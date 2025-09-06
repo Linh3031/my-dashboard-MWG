@@ -2,20 +2,38 @@
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
+console.log("--- BÀI KIỂM TRA BẮT ĐẦU ---");
+console.log("1. File main.js đã bắt đầu được thực thi.");
+
 import { config } from './config.js';
 import { appState } from './state.js';
 import { services } from './services.js';
 import { ui } from './ui.js';
 
+console.log("2. Các module (config, state, services, ui) đã được nhập khẩu.");
+
 const app = {
     init() {
-        this.loadDataFromStorage();
-        this.loadInterfaceSettings();
-        this.setupEventListeners();
-        this.applyContrastSetting();
-        this.loadHighlightSettings();
-        ui.populateAllFilters();
-        this.switchTab('data-section');
+        console.log("3. Hàm app.init() đã bắt đầu.");
+        try {
+            this.loadDataFromStorage();
+            console.log("4. loadDataFromStorage() hoàn tất.");
+            
+            this.loadInterfaceSettings();
+            console.log("5. loadInterfaceSettings() hoàn tất.");
+            
+            this.setupEventListeners();
+            console.log("6. setupEventListeners() hoàn tất.");
+            
+            this.applyContrastSetting();
+            this.loadHighlightSettings();
+            ui.populateAllFilters();
+            this.switchTab('data-section');
+            
+            console.log("7. Hàm app.init() đã KẾT THÚC thành công!");
+        } catch (error) {
+            console.error("!!! LỖI NGHIÊM TRỌNG TRONG QUÁ TRÌNH KHỞI TẠO APP !!!", error);
+        }
     },
 
     loadInterfaceSettings() {
@@ -95,8 +113,6 @@ const app = {
                     const data = new Uint8Array(event.target.result);
                     const workbook = XLSX.read(data, { type: 'array', cellDates: true });
                     const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-                    //console.log(jsonData); // <--- THÊM DÒNG NÀY VÀO
-
                     resolve(jsonData);
                 } catch (err) { reject(err); }
             };
@@ -511,7 +527,7 @@ const app = {
         let requiredRevenue = 0;
         if (daysRemaining > 0) {
             requiredRevenue = ((targetQd * targetPercentage) - thucHienQd) / daysRemaining;
-        } else {
+        } else { 
             requiredRevenue = (targetQd * targetPercentage) - thucHienQd;
         }
     
@@ -558,6 +574,10 @@ const app = {
     },
 
     setupEventListeners() {
+        console.log("6A. Bên trong hàm setupEventListeners(). Bắt đầu tìm kiếm các element.");
+        const fileInputs = document.querySelectorAll('.file-input');
+        console.log(`6B. Đã tìm thấy ${fileInputs.length} element có class '.file-input'.`);
+
         // --- Khởi tạo các thư viện ---
         ['luyke', 'sknv', 'realtime'].forEach(prefix => {
             const el = document.getElementById(`${prefix}-filter-name`);
@@ -626,8 +646,8 @@ const app = {
         
         document.querySelectorAll('.kpi-color-input').forEach(picker => picker.addEventListener('input', app.saveInterfaceSettings));
 
-        document.querySelectorAll('.file-input').forEach(input => input.addEventListener('change', async (e) => {
-            console.log("Sự kiện 'change' đã được kích hoạt trên input:", e.target.id);
+        fileInputs.forEach(input => input.addEventListener('change', async (e) => {
+            console.log("Sự kiện 'change' đã được kích hoạt trên input:", e.target.id); // <--- LOG CŨ
             const fileInput = e.target, file = fileInput.files[0], fileType = fileInput.id.replace('file-', '');
             const dataName = fileInput.dataset.name || fileType, shouldSave = fileInput.dataset.save === 'true';
             const fileNameSpan = document.getElementById(`file-name-${fileType}`), fileStatusSpan = document.getElementById(`file-status-${fileType}`);
@@ -638,9 +658,7 @@ const app = {
             try {
                 const rawData = await app.handleFileRead(file);
                 const { normalizedData, success, missingColumns } = services.normalizeData(rawData, fileType);
-                console.log("Dữ liệu SAU KHI chuẩn hóa:", normalizedData);
-    console.log("Trạng thái thành công:", success);
-    console.log("Các cột bị thiếu (nếu có):", missingColumns);
+                // LOG CŨ
                 ui.displayDebugInfo(fileType);
                 if (success) {
                     if (fileType === 'danhsachnv') {
@@ -673,8 +691,7 @@ const app = {
                     if (debugContainer?.classList.contains('hidden')) document.getElementById('toggle-debug-btn')?.click();
                 }
             } catch (error) {
-                // THÊM DÒNG NÀY ĐỂ DỄ NHẬN BIẾT
-    console.error("!!! MỘT LỖI ĐÃ BỊ BẮT TRONG KHỐI CATCH !!!"); 
+                console.error("!!! MỘT LỖI ĐÃ BỊ BẮT TRONG KHỐI CATCH !!!"); // <-- LOG CŨ
                 console.error(`Lỗi xử lý file ${dataName}:`, error);
                 if (fileStatusSpan) { fileStatusSpan.textContent = `Lỗi: ${error.message}`; fileStatusSpan.className = 'text-sm text-red-500'; }
                 ui.showNotification(`Lỗi khi xử lý file "${dataName}".`, 'error');
