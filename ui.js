@@ -5,7 +5,6 @@
 import { appState } from './state.js';
 import { config } from './config.js';
 import { services } from './services.js';
-
 const ui = {
     showProgressBar: (elementId) => document.getElementById(`progress-${elementId}`)?.classList.remove('hidden'),
     hideProgressBar: (elementId) => document.getElementById(`progress-${elementId}`)?.classList.add('hidden'),
