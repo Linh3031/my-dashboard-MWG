@@ -95,7 +95,7 @@ const app = {
                     const data = new Uint8Array(event.target.result);
                     const workbook = XLSX.read(data, { type: 'array', cellDates: true });
                     const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-                    console.log(jsonData); // <--- THÊM DÒNG NÀY VÀO
+                    //console.log(jsonData); // <--- THÊM DÒNG NÀY VÀO
 
                     resolve(jsonData);
                 } catch (err) { reject(err); }
@@ -638,6 +638,9 @@ const app = {
             try {
                 const rawData = await app.handleFileRead(file);
                 const { normalizedData, success, missingColumns } = services.normalizeData(rawData, fileType);
+                console.log("Dữ liệu SAU KHI chuẩn hóa:", normalizedData);
+    console.log("Trạng thái thành công:", success);
+    console.log("Các cột bị thiếu (nếu có):", missingColumns);
                 ui.displayDebugInfo(fileType);
                 if (success) {
                     if (fileType === 'danhsachnv') {
