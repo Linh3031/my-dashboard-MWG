@@ -673,6 +673,8 @@ const app = {
                     if (debugContainer?.classList.contains('hidden')) document.getElementById('toggle-debug-btn')?.click();
                 }
             } catch (error) {
+                // THÊM DÒNG NÀY ĐỂ DỄ NHẬN BIẾT
+    console.error("!!! MỘT LỖI ĐÃ BỊ BẮT TRONG KHỐI CATCH !!!"); 
                 console.error(`Lỗi xử lý file ${dataName}:`, error);
                 if (fileStatusSpan) { fileStatusSpan.textContent = `Lỗi: ${error.message}`; fileStatusSpan.className = 'text-sm text-red-500'; }
                 ui.showNotification(`Lỗi khi xử lý file "${dataName}".`, 'error');
