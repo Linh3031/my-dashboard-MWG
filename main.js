@@ -1,4 +1,4 @@
-// Version 7.5 - Final Polishing
+// Version 7.5 - Final Polishing & Bug Fix
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -18,7 +18,7 @@ const app = {
             ui.populateAllFilters();
             this.switchTab('data-section');
         } catch (error) {
-            console.error("!!! LỖI NGHIÊM TRỌNG TRONG QUÁ TRÌNH KHỞI TẠO APP !!!", error);
+            console.error("Lỗi nghiêm trọng trong quá trình khởi tạo ứng dụng:", error);
         }
     },
 
@@ -31,7 +31,6 @@ const app = {
             };
             const settings = savedSettings ? JSON.parse(savedSettings) : defaultSettings;
             ui.applyInterfaceSettings(settings);
-
             document.getElementById('kpi-color-1')?.setAttribute('value', settings.kpiCard1Bg || defaultSettings.kpiCard1Bg);
             document.getElementById('kpi-color-2')?.setAttribute('value', settings.kpiCard2Bg || defaultSettings.kpiCard2Bg);
             document.getElementById('kpi-color-3')?.setAttribute('value', settings.kpiCard3Bg || defaultSettings.kpiCard3Bg);
