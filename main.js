@@ -95,6 +95,8 @@ const app = {
                     const data = new Uint8Array(event.target.result);
                     const workbook = XLSX.read(data, { type: 'array', cellDates: true });
                     const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                    console.log(jsonData); // <--- THÊM DÒNG NÀY VÀO
+
                     resolve(jsonData);
                 } catch (err) { reject(err); }
             };
@@ -625,6 +627,7 @@ const app = {
         document.querySelectorAll('.kpi-color-input').forEach(picker => picker.addEventListener('input', app.saveInterfaceSettings));
 
         document.querySelectorAll('.file-input').forEach(input => input.addEventListener('change', async (e) => {
+            console.log("Sự kiện 'change' đã được kích hoạt trên input:", e.target.id);
             const fileInput = e.target, file = fileInput.files[0], fileType = fileInput.id.replace('file-', '');
             const dataName = fileInput.dataset.name || fileType, shouldSave = fileInput.dataset.save === 'true';
             const fileNameSpan = document.getElementById(`file-name-${fileType}`), fileStatusSpan = document.getElementById(`file-status-${fileType}`);
