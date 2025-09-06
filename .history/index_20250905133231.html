@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="vi" data-contrast="1">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trang tổng quan dữ liệu Ver 7.0</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <link rel="stylesheet" href="./dashboard.css">
+</head>
+<body class="overflow-x-hidden">
+
+    <div id="interface-drawer" class="settings-drawer fixed top-0 left-0 h-full bg-white shadow-2xl z-50 p-6 overflow-y-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-gray-800">Cài đặt giao diện</h3>
+            <button id="close-interface-drawer" class="text-gray-500 hover:text-gray-800">&times;</button>
+        </div>
+        <div class="space-y-6">
+            <div>
+                <label for="contrast-selector-drawer" class="block text-sm font-medium text-gray-700 mb-2">Độ tương phản</label>
+                <select id="contrast-selector-drawer" class="contrast-selector w-full p-2 border rounded-lg text-sm bg-white shadow-sm">
+                    <option value="1">Mặc định</option>
+                    <option value="2">Tương phản cao</option>
+                    <option value="3">Tương phản rất cao</option>
+                </select>
+            </div>
+            <div>
+                <h4 class="text-sm font-medium text-gray-700 mb-2">Màu sắc thẻ KPI</h4>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="flex items-center gap-2">
+                        <input type="color" id="kpi-color-1" class="kpi-color-input p-1 h-10 w-14 block bg-white border border-gray-300 cursor-pointer rounded-lg">
+                        <label for="kpi-color-1" class="text-sm">Thẻ 1</label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="color" id="kpi-color-2" class="kpi-color-input p-1 h-10 w-14 block bg-white border border-gray-300 cursor-pointer rounded-lg">
+                        <label for="kpi-color-2" class="text-sm">Thẻ 2</label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="color" id="kpi-color-3" class="kpi-color-input p-1 h-10 w-14 block bg-white border border-gray-300 cursor-pointer rounded-lg">
+                        <label for="kpi-color-3" class="text-sm">Thẻ 3</label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="color" id="kpi-color-4" class="kpi-color-input p-1 h-10 w-14 block bg-white border border-gray-300 cursor-pointer rounded-lg">
+                        <label for="kpi-color-4" class="text-sm">Thẻ 4</label>
+                    </div>
+                </div>
+            </div>
+             <div>
+                <h4 class="text-sm font-medium text-gray-700 mb-2">Màu chữ thẻ KPI</h4>
+                 <div class="flex items-center gap-2">
+                    <input type="color" id="kpi-text-color" class="kpi-color-input p-1 h-10 w-14 block bg-white border border-gray-300 cursor-pointer rounded-lg">
+                    <label for="kpi-text-color" class="text-sm">Màu chữ</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="goal-drawer" class="settings-drawer fixed top-0 left-0 h-full bg-white shadow-2xl z-50 p-6 overflow-y-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-gray-800">Thiết lập mục tiêu</h3>
+            <button id="close-goal-drawer" class="text-gray-500 hover:text-gray-800">&times;</button>
+        </div>
+        
+        <div class="border-b border-gray-200 mb-4">
+            <nav id="goal-drawer-tabs" class="-mb-px flex space-x-6" aria-label="Tabs">
+                 <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="goal-tab-monthly">Mục tiêu Tháng (Lũy kế)</button>
+                 <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="goal-tab-daily">Mục tiêu Ngày (Realtime)</button>
+            </nav>
+        </div>
+
+        <div id="goal-drawer-content">
+            <div id="goal-tab-monthly" class="sub-tab-content space-y-4">
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div>
+                        <label for="luyke-goal-warehouse-select" class="block text-sm font-medium text-gray-700 mb-1">Thiết lập cho kho</label>
+                        <select id="luyke-goal-warehouse-select" class="p-2 border rounded-lg text-sm bg-white shadow-sm w-full"></select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-2 gap-x-4 gap-y-3">
+                    <div>
+                        <label for="luyke-goal-dtt" class="block text-sm font-medium text-gray-700">Target DT Thực (tỷ)</label>
+                        <input type="number" id="luyke-goal-dtt" class="luyke-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="doanhThuThuc">
+                    </div>
+                    <div>
+                        <label for="luyke-goal-dtqd" class="block text-sm font-medium text-gray-700">Target DT QĐ (tỷ)</label>
+                        <input type="number" id="luyke-goal-dtqd" class="luyke-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="doanhThuQD">
+                    </div>
+                    <div>
+                        <label for="luyke-goal-ptqd" class="block text-sm font-medium text-gray-700">% Quy đổi</label>
+                        <input type="number" id="luyke-goal-ptqd" class="luyke-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="phanTramQD">
+                    </div>
+                    <div>
+                        <label for="luyke-goal-pttc" class="block text-sm font-medium text-gray-700">% Trả chậm</label>
+                        <input type="number" id="luyke-goal-pttc" class="luyke-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="phanTramTC">
+                    </div>
+                    <div>
+                        <label for="luyke-goal-giadung" class="block text-sm font-medium text-gray-700">% Gia dụng</label>
+                        <input type="number" id="luyke-goal-giadung" class="luyke-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="phanTramGiaDung">
+                    </div>
+                    <div>
+                        <label for="luyke-goal-mln" class="block text-sm font-medium text-gray-700">% MLN</label>
+                        <input type="number" id="luyke-goal-mln" class="luyke-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="phanTramMLN">
+                    </div>
+                    <div>
+                        <label for="luyke-goal-phukien" class="block text-sm font-medium text-gray-700">% Phụ kiện</label>
+                        <input type="number" id="luyke-goal-phukien" class="luyke-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="phanTramPhuKien">
+                    </div>
+                     <div>
+                        <label for="luyke-goal-baohiem" class="block text-sm font-medium text-gray-700">% Bảo hiểm</label>
+                        <input type="number" id="luyke-goal-baohiem" class="luyke-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="phanTramBaoHiem">
+                    </div>
+                    <div>
+                        <label for="luyke-goal-sim" class="block text-sm font-medium text-gray-700">% Sim</label>
+                        <input type="number" id="luyke-goal-sim" class="luyke-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="phanTramSim">
+                    </div>
+                    <div>
+                        <label for="luyke-goal-vas" class="block text-sm font-medium text-gray-700">% VAS</label>
+                        <input type="number" id="luyke-goal-vas" class="luyke-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="phanTramVAS">
+                    </div>
+                </div>
+            </div>
+            <div id="goal-tab-daily" class="sub-tab-content hidden space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                    <div>
+                        <label for="rt-goal-warehouse-select" class="block text-sm font-medium text-gray-700 mb-1">Thiết lập cho kho</label>
+                        <select id="rt-goal-warehouse-select" class="p-2 border rounded-lg text-sm bg-white shadow-sm w-full"></select>
+                    </div>
+                    <div class="flex items-center gap-x-2">
+                        <label for="rt-open-hour" class="font-medium text-gray-700 text-sm">Mở cửa:</label>
+                        <input type="time" id="rt-open-hour" class="rt-setting-input p-1 border border-gray-300 rounded-md shadow-sm w-24">
+                    </div>
+                    <div class="flex items-center gap-x-2">
+                        <label for="rt-close-hour" class="font-medium text-gray-700 text-sm">Đóng cửa:</label>
+                        <input type="time" id="rt-close-hour" class="rt-setting-input p-1 border border-gray-300 rounded-md shadow-sm w-24">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-2 gap-x-4 gap-y-3">
+                    <div>
+                        <label for="rt-goal-dtt" class="block text-sm font-medium text-gray-700">DT Thực (triệu)</label>
+                        <input type="number" id="rt-goal-dtt" class="rt-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="doanhThuThuc">
+                    </div>
+                    <div>
+                        <label for="rt-goal-dtqd" class="block text-sm font-medium text-gray-700">DT QĐ (triệu)</label>
+                        <input type="number" id="rt-goal-dtqd" class="rt-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="doanhThuQD">
+                    </div>
+                    <div>
+                        <label for="rt-goal-ptqd" class="block text-sm font-medium text-gray-700">% Quy đổi</label>
+                        <input type="number" id="rt-goal-ptqd" class="rt-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="phanTramQD">
+                    </div>
+                    <div>
+                        <label for="rt-goal-pttc" class="block text-sm font-medium text-gray-700">% Trả chậm</label>
+                        <input type="number" id="rt-goal-pttc" class="rt-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="phanTramTC">
+                    </div>
+                    <div>
+                        <label for="rt-goal-giadung" class="block text-sm font-medium text-gray-700">% Gia dụng</label>
+                        <input type="number" id="rt-goal-giadung" class="rt-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="phanTramGiaDung">
+                    </div>
+                    <div>
+                        <label for="rt-goal-mln" class="block text-sm font-medium text-gray-700">% MLN</label>
+                        <input type="number" id="rt-goal-mln" class="rt-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="phanTramMLN">
+                    </div>
+                    <div>
+                        <label for="rt-goal-phukien" class="block text-sm font-medium text-gray-700">% Phụ kiện</label>
+                        <input type="number" id="rt-goal-phukien" class="rt-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="phanTramPhuKien">
+                    </div>
+                    <div>
+                        <label for="rt-goal-sim" class="block text-sm font-medium text-gray-700">% Sim</label>
+                        <input type="number" id="rt-goal-sim" class="rt-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="phanTramSim">
+                    </div>
+                    <div>
+                        <label for="rt-goal-vas" class="block text-sm font-medium text-gray-700">% VAS</label>
+                        <input type="number" id="rt-goal-vas" class="rt-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="phanTramVAS">
+                    </div>
+                     <div>
+                        <label for="rt-goal-baohiem" class="block text-sm font-medium text-gray-700">% Bảo hiểm</label>
+                        <input type="number" id="rt-goal-baohiem" class="rt-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="phanTramBaoHiem">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="drawer-overlay" class="hidden fixed inset-0 bg-black bg-opacity-40 z-40"></div>
+
+
+    <div class="flex min-h-screen">
+        <nav id="sidebar" class="bg-white/80 backdrop-blur-sm shadow-lg fixed top-0 left-0 h-full z-30 p-3 flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-center mb-8 h-8">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                </div>
+                <ul class="space-y-2">
+                    <li>
+                        <a href="#data-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                            <span class="menu-text ml-4">Data</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#health-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+                            <span class="menu-text ml-4">Sức khỏe siêu thị</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#health-employee-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200">
+                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                            <span class="menu-text ml-4">Sức khỏe nhân viên</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#realtime-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                            <span class="menu-text ml-4">Doanh thu realtime</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div>
+                <ul class="space-y-2">
+                    <li>
+                        <button id="interface-settings-btn" class="w-full flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                            <span class="menu-text ml-4">Cài đặt giao diện</span>
+                        </button>
+                    </li>
+                     <li>
+                        <button id="goal-settings-btn" class="w-full flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+                            <span class="menu-text ml-4">Thiết lập mục tiêu</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button id="admin-access-btn" class="w-full flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                            <span class="menu-text ml-4">Khai báo</span>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <main id="main-content" class="flex-1 py-6">
+            <div class="max-w-full px-4">
+                
+                <section id="data-section" class="page-section">
+                    <h2 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-6">Data</h2>
+                    <div class="bg-white rounded-xl shadow-md p-4 sm:p-6 mb-8 border border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-4 border-b pb-2">DỮ LIỆU CẬP NHẬT HÀNG NGÀY</h3>
+                        
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="space-y-6">
+                                <div class="border border-gray-200 rounded-lg p-4">
+                                    <label class="font-bold text-gray-600">Yêu cầu xuất lũy kế:</label>
+                                    <div class="mt-2">
+                                        <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+                                            <label for="file-ycx" class="cursor-pointer bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition text-sm font-medium whitespace-nowrap">Thêm file</label>
+                                            <span id="file-name-ycx" class="text-sm text-gray-500 truncate">Chưa thêm file</span>
+                                            <input type="file" id="file-ycx" class="hidden file-input" data-name="Yêu cầu xuất lũy kế" accept=".xlsx, .xls, .csv">
+                                        </div>
+                                        <a href="https://report.mwgroup.vn/home/dashboard/077" target="_blank" class="text-blue-600 hover:underline whitespace-nowrap text-sm mt-2 inline-block">Lấy file tại đây</a>
+                                        <div class="mt-2 h-4"><span id="file-status-ycx" class="text-sm text-red-500"></span></div>
+                                        <div id="progress-ycx" class="w-full bg-gray-200 rounded-full h-1.5 mt-2 hidden progress-bar-container"><div class="bg-blue-600 h-1.5 rounded-full progress-bar"></div></div>
+                                    </div>
+                                </div>
+                                <div class="border border-gray-200 rounded-lg p-4">
+                                    <label class="font-bold text-gray-600">Giờ công:</label>
+                                    <div class="mt-2">
+                                        <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+                                            <label for="file-giocong" class="cursor-pointer bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition text-sm font-medium whitespace-nowrap">Thêm file</label>
+                                            <span id="file-name-giocong" class="text-sm text-gray-500 truncate">Chưa thêm file</span>
+                                            <input type="file" id="file-giocong" class="hidden file-input" data-name="Giờ công" accept=".xlsx, .xls, .csv">
+                                        </div>
+                                        <a href="https://reports.thegioididong.com/#/viewreport/168754" target="_blank" class="text-blue-600 hover:underline whitespace-nowrap text-sm mt-2 inline-block">Lấy file tại đây</a>
+                                        <div class="mt-2 h-4"><span id="file-status-giocong" class="text-sm text-red-500"></span></div>
+                                        <div id="progress-giocong" class="w-full bg-gray-200 rounded-full h-1.5 mt-2 hidden progress-bar-container"><div class="bg-blue-600 h-1.5 rounded-full progress-bar"></div></div>
+                                    </div>
+                                </div>
+                                <div class="border border-gray-200 rounded-lg p-4">
+                                    <label class="font-bold text-gray-600">Thưởng nóng:</label>
+                                    <div class="mt-2">
+                                        <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+                                            <label for="file-thuongnong" class="cursor-pointer bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition text-sm font-medium whitespace-nowrap">Thêm file</label>
+                                            <span id="file-name-thuongnong" class="text-sm text-gray-500 truncate">Chưa thêm file</span>
+                                            <input type="file" id="file-thuongnong" class="hidden file-input" data-name="Thưởng nóng" accept=".xlsx, .xls, .csv">
+                                        </div>
+                                        <a href="https://report.mwgroup.vn/home/dashboard/105" target="_blank" class="text-blue-600 hover:underline whitespace-nowrap text-sm mt-2 inline-block">Lấy file tại đây</a>
+                                        <div class="mt-2 h-4"><span id="file-status-thuongnong" class="text-sm text-red-500"></span></div>
+                                        <div id="progress-thuongnong" class="w-full bg-gray-200 rounded-full h-1.5 mt-2 hidden progress-bar-container"><div class="bg-blue-600 h-1.5 rounded-full progress-bar"></div></div>
+                                    </div>
+                                </div>
+                                <div class="border border-gray-200 rounded-lg p-4">
+                                    <label class="font-bold text-gray-600">Data ngành hàng tháng này:<br><span class="text-sm text-gray-500 font-normal">(Copy từ BI)</span></label>
+                                    <div class="mt-2 flex flex-col space-y-2">
+                                        <textarea id="paste-nganhhang-thangnay" rows="3" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Dán dữ liệu đã sao chép vào đây..."></textarea>
+                                        <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+                                            <span id="status-nganhhang-thangnay" class="text-sm text-green-600 font-semibold"></span>
+                                        </div>
+                                        <div id="progress-nganhhang-thangnay" class="w-full bg-gray-200 rounded-full h-1.5 mt-2 hidden progress-bar-container"><div class="bg-blue-600 h-1.5 rounded-full progress-bar"></div></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-6">
+                                <div class="border border-gray-200 rounded-lg p-4">
+                                    <label class="font-bold text-gray-600">Thưởng ERP:<br><span class="text-sm text-gray-500 font-normal">(Copy từ BI)</span></label>
+                                    <div class="mt-2 flex flex-col space-y-2">
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div>
+                                                <label class="text-sm font-medium text-gray-600">Trang 1</label>
+                                                <textarea id="paste-thuongerp-1" rows="3" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Dán dữ liệu trang 1..."></textarea>
+                                            </div>
+                                            <div>
+                                                <label class="text-sm font-medium text-gray-600">Trang 2</label>
+                                                <textarea id="paste-thuongerp-2" rows="3" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Dán dữ liệu trang 2..."></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+                                            <a href="https://bi.thegioididong.com/reward?id=-1&tab=1" target="_blank" class="text-blue-600 hover:underline whitespace-nowrap text-sm">Lấy file tại đây</a>
+                                            <span id="status-thuongerp" class="text-sm text-green-600 font-semibold"></span>
+                                        </div>
+                                        <div id="progress-thuongerp" class="w-full bg-gray-200 rounded-full h-1.5 mt-2 hidden progress-bar-container"><div class="bg-blue-600 h-1.5 rounded-full progress-bar"></div></div>
+                                    </div>
+                                </div>
+                                <div class="border border-gray-200 rounded-lg p-4">
+                                    <label class="font-bold text-gray-600">Data lũy kế:<br><span class="text-sm text-gray-500 font-normal">(Copy từ BI)</span></label>
+                                    <div class="mt-2 flex flex-col space-y-2">
+                                        <textarea id="paste-luyke" rows="3" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Dán dữ liệu đã sao chép vào đây..."></textarea>
+                                        <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+                                            <a href="https://bi.thegioididong.com/sieu-thi-con?id=16612&tab=1" target="_blank" class="text-blue-600 hover:underline whitespace-nowrap text-sm">Lấy file tại đây</a>
+                                            <span id="status-luyke" class="text-sm text-green-600 font-semibold"></span>
+                                        </div>
+                                        <div id="progress-luyke" class="w-full bg-gray-200 rounded-full h-1.5 mt-2 hidden progress-bar-container"><div class="bg-blue-600 h-1.5 rounded-full progress-bar"></div></div>
+                                    </div>
+                                </div>
+                                <div class="border border-gray-200 rounded-lg p-4">
+                                    <label class="font-bold text-gray-600">Dữ liệu thi đua nhân viên:<br><span class="text-sm text-gray-500 font-normal">(Copy từ BI)</span></label>
+                                    <div class="mt-2 flex flex-col space-y-2">
+                                        <textarea id="paste-thidua-nv" rows="3" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Dán dữ liệu đã sao chép vào đây..."></textarea>
+                                        <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+                                            <span id="status-thidua-nv" class="text-sm text-green-600 font-semibold"></span>
+                                        </div>
+                                        <div id="progress-thidua-nv" class="w-full bg-gray-200 rounded-full h-1.5 mt-2 hidden progress-bar-container"><div class="bg-blue-600 h-1.5 rounded-full progress-bar"></div></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-4 border-b pb-2">DỮ LIỆU CẬP NHẬT 1 THÁNG 1 LẦN</h3>
+                          <p class="text-sm text-yellow-600 bg-yellow-50 p-3 rounded-lg mb-4">Lưu ý: Dữ liệu trong phần này sẽ được lưu vào trình duyệt của bạn. Dữ liệu sẽ tồn tại cho đến khi bạn cập nhật lại.</p>
+                        <div class="divide-y divide-gray-200">
+                            <div class="grid md:grid-cols-3 items-start gap-4 py-5">
+                                <label class="font-bold text-gray-600 pt-2">Danh sách nhân viên:</label>
+                                <div class="md:col-span-2">
+                                    <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+                                        <label for="file-danhsachnv" class="cursor-pointer bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition text-sm font-medium whitespace-nowrap">Thêm file</label>
+                                        <span id="file-name-danhsachnv" class="text-sm text-gray-500 truncate">Chưa thêm file</span>
+                                        <input type="file" id="file-danhsachnv" class="hidden file-input" data-name="Danh sách nhân viên" data-save="true" accept=".xlsx, .xls, .csv">
+                                        <a href="#" id="download-sample-nv" class="text-blue-600 hover:underline whitespace-nowrap">Tải file mẫu</a>
+                                    </div>
+                                    <div class="mt-2 h-4">
+                                        <span id="file-status-danhsachnv" class="text-sm text-red-500"></span>
+                                        <span id="danhsachnv-saved-status" class="text-sm text-green-600"></span>
+                                    </div>
+                                    <div id="progress-danhsachnv" class="w-full bg-gray-200 rounded-full h-1.5 mt-2 hidden progress-bar-container"><div class="bg-blue-600 h-1.5 rounded-full progress-bar"></div></div>
+                                </div>
+                            </div>
+                            <div class="grid md:grid-cols-3 items-start gap-4 py-5">
+                                <label class="font-bold text-gray-600 pt-2">Data ngành hàng tháng trước:<br><span class="text-sm text-gray-500 font-normal">(Copy từ BI)</span></label>
+                                <div class="md:col-span-2 flex flex-col space-y-2">
+                                    <textarea id="paste-cungkythang" rows="3" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Dán dữ liệu vào đây để lưu lại..."></textarea>
+                                    <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+                                        <button class="paste-btn bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition" data-target="paste-cungkythang" data-name="Data ngành hàng tháng trước" data-save="true">Lưu dữ liệu</button>
+                                        <a href="https://bi.thegioididong.com/sieu-thi-con?id=16612&tab=1" target="_blank" class="text-blue-600 hover:underline whitespace-nowrap">Lấy file tại đây</a>
+                                    </div>
+                                    <div id="progress-cungkythang" class="w-full bg-gray-200 rounded-full h-1.5 mt-2 hidden progress-bar-container"><div class="bg-blue-600 h-1.5 rounded-full progress-bar"></div></div>
+                                </div>
+                            </div>
+                            <div class="grid md:grid-cols-3 items-start gap-4 pt-5">
+                                <label class="font-bold text-gray-600 pt-2">Data cùng kỳ năm:</label>
+                                <div class="md:col-span-2">
+                                    <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+                                         <label for="file-cungkynam" class="cursor-pointer bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition text-sm font-medium whitespace-nowrap">Thêm file</label>
+                                        <span id="file-name-cungkynam" class="text-sm text-gray-500 truncate">Chưa thêm file</span>
+                                        <input type="file" id="file-cungkynam" class="hidden file-input" data-name="Data cùng kỳ năm" data-save="true" accept=".xlsx, .xls, .csv">
+                                    </div>
+                                    <div class="mt-2 h-4">
+                                        <span id="file-status-cungkynam" class="text-sm text-red-500"></span>
+                                        <span id="cungkynam-saved-status" class="text-sm text-green-600"></span>
+                                    </div>
+                                    <div id="progress-cungkynam" class="w-full bg-gray-200 rounded-full h-1.5 mt-2 hidden progress-bar-container"><div class="bg-blue-600 h-1.5 rounded-full progress-bar"></div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <section id="health-section" class="page-section hidden">
+                    <div class="bg-white rounded-xl shadow-md p-4 sm:p-6 mb-8 border border-gray-200">
+                        <div class="flex flex-wrap justify-between items-center gap-4 border-b pb-4 mb-6">
+                            <h2 class="text-xl sm:text-2xl font-bold text-gray-800 uppercase whitespace-nowrap">Phân Tích Lũy Kế</h2>
+                            <button id="capture-health-btn" class="text-sm font-medium text-blue-600 hover:bg-blue-50 p-2 rounded-lg flex items-center gap-2" title="Chụp ảnh tab hiện tại">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15 12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1.172a3 3 0 0 0 2.12-.879l.83-.828A1 1 0 0 1 6.827 3h2.344a1 1 0 0 1 .707.293l.828.828A3 3 0 0 0 12.828 5H14a1 1 0 0 1 1 1v6zM2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828-.828A2 2 0 0 1 3.172 4H2z"/><path d="M8 11a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5zm0 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM3 6.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/></svg>
+                                <span>Chụp màn hình</span>
+                            </button>
+                        </div>
+
+                        <button class="toggle-filters-btn" data-target="luyke-filter-container">
+                            <span class="text">Hiện bộ lọc nâng cao</span>
+                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <div id="luyke-filter-container" class="advanced-filters hidden">
+                            <div id="luyke-filter-bar" class="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-4">
+                                <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                                    <div class="md:col-span-2">
+                                        <label for="luyke-filter-date" class="block text-sm font-medium text-gray-600 mb-1">Ngày tạo</label>
+                                        <div class="relative">
+                                            <input type="text" id="luyke-filter-date" class="p-2 border rounded-lg text-sm bg-white shadow-sm w-full" placeholder="Chọn ngày...">
+                                            <button id="luyke-clear-date" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 text-xs">Bỏ chọn</button>
+                                        </div>
+                                        <span id="luyke-date-summary" class="text-xs text-red-500 mt-1 block"></span>
+                                    </div>
+                                    <div class="md:col-span-2"><label for="luyke-filter-warehouse" class="block text-sm font-medium text-gray-600 mb-1">Mã Kho</label><select id="luyke-filter-warehouse" class="p-2 border rounded-lg text-sm bg-white shadow-sm w-full"></select></div>
+                                    <div class="md:col-span-2"><label for="luyke-filter-department" class="block text-sm font-medium text-gray-600 mb-1">Bộ Phận</label><select id="luyke-filter-department" class="p-2 border rounded-lg text-sm bg-white shadow-sm w-full"></select></div>
+                                    <div class="md:col-span-6"><label for="luyke-filter-name" class="block text-sm font-medium text-gray-600 mb-1">Nhân Viên</label><select id="luyke-filter-name" multiple></select></div>
+                                </div>
+                                 <div class="border-t pt-4 grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                                    <div class="md:col-span-9"><label for="luyke-highlight-employee" class="block text-sm font-medium text-gray-600 mb-1">Tô màu nhân viên</label><select id="luyke-highlight-employee" multiple></select></div>
+                                    <div class="md:col-span-3 flex items-end gap-2">
+                                        <div><label for="luyke-highlight-color" class="block text-sm font-medium text-gray-600 mb-1">Chọn màu</label><input type="color" id="luyke-highlight-color" value="#ffff00" class="p-1 h-10 w-14 block bg-white border border-gray-300 cursor-pointer rounded-lg"></div>
+                                        <button id="luyke-clear-highlight" class="bg-red-500 text-white px-4 h-10 rounded-lg hover:bg-red-600 transition text-sm">Xóa màu</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-8 border-b border-gray-200">
+                        <nav id="luyke-subtabs-nav" class="-mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs">
+                            <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-luyke-sieu-thi">Siêu thị Lũy kế</button>
+                            <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-luyke-thi-dua">Thi đua ngành hàng</button>
+                            <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-luyke-cung-ky">So sánh cùng kỳ</button>
+                             <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-luyke-hang">Doanh thu theo hãng</button>
+                        </nav>
+                    </div>
+
+                    <div id="luyke-subtabs-content">
+                        <div id="subtab-luyke-sieu-thi" class="sub-tab-content space-y-8">
+                            <div id="luyke-kpi-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                                <div class="kpi-card p-6 rounded-2xl shadow-lg">
+                                    <h4 class="kpi-card-title font-semibold uppercase tracking-wider">Doanh thu thực</h4>
+                                    <p id="luyke-kpi-dt-thuc-main" class="text-4xl font-bold mt-2 mb-3">0</p>
+                                    <p id="luyke-kpi-dt-thuc-sub1" class="text-sm">% HT: <span class="kpi-percentage-value">0%</span></p>
+                                    <p id="luyke-kpi-dt-thuc-sub2" class="text-sm mt-1">Dự kiến: 0</p>
+                                </div>
+                                <div class="kpi-card p-6 rounded-2xl shadow-lg">
+                                    <h4 class="kpi-card-title font-semibold uppercase tracking-wider">Doanh thu Quy đổi</h4>
+                                    <p id="luyke-kpi-dt-qd-main" class="text-4xl font-bold mt-2 mb-3">0</p>
+                                    <p id="luyke-kpi-dt-qd-sub1" class="text-sm">% HT: <span class="kpi-percentage-value">0%</span></p>
+                                    <p id="luyke-kpi-dt-qd-sub2" class="text-sm mt-1">Dự kiến: 0</p>
+                                </div>
+                                <div class="kpi-card p-6 rounded-2xl shadow-lg">
+                                    <h4 class="kpi-card-title font-semibold uppercase tracking-wider">Tỷ lệ quy đổi</h4>
+                                    <p id="luyke-kpi-tl-qd-main" class="text-4xl font-bold mt-2 mb-3 kpi-percentage-value">0%</p>
+                                    <p id="luyke-kpi-tl-qd-sub" class="text-sm">Mục tiêu: 0%</p>
+                                </div>
+                                <div class="kpi-card p-6 rounded-2xl shadow-lg">
+                                    <h4 class="kpi-card-title font-semibold uppercase tracking-wider">Doanh thu trả chậm</h4>
+                                    <p id="luyke-kpi-dt-tc-main" class="text-4xl font-bold mt-2 mb-3">0</p>
+                                    <p id="luyke-kpi-dt-tc-sub" class="text-sm">% thực trả chậm: <span class="kpi-percentage-value">0%</span></p>
+                                </div>
+                                <div class="kpi-card p-6 rounded-2xl shadow-lg">
+                                    <h4 class="kpi-card-title font-semibold uppercase tracking-wider">DTQĐ Chưa Xuất</h4>
+                                    <p id="luyke-kpi-dtqd-chua-xuat-main" class="text-4xl font-bold mt-2 mb-3">0</p>
+                                    <p id="luyke-kpi-dtqd-chua-xuat-sub" class="text-sm">Lấy từ file Yêu cầu xuất</p>
+                                </div>
+                            </div>
+                           
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                                <div id="luyke-efficiency-panel" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200">
+                                    <h3 id="luyke-efficiency-title" class="text-xl font-bold text-gray-700 mb-4 uppercase bg-yellow-100 text-yellow-800 p-2 rounded-md">HIỆU QUẢ KHAI THÁC LŨY KẾ</h3>
+                                    <div id="luyke-efficiency-content"><p class="text-gray-500 font-bold">Vui lòng tải file "Yêu cầu xuất lũy kế".</p></div>
+                                </div>
+                                <div id="luyke-daily-goal-panel" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200 flex flex-col">
+                                     <div class="flex justify-between items-center mb-4 bg-green-100 text-green-800 p-2 rounded-md">
+                                        <h3 class="text-xl font-bold uppercase">Mục tiêu ngày</h3>
+                                        <div class="flex items-center gap-2">
+                                            <label for="daily-goal-percentage" class="text-sm font-semibold">Mục tiêu HT:</label>
+                                            <input type="number" id="daily-goal-percentage" class="w-20 p-1 text-right font-bold border rounded-md" placeholder="95">
+                                            <span class="font-bold">%</span>
+                                        </div>
+                                    </div>
+                                    <div id="daily-goal-content" class="flex-grow"><p class="text-gray-500 font-bold text-center">Nhập % mục tiêu để tính toán.</p></div>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                                <div id="luyke-category-panel" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200">
+                                    <h3 id="luyke-category-details-title" class="text-xl font-bold text-gray-700 mb-4 uppercase flex items-center gap-2">NGÀNH HÀNG LŨY KẾ <button class="highlight-trigger" data-target="luyke"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l.34 3.03 3.03.34-2.28 2.28.54 3.03-2.63-1.38L8.37 11.4l.54-3.03-2.28-2.28 3.03-.34L12 2.69zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg></button></h3>
+                                    <div id="luyke-category-details-content"><p class="text-gray-500 font-bold">Vui lòng tải file "Yêu cầu xuất lũy kế".</p></div>
+                                </div>
+                                 <div id="luyke-qdc-panel" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200">
+                                    <h3 id="luyke-qdc-title" class="text-xl font-bold text-gray-700 mb-4 uppercase flex items-center gap-2">NHÓM HÀNG QUY ĐỔI CAO <button class="highlight-trigger" data-target="luyke"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l.34 3.03 3.03.34-2.28 2.28.54 3.03-2.63-1.38L8.37 11.4l.54-3.03-2.28-2.28 3.03-.34L12 2.69zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg></button></h3>
+                                    <div id="luyke-qdc-content"><p class="text-gray-500 font-bold">Vui lòng tải file "Yêu cầu xuất lũy kế".</p></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="subtab-luyke-thi-dua" class="sub-tab-content hidden space-y-4">
+                             <div class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200">
+                                <h3 class="text-xl font-bold text-gray-700 mb-4 uppercase bg-purple-100 text-purple-800 p-2 rounded-md">THI ĐUA NGÀNH HÀNG LŨY KẾ <span id="luyke-competition-summary" class="text-sm font-normal normal-case text-gray-500 ml-2"></span></h3>
+                                <div id="luyke-competition-content" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    <p class="text-gray-500 font-bold col-span-2">Vui lòng dán "Data lũy kế" ở tab Data để xem chi tiết.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="subtab-luyke-cung-ky" class="sub-tab-content hidden space-y-4">
+                             <p class="text-gray-500 font-bold">Chức năng đang được phát triển.</p>
+                        </div>
+                         <div id="subtab-luyke-hang" class="sub-tab-content hidden space-y-4">
+                             <p class="text-gray-500 font-bold">Chức năng đang được phát triển.</p>
+                        </div>
+                    </div>
+                </section>
+                
+                <section id="health-employee-section" class="page-section hidden">
+                    <div class="bg-white rounded-xl shadow-md p-4 sm:p-6 mb-8 border border-gray-200">
+                         <div class="flex flex-wrap justify-between items-center gap-4 border-b pb-4 mb-6">
+                            <h2 class="text-xl sm:text-2xl font-bold text-gray-800 uppercase whitespace-nowrap">Sức khỏe nhân viên</h2>
+                             <button id="capture-employee-health-btn" class="text-sm font-medium text-blue-600 hover:bg-blue-50 p-2 rounded-lg flex items-center gap-2" title="Chụp ảnh tab hiện tại">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15 12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1.172a3 3 0 0 0 2.12-.879l.83-.828A1 1 0 0 1 6.827 3h2.344a1 1 0 0 1 .707.293l.828.828A3 3 0 0 0 12.828 5H14a1 1 0 0 1 1 1v6zM2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828-.828A2 2 0 0 1 3.172 4H2z"/><path d="M8 11a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5zm0 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM3 6.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/></svg>
+                                <span>Chụp màn hình</span>
+                            </button>
+                        </div>
+                        
+                        <button class="toggle-filters-btn" data-target="sknv-filter-container">
+                            <span class="text">Hiện bộ lọc nâng cao</span>
+                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <div id="sknv-filter-container" class="advanced-filters hidden">
+                            <div id="sknv-filter-bar" class="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-4">
+                                <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                                    <div class="md:col-span-2">
+                                        <label for="sknv-filter-date" class="block text-sm font-medium text-gray-600 mb-1">Ngày tạo</label>
+                                        <div class="relative">
+                                            <input type="text" id="sknv-filter-date" class="p-2 border rounded-lg text-sm bg-white shadow-sm w-full" placeholder="Chọn ngày...">
+                                            <button id="sknv-clear-date" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 text-xs">Bỏ chọn</button>
+                                        </div>
+                                        <span id="sknv-date-summary" class="text-xs text-red-500 mt-1 block"></span>
+                                    </div>
+                                    <div class="md:col-span-2"><label for="sknv-filter-warehouse" class="block text-sm font-medium text-gray-600 mb-1">Mã Kho</label><select id="sknv-filter-warehouse" class="p-2 border rounded-lg text-sm bg-white shadow-sm w-full"></select></div>
+                                    <div class="md:col-span-2"><label for="sknv-filter-department" class="block text-sm font-medium text-gray-600 mb-1">Bộ Phận</label><select id="sknv-filter-department" class="p-2 border rounded-lg text-sm bg-white shadow-sm w-full"></select></div>
+                                    <div class="md:col-span-6"><label for="sknv-filter-name" class="block text-sm font-medium text-gray-600 mb-1">Nhân Viên</label><select id="sknv-filter-name" multiple></select></div>
+                                </div>
+                                <div class="border-t pt-4 grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                                    <div class="md:col-span-9"><label for="sknv-highlight-employee" class="block text-sm font-medium text-gray-600 mb-1">Tô màu nhân viên</label><select id="sknv-highlight-employee" multiple></select></div>
+                                    <div class="md:col-span-3 flex items-end gap-2">
+                                        <div><label for="sknv-highlight-color" class="block text-sm font-medium text-gray-600 mb-1">Chọn màu</label><input type="color" id="sknv-highlight-color" value="#ffff00" class="p-1 h-10 w-14 block bg-white border border-gray-300 cursor-pointer rounded-lg"></div>
+                                        <button id="sknv-clear-highlight" class="bg-red-500 text-white px-4 h-10 rounded-lg hover:bg-red-600 transition text-sm">Xóa màu</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                         <div class="mb-6">
+                            <button id="toggle-debug-btn" class="text-sm text-blue-600 hover:underline">Hiển thị Công cụ Gỡ lỗi</button>
+                            <div id="debug-tool-container" class="hidden mt-4 p-4 border-2 border-dashed border-red-300 rounded-lg bg-red-50">
+                                <h3 class="text-lg font-bold text-red-700 mb-2">Công cụ Gỡ lỗi & Chẩn đoán</h3>
+                                <p class="text-sm text-gray-600 mb-4">Công cụ này sẽ tự động kiểm tra các file bạn tải lên để xem các cột dữ liệu cần thiết có tồn tại hay không. Nếu có cột báo <span class="font-bold text-red-600">LỖI</span>, vui lòng kiểm tra lại tên cột trong file Excel của bạn.</p>
+                                <div id="debug-results-container" class="space-y-4">
+                                     <p class="text-gray-500">Chưa có file nào được tải lên để kiểm tra.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200">
+                        <div class="mb-8 border-b border-gray-200">
+                                <nav id="employee-subtabs-nav" class="-mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs">
+                                    <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-sknv" data-title="SKNV">SKNV</button>
+                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-doanhthu-lk" data-title="Doanh thu LK">Doanh thu LK</button>
+                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-thunhap" data-title="Thu nhập">Thu nhập</button>
+                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-khai-thac" data-title="Hiệu quả khai thác">Hiệu quả khai thác</button>
+                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-doanhthu-nganhhang" data-title="Doanh thu theo ngành hàng">Doanh thu theo ngành hàng</button>
+                                </nav>
+                        </div>
+
+                        <div id="employee-subtabs-content">
+                            <div id="subtab-sknv" class="sub-tab-content">
+                                <div class="flex flex-wrap items-center gap-4 mb-6">
+                                    <div>
+                                        <label for="sknv-employee-filter" class="font-semibold text-sm text-gray-600">Chọn nhân viên:</label>
+                                        <select id="sknv-employee-filter" class="p-2 border rounded-lg text-sm bg-white shadow-sm mt-1" style="min-width: 250px;"></select>
+                                    </div>
+                                </div>
+                                <div id="sknv-summary-container" class="mb-6"></div>
+                                <div id="sknv-details-container" class="mt-6">
+                                    <p class="text-gray-500">Vui lòng chọn một nhân viên để xem chi tiết.</p>
+                                </div>
+                            </div>
+                            <div id="subtab-doanhthu-lk" class="sub-tab-content hidden space-y-6"></div>
+                            <div id="subtab-thunhap" class="sub-tab-content hidden space-y-6">
+                                <div id="income-report-placeholder">
+                                    <p class="text-gray-500 mb-4">Vui lòng tải đủ các file: <b>Danh sách nhân viên, Yêu cầu xuất lũy kế, Giờ công, Thưởng nóng</b> và xử lý <b>Thưởng ERP</b> ở tab Data để xem báo cáo thu nhập.</p>
+                                    <button id="calculate-income-btn" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition">Tính toán & Cập nhật lại Thu nhập</button>
+                                </div>
+                                <div id="income-report-container"></div>
+                            </div>
+                            <div id="subtab-hieu-qua-khai-thac" class="sub-tab-content hidden space-y-6"></div>
+                            <div id="subtab-doanhthu-nganhhang" class="sub-tab-content hidden space-y-6"></div>
+                        </div>
+
+                    </div>
+                </section>
+
+                 <section id="realtime-section" class="page-section hidden">
+                    <div class="bg-white rounded-xl shadow-md p-4 sm:p-6 mb-8 border border-gray-200">
+                        <div class="flex flex-wrap justify-between items-center gap-4 border-b pb-4 mb-6">
+                            <h2 class="text-xl sm:text-2xl font-bold text-gray-800 uppercase whitespace-nowrap">Phân Tích Doanh Thu Realtime</h2>
+                            <div class="flex-shrink-0 flex items-center gap-x-4">
+                                <label for="realtime-file-input" class="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium whitespace-nowrap">Thêm file Realtime</label>
+                                <input type="file" id="realtime-file-input" class="hidden" accept=".xlsx, .xls, .csv">
+                                <a href="https://report.mwgroup.vn/home/dashboard/077" target="_blank" class="text-blue-600 hover:underline whitespace-nowrap text-sm">Lấy file tại đây</a>
+                                <button id="capture-realtime-btn" class="text-sm font-medium text-blue-600 hover:bg-blue-50 p-2 rounded-lg flex items-center gap-2" title="Chụp ảnh tab hiện tại">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15 12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1.172a3 3 0 0 0 2.12-.879l.83-.828A1 1 0 0 1 6.827 3h2.344a1 1 0 0 1 .707.293l.828.828A3 3 0 0 0 12.828 5H14a1 1 0 0 1 1 1v6zM2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828-.828A2 2 0 0 1 3.172 4H2z"/><path d="M8 11a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5zm0 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM3 6.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/></svg>
+                                    <span>Chụp màn hình</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <button class="toggle-filters-btn" data-target="realtime-filter-container">
+                            <span class="text">Hiện bộ lọc nâng cao</span>
+                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <div id="realtime-filter-container" class="advanced-filters hidden">
+                             <div id="realtime-filter-bar" class="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-4">
+                                <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                                    <div class="md:col-span-3"><label for="realtime-filter-warehouse" class="block text-sm font-medium text-gray-600 mb-1">Mã Kho</label><select id="realtime-filter-warehouse" class="p-2 border rounded-lg text-sm bg-white shadow-sm w-full"></select></div>
+                                    <div class="md:col-span-3"><label for="realtime-filter-department" class="block text-sm font-medium text-gray-600 mb-1">Bộ Phận</label><select id="realtime-filter-department" class="p-2 border rounded-lg text-sm bg-white shadow-sm w-full"></select></div>
+                                    <div class="md:col-span-6"><label for="realtime-filter-name" class="block text-sm font-medium text-gray-600 mb-1">Nhân Viên</label><select id="realtime-filter-name" multiple></select></div>
+                                </div>
+                                <div class="border-t pt-4 grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                                    <div class="md:col-span-9"><label for="realtime-highlight-employee" class="block text-sm font-medium text-gray-600 mb-1">Tô màu nhân viên</label><select id="realtime-highlight-employee" multiple></select></div>
+                                    <div class="md:col-span-3 flex items-end gap-2">
+                                        <div><label for="realtime-highlight-color" class="block text-sm font-medium text-gray-600 mb-1">Chọn màu</label><input type="color" id="realtime-highlight-color" value="#ffff00" class="p-1 h-10 w-14 block bg-white border border-gray-300 cursor-pointer rounded-lg"></div>
+                                        <button id="realtime-clear-highlight" class="bg-red-500 text-white px-4 h-10 rounded-lg hover:bg-red-600 transition text-sm">Xóa màu</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-8 border-b border-gray-200">
+                        <nav id="realtime-subtabs-nav" class="-mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs">
+                            <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-sieu-thi">Siêu thị Realtime</button>
+                            <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-nhan-vien">DT Nhân viên Realtime</button>
+                            <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-hieu-qua">Hiệu quả khai thác Realtime</button>
+                            <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-nganh-hang">Doanh thu theo ngành hàng Realtime</button>
+                        </nav>
+                    </div>
+
+                    <div id="realtime-subtabs-content">
+                        <div id="subtab-realtime-sieu-thi" class="sub-tab-content space-y-8">
+                            <div id="realtime-kpi-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                <div class="kpi-card p-6 rounded-2xl shadow-lg">
+                                    <h4 class="kpi-card-title font-semibold uppercase tracking-wider">Doanh thu thực</h4>
+                                    <p id="rt-kpi-dt-thuc-main" class="text-4xl font-bold mt-2 mb-3">0</p>
+                                    <p id="rt-kpi-dt-thuc-sub1" class="text-sm">% HT: <span class="kpi-percentage-value">0%</span> / Target: 0</p>
+                                    <p id="rt-kpi-dt-thuc-sub2" class="text-sm mt-1">DT Chưa xuất: 0</p>
+                                </div>
+                                <div class="kpi-card p-6 rounded-2xl shadow-lg">
+                                    <h4 class="kpi-card-title font-semibold uppercase tracking-wider">Doanh thu Quy đổi</h4>
+                                    <p id="rt-kpi-dt-qd-main" class="text-4xl font-bold mt-2 mb-3">0</p>
+                                    <p id="rt-kpi-dt-qd-sub1" class="text-sm">% HT: <span class="kpi-percentage-value">0%</span> / Target: 0</p>
+                                    <p id="rt-kpi-dt-qd-sub2" class="text-sm mt-1">DTQĐ Chưa xuất: 0</p>
+                                </div>
+                                <div class="kpi-card p-6 rounded-2xl shadow-lg">
+                                    <h4 class="kpi-card-title font-semibold uppercase tracking-wider">Tỷ lệ quy đổi</h4>
+                                    <p id="rt-kpi-tl-qd-main" class="text-4xl font-bold mt-2 mb-3 kpi-percentage-value">0%</p>
+                                    <p id="rt-kpi-tl-qd-sub" class="text-sm">Mục tiêu: 0%</p>
+                                </div>
+                                <div class="kpi-card p-6 rounded-2xl shadow-lg">
+                                    <h4 class="kpi-card-title font-semibold uppercase tracking-wider">Doanh thu trả chậm</h4>
+                                    <p id="rt-kpi-dt-tc-main" class="text-4xl font-bold mt-2 mb-3">0</p>
+                                    <p id="rt-kpi-dt-tc-sub" class="text-sm">% thực trả chậm: <span class="kpi-percentage-value">0%</span></p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                <div class="space-y-8">
+                                    <div id="realtime-efficiency-panel" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200">
+                                        <h3 id="realtime-efficiency-title" class="text-xl font-bold text-gray-700 mb-4 uppercase bg-yellow-100 text-yellow-800 p-2 rounded-md">HIỆU QUẢ KHAI THÁC</h3>
+                                        <div id="realtime-efficiency-content"><p class="text-gray-500 font-bold">Vui lòng tải file realtime để xem chi tiết.</p></div>
+                                    </div>
+                                    <div id="realtime-qdc-panel" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200">
+                                        <h3 id="realtime-qdc-title" class="text-xl font-bold text-gray-700 mb-4 uppercase flex items-center gap-2">NHÓM HÀNG QUY ĐỔI CAO <button class="highlight-trigger" data-target="realtime"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l.34 3.03 3.03.34-2.28 2.28.54 3.03-2.63-1.38L8.37 11.4l.54-3.03-2.28-2.28 3.03-.34L12 2.69zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg></button></h3>
+                                        <div id="realtime-qdc-content"><p class="text-gray-500 font-bold">Vui lòng tải file realtime để xem chi tiết.</p></div>
+                                    </div>
+                                </div>
+                                <div id="realtime-category-panel" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200">
+                                    <h3 id="realtime-category-title" class="text-xl font-bold text-gray-700 mb-4 uppercase bg-green-100 text-green-800 p-2 rounded-md flex items-center gap-2">NGÀNH HÀNG CHI TIẾT <button class="highlight-trigger" data-target="realtime"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l.34 3.03 3.03.34-2.28 2.28.54 3.03-2.63-1.38L8.37 11.4l.54-3.03-2.28-2.28 3.03-.34L12 2.69zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg></button></h3>
+                                    <div id="realtime-category-details-content"><p class="text-gray-500 font-bold">Vui lòng tải file realtime để xem chi tiết.</p></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="subtab-realtime-nhan-vien" class="sub-tab-content hidden space-y-4"></div>
+                        <div id="subtab-realtime-hieu-qua" class="sub-tab-content hidden space-y-4"></div>
+                        <div id="subtab-realtime-nganh-hang" class="sub-tab-content hidden space-y-4"></div>
+                    </div>
+                </section>
+
+                <section id="declaration-section" class="page-section hidden">
+                    <h2 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-6">Khai báo dữ liệu tính toán</h2>
+                    <div class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200">
+                        <p class="text-sm text-yellow-600 bg-yellow-50 p-3 rounded-lg mb-4">Lưu ý: Dữ liệu khai báo tại đây sẽ được lưu vào trình duyệt và sử dụng cho các logic tính toán. Chỉnh sửa và nhấn "Lưu khai báo" để cập nhật.</p>
+                        <div class="space-y-6">
+                            <div>
+                                <label for="declaration-ycx" class="block text-md font-bold text-gray-700 mb-2">Hình thức xuất (Tính doanh thu)</label>
+                                <textarea id="declaration-ycx" rows="8" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm" placeholder="Dán danh sách các loại YCX vào đây, mỗi loại một dòng..."></textarea>
+                            </div>
+                            <div>
+                                <label for="declaration-ycx-gop" class="block text-md font-bold text-gray-700 mb-2">Hình thức xuất (Trả góp)</label>
+                                <textarea id="declaration-ycx-gop" rows="8" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm" placeholder="Dán danh sách các loại YCX Góp vào đây, mỗi loại một dòng..."></textarea>
+                            </div>
+                            <div>
+                                <label for="declaration-heso" class="block text-md font-bold text-gray-700 mb-2">Hệ số quy đổi</label>
+                                <textarea id="declaration-heso" rows="8" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm" placeholder="Dán danh sách hệ số quy đổi vào đây, định dạng: Tên nhóm hàng,Hệ số"></textarea>
+                            </div>
+                        </div>
+                        <div class="mt-6">
+                            <button id="save-declaration-btn" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition w-full sm:w-auto">Lưu khai báo</button>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <div id="notification"></div>
+
+    <div id="admin-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm mx-4">
+            <h3 class="text-lg font-bold mb-4">Truy cập khu vực Admin</h3>
+            <p class="text-sm text-gray-600 mb-4">Vui lòng nhập mật khẩu để xem và chỉnh sửa phần Khai báo.</p>
+            <input type="password" id="admin-password-input" class="w-full p-2 border rounded-lg mb-2" placeholder="Mật khẩu...">
+            <p id="admin-error-msg" class="text-red-500 text-sm mb-4 hidden">Mật khẩu không đúng. Vui lòng thử lại.</p>
+            <div class="flex justify-end space-x-3">
+                <button id="admin-cancel-btn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">Hủy</button>
+                <button id="admin-submit-btn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="./main.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="vi" data-contrast="1">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trang tổng quan dữ liệu Ver 7.2</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <link rel="stylesheet" href="./dashboard.css">
+</head>
+<body class="overflow-x-hidden">
+
+    <div id="interface-drawer" class="settings-drawer fixed top-0 left-0 h-full bg-white shadow-2xl z-50 p-6 overflow-y-auto hidden">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-gray-800">Cài đặt giao diện</h3>
+            <button class="close-drawer-btn text-gray-500 hover:text-gray-800 text-3xl">&times;</button>
+        </div>
+        <div class="space-y-6">
+            <div>
+                <label for="contrast-selector-drawer" class="block text-sm font-medium text-gray-700 mb-2">Độ tương phản</label>
+                <select id="contrast-selector-drawer" class="contrast-selector w-full p-2 border rounded-lg text-sm bg-white shadow-sm">
+                    <option value="1">Mặc định</option>
+                    <option value="2">Tương phản cao</option>
+                    <option value="3">Tương phản rất cao</option>
+                </select>
+            </div>
+            <div>
+                <h4 class="text-sm font-medium text-gray-700 mb-2">Màu sắc thẻ KPI</h4>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="flex items-center gap-2">
+                        <input type="color" id="kpi-color-1" class="kpi-color-input p-1 h-10 w-14 block bg-white border border-gray-300 cursor-pointer rounded-lg" value="#38bdf8">
+                        <label for="kpi-color-1" class="text-sm">Thẻ 1</label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="color" id="kpi-color-2" class="kpi-color-input p-1 h-10 w-14 block bg-white border border-gray-300 cursor-pointer rounded-lg" value="#34d399">
+                        <label for="kpi-color-2" class="text-sm">Thẻ 2</label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="color" id="kpi-color-3" class="kpi-color-input p-1 h-10 w-14 block bg-white border border-gray-300 cursor-pointer rounded-lg" value="#fbbf24">
+                        <label for="kpi-color-3" class="text-sm">Thẻ 3</label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="color" id="kpi-color-4" class="kpi-color-input p-1 h-10 w-14 block bg-white border border-gray-300 cursor-pointer rounded-lg" value="#2dd4bf">
+                        <label for="kpi-color-4" class="text-sm">Thẻ 4</label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="color" id="kpi-color-5" class="kpi-color-input p-1 h-10 w-14 block bg-white border border-gray-300 cursor-pointer rounded-lg" value="#a78bfa">
+                        <label for="kpi-color-5" class="text-sm">Thẻ 5</label>
+                    </div>
+                </div>
+            </div>
+             <div>
+                <h4 class="text-sm font-medium text-gray-700 mb-2">Màu chữ thẻ KPI</h4>
+                 <div class="flex items-center gap-2">
+                    <input type="color" id="kpi-text-color" class="kpi-color-input p-1 h-10 w-14 block bg-white border border-gray-300 cursor-pointer rounded-lg" value="#ffffff">
+                    <label for="kpi-text-color" class="text-sm">Màu chữ</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="goal-drawer" class="settings-drawer fixed top-0 left-0 h-full bg-white shadow-2xl z-50 p-6 overflow-y-auto hidden">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-gray-800">Thiết lập mục tiêu</h3>
+            <button class="close-drawer-btn text-gray-500 hover:text-gray-800 text-3xl">&times;</button>
+        </div>
+        
+        <div class="border-b border-gray-200 mb-4">
+            <nav id="goal-drawer-tabs" class="-mb-px flex space-x-6" aria-label="Tabs">
+                 <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="goal-tab-monthly">Mục tiêu Tháng (Lũy kế)</button>
+                 <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="goal-tab-daily">Mục tiêu Ngày (Realtime)</button>
+            </nav>
+        </div>
+
+        <div id="goal-drawer-content">
+            <div id="goal-tab-monthly" class="sub-tab-content space-y-4">
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div>
+                        <label for="luyke-goal-warehouse-select" class="block text-sm font-medium text-gray-700 mb-1">Thiết lập cho kho</label>
+                        <select id="luyke-goal-warehouse-select" class="p-2 border rounded-lg text-sm bg-white shadow-sm w-full"></select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-2 gap-x-4 gap-y-3">
+                    <div>
+                        <label for="luyke-goal-dtt" class="block text-sm font-medium text-gray-700">Target DT Thực (tỷ)</label>
+                        <input type="number" id="luyke-goal-dtt" class="luyke-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="doanhThuThuc">
+                    </div>
+                    <div>
+                        <label for="luyke-goal-dtqd" class="block text-sm font-medium text-gray-700">Target DT QĐ (tỷ)</label>
+                        <input type="number" id="luyke-goal-dtqd" class="luyke-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="doanhThuQD">
+                    </div>
+                    <div>
+                        <label for="luyke-goal-ptqd" class="block text-sm font-medium text-gray-700">% Quy đổi</label>
+                        <input type="number" id="luyke-goal-ptqd" class="luyke-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="phanTramQD">
+                    </div>
+                    <div>
+                        <label for="luyke-goal-pttc" class="block text-sm font-medium text-gray-700">% Trả chậm</label>
+                        <input type="number" id="luyke-goal-pttc" class="luyke-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="phanTramTC">
+                    </div>
+                    <div>
+                        <label for="luyke-goal-giadung" class="block text-sm font-medium text-gray-700">% Gia dụng</label>
+                        <input type="number" id="luyke-goal-giadung" class="luyke-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="phanTramGiaDung">
+                    </div>
+                    <div>
+                        <label for="luyke-goal-mln" class="block text-sm font-medium text-gray-700">% MLN</label>
+                        <input type="number" id="luyke-goal-mln" class="luyke-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="phanTramMLN">
+                    </div>
+                    <div>
+                        <label for="luyke-goal-phukien" class="block text-sm font-medium text-gray-700">% Phụ kiện</label>
+                        <input type="number" id="luyke-goal-phukien" class="luyke-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="phanTramPhuKien">
+                    </div>
+                     <div>
+                        <label for="luyke-goal-baohiem" class="block text-sm font-medium text-gray-700">% Bảo hiểm</label>
+                        <input type="number" id="luyke-goal-baohiem" class="luyke-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="phanTramBaoHiem">
+                    </div>
+                    <div>
+                        <label for="luyke-goal-sim" class="block text-sm font-medium text-gray-700">% Sim</label>
+                        <input type="number" id="luyke-goal-sim" class="luyke-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="phanTramSim">
+                    </div>
+                    <div>
+                        <label for="luyke-goal-vas" class="block text-sm font-medium text-gray-700">% VAS</label>
+                        <input type="number" id="luyke-goal-vas" class="luyke-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="phanTramVAS">
+                    </div>
+                </div>
+            </div>
+            <div id="goal-tab-daily" class="sub-tab-content hidden space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                    <div>
+                        <label for="rt-goal-warehouse-select" class="block text-sm font-medium text-gray-700 mb-1">Thiết lập cho kho</label>
+                        <select id="rt-goal-warehouse-select" class="p-2 border rounded-lg text-sm bg-white shadow-sm w-full"></select>
+                    </div>
+                    <div class="flex items-center gap-x-2">
+                        <label for="rt-open-hour" class="font-medium text-gray-700 text-sm">Mở cửa:</label>
+                        <input type="time" id="rt-open-hour" class="rt-setting-input p-1 border border-gray-300 rounded-md shadow-sm w-24">
+                    </div>
+                    <div class="flex items-center gap-x-2">
+                        <label for="rt-close-hour" class="font-medium text-gray-700 text-sm">Đóng cửa:</label>
+                        <input type="time" id="rt-close-hour" class="rt-setting-input p-1 border border-gray-300 rounded-md shadow-sm w-24">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-2 gap-x-4 gap-y-3">
+                    <div>
+                        <label for="rt-goal-dtt" class="block text-sm font-medium text-gray-700">DT Thực (triệu)</label>
+                        <input type="number" id="rt-goal-dtt" class="rt-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="doanhThuThuc">
+                    </div>
+                    <div>
+                        <label for="rt-goal-dtqd" class="block text-sm font-medium text-gray-700">DT QĐ (triệu)</label>
+                        <input type="number" id="rt-goal-dtqd" class="rt-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="doanhThuQD">
+                    </div>
+                    <div>
+                        <label for="rt-goal-ptqd" class="block text-sm font-medium text-gray-700">% Quy đổi</label>
+                        <input type="number" id="rt-goal-ptqd" class="rt-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="phanTramQD">
+                    </div>
+                    <div>
+                        <label for="rt-goal-pttc" class="block text-sm font-medium text-gray-700">% Trả chậm</label>
+                        <input type="number" id="rt-goal-pttc" class="rt-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="phanTramTC">
+                    </div>
+                    <div>
+                        <label for="rt-goal-giadung" class="block text-sm font-medium text-gray-700">% Gia dụng</label>
+                        <input type="number" id="rt-goal-giadung" class="rt-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="phanTramGiaDung">
+                    </div>
+                    <div>
+                        <label for="rt-goal-mln" class="block text-sm font-medium text-gray-700">% MLN</label>
+                        <input type="number" id="rt-goal-mln" class="rt-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="phanTramMLN">
+                    </div>
+                    <div>
+                        <label for="rt-goal-phukien" class="block text-sm font-medium text-gray-700">% Phụ kiện</label>
+                        <input type="number" id="rt-goal-phukien" class="rt-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="phanTramPhuKien">
+                    </div>
+                    <div>
+                        <label for="rt-goal-sim" class="block text-sm font-medium text-gray-700">% Sim</label>
+                        <input type="number" id="rt-goal-sim" class="rt-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="phanTramSim">
+                    </div>
+                    <div>
+                        <label for="rt-goal-vas" class="block text-sm font-medium text-gray-700">% VAS</label>
+                        <input type="number" id="rt-goal-vas" class="rt-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="phanTramVAS">
+                    </div>
+                     <div>
+                        <label for="rt-goal-baohiem" class="block text-sm font-medium text-gray-700">% Bảo hiểm</label>
+                        <input type="number" id="rt-goal-baohiem" class="rt-goal-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" data-goal="phanTramBaoHiem">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="drawer-overlay" class="hidden fixed inset-0 bg-black bg-opacity-40 z-40"></div>
+
+
+    <div class="flex min-h-screen">
+        <nav id="sidebar" class="bg-white/80 backdrop-blur-sm shadow-lg fixed top-0 left-0 h-full z-30 p-3 flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-center mb-8 h-8">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                </div>
+                <ul class="space-y-2">
+                    <li>
+                        <a href="#data-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                            <span class="menu-text ml-4">Data</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#health-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+                            <span class="menu-text ml-4">Sức khỏe siêu thị</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#health-employee-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200">
+                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                            <span class="menu-text ml-4">Sức khỏe nhân viên</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#realtime-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                            <span class="menu-text ml-4">Doanh thu realtime</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div>
+                <ul class="space-y-2">
+                    <li>
+                        <button id="interface-settings-btn" class="w-full flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                            <span class="menu-text ml-4">Cài đặt giao diện</span>
+                        </button>
+                    </li>
+                     <li>
+                        <button id="goal-settings-btn" class="w-full flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+                            <span class="menu-text ml-4">Thiết lập mục tiêu</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button id="admin-access-btn" class="w-full flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                            <span class="menu-text ml-4">Khai báo</span>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <main id="main-content" class="flex-1 p-6">
+            <div class="max-w-full mx-auto">
+                
+                <section id="data-section" class="page-section">
+                    </section>
+                
+                <section id="health-section" class="page-section hidden">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                        <div id="luyke-category-panel" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200">
+                            <h3 id="luyke-category-details-title" class="text-xl font-bold text-gray-700 mb-4 uppercase flex items-center gap-2">
+                                <span>NGÀNH HÀNG LŨY KẾ</span> 
+                                <button class="highlight-trigger" data-target="luyke"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l.34 3.03 3.03.34-2.28 2.28.54 3.03-2.63-1.38L8.37 11.4l.54-3.03-2.28-2.28 3.03-.34L12 2.69zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg></button>
+                            </h3>
+                            <div id="luyke-category-details-content"><p class="text-gray-500 font-bold">Vui lòng tải file "Yêu cầu xuất lũy kế".</p></div>
+                        </div>
+                        </div>
+                </section>
+                
+                <section id="health-employee-section" class="page-section hidden">
+                    </section>
+
+                 <section id="realtime-section" class="page-section hidden">
+                    <div id="realtime-subtabs-content">
+                        <div id="subtab-realtime-sieu-thi" class="sub-tab-content space-y-8">
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                <div id="realtime-category-panel" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200">
+                                    <h3 id="realtime-category-title" class="text-xl font-bold text-gray-700 mb-4 uppercase bg-green-100 text-green-800 p-2 rounded-md flex items-center gap-2">
+                                        <span>NGÀNH HÀNG CHI TIẾT</span>
+                                        <button class="highlight-trigger" data-target="realtime"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l.34 3.03 3.03.34-2.28 2.28.54 3.03-2.63-1.38L8.37 11.4l.54-3.03-2.28-2.28 3.03-.34L12 2.69zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg></button>
+                                    </h3>
+                                    <div id="realtime-category-details-content"><p class="text-gray-500 font-bold">Vui lòng tải file realtime để xem chi tiết.</p></div>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+                </section>
+                
+                </div>
+        </main>
+    </div>
+    
+    <script type="module" src="./main.js"></script>
+</body>
+</html>

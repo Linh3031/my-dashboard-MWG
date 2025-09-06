@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="vi" data-contrast="1">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trang tổng quan dữ liệu Ver 7.0</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <link rel="stylesheet" href="./dashboard.css">
+</head>
+<body class="overflow-x-hidden">
+
+    <div class="flex min-h-screen">
+        <nav id="sidebar" class="bg-white/80 backdrop-blur-sm shadow-lg fixed top-0 left-0 h-full z-30 p-3 flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-center mb-8 h-8">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                </div>
+                <ul class="space-y-2">
+                    <li>
+                        <a href="#data-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                            <span class="menu-text ml-4">Data</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#health-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+                            <span class="menu-text ml-4">Sức khỏe siêu thị</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#health-employee-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200">
+                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                            <span class="menu-text ml-4">Sức khỏe nhân viên</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#realtime-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                            <span class="menu-text ml-4">Doanh thu realtime</span>
+                        </a>
+                    </li>
+                    <li>
+                        <button id="goal-settings-menu-btn" class="w-full flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><path d="M12 20v-6M6 20v-2M18 20v-4"/><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="M6 18a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="M18 16a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/></svg>
+                            <span class="menu-text ml-4">Thiết lập Mục tiêu</span>
+                        </button>
+                    </li>
+                     <li>
+                        <button id="ui-settings-menu-btn" class="w-full flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                            <span class="menu-text ml-4">Cài đặt Giao diện</span>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <div>
+                <ul class="space-y-2">
+                    <li>
+                        <button id="admin-access-btn" class="w-full flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                            <span class="menu-text ml-4">Khai báo</span>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <main id="main-content" class="flex-1 py-6">
+            <div class="max-w-full px-4">
+                
+                <section id="data-section" class="page-section">
+                    </section>
+                
+                <section id="health-section" class="page-section hidden">
+                    </section>
+                
+                <section id="health-employee-section" class="page-section hidden">
+                    </section>
+
+                <section id="realtime-section" class="page-section hidden">
+                    </section>
+                
+                <section id="declaration-section" class="page-section hidden">
+                    </section>
+
+            </div>
+        </main>
+    </div>
+
+    <div id="notification"></div>
+
+    <div id="admin-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
+        </div>
+    
+    <div id="ui-settings-drawer-overlay" class="hidden fixed inset-0 bg-black bg-opacity-40 z-40 transition-opacity"></div>
+    <div id="ui-settings-drawer" class="fixed top-0 left-0 h-full bg-gray-50 shadow-2xl z-50 w-full max-w-md transform -translate-x-full transition-transform duration-300 ease-in-out">
+        <div class="p-4 border-b flex justify-between items-center bg-white">
+            <h2 class="text-xl font-bold text-gray-800">Cài đặt Giao diện</h2>
+            <button id="close-ui-settings-drawer" class="p-2 rounded-full text-gray-500 hover:bg-gray-200 hover:text-gray-800 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+        <div class="p-4 space-y-4 overflow-y-auto" style="height: calc(100% - 65px);">
+            <div class="p-4 border rounded-lg bg-white shadow-sm">
+                <div class="space-y-4">
+                     <div>
+                        <label for="contrast-selector-drawer" class="block text-sm font-medium text-gray-600 mb-1">Độ tương phản</label>
+                        <select id="contrast-selector-drawer" class="contrast-selector p-2 border rounded-lg text-sm bg-white shadow-sm w-full">
+                            <option value="1">Mặc định</option><option value="2">Tương phản cao</option><option value="3">Tương phản rất cao</option>
+                        </select>
+                    </div>
+                    <div class="border-t pt-4">
+                        <h4 class="font-semibold text-gray-600 mb-2">Màu sắc thẻ KPI</h4>
+                        <div id="kpi-color-pickers" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="goal-settings-drawer-overlay" class="hidden fixed inset-0 bg-black bg-opacity-40 z-40 transition-opacity"></div>
+    <div id="goal-settings-drawer" class="fixed top-0 left-0 h-full bg-gray-50 shadow-2xl z-50 w-full max-w-md transform -translate-x-full transition-transform duration-300 ease-in-out">
+        <div class="p-4 border-b flex justify-between items-center bg-white">
+            <h2 class="text-xl font-bold text-gray-800">Thiết lập Mục tiêu</h2>
+            <button id="close-goal-settings-drawer" class="p-2 rounded-full text-gray-500 hover:bg-gray-200 hover:text-gray-800 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+        <div class="p-4 space-y-4 overflow-y-auto" style="height: calc(100% - 65px);">
+            <div class="p-4 border rounded-lg bg-white shadow-sm">
+                <h3 class="font-bold text-gray-700 mb-3">Mục tiêu tháng (Lũy kế & SKNV)</h3>
+                <div id="luyke-goal-settings-drawer-container" class="space-y-4"></div>
+            </div>
+            <div class="p-4 border rounded-lg bg-white shadow-sm">
+                <h3 class="font-bold text-gray-700 mb-3">Mục tiêu ngày (Realtime)</h3>
+                <div id="realtime-goal-settings-drawer-container" class="space-y-4"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="hidden">
+        <div id="luyke-goal-settings-content">
+            </div>
+        <div id="realtime-goal-settings-content">
+            </div>
+    </div>
+
+    <script type="module" src="./main.js"></script>
+
+</body>
+</html>
