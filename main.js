@@ -2,35 +2,21 @@
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
-console.log("--- BÀI KIỂM TRA BẮT ĐẦU ---");
-console.log("1. File main.js đã bắt đầu được thực thi.");
-
 import { config } from './config.js';
 import { appState } from './state.js';
 import { services } from './services.js';
 import { ui } from './ui.js';
 
-console.log("2. Các module (config, state, services, ui) đã được nhập khẩu.");
-
 const app = {
     init() {
-        console.log("3. Hàm app.init() đã bắt đầu.");
         try {
             this.loadDataFromStorage();
-            console.log("4. loadDataFromStorage() hoàn tất.");
-            
             this.loadInterfaceSettings();
-            console.log("5. loadInterfaceSettings() hoàn tất.");
-            
             this.setupEventListeners();
-            console.log("6. setupEventListeners() hoàn tất.");
-            
             this.applyContrastSetting();
             this.loadHighlightSettings();
             ui.populateAllFilters();
             this.switchTab('data-section');
-            
-            console.log("7. Hàm app.init() đã KẾT THÚC thành công!");
         } catch (error) {
             console.error("!!! LỖI NGHIÊM TRỌNG TRONG QUÁ TRÌNH KHỞI TẠO APP !!!", error);
         }
@@ -574,45 +560,49 @@ const app = {
     },
 
     setupEventListeners() {
-        console.log("6A. Bên trong hàm setupEventListeners(). Bắt đầu tìm kiếm các element.");
-        const fileInputs = document.querySelectorAll('.file-input');
-        console.log(`6B. Đã tìm thấy ${fileInputs.length} element có class '.file-input'.`);
-
-        // --- Khởi tạo các thư viện ---
-        ['luyke', 'sknv', 'realtime'].forEach(prefix => {
-            const el = document.getElementById(`${prefix}-filter-name`);
-            if (el) appState.choices[`${prefix}_employee`] = new Choices(el, { removeItemButton: true, placeholder: true, placeholderValue: 'Chọn nhân viên...' });
-            
-            ['nhanhang', 'nhomhang', 'employee'].forEach(type => {
-                const highlightEl = document.getElementById(`${prefix}-highlight-${type}`);
-                if (highlightEl) appState.choices[`${prefix}_highlight_${type}`] = new Choices(highlightEl, { removeItemButton: true, placeholder: true });
+        try {
+            // --- Khởi tạo các thư viện ---
+            ['luyke', 'sknv', 'realtime'].forEach(prefix => {
+                const el = document.getElementById(`${prefix}-filter-name`);
+                if (el) appState.choices[`${prefix}_employee`] = new Choices(el, { removeItemButton: true, placeholder: true, placeholderValue: 'Chọn nhân viên...' });
+                
+                ['nhanhang', 'nhomhang', 'employee'].forEach(type => {
+                    const highlightEl = document.getElementById(`${prefix}-highlight-${type}`);
+                    if (highlightEl) appState.choices[`${prefix}_highlight_${type}`] = new Choices(highlightEl, { removeItemButton: true, placeholder: true });
+                });
             });
-        });
+        } catch (error) {
+            console.error("Lỗi khi khởi tạo Choices.js:", error);
+        }
 
-        const initDatePicker = (prefix) => {
-            const datePickerEl = document.getElementById(`${prefix}-filter-date`);
-            if (!datePickerEl) return;
-            const applyFilter = () => (prefix === 'luyke') ? app.applyHealthSectionFiltersAndRender() : app.applySknvFiltersAndRender();
-            const datePicker = flatpickr(datePickerEl, {
-                mode: "multiple", dateFormat: "d/m", maxDate: "today",
-                onClose: function(selectedDates, dateStr, instance) {
-                    if (selectedDates.length === 2) {
-                        const [start, end] = selectedDates.sort((a,b) => a - b);
-                        const dateRange = Array.from({length: (end - start) / 86400000 + 1}, (_, i) => new Date(start.getTime() + i * 86400000));
-                        instance.setDate(dateRange, false); selectedDates = instance.selectedDates;
+        try {
+            const initDatePicker = (prefix) => {
+                const datePickerEl = document.getElementById(`${prefix}-filter-date`);
+                if (!datePickerEl) return;
+                const applyFilter = () => (prefix === 'luyke') ? app.applyHealthSectionFiltersAndRender() : app.applySknvFiltersAndRender();
+                const datePicker = flatpickr(datePickerEl, {
+                    mode: "multiple", dateFormat: "d/m", maxDate: "today",
+                    onClose: function(selectedDates, dateStr, instance) {
+                        if (selectedDates.length === 2) {
+                            const [start, end] = selectedDates.sort((a,b) => a - b);
+                            const dateRange = Array.from({length: (end - start) / 86400000 + 1}, (_, i) => new Date(start.getTime() + i * 86400000));
+                            instance.setDate(dateRange, false); selectedDates = instance.selectedDates;
+                        }
+                        const summaryEl = document.getElementById(`${prefix}-date-summary`);
+                        if (summaryEl) {
+                            if (selectedDates.length > 1) summaryEl.textContent = `Đang chọn ${selectedDates.length} ngày: ${instance.formatDate(selectedDates.sort((a,b)=>a-b)[0], "d/m")} - ${instance.formatDate(selectedDates[selectedDates.length - 1], "d/m")}`;
+                            else if (selectedDates.length === 1) summaryEl.textContent = `Đang chọn 1 ngày`; else summaryEl.textContent = '';
+                        }
+                        applyFilter();
                     }
-                    const summaryEl = document.getElementById(`${prefix}-date-summary`);
-                    if (summaryEl) {
-                        if (selectedDates.length > 1) summaryEl.textContent = `Đang chọn ${selectedDates.length} ngày: ${instance.formatDate(selectedDates.sort((a,b)=>a-b)[0], "d/m")} - ${instance.formatDate(selectedDates[selectedDates.length - 1], "d/m")}`;
-                        else if (selectedDates.length === 1) summaryEl.textContent = `Đang chọn 1 ngày`; else summaryEl.textContent = '';
-                    }
-                    applyFilter();
-                }
-            });
-            appState.choices[`${prefix}_date_picker`] = datePicker;
-            document.getElementById(`${prefix}-clear-date`)?.addEventListener('click', () => { datePicker.clear(); applyFilter(); });
-        };
-        initDatePicker('luyke'); initDatePicker('sknv');
+                });
+                appState.choices[`${prefix}_date_picker`] = datePicker;
+                document.getElementById(`${prefix}-clear-date`)?.addEventListener('click', () => { datePicker.clear(); applyFilter(); });
+            };
+            initDatePicker('luyke'); initDatePicker('sknv');
+        } catch (error) {
+            console.error("Lỗi khi khởi tạo Flatpickr:", error);
+        }
 
         // --- Gán sự kiện cho các element ---
         document.querySelectorAll('a.nav-link').forEach(link => link.addEventListener('click', (e) => { e.preventDefault(); app.switchTab(link.getAttribute('href').substring(1)); }));
@@ -646,8 +636,7 @@ const app = {
         
         document.querySelectorAll('.kpi-color-input').forEach(picker => picker.addEventListener('input', app.saveInterfaceSettings));
 
-        fileInputs.forEach(input => input.addEventListener('change', async (e) => {
-            console.log("Sự kiện 'change' đã được kích hoạt trên input:", e.target.id); // <--- LOG CŨ
+        document.querySelectorAll('.file-input').forEach(input => input.addEventListener('change', async (e) => {
             const fileInput = e.target, file = fileInput.files[0], fileType = fileInput.id.replace('file-', '');
             const dataName = fileInput.dataset.name || fileType, shouldSave = fileInput.dataset.save === 'true';
             const fileNameSpan = document.getElementById(`file-name-${fileType}`), fileStatusSpan = document.getElementById(`file-status-${fileType}`);
@@ -658,7 +647,6 @@ const app = {
             try {
                 const rawData = await app.handleFileRead(file);
                 const { normalizedData, success, missingColumns } = services.normalizeData(rawData, fileType);
-                // LOG CŨ
                 ui.displayDebugInfo(fileType);
                 if (success) {
                     if (fileType === 'danhsachnv') {
@@ -691,7 +679,6 @@ const app = {
                     if (debugContainer?.classList.contains('hidden')) document.getElementById('toggle-debug-btn')?.click();
                 }
             } catch (error) {
-                console.error("!!! MỘT LỖI ĐÃ BỊ BẮT TRONG KHỐI CATCH !!!"); // <-- LOG CŨ
                 console.error(`Lỗi xử lý file ${dataName}:`, error);
                 if (fileStatusSpan) { fileStatusSpan.textContent = `Lỗi: ${error.message}`; fileStatusSpan.className = 'text-sm text-red-500'; }
                 ui.showNotification(`Lỗi khi xử lý file "${dataName}".`, 'error');
