@@ -1,4 +1,4 @@
-// Version 9.7 - Final Capture & Formatting Fix
+// Version 9.8 - SKNV Capture & Logic Hotfix
 // MODULE 4: KỆ "GIAO DIỆN" (UI)
 // File này chứa tất cả các hàm chịu trách nhiệm cập nhật và hiển thị dữ liệu ra màn hình.
 
@@ -377,20 +377,20 @@ const ui = {
             const incomeDkCellClass = nv.thuNhapDuKien < averageProjectedIncome ? 'cell-performance is-below' : '';
             tableHTML += `<tr class="hover:bg-gray-50">
                     <td class="px-4 py-2 font-semibold line-clamp-2">${nv.hoTen}</td>
-                    <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(nv.gioCong)}</td>
-                    <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(nv.thuongNong / 1000000)}</td>
-                    <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(nv.thuongERP / 1000000)}</td>
+                    <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(nv.gioCong)}</td>
+                    <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(nv.thuongNong / 1000000)}</td>
+                    <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(nv.thuongERP / 1000000)}</td>
                     <td class="px-4 py-2 text-right font-bold text-blue-600">${ui.formatNumberOrDash(nv.tongThuNhap / 1000000)}</td>
                     <td class="px-4 py-2 text-right font-bold text-green-600 ${incomeDkCellClass}">${ui.formatNumberOrDash(nv.thuNhapDuKien / 1000000)}</td></tr>`;
         });
         tableHTML += `</tbody><tfoot class="table-footer font-bold">
             <tr>
                 <td class="px-4 py-2">Tổng</td>
-                <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.gioCong)}</td>
-                <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.thuongNong / 1000000)}</td>
-                <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.thuongERP / 1000000)}</td>
-                <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.tongThuNhap / 1000000)}</td>
-                <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.thuNhapDuKien / 1000000)}</td>
+                <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(totals.gioCong)}</td>
+                <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(totals.thuongNong / 1000000)}</td>
+                <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(totals.thuongERP / 1000000)}</td>
+                <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(totals.tongThuNhap / 1000000)}</td>
+                <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(totals.thuNhapDuKien / 1000000)}</td>
             </tr>
         </tfoot></table></div></div>`;
         return tableHTML;
@@ -723,21 +723,24 @@ const ui = {
         ];
         donGiaData.forEach(d => countEvaluation('dongia', d.rawValue, d.rawAverage));
 
+        // [*] FIX: Calculate the number of QDC criteria BEFORE calculating the total.
+        const qdcArray = Object.entries(employeeData.qdc || {}).map(([key, values]) => ({ key, ...values })).filter(item => item.sl > 0);
+        evaluationCounts.qdc.total = qdcArray.length;
+
         const totalAbove = evaluationCounts.doanhthu.above + evaluationCounts.nangsuat.above + evaluationCounts.hieuqua.above + evaluationCounts.dongia.above + evaluationCounts.qdc.above;
         const totalBelow = evaluationCounts.doanhthu.below + evaluationCounts.nangsuat.below + evaluationCounts.hieuqua.below + evaluationCounts.dongia.below + evaluationCounts.qdc.below;
         const totalCriteria = evaluationCounts.doanhthu.total + evaluationCounts.nangsuat.total + evaluationCounts.hieuqua.total + evaluationCounts.dongia.total + evaluationCounts.qdc.total;
         const titleHtml = `CHI TIẾT - ${employeeData.hoTen} <span class="font-normal text-sm">(Trên TB: <span class="font-bold text-green-300">${totalAbove}</span>, Dưới TB: <span class="font-bold text-yellow-300">${totalBelow}</span> / Tổng: ${totalCriteria})</span>`;
 
-        detailsContainer.innerHTML = `<div class="p-4 mb-6 bg-blue-600 text-white rounded-lg shadow-lg border border-blue-700" data-capture-group="1"><h3 class="text-2xl font-bold text-center uppercase">${titleHtml}</h3></div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" data-capture-layout="grid">
-                <div class="space-y-6" data-capture-group="1">${createDetailTableHtml('Doanh thu', 'header-bg-blue', doanhThuData)}</div>
-                <div class="space-y-6" data-capture-group="1">${createDetailTableHtml('Năng suất', 'header-bg-green', nangSuatData)}</div>
-                <div class="space-y-6" data-capture-group="1">${createDetailTableHtml('Hiệu quả khai thác', 'header-bg-blue', hieuQuaData)}</div>
-                <div class="space-y-6" data-capture-group="1">${createDetailTableHtml('Đơn giá (Triệu)', 'header-bg-yellow', donGiaData)}</div>
-                <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6" data-capture-layout="grid">
-                    <div data-capture-group="1">${ui.renderSknvQdcTable(employeeData, departmentAverages, countEvaluation, evaluationCounts)}</div>
-                    <div data-capture-group="1">${ui.renderSknvNganhHangTable(employeeData)}</div>
-                </div>
+        // [*] FIX: Refactored the grid structure and added a custom layout attribute for SKNV screenshots.
+        detailsContainer.innerHTML = `<div class="p-4 mb-6 bg-blue-600 text-white rounded-lg shadow-lg border border-blue-700"><h3 class="text-2xl font-bold text-center uppercase">${titleHtml}</h3></div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" data-capture-layout="sknv-custom">
+                <div>${createDetailTableHtml('Doanh thu', 'header-bg-blue', doanhThuData)}</div>
+                <div>${createDetailTableHtml('Năng suất', 'header-bg-green', nangSuatData)}</div>
+                <div>${createDetailTableHtml('Hiệu quả khai thác', 'header-bg-blue', hieuQuaData)}</div>
+                <div>${createDetailTableHtml('Đơn giá (Triệu)', 'header-bg-yellow', donGiaData)}</div>
+                <div>${ui.renderSknvQdcTable(employeeData, departmentAverages, countEvaluation, evaluationCounts)}</div>
+                <div>${ui.renderSknvNganhHangTable(employeeData)}</div>
             </div>`;
     },
 
@@ -798,7 +801,7 @@ const ui = {
 
             if(employee.qdc && departmentAverages.qdc) {
                 for (const key in employee.qdc) {
-                    if(departmentAverages.qdc[key]) {
+                    if(departmentAverages.qdc[key] && employee.qdc[key].sl > 0) {
                         counts.qdc.total++;
                         checkAndCount('qdc', employee.qdc[key].dtqd, departmentAverages.qdc[key].dtqd);
                     }
@@ -901,7 +904,6 @@ const ui = {
         setContent('rt-kpi-dt-tc-sub', `% thực trả chậm: <span class="kpi-percentage-value">${ui.formatPercentage(phanTramTC)}</span>`);
     },
     
-    // [*] MODIFIED: Fixed data loss bug for comparison percentage.
     renderLuykeKpiCards: (luykeData, comparisonData, chuaXuatData, goals) => {
         const targetDTThuc = (parseFloat(goals.doanhThuThuc) || 0);
         const targetDTQD = (parseFloat(goals.doanhThuQD) || 0);
@@ -939,7 +941,6 @@ const ui = {
     
         setContent('luyke-kpi-dtqd-chua-xuat-main', ui.formatNumberOrDash(dtChuaXuatQD / 1000000));
     
-        // FIX: Restore the original logic to prevent data loss.
         const comparisonPercentageText = comparisonData.percentage || '-';
         setContent('luyke-kpi-dtck-main', comparisonPercentageText);
         setContent('luyke-kpi-dtck-sub', ui.formatNumberOrDash(comparisonData.value));
@@ -1261,5 +1262,6 @@ const ui = {
         return result;
     }
 };
+
 export { ui };
 

@@ -1,4 +1,4 @@
-/* Version 9.4.1 - Compatibility Fix */
+/* Version 9.6 - SKNV Capture Layout Fix */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -180,8 +180,8 @@ body[data-contrast="3"] { --bg-lightness: var(--bg-lightness-3); --header-lightn
     padding: 24px;
     background-color: #f3f4f6;
     box-sizing: border-box;
-    width: fit-content; /* [*] FIX: Let container fit the content width */
-    max-width: 1440px; /* But don't let it get excessively wide */
+    width: fit-content;
+    max-width: 1440px;
 }
 .capture-layout-container {
     display: flex;
@@ -190,7 +190,14 @@ body[data-contrast="3"] { --bg-lightness: var(--bg-lightness-3); --header-lightn
 }
 .capture-layout-container[data-capture-layout="grid"] {
     display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important; /* [*] FIX: Flexible columns to prevent overflow */
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    align-items: start;
+}
+/* [+] NEW: Added a specific layout rule for SKNV to fix the incorrect vertical stacking. */
+.capture-layout-container[data-capture-layout="sknv-custom"] {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-auto-flow: row;
     align-items: start;
 }
 .capture-title {
@@ -213,12 +220,17 @@ body[data-contrast="3"] { --bg-lightness: var(--bg-lightness-3); --header-lightn
     width: 100% !important;
 }
 
-/* [*] MODIFIED: Unified font size for table content */
+.prepare-for-capture td {
+    font-weight: 600 !important;
+}
+.prepare-for-capture th {
+    font-weight: 700 !important;
+}
+
 .prepare-for-capture th, 
 .prepare-for-capture td {
     padding: 14px 10px !important;
     font-size: 22px !important;
-    font-weight: 500 !important;
     white-space: normal !important;
     word-break: break-word !important;
     vertical-align: middle !important;
@@ -226,7 +238,6 @@ body[data-contrast="3"] { --bg-lightness: var(--bg-lightness-3); --header-lightn
     line-height: 1.4 !important;
 }
 
-/* [*] MODIFIED: Increased font size for headers and KPI cards */
 .prepare-for-capture h3,
 .prepare-for-capture h4,
 .department-block > h4 {
@@ -238,17 +249,18 @@ body[data-contrast="3"] { --bg-lightness: var(--bg-lightness-3); --header-lightn
 }
 .prepare-for-capture .kpi-card-title {
     font-size: 20px !important;
-    font-weight: 600 !important;
+    font-weight: 700 !important;
 }
-.prepare-for-capture .kpi-card p[id$="-main"] { /* Targets the main number */
+.prepare-for-capture .kpi-card p[id$="-main"] {
     font-size: 48px !important;
     font-weight: 800 !important;
     line-height: 1.1 !important;
 }
 .prepare-for-capture .kpi-card p[id$="-sub"],
 .prepare-for-capture .kpi-card p[id$="-sub1"],
-.prepare-for-capture .kpi-card p[id$="-sub2"] { /* Targets sub-text */
+.prepare-for-capture .kpi-card p[id$="-sub2"] {
     font-size: 18px !important;
+    font-weight: 600 !important;
 }
 
 
@@ -267,4 +279,11 @@ body[data-contrast="3"] { --bg-lightness: var(--bg-lightness-3); --header-lightn
 
 .prepare-for-capture[data-capture-columns="6"] th:nth-child(1), .prepare-for-capture[data-capture-columns="6"] td:nth-child(1) { width: 30%; }
 .prepare-for-capture[data-capture-columns="6"] th:nth-child(n+2), .prepare-for-capture[data-capture-columns="6"] td:nth-child(n+2) { width: 14%; text-align: right; }
+
+.prepare-for-capture[data-capture-columns="4"] th:nth-child(1), .prepare-for-capture[data-capture-columns="4"] td:nth-child(1) { width: 40%; }
+.prepare-for-capture[data-capture-columns="4"] th:nth-child(n+2), .prepare-for-capture[data-capture-columns="4"] td:nth-child(n+2) { width: 20%; text-align: right; }
+.prepare-for-capture[data-capture-columns="4"] td:nth-child(4) { text-align: center !important; }
+
+.prepare-for-capture[data-capture-columns="3"] th:nth-child(1), .prepare-for-capture[data-capture-columns="3"] td:nth-child(1) { width: 50%; }
+.prepare-for-capture[data-capture-columns="3"] th:nth-child(n+2), .prepare-for-capture[data-capture-columns="3"] td:nth-child(n+2) { width: 25%; text-align: right; }
 
