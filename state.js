@@ -1,4 +1,4 @@
-// Version 5.0
+// Version 8.0 - Feature Update & Bug Fix
 // MODULE 2: TỦ TRẠNG THÁI (APPSTATE)
 // File này chứa đối tượng trạng thái chung của ứng dụng, hoạt động như một "bộ nhớ".
 
@@ -46,6 +46,8 @@ const appState = {
         sknv_giadung: { key: 'dtGiaDung', direction: 'desc' },
         sknv_ce: { key: 'dtCE', direction: 'desc' },
         sknv_baohiem: { key: 'dtBaoHiem', direction: 'desc' },
+        sknv_nganhhang_chitiet: { key: 'revenue', direction: 'desc' },
+        sknv_qdc: { key: 'dtqd', direction: 'desc' },
         competition_doanhthu: { key: 'hoanThanh', direction: 'desc' },
         competition_soluong: { key: 'hoanThanh', direction: 'desc' },
         luyke_nganhhang: { key: 'revenue', direction: 'desc' },

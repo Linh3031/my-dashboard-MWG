@@ -1,4 +1,4 @@
-/* Version 7.4 - Final Polishing */
+/* Version 9.4.1 - Compatibility Fix */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -10,9 +10,10 @@
     /* KPI Card Colors - Default */
     --kpi-card-1-bg: #38bdf8; /* sky-400 */
     --kpi-card-2-bg: #34d399; /* emerald-400 */
-    --kpi-card-3-bg: #fbbF24; /* amber-400 */
+    --kpi-card-3-bg: #fbbf24; /* amber-400 */
     --kpi-card-4-bg: #2dd4bf; /* teal-400 */
     --kpi-card-5-bg: #a78bfa; /* violet-400 */
+    --kpi-card-6-bg: #f472b6; /* pink-400 */
     --kpi-text-color: #ffffff;
 }
 
@@ -46,11 +47,21 @@ body[data-contrast="3"] { --bg-lightness: var(--bg-lightness-3); --header-lightn
 .settings-drawer.open { transform: translateX(0); }
 .close-drawer-btn { font-size: 2rem; line-height: 1; }
 
-/* --- NOTIFICATION --- */
+/* --- NOTIFICATION & PLACEHOLDERS --- */
 #notification { position: fixed; bottom: 20px; right: 20px; padding: 1rem 1.5rem; border-radius: 0.5rem; color: white; z-index: 1000; opacity: 0; transition: opacity 0.5s, transform 0.5s; transform: translateY(100px); }
 #notification.show { opacity: 1; transform: translateY(0); }
 .notification-success { background-color: #28a745; }
 .notification-error { background-color: #dc3545; }
+.placeholder-message {
+    border: 2px dashed #f59e0b; /* amber-500 */
+    background-color: #fffbeb; /* amber-50 */
+    color: #b45309; /* amber-700 */
+    padding: 2rem;
+    border-radius: 0.75rem;
+    text-align: center;
+    font-weight: 600;
+}
+
 
 /* --- TABS & SORTING --- */
 .sub-tab-btn { transition: all 0.2s ease-in-out; border-bottom: 2px solid transparent; }
@@ -78,6 +89,15 @@ body[data-contrast="3"] { --bg-lightness: var(--bg-lightness-3); --header-lightn
 .header-group-2 { background-color: hsl(90, 90%, var(--header-lightness)); }
 .header-group-3 { background-color: hsl(180, 90%, var(--header-lightness)); }
 
+/* [*] FIX: Added standard 'line-clamp' property for compatibility */
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2; /* Standard property */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
 /* Department Title Colors */
 .department-header-tv { background-color: #e0e7ff; color: #3730a3; } /* indigo */
 .department-header-kho { background-color: #d1fae5; color: #065f46; } /* emerald */
@@ -91,13 +111,19 @@ body[data-contrast="3"] { --bg-lightness: var(--bg-lightness-3); --header-lightn
 .category-header-baohiem { background-color: #f3e8ff; color: #6b21a8; } /* purple */
 
 .qdc-group-title { font-weight: 600; }
-.qdc-group-ict { background-color: hsl(190, 80%, var(--bg-lightness)); }
-.qdc-group-vas { background-color: hsl(140, 80%, var(--bg-lightness)); }
-.qdc-group-giadung { background-color: hsl(0, 80%, var(--bg-lightness)); }
-.qdc-group-sim { background-color: hsl(40, 80%, var(--bg-lightness)); }
+.qdc-group-ict { background-color: hsl(190, 80%, var(--special-header-lightness)); }
+.qdc-group-vas { background-color: hsl(140, 80%, var(--special-header-lightness)); }
+.qdc-group-giadung { background-color: hsl(0, 80%, var(--special-header-lightness)); }
+.qdc-group-sim { background-color: hsl(40, 80%, var(--special-header-lightness)); }
+
 .competition-header-doanhthu { border-color: #a78bfa; background-color: hsl(260, 90%, var(--bg-lightness)); }
 .competition-header-soluong { border-color: #facc15; background-color: hsl(50, 90%, var(--bg-lightness)); }
 .header-highlight-special { background-color: hsl(25, 90%, var(--header-lightness)) !important; }
+
+.competition-row-below-100 td {
+    background-color: #fee2e2; /* red-100 */
+    color: #991b1b; /* red-800 */
+}
 
 /* --- KPI CARDS --- */
 .kpi-card { color: var(--kpi-text-color); }
@@ -105,16 +131,18 @@ body[data-contrast="3"] { --bg-lightness: var(--bg-lightness-3); --header-lightn
 .kpi-card-title { opacity: 0.8; }
 .kpi-percentage, .kpi-percentage-value {
     font-weight: 700;
-    color: #a50a0a !important;
 }
-/* Làm tròn số lẻ trong KPI */
-.kpi-card p.text-4xl { font-size: 2.25rem !important; } /* Tailwind's text-4xl */
+.kpi-sub-value {
+    opacity: 0.9;
+    font-size: 0.9em;
+}
 
 #luyke-kpi-cards-container .kpi-card:nth-child(1), #realtime-kpi-cards-container .kpi-card:nth-child(1) { background-color: var(--kpi-card-1-bg); }
 #luyke-kpi-cards-container .kpi-card:nth-child(2), #realtime-kpi-cards-container .kpi-card:nth-child(2) { background-color: var(--kpi-card-2-bg); }
 #luyke-kpi-cards-container .kpi-card:nth-child(3), #realtime-kpi-cards-container .kpi-card:nth-child(3) { background-color: var(--kpi-card-3-bg); }
 #luyke-kpi-cards-container .kpi-card:nth-child(4), #realtime-kpi-cards-container .kpi-card:nth-child(4) { background-color: var(--kpi-card-4-bg); }
 #luyke-kpi-cards-container .kpi-card:nth-child(5) { background-color: var(--kpi-card-5-bg); }
+#luyke-kpi-cards-container .kpi-card:nth-child(6) { background-color: var(--kpi-card-6-bg); }
 
 
 /* --- PROGRESS BAR & MISC --- */
@@ -136,22 +164,107 @@ body[data-contrast="3"] { --bg-lightness: var(--bg-lightness-3); --header-lightn
 .highlighted-row td { animation: pulse-bg 2s infinite; }
 @keyframes pulse-bg { 0% { background-color: var(--highlight-color, #ffff99); } 50% { background-color: var(--highlight-color-light, #ffffcc); } 100% { background-color: var(--highlight-color, #ffff99); } }
 
-/* --- CAPTURE STYLES (for html2canvas) --- */
-.capture-container {
-    padding: 16px;
-    background-color: #f3f4f6; /* Match body background */
-    width: 1400px; /* Define a fixed width for consistent capture size */
-    box-sizing: border-box;
+/* Daily goal cells */
+.daily-goal-cell[contenteditable="true"] {
+    outline: none;
+    cursor: text;
+    padding: 0.5rem 0.75rem !important;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s ease-in-out, background-color 0.2s ease-in-out;
 }
+.daily-goal-cell[contenteditable="true"]:hover { border-bottom-color: #9ca3af; }
+.daily-goal-cell[contenteditable="true"]:focus { background-color: #eff6ff; border-bottom-color: #3b82f6; }
 
+/* --- ADVANCED STYLES FOR SCREEN CAPTURE --- */
+.capture-container {
+    padding: 24px;
+    background-color: #f3f4f6;
+    box-sizing: border-box;
+    width: fit-content; /* [*] FIX: Let container fit the content width */
+    max-width: 1440px; /* But don't let it get excessively wide */
+}
+.capture-layout-container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+.capture-layout-container[data-capture-layout="grid"] {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important; /* [*] FIX: Flexible columns to prevent overflow */
+    align-items: start;
+}
 .capture-title {
-    font-size: 24px;
+    font-size: 28px;
     font-weight: 700;
     text-align: center;
-    color: #1f2937; /* gray-800 */
-    margin-bottom: 16px;
-    padding: 8px;
+    color: #1f2937;
+    margin-bottom: 24px;
+    padding: 12px;
     background-color: #ffffff;
-    border-radius: 0.5rem;
+    border-radius: 0.75rem;
     box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
 }
+.prepare-for-capture .bg-white { 
+    box-shadow: none !important; 
+    border: none !important; 
+}
+.prepare-for-capture table {
+    table-layout: fixed !important;
+    width: 100% !important;
+}
+
+/* [*] MODIFIED: Unified font size for table content */
+.prepare-for-capture th, 
+.prepare-for-capture td {
+    padding: 14px 10px !important;
+    font-size: 22px !important;
+    font-weight: 500 !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    vertical-align: middle !important;
+    height: auto !important;
+    line-height: 1.4 !important;
+}
+
+/* [*] MODIFIED: Increased font size for headers and KPI cards */
+.prepare-for-capture h3,
+.prepare-for-capture h4,
+.department-block > h4 {
+    font-size: 28px !important;
+    font-weight: 700 !important;
+}
+.prepare-for-capture .kpi-card {
+    padding: 24px !important;
+}
+.prepare-for-capture .kpi-card-title {
+    font-size: 20px !important;
+    font-weight: 600 !important;
+}
+.prepare-for-capture .kpi-card p[id$="-main"] { /* Targets the main number */
+    font-size: 48px !important;
+    font-weight: 800 !important;
+    line-height: 1.1 !important;
+}
+.prepare-for-capture .kpi-card p[id$="-sub"],
+.prepare-for-capture .kpi-card p[id$="-sub1"],
+.prepare-for-capture .kpi-card p[id$="-sub2"] { /* Targets sub-text */
+    font-size: 18px !important;
+}
+
+
+/* [+] NEW: Specific column widths for different tables to optimize space */
+.prepare-for-capture[data-capture-columns="7"] th:nth-child(1), .prepare-for-capture[data-capture-columns="7"] td:nth-child(1) { width: 24%; }
+.prepare-for-capture[data-capture-columns="7"] th:nth-child(n+2), .prepare-for-capture[data-capture-columns="7"] td:nth-child(n+2) { width: 12.6%; text-align: right; }
+
+.prepare-for-capture[data-capture-columns="11"] th:nth-child(1), .prepare-for-capture[data-capture-columns="11"] td:nth-child(1) { width: 20%; } /* Ten NV */
+.prepare-for-capture[data-capture-columns="11"] th:nth-child(4), .prepare-for-capture[data-capture-columns="11"] td:nth-child(4) { width: 9%; } /* % PK */
+.prepare-for-capture[data-capture-columns="11"] th:nth-child(7), .prepare-for-capture[data-capture-columns="11"] td:nth-child(7) { width: 9%; } /* % GD */
+.prepare-for-capture[data-capture-columns="11"] th:nth-child(8), .prepare-for-capture[data-capture-columns="11"] td:nth-child(8) { width: 9%; } /* % MLN */
+.prepare-for-capture[data-capture-columns="11"] th:nth-child(n+2), .prepare-for-capture[data-capture-columns="11"] td:nth-child(n+2) { text-align: right; }
+
+.prepare-for-capture[data-capture-columns="5"] th:nth-child(1), .prepare-for-capture[data-capture-columns="5"] td:nth-child(1) { width: 32%; }
+.prepare-for-capture[data-capture-columns="5"] th:nth-child(n+2), .prepare-for-capture[data-capture-columns="5"] td:nth-child(n+2) { width: 17%; text-align: right; }
+
+.prepare-for-capture[data-capture-columns="6"] th:nth-child(1), .prepare-for-capture[data-capture-columns="6"] td:nth-child(1) { width: 30%; }
+.prepare-for-capture[data-capture-columns="6"] th:nth-child(n+2), .prepare-for-capture[data-capture-columns="6"] td:nth-child(n+2) { width: 14%; text-align: right; }
+

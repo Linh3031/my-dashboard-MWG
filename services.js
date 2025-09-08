@@ -1,4 +1,4 @@
-// Version 7.5 - Final Polishing
+// Version 9.1 - Data Parsing Hotfix
 // MODULE 3: KỆ "DỊCH VỤ" (SERVICES)
 // File này chứa tất cả các hàm xử lý logic, tính toán, và chuyển đổi dữ liệu.
 
@@ -143,83 +143,77 @@ const services = {
         return results;
     },
 
+    // [*] MODIFIED: Replaced faulty parsing logic with a robust Regex-based approach.
     parseLuyKePastedData: (text) => {
         const mainKpis = {};
-        if (!text) return { mainKpis, allLines: [] };
-    
+        const comparisonData = { value: 0, percentage: 'N/A' };
+        if (!text) return { mainKpis, allLines: [], comparisonData };
+
         const allLines = text.split('\n').map(line => line.trim());
         const textContent = allLines.join(' ');
-    
+
+        // Use robust Regex patterns to find values, tolerant of spacing and positioning issues.
         const patterns = {
             'Thực hiện DT thực': /DTLK\s+([\d,.]+)/,
-            'Dự kiến DT thực': /DT Dự Kiến\s+([\d,.]+)/,
-            '% HT Dự kiến DT thực': /% HT Target Dự Kiến\s+([\d.]+%?)/,
             'Thực hiện DTQĐ': /DTQĐ\s+([\d,.]+)/,
-            'Dự kiến DTQĐ': /DT Dự Kiến \(QĐ\)\s+([\d,.]+)/,
-            '% HT Dự kiến DTQĐ': /% HT Target Dự Kiến \(QĐ\)\s+([\d.]+%?)/,
-            'Doanh thu trả chậm': /DT Siêu thị\s+([\d,.]+)/,
-            '% Trả chậm': /Tỷ Trọng Trả Góp\s+([\d.]+%?)/,
+            '% HT Target Dự Kiến (QĐ)': /% HT Target Dự Kiến \(QĐ\)\s+([\d.]+%?)/,
+            'Tỷ Trọng Trả Góp': /Tỷ Trọng Trả Góp\s+([\d.]+%?)/,
         };
-    
+
         for (const [key, regex] of Object.entries(patterns)) {
             const match = textContent.match(regex);
             if (match && match[1]) {
                 mainKpis[key] = match[1];
             }
         }
-    
-        return { mainKpis, allLines };
+        
+        // Retain the logic for comparison data (so sánh cùng kỳ)
+        const dtckIndex = allLines.findIndex(line => line.includes('DTCK Tháng'));
+        if (dtckIndex !== -1 && dtckIndex + 1 < allLines.length) {
+            const valueLine = allLines[dtckIndex + 1];
+            const values = valueLine.split(/\s+/);
+            if (values.length >= 2) {
+                comparisonData.value = parseFloat(values[0].replace(/,/g, '')) || 0;
+                comparisonData.percentage = values[1] || 'N/A';
+            }
+        }
+
+        return { mainKpis, allLines, comparisonData };
     },
+
+    // [*] MODIFIED: Corrected parsing logic for competition data.
     parseCompetitionDataFromLuyKe: (text) => {
-        if(!text || !text.trim()) return [];
+        if (!text || !text.trim()) return [];
         const lines = text.split('\n').map(l => l.trim());
         const results = [];
-        const competitionTitleIndexes = [];
+        let currentCompetition = null;
 
-        lines.forEach((line, index) => {
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
             if (line.toLowerCase().startsWith('thi đua')) {
-                competitionTitleIndexes.push({ name: line, startIndex: index });
+                if (currentCompetition) results.push(currentCompetition);
+                currentCompetition = {
+                    name: line.replace("Thi đua doanh thu", "DT").replace("Thi đua số lượng", "SL"),
+                    type: line.toLowerCase().includes('doanh thu') ? 'doanhThu' : 'soLuong',
+                    luyKe: 0, target: 0, hoanThanh: '0%'
+                };
+            } else if (currentCompetition) {
+                if (line.startsWith('DTLK') || line.startsWith('SLLK') || line.startsWith('DTQĐ')) {
+                    if (i + 1 < lines.length) {
+                        currentCompetition.luyKe = parseFloat(lines[i + 1].replace(/,/g, '')) || 0;
+                    }
+                } else if (line.startsWith('Target')) {
+                    if (i + 1 < lines.length) {
+                        currentCompetition.target = parseFloat(lines[i + 1].replace(/,/g, '')) || 0;
+                    }
+                } else if (line.startsWith('% HT Dự Kiến')) {
+                    if (i + 1 < lines.length) {
+                        currentCompetition.hoanThanh = lines[i + 1] || '0%';
+                    }
+                }
             }
-        });
-
-        const extractNumber = (str) => {
-            if (!str) return 0;
-            const match = str.match(/([\d,.-]+)/);
-            return match ? parseFloat(match[1].replace(/,/g, '')) : 0;
-        };
-
-        competitionTitleIndexes.forEach((comp, index) => {
-            const endIndex = (index + 1 < competitionTitleIndexes.length) ? competitionTitleIndexes[index + 1].startIndex : lines.length;
-            const block = lines.slice(comp.startIndex, endIndex);
-
-            const displayName = comp.name.replace("Thi đua doanh thu", "DT").replace("Thi đua số lượng", "SL");
-
-            const result = {
-                name: displayName,
-                type: comp.name.toLowerCase().includes('doanh thu') ? 'doanhThu' : 'soLuong',
-                luyKe: 0, target: 0, duKien: 0, hoanThanh: '0%'
-            };
-
-            const findValueAfterKeyword = (keyword) => {
-                const keywordIndex = block.findIndex(line => line.trim() === keyword);
-                return (keywordIndex !== -1 && keywordIndex + 1 < block.length) ? block[keywordIndex + 1] : null;
-            };
-
-            let luyKeValue = result.type === 'doanhThu' ? (findValueAfterKeyword('DTLK') || findValueAfterKeyword('DTQĐ')) : findValueAfterKeyword('SLLK');
-            let duKienValue = result.type === 'doanhThu' ? (findValueAfterKeyword('DT Dự Kiến') || findValueAfterKeyword('DT Dự Kiến (QĐ)')) : findValueAfterKeyword('SL Dự Kiến');
-            
-            result.luyKe = extractNumber(luyKeValue);
-            result.target = extractNumber(findValueAfterKeyword('Target'));
-            result.duKien = extractNumber(duKienValue);
-            
-            const hoanThanhValue = findValueAfterKeyword('% HT Dự Kiến (QĐ)');
-            if (hoanThanhValue) {
-                const match = hoanThanhValue.match(/([\d.]+%?)/);
-                if (match) result.hoanThanh = match[1];
-            }
-
-            results.push(result);
-        });
+        }
+        if (currentCompetition) results.push(currentCompetition);
 
         appState.competitionData = results;
         return results;
@@ -418,8 +412,18 @@ const services = {
             const pctSim = data.slSmartphone > 0 ? data.slSimOnline / data.slSmartphone : 0;
             const pctVAS = data.slSmartphone > 0 ? data.slUDDD / data.slSmartphone : 0;
             const pctBaoHiem = data.slBaoHiemDenominator > 0 ? data.slBaoHiemVAS / data.slBaoHiemDenominator : 0;
+            
+            data.donGiaTivi = data.slTivi > 0 ? data.dtTivi / data.slTivi : 0;
+            data.donGiaTuLanh = data.slTuLanh > 0 ? data.dtTuLanh / data.slTuLanh : 0;
+            data.donGiaMayGiat = data.slMayGiat > 0 ? data.dtMayGiat / data.slMayGiat : 0;
+            data.donGiaMayLanh = data.slMayLanh > 0 ? data.dtMayLanh / data.slMayLanh : 0;
+            data.donGiaDienThoai = data.slDienThoai > 0 ? data.dtDienThoai / data.slDienThoai : 0;
+            data.donGiaLaptop = data.slLaptop > 0 ? data.dtLaptop / data.slLaptop : 0;
+            
+            const totalQuantity = Object.values(data.doanhThuTheoNganhHang).reduce((sum, category) => sum + category.quantity, 0);
+            const donGiaTrungBinh = totalQuantity > 0 ? data.doanhThu / totalQuantity : 0;
 
-            return { ...employee, ...data, gioCong, thuongNong, thuongERP, tongThuNhap, thuNhapDuKien, hieuQuaQuyDoi, tyLeTraCham, pctPhuKien, pctGiaDung, pctMLN, pctSim, pctVAS, pctBaoHiem, mucTieu: goalSettings };
+            return { ...employee, ...data, gioCong, thuongNong, thuongERP, tongThuNhap, thuNhapDuKien, hieuQuaQuyDoi, tyLeTraCham, pctPhuKien, pctGiaDung, pctMLN, pctSim, pctVAS, pctBaoHiem, donGiaTrungBinh, mucTieu: goalSettings };
         });
     },
     calculateDepartmentAverages(departmentName, reportData) {

@@ -1,4 +1,4 @@
-// Version 7.5 - Final Polishing
+// Version 9.7 - Final Capture & Formatting Fix
 // MODULE 4: KỆ "GIAO DIỆN" (UI)
 // File này chứa tất cả các hàm chịu trách nhiệm cập nhật và hiển thị dữ liệu ra màn hình.
 
@@ -19,17 +19,35 @@ const ui = {
         if (isNaN(value) || value === null) return '0';
         return new Intl.NumberFormat('vi-VN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(value);
     },
-    formatNumberOrDash: (value, decimals = 0) => {
+    
+    formatNumberOrDash: (value) => {
         if (!isFinite(value) || value === null || value === 0) return '-';
-        return new Intl.NumberFormat('vi-VN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(value);
+        const roundedValue = Math.round(value * 10) / 10;
+        if (roundedValue === 0) return '-';
+        return new Intl.NumberFormat('vi-VN', { 
+            minimumFractionDigits: 0, 
+            maximumFractionDigits: 1 
+        }).format(roundedValue);
     },
+
     formatPercentage: (value) => {
-        if (!isFinite(value) || value === null || value === 0) return '-';
-        const roundedPercent = parseFloat((value * 100).toFixed(1));
-        const isWholeRounded = Number.isInteger(roundedPercent);
-        return new Intl.NumberFormat('vi-VN', { style: 'percent', minimumFractionDigits: isWholeRounded ? 0 : 1, maximumFractionDigits: 1 }).format(value);
+        if (!isFinite(value) || value === null) return '-';
+        if (value === 0) return '-';
+        return new Intl.NumberFormat('vi-VN', { 
+            style: 'percent', 
+            maximumFractionDigits: 0 
+        }).format(value);
     },
     
+    togglePlaceholder: (sectionId, show) => {
+        const placeholder = document.getElementById(`${sectionId}-placeholder`);
+        const content = document.getElementById(`${sectionId}-content`);
+        if (placeholder && content) {
+            placeholder.classList.toggle('hidden', !show);
+            content.classList.toggle('hidden', show);
+        }
+    },
+
     toggleDrawer(drawerId, show) {
         const drawer = document.getElementById(drawerId);
         const sidebar = document.getElementById('sidebar');
@@ -59,6 +77,7 @@ const ui = {
         if (settings.kpiCard3Bg) root.style.setProperty('--kpi-card-3-bg', settings.kpiCard3Bg);
         if (settings.kpiCard4Bg) root.style.setProperty('--kpi-card-4-bg', settings.kpiCard4Bg);
         if (settings.kpiCard5Bg) root.style.setProperty('--kpi-card-5-bg', settings.kpiCard5Bg);
+        if (settings.kpiCard6Bg) root.style.setProperty('--kpi-card-6-bg', settings.kpiCard6Bg);
         if (settings.kpiTextColor) root.style.setProperty('--kpi-text-color', settings.kpiTextColor);
     },
 
@@ -97,52 +116,37 @@ const ui = {
         }
     },
     
-    displayHealthKpiTable: (extractedData, goals, updateDailyGoalCallback) => {
+    displayHealthKpiTable: (pastedData, goals, updateDailyGoalCallback) => {
         updateDailyGoalCallback();
-
-        const { mainKpis, allLines } = extractedData;
-
+    
+        const { mainKpis, comparisonData } = pastedData;
+    
         if (!mainKpis || Object.keys(mainKpis).length === 0) {
-            ui.renderLuykeKpiCards({}, appState.masterReportData.luyke, goals);
+            ui.renderLuykeKpiCards({}, {}, appState.masterReportData.luyke || [], goals);
             return;
         }
         
-        const cleanValue = (str) => (typeof str === 'string' ? parseFloat(str.replace(/,/g, '')) : (typeof str === 'number' ? str : 0));
+        const cleanValue = (str) => (typeof str === 'string' ? parseFloat(str.replace(/,|%/g, '')) : (typeof str === 'number' ? str : 0));
         
         const dtThucLK = cleanValue(mainKpis['Thực hiện DT thực']) * 1000000;
         const dtQdLK = cleanValue(mainKpis['Thực hiện DTQĐ']) * 1000000;
-        const dtGop = cleanValue(mainKpis['Doanh thu trả chậm']) * 1000000;
-        const phanTramGopRaw = cleanValue(mainKpis['% Trả chậm']);
+        const phanTramGopRaw = cleanValue(mainKpis['Tỷ Trọng Trả Góp']);
+        const dtGop = dtThucLK * (phanTramGopRaw / 100);
 
         const phanTramQd = dtThucLK > 0 ? (dtQdLK / dtThucLK) - 1 : 0;
-        const phanTramGop = dtThucLK > 0 ? dtGop / dtThucLK : (phanTramGopRaw / 100);
+        const phanTramGop = dtThucLK > 0 ? dtGop / dtThucLK : 0;
 
-        const targetThuc = (parseFloat(goals.doanhThuThuc) || 0) * 1000000000;
+        const targetThuc = (parseFloat(goals.doanhThuThuc) || 0);
+        const phanTramTargetThuc = targetThuc > 0 ? (dtThucLK / 1000000) / targetThuc : 0;
         
-        const phanTramTargetThuc = targetThuc > 0 ? dtThucLK / targetThuc : 0;
-
-        let phanTramTargetQd = 0;
-        const keyword = '% HT Target Dự Kiến (QĐ)';
-        const keywordIndex = allLines.findIndex(line => line.includes(keyword));
-        if (keywordIndex !== -1 && keywordIndex + 1 < allLines.length) {
-            const valueLine = allLines[keywordIndex + 1];
-            const match = valueLine.match(/([\d.]+%?)/);
-            if (match) {
-                phanTramTargetQd = (parseFloat(match[1].replace('%', '')) || 0) / 100;
-            }
-        }
+        const phanTramTargetQd = (cleanValue(mainKpis['% HT Target Dự Kiến (QĐ)']) || 0) / 100;
 
         const luykeCardData = {
-            dtThucLK,
-            dtQdLK,
-            dtGop,
-            phanTramQd,
-            phanTramGop,
-            phanTramTargetThuc,
-            phanTramTargetQd
+            dtThucLK, dtQdLK, dtGop, phanTramQd, phanTramGop,
+            phanTramTargetThuc, phanTramTargetQd
         };
         
-        ui.renderLuykeKpiCards(luykeCardData, appState.masterReportData.luyke, goals);
+        ui.renderLuykeKpiCards(luykeCardData, comparisonData, appState.masterReportData.luyke || [], goals);
     },
 
     displayCompetitionResultsFromLuyKe: (text) => {
@@ -156,6 +160,10 @@ const ui = {
 
         appState.competitionData = services.parseCompetitionDataFromLuyKe(text);
         const data = appState.competitionData;
+        if(data.length === 0) {
+             container.innerHTML = '<p class="text-yellow-600 font-bold col-span-2">Không tìm thấy dữ liệu thi đua trong văn bản đã dán.</p>';
+            return;
+        }
         
         const dataDoanhThu = data.filter(d => d.type === 'doanhThu');
         const dataSoLuong = data.filter(d => d.type === 'soLuong');
@@ -207,12 +215,16 @@ const ui = {
                         } else { 
                             dailyTarget = item.target - item.luyKe;
                         }
-                        return `<tr class="hover:bg-purple-50">
-                            <td class="px-2 py-2 font-semibold">${item.name}</td>
-                            <td class="px-2 py-2 text-right font-bold">${ui.formatNumberOrDash(item.luyKe, 0)}</td>
-                            <td class="px-2 py-2 text-right font-bold">${ui.formatNumberOrDash(item.target, 0)}</td>
-                            <td class="px-2 py-2 text-right font-bold text-blue-600">${item.hoanThanh}</td>
-                            <td class="px-2 py-2 text-right font-bold text-orange-600">${ui.formatNumberOrDash(dailyTarget, 0)}</td>
+                        const hoanThanhValue = parseFloat(String(item.hoanThanh).replace('%', '')) || 0;
+                        const rowClass = hoanThanhValue < 100 ? 'competition-row-below-100' : 'hover:bg-purple-50';
+                        const formattedHoanThanh = ui.formatPercentage(hoanThanhValue / 100);
+
+                        return `<tr class="${rowClass}">
+                            <td class="px-2 py-2 font-semibold line-clamp-2">${item.name}</td>
+                            <td class="px-2 py-2 text-right font-bold">${ui.formatNumberOrDash(item.luyKe)}</td>
+                            <td class="px-2 py-2 text-right font-bold">${ui.formatNumberOrDash(item.target)}</td>
+                            <td class="px-2 py-2 text-right font-bold text-blue-600">${formattedHoanThanh}</td>
+                            <td class="px-2 py-2 text-right font-bold text-orange-600">${ui.formatNumberOrDash(dailyTarget)}</td>
                         </tr>`
                     }).join('')}</tbody></table></div></div>`;
         };
@@ -267,7 +279,7 @@ const ui = {
         else if (title.includes('Trang Trí')) titleClass = 'department-header-tt';
 
         const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
-        let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}">
+        let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="7">
                         <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                             <tr>
                                 <th class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên <span class="sort-indicator"></span></th>
@@ -284,22 +296,22 @@ const ui = {
             const qdClass = item.hieuQuaQuyDoi < (mucTieu.phanTramQD / 100) ? 'cell-performance is-below' : '';
             const tcClass = item.tyLeTraCham < (mucTieu.phanTramTC / 100) ? 'cell-performance is-below' : '';
             tableHTML += `<tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2 font-semibold">${item.hoTen}</td>
-                    <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item.doanhThu / 1000000, 2)}</td>
-                    <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item.doanhThuQuyDoi / 1000000, 2)}</td>
+                    <td class="px-4 py-2 font-semibold line-clamp-2">${item.hoTen}</td>
+                    <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item.doanhThu / 1000000)}</td>
+                    <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item.doanhThuQuyDoi / 1000000)}</td>
                     <td class="px-4 py-2 text-right font-bold ${qdClass}">${ui.formatPercentage(item.hieuQuaQuyDoi)}</td>
-                    <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item.doanhThuTraGop / 1000000, 2)}</td>
+                    <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item.doanhThuTraGop / 1000000)}</td>
                     <td class="px-4 py-2 text-right font-bold ${tcClass}">${ui.formatPercentage(item.tyLeTraCham)}</td>
-                    <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item.doanhThuChuaXuat / 1000000, 2)}</td></tr>`;
+                    <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item.doanhThuChuaXuat / 1000000)}</td></tr>`;
         });
          tableHTML += `</tbody><tfoot class="table-footer font-bold"><tr>
                     <td class="px-4 py-2">Tổng</td>
-                    <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.doanhThu / 1000000, 2)}</td>
-                    <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.doanhThuQuyDoi / 1000000, 2)}</td>
+                    <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.doanhThu / 1000000)}</td>
+                    <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.doanhThuQuyDoi / 1000000)}</td>
                     <td class="px-4 py-2 text-right">${ui.formatPercentage(totals.hieuQuaQuyDoi)}</td>
-                    <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.doanhThuTraGop / 1000000, 2)}</td>
+                    <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.doanhThuTraGop / 1000000)}</td>
                     <td class="px-4 py-2 text-right">${ui.formatPercentage(totals.tyLeTraCham)}</td>
-                    <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.doanhThuChuaXuat / 1000000, 2)}</td>
+                    <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.doanhThuChuaXuat / 1000000)}</td>
                 </tr></tfoot></table></div></div>`;
         return tableHTML;
     },
@@ -350,7 +362,7 @@ const ui = {
         else if (title.includes('Trang Trí')) titleClass = 'department-header-tt';
 
         const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
-        let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title} <span class="text-sm font-normal text-gray-500">(Thu nhập DK TB: ${ui.formatNumberOrDash(averageProjectedIncome / 1000000, 2)})</span></h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="thunhap">
+        let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title} <span class="text-sm font-normal text-gray-500">(Thu nhập DK TB: ${ui.formatNumberOrDash(averageProjectedIncome / 1000000)})</span></h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="thunhap" data-capture-columns="6">
                         <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                             <tr>
                                 <th class="${headerClass('hoTen')}" data-sort="hoTen">Họ Tên <span class="sort-indicator"></span></th>
@@ -364,21 +376,21 @@ const ui = {
         sortedData.forEach(nv => {
             const incomeDkCellClass = nv.thuNhapDuKien < averageProjectedIncome ? 'cell-performance is-below' : '';
             tableHTML += `<tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2 font-semibold">${nv.hoTen}</td>
-                    <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(nv.gioCong, 1)}</td>
-                    <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(nv.thuongNong / 1000000, 2)}</td>
-                    <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(nv.thuongERP / 1000000, 2)}</td>
-                    <td class="px-4 py-2 text-right font-bold text-blue-600">${ui.formatNumberOrDash(nv.tongThuNhap / 1000000, 2)}</td>
-                    <td class="px-4 py-2 text-right font-bold text-green-600 ${incomeDkCellClass}">${ui.formatNumberOrDash(nv.thuNhapDuKien / 1000000, 2)}</td></tr>`;
+                    <td class="px-4 py-2 font-semibold line-clamp-2">${nv.hoTen}</td>
+                    <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(nv.gioCong)}</td>
+                    <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(nv.thuongNong / 1000000)}</td>
+                    <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(nv.thuongERP / 1000000)}</td>
+                    <td class="px-4 py-2 text-right font-bold text-blue-600">${ui.formatNumberOrDash(nv.tongThuNhap / 1000000)}</td>
+                    <td class="px-4 py-2 text-right font-bold text-green-600 ${incomeDkCellClass}">${ui.formatNumberOrDash(nv.thuNhapDuKien / 1000000)}</td></tr>`;
         });
         tableHTML += `</tbody><tfoot class="table-footer font-bold">
             <tr>
                 <td class="px-4 py-2">Tổng</td>
-                <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.gioCong, 1)}</td>
-                <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.thuongNong / 1000000, 2)}</td>
-                <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.thuongERP / 1000000, 2)}</td>
-                <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.tongThuNhap / 1000000, 2)}</td>
-                <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.thuNhapDuKien / 1000000, 2)}</td>
+                <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.gioCong)}</td>
+                <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.thuongNong / 1000000)}</td>
+                <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.thuongERP / 1000000)}</td>
+                <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.tongThuNhap / 1000000)}</td>
+                <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.thuNhapDuKien / 1000000)}</td>
             </tr>
         </tfoot></table></div></div>`;
         return tableHTML;
@@ -439,7 +451,7 @@ const ui = {
         else if (title.includes('Trang Trí')) titleClass = 'department-header-tt';
 
         const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
-        let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}">
+        let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="11">
                     <thead class="text-xs text-slate-800 uppercase font-bold">
                         <tr>
                             <th class="${headerClass('hoTen')}" data-sort="hoTen">Tên nhân viên <span class="sort-indicator"></span></th>
@@ -465,12 +477,12 @@ const ui = {
             const bhClass = item.pctBaoHiem < (mucTieu.phanTramBaoHiem / 100) ? 'cell-performance is-below' : '';
 
             tableHTML += `<tr class="hover:bg-gray-50">
-                <td class="px-4 py-2 font-semibold">${item.hoTen}</td>
-                <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item.dtICT / 1000000, 2)}</td>
-                <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item.dtPhuKien / 1000000, 2)}</td>
+                <td class="px-4 py-2 font-semibold line-clamp-2">${item.hoTen}</td>
+                <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item.dtICT / 1000000)}</td>
+                <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item.dtPhuKien / 1000000)}</td>
                 <td class="px-4 py-2 text-right font-bold ${pkClass}">${ui.formatPercentage(item.pctPhuKien)}</td>
-                <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item.dtCE / 1000000, 2)}</td>
-                <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item.dtGiaDung / 1000000, 2)}</td>
+                <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item.dtCE / 1000000)}</td>
+                <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item.dtGiaDung / 1000000)}</td>
                 <td class="px-4 py-2 text-right font-bold ${gdClass}">${ui.formatPercentage(item.pctGiaDung)}</td>
                 <td class="px-4 py-2 text-right font-bold ${mlnClass}">${ui.formatPercentage(item.pctMLN)}</td>
                 <td class="px-4 py-2 text-right font-bold ${simClass}">${ui.formatPercentage(item.pctSim)}</td>
@@ -480,11 +492,11 @@ const ui = {
         tableHTML += `</tbody><tfoot class="table-footer font-bold">
             <tr>
                 <td class="px-4 py-2">Tổng</td>
-                <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.dtICT / 1000000, 2)}</td>
-                <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.dtPhuKien / 1000000, 2)}</td>
+                <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.dtICT / 1000000)}</td>
+                <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.dtPhuKien / 1000000)}</td>
                 <td class="px-4 py-2 text-right">${ui.formatPercentage(totals.pctPhuKien)}</td>
-                <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.dtCE / 1000000, 2)}</td>
-                <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.dtGiaDung / 1000000, 2)}</td>
+                <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.dtCE / 1000000)}</td>
+                <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.dtGiaDung / 1000000)}</td>
                 <td class="px-4 py-2 text-right">${ui.formatPercentage(totals.pctGiaDung)}</td>
                 <td class="px-4 py-2 text-right">${ui.formatPercentage(totals.pctMLN)}</td>
                 <td class="px-4 py-2 text-right">${ui.formatPercentage(totals.pctSim)}</td>
@@ -505,11 +517,11 @@ const ui = {
              container.innerHTML = '<p class="text-yellow-600 font-semibold">Không tìm thấy doanh thu cho các ngành hàng chính.</p>'; return;
         }
         let finalHTML = `<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                ${ui.renderCategoryTable('ICT', `${sortStatePrefix}_ict`, reportData, 'dtICT', 'slICT', ['slDienThoai', 'slLaptop'], ['SL Điện thoại', 'SL Laptop'])}
-                ${ui.renderCategoryTable('PHỤ KIỆN', `${sortStatePrefix}_phukien`, reportData, 'dtPhuKien', 'slPhuKien', ['slPinSDP', 'slCamera', 'slTaiNgheBLT'], ['SL Pin SDP', 'SL Camera', 'SL Tai nghe BLT'])}
-                ${ui.renderCategoryTable('GIA DỤNG', `${sortStatePrefix}_giadung`, reportData, 'dtGiaDung', 'slGiaDung', ['slNoiChien', 'slMLN', 'slRobotHB'], ['SL Nồi chiên', 'SL MLN', 'SL Robot HB'])}
-                ${ui.renderCategoryTable('CE', `${sortStatePrefix}_ce`, reportData, 'dtCE', 'slCE', ['slTivi', 'slTuLanh', 'slMayGiat', 'slMayLanh'], ['SL Tivi', 'SL Tủ lạnh', 'SL Máy giặt', 'SL Máy lạnh'])}
-                <div class="lg:col-span-2">
+                <div data-capture-group="1" data-capture-columns="6">${ui.renderCategoryTable('ICT', `${sortStatePrefix}_ict`, reportData, 'dtICT', 'slICT', ['slDienThoai', 'slLaptop'], ['SL Điện thoại', 'SL Laptop'])}</div>
+                <div data-capture-group="1" data-capture-columns="6">${ui.renderCategoryTable('PHỤ KIỆN', `${sortStatePrefix}_phukien`, reportData, 'dtPhuKien', 'slPhuKien', ['slPinSDP', 'slCamera', 'slTaiNgheBLT'], ['SL Pin SDP', 'SL Camera', 'SL Tai nghe BLT'])}</div>
+                <div data-capture-group="2" data-capture-columns="6">${ui.renderCategoryTable('GIA DỤNG', `${sortStatePrefix}_giadung`, reportData, 'dtGiaDung', 'slGiaDung', ['slNoiChien', 'slMLN', 'slRobotHB'], ['SL Nồi chiên', 'SL MLN', 'SL Robot HB'])}</div>
+                <div data-capture-group="2" data-capture-columns="6">${ui.renderCategoryTable('CE', `${sortStatePrefix}_ce`, reportData, 'dtCE', 'slCE', ['slTivi', 'slTuLanh', 'slMayGiat', 'slMayLanh'], ['SL Tivi', 'SL Tủ lạnh', 'SL Máy giặt', 'SL Máy lạnh'])}</div>
+                <div class="lg:col-span-2" data-capture-group="3" data-capture-columns="7">
                     ${ui.renderCategoryTable('BẢO HIỂM', `${sortStatePrefix}_baohiem`, reportData, 'dtBaoHiem', 'slBaoHiem', ['slBH1d1', 'slBHXM', 'slBHRV', 'slBHMR'], ['BH 1-1', 'BHXM', 'BHRV', 'BHMR'])}
                 </div></div>`;
         container.innerHTML = finalHTML;
@@ -537,7 +549,7 @@ const ui = {
 
         let tableHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden h-full flex flex-col">
             <h4 class="text-lg font-bold p-4 border-b border-gray-200 category-header-${colorKey}">${title}</h4>
-            <div class="overflow-x-auto flex-grow"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${type}"><thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold"><tr>
+            <div class="overflow-x-auto flex-grow"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${type}" data-capture-columns="${3 + keys.length}"><thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold"><tr>
                 <th class="${headerClass('hoTen')}" data-sort="hoTen">Tên nhân viên <span class="sort-indicator"></span></th>
                 <th class="${headerClass(slField)} text-right header-highlight" data-sort="${slField}">SL <span class="sort-indicator"></span></th>
                 <th class="${headerClass(revenueField)} text-right header-highlight" data-sort="${revenueField}">Doanh thu thực <span class="sort-indicator"></span></th>`;
@@ -546,16 +558,16 @@ const ui = {
         });
         tableHTML += `</tr></thead><tbody>`;
         sortedData.forEach(item => {
-            tableHTML += `<tr class="hover:bg-gray-50"><td class="px-4 py-2 font-semibold">${item.hoTen}</td>
+            tableHTML += `<tr class="hover:bg-gray-50"><td class="px-4 py-2 font-semibold line-clamp-2">${item.hoTen}</td>
                 <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item[slField])}</td>
-                <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item[revenueField] / 1000000, 2)}</td>`;
+                <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item[revenueField] / 1000000)}</td>`;
             keys.forEach(k => { tableHTML += `<td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item[k])}</td>`; });
             tableHTML += `</tr>`;
         });
         tableHTML += `</tbody><tfoot class="table-footer font-bold">
                 <tr><td class="px-4 py-2">Tổng</td>
                 <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals[slField])}</td>
-                <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals[revenueField] / 1000000, 2)}</td>`;
+                <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals[revenueField] / 1000000)}</td>`;
         keys.forEach(k => { tableHTML += `<td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals[k])}</td>`; });
         tableHTML += `</tr></tfoot></table></div></div>`;
         return tableHTML;
@@ -577,18 +589,15 @@ const ui = {
         const warehouseOptions = createOptionsHTML(uniqueWarehouses);
         const departmentOptions = createOptionsHTML(uniqueDepartments);
 
-        // Populate filter bars
         ['luyke', 'sknv', 'realtime'].forEach(prefix => {
             document.getElementById(`${prefix}-filter-warehouse`).innerHTML = warehouseOptions;
             document.getElementById(`${prefix}-filter-department`).innerHTML = departmentOptions;
             ui.updateEmployeeFilter(prefix);
         });
         
-        // Populate goal setting dropdowns
         document.getElementById('luyke-goal-warehouse-select').innerHTML = createOptionsHTML(uniqueWarehouses, false);
         document.getElementById('rt-goal-warehouse-select').innerHTML = createOptionsHTML(uniqueWarehouses, false);
 
-        // Populate SKNV employee details filter
         const sknvEmployeeFilter = document.getElementById('sknv-employee-filter');
         if (sknvEmployeeFilter) {
             sknvEmployeeFilter.innerHTML = '<option value="">-- Tổng hợp --</option>' + danhSachNhanVien
@@ -624,64 +633,75 @@ const ui = {
         const detailsContainer = document.getElementById('sknv-details-container');
         const summaryContainer = document.getElementById('sknv-summary-container');
         const selectedMaNV = document.getElementById('sknv-employee-filter')?.value;
-        
+    
         if (!detailsContainer || !summaryContainer) return;
-        
-        // Always display the summary report regardless of selection
-        ui.displaySknvSummaryReport(filteredReport);
-        
+    
         if (!selectedMaNV) {
             detailsContainer.classList.add('hidden');
             summaryContainer.classList.remove('hidden');
+            ui.displaySknvSummaryReport(filteredReport);
             return;
         }
-        
+    
         summaryContainer.classList.add('hidden');
         detailsContainer.classList.remove('hidden');
-
+    
         const employeeData = appState.masterReportData.sknv.find(nv => String(nv.maNV).trim() == String(selectedMaNV).trim());
-        if (!employeeData) {
-            detailsContainer.innerHTML = '<p class="text-red-500">Không tìm thấy dữ liệu cho nhân viên đã chọn.</p>'; return;
-        }
-
-        const departmentAverages = services.calculateDepartmentAverages(employeeData.boPhan, appState.masterReportData.sknv);
         
-        const evaluationCounts = { above: 0, below: 0, total: 0 };
-        const getEvaluation = (value, avgValue) => {
-            const result = { text: '-', class: '' };
-            if (!isFinite(value) || avgValue === undefined || !isFinite(avgValue)) return result;
-            evaluationCounts.total++;
-            if (value >= avgValue) { result.text = 'Trên TB'; result.class = 'text-green-600'; evaluationCounts.above++; } 
-            else { result.text = 'Dưới TB'; result.class = 'cell-performance is-below text-red-600'; evaluationCounts.below++; }
-            return result;
+        if (!employeeData) {
+            detailsContainer.innerHTML = '<p class="text-red-500">Không tìm thấy dữ liệu cho nhân viên đã chọn. Vui lòng tải lại dữ liệu YCX nếu cần.</p>';
+            return;
+        }
+    
+        const departmentAverages = services.calculateDepartmentAverages(employeeData.boPhan, filteredReport);
+        
+        const evaluationCounts = {
+            doanhthu: { above: 0, below: 0, total: 7 },
+            nangsuat: { above: 0, below: 0, total: 7 },
+            hieuqua: { above: 0, below: 0, total: 6 },
+            dongia: { above: 0, below: 0, total: 7 },
+            qdc: { above: 0, below: 0, total: 0 }
         };
+
+        const countEvaluation = (group, value, avgValue, higherIsBetter = true) => {
+            if (!isFinite(value) || avgValue === undefined || !isFinite(avgValue)) return;
+            let isAbove = higherIsBetter ? (value >= avgValue) : (value <= avgValue);
+            if (isAbove) { evaluationCounts[group].above++; } else { evaluationCounts[group].below++; }
+        };
+        
         const createDetailTableHtml = (title, colorClass, rows) => {
             let rowsHtml = rows.map(row => {
-                const evaluation = getEvaluation(row.rawValue, row.rawAverage);
+                const evaluation = ui.getSknvEvaluation(row.rawValue, row.rawAverage, row.higherIsBetter);
                 return `<tr class="border-t"><td class="px-4 py-2 font-medium text-gray-700">${row.label}</td><td class="px-4 py-2 text-right font-bold text-gray-900 ${row.valueClass || ''}">${row.value}</td><td class="px-4 py-2 text-right font-medium text-gray-500">${row.average}</td><td class="px-4 py-2 text-center font-semibold ${evaluation.class}">${evaluation.text}</td></tr>`
             }).join('');
-            return `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"><h4 class="text-lg font-bold p-3 border-b ${colorClass}">${title}</h4><table class="min-w-full text-sm table-bordered table-striped">
+            return `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"><h4 class="text-lg font-bold p-3 border-b ${colorClass}">${title}</h4><table class="min-w-full text-sm table-bordered table-striped" data-capture-columns="4">
                 <thead class="sknv-subtable-header"><tr><th class="px-4 py-2 text-left">Chỉ số</th><th class="px-4 py-2 text-right">Giá trị</th><th class="px-4 py-2 text-right">Giá trị TB</th><th class="px-4 py-2 text-center">Đánh giá</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
         };
+        
         const { mucTieu } = employeeData;
+
         const doanhThuData = [
-            { label: 'Doanh thu thực', value: ui.formatNumberOrDash(employeeData.doanhThu / 1000000, 2), average: ui.formatNumberOrDash((departmentAverages.doanhThu || 0) / 1000000, 2), rawValue: employeeData.doanhThu, rawAverage: departmentAverages.doanhThu },
-            { label: 'Doanh thu quy đổi', value: ui.formatNumberOrDash(employeeData.doanhThuQuyDoi / 1000000, 2), average: ui.formatNumberOrDash((departmentAverages.doanhThuQuyDoi || 0) / 1000000, 2), rawValue: employeeData.doanhThuQuyDoi, rawAverage: departmentAverages.doanhThuQuyDoi },
+            { label: 'Doanh thu thực', value: ui.formatNumberOrDash(employeeData.doanhThu / 1000000), average: ui.formatNumberOrDash((departmentAverages.doanhThu || 0) / 1000000), rawValue: employeeData.doanhThu, rawAverage: departmentAverages.doanhThu },
+            { label: 'Doanh thu quy đổi', value: ui.formatNumberOrDash(employeeData.doanhThuQuyDoi / 1000000), average: ui.formatNumberOrDash((departmentAverages.doanhThuQuyDoi || 0) / 1000000), rawValue: employeeData.doanhThuQuyDoi, rawAverage: departmentAverages.doanhThuQuyDoi },
             { label: '% Quy đổi', value: ui.formatPercentage(employeeData.hieuQuaQuyDoi), valueClass: employeeData.hieuQuaQuyDoi < (mucTieu.phanTramQD/100) ? 'cell-performance is-below' : '', average: ui.formatPercentage(departmentAverages.hieuQuaQuyDoi), rawValue: employeeData.hieuQuaQuyDoi, rawAverage: departmentAverages.hieuQuaQuyDoi },
-            { label: 'Doanh thu CE', value: ui.formatNumberOrDash(employeeData.dtCE / 1000000, 2), average: ui.formatNumberOrDash((departmentAverages.dtCE || 0) / 1000000, 2), rawValue: employeeData.dtCE, rawAverage: departmentAverages.dtCE },
-            { label: 'Doanh thu ICT', value: ui.formatNumberOrDash(employeeData.dtICT / 1000000, 2), average: ui.formatNumberOrDash((departmentAverages.dtICT || 0) / 1000000, 2), rawValue: employeeData.dtICT, rawAverage: departmentAverages.dtICT },
-            { label: 'Doanh thu trả chậm', value: ui.formatNumberOrDash(employeeData.doanhThuTraGop / 1000000, 2), average: ui.formatNumberOrDash((departmentAverages.doanhThuTraGop || 0) / 1000000, 2), rawValue: employeeData.doanhThuTraGop, rawAverage: departmentAverages.doanhThuTraGop },
+            { label: 'Doanh thu CE', value: ui.formatNumberOrDash(employeeData.dtCE / 1000000), average: ui.formatNumberOrDash((departmentAverages.dtCE || 0) / 1000000), rawValue: employeeData.dtCE, rawAverage: departmentAverages.dtCE },
+            { label: 'Doanh thu ICT', value: ui.formatNumberOrDash(employeeData.dtICT / 1000000), average: ui.formatNumberOrDash((departmentAverages.dtICT || 0) / 1000000), rawValue: employeeData.dtICT, rawAverage: departmentAverages.dtICT },
+            { label: 'Doanh thu trả chậm', value: ui.formatNumberOrDash(employeeData.doanhThuTraGop / 1000000), average: ui.formatNumberOrDash((departmentAverages.doanhThuTraGop || 0) / 1000000), rawValue: employeeData.doanhThuTraGop, rawAverage: departmentAverages.doanhThuTraGop },
             { label: '% Trả chậm', value: ui.formatPercentage(employeeData.tyLeTraCham), valueClass: employeeData.tyLeTraCham < (mucTieu.phanTramTC/100) ? 'cell-performance is-below' : '', average: ui.formatPercentage(departmentAverages.tyLeTraCham), rawValue: employeeData.tyLeTraCham, rawAverage: departmentAverages.tyLeTraCham }
         ];
+        doanhThuData.forEach(d => countEvaluation('doanhthu', d.rawValue, d.rawAverage));
+
         const nangSuatData = [
-            { label: 'Thưởng nóng', value: ui.formatNumberOrDash(employeeData.thuongNong / 1000000, 2), average: ui.formatNumberOrDash((departmentAverages.thuongNong || 0) / 1000000, 2), rawValue: employeeData.thuongNong, rawAverage: departmentAverages.thuongNong },
-            { label: 'Thưởng ERP', value: ui.formatNumberOrDash(employeeData.thuongERP / 1000000, 2), average: ui.formatNumberOrDash((departmentAverages.thuongERP || 0) / 1000000, 2), rawValue: employeeData.thuongERP, rawAverage: departmentAverages.thuongERP },
-            { label: 'Thu nhập lũy kế', value: ui.formatNumberOrDash(employeeData.tongThuNhap / 1000000, 2), average: ui.formatNumberOrDash((departmentAverages.tongThuNhap || 0) / 1000000, 2), rawValue: employeeData.tongThuNhap, rawAverage: departmentAverages.tongThuNhap },
-            { label: 'Thu nhập dự kiến', value: ui.formatNumberOrDash(employeeData.thuNhapDuKien / 1000000, 2), average: ui.formatNumberOrDash((departmentAverages.thuNhapDuKien || 0) / 1000000, 2), rawValue: employeeData.thuNhapDuKien, rawAverage: departmentAverages.thuNhapDuKien },
-            { label: 'Giờ công', value: ui.formatNumberOrDash(employeeData.gioCong, 1), average: ui.formatNumberOrDash(departmentAverages.gioCong, 1), rawValue: employeeData.gioCong, rawAverage: departmentAverages.gioCong },
-            { label: 'Thu nhập/GC', value: ui.formatNumberOrDash(employeeData.gioCong > 0 ? employeeData.tongThuNhap / employeeData.gioCong : 0, 0), average: ui.formatNumberOrDash((departmentAverages.gioCong || 0) > 0 ? (departmentAverages.tongThuNhap || 0) / departmentAverages.gioCong : 0, 0), rawValue: employeeData.gioCong > 0 ? employeeData.tongThuNhap / employeeData.gioCong : 0, rawAverage: (departmentAverages.gioCong || 0) > 0 ? (departmentAverages.tongThuNhap || 0) / departmentAverages.gioCong : 0 },
-            { label: 'Doanh thu QĐ/GC', value: ui.formatNumberOrDash(employeeData.gioCong > 0 ? employeeData.doanhThuQuyDoi / employeeData.gioCong : 0, 0), average: ui.formatNumberOrDash((departmentAverages.gioCong || 0) > 0 ? (departmentAverages.doanhThuQuyDoi || 0) / departmentAverages.gioCong : 0, 0), rawValue: employeeData.gioCong > 0 ? employeeData.doanhThuQuyDoi / employeeData.gioCong : 0, rawAverage: (departmentAverages.gioCong || 0) > 0 ? (departmentAverages.doanhThuQuyDoi || 0) / departmentAverages.gioCong : 0 }
+            { label: 'Thưởng nóng', value: ui.formatNumberOrDash(employeeData.thuongNong / 1000000), average: ui.formatNumberOrDash((departmentAverages.thuongNong || 0) / 1000000), rawValue: employeeData.thuongNong, rawAverage: departmentAverages.thuongNong },
+            { label: 'Thưởng ERP', value: ui.formatNumberOrDash(employeeData.thuongERP / 1000000), average: ui.formatNumberOrDash((departmentAverages.thuongERP || 0) / 1000000), rawValue: employeeData.thuongERP, rawAverage: departmentAverages.thuongERP },
+            { label: 'Thu nhập lũy kế', value: ui.formatNumberOrDash(employeeData.tongThuNhap / 1000000), average: ui.formatNumberOrDash((departmentAverages.tongThuNhap || 0) / 1000000), rawValue: employeeData.tongThuNhap, rawAverage: departmentAverages.tongThuNhap },
+            { label: 'Thu nhập dự kiến', value: ui.formatNumberOrDash(employeeData.thuNhapDuKien / 1000000), average: ui.formatNumberOrDash((departmentAverages.thuNhapDuKien || 0) / 1000000), rawValue: employeeData.thuNhapDuKien, rawAverage: departmentAverages.thuNhapDuKien },
+            { label: 'Giờ công', value: ui.formatNumberOrDash(employeeData.gioCong), average: ui.formatNumberOrDash(departmentAverages.gioCong), rawValue: employeeData.gioCong, rawAverage: departmentAverages.gioCong },
+            { label: 'Thu nhập/GC', value: ui.formatNumberOrDash(employeeData.gioCong > 0 ? employeeData.tongThuNhap / employeeData.gioCong : 0), average: ui.formatNumberOrDash((departmentAverages.gioCong || 0) > 0 ? (departmentAverages.tongThuNhap || 0) / departmentAverages.gioCong : 0), rawValue: employeeData.gioCong > 0 ? employeeData.tongThuNhap / employeeData.gioCong : 0, rawAverage: (departmentAverages.gioCong || 0) > 0 ? (departmentAverages.tongThuNhap || 0) / departmentAverages.gioCong : 0 },
+            { label: 'Doanh thu QĐ/GC', value: ui.formatNumberOrDash(employeeData.gioCong > 0 ? employeeData.doanhThuQuyDoi / employeeData.gioCong : 0), average: ui.formatNumberOrDash((departmentAverages.gioCong || 0) > 0 ? (departmentAverages.doanhThuQuyDoi || 0) / departmentAverages.gioCong : 0), rawValue: employeeData.gioCong > 0 ? employeeData.doanhThuQuyDoi / employeeData.gioCong : 0, rawAverage: (departmentAverages.gioCong || 0) > 0 ? (departmentAverages.doanhThuQuyDoi || 0) / departmentAverages.gioCong : 0 }
         ];
+        nangSuatData.forEach(d => countEvaluation('nangsuat', d.rawValue, d.rawAverage));
+
         const hieuQuaData = [
             { label: '% PK', value: ui.formatPercentage(employeeData.pctPhuKien), valueClass: employeeData.pctPhuKien < (mucTieu.phanTramPhuKien/100) ? 'cell-performance is-below' : '', average: ui.formatPercentage(departmentAverages.pctPhuKien), rawValue: employeeData.pctPhuKien, rawAverage: departmentAverages.pctPhuKien },
             { label: '% Gia dụng', value: ui.formatPercentage(employeeData.pctGiaDung), valueClass: employeeData.pctGiaDung < (mucTieu.phanTramGiaDung/100) ? 'cell-performance is-below' : '', average: ui.formatPercentage(departmentAverages.pctGiaDung), rawValue: employeeData.pctGiaDung, rawAverage: departmentAverages.pctGiaDung },
@@ -690,16 +710,37 @@ const ui = {
             { label: '% VAS', value: ui.formatPercentage(employeeData.pctVAS), valueClass: employeeData.pctVAS < (mucTieu.phanTramVAS/100) ? 'cell-performance is-below' : '', average: ui.formatPercentage(departmentAverages.pctVAS), rawValue: employeeData.pctVAS, rawAverage: departmentAverages.pctVAS },
             { label: '% Bảo hiểm', value: ui.formatPercentage(employeeData.pctBaoHiem), valueClass: employeeData.pctBaoHiem < (mucTieu.phanTramBaoHiem/100) ? 'cell-performance is-below' : '', average: ui.formatPercentage(departmentAverages.pctBaoHiem), rawValue: employeeData.pctBaoHiem, rawAverage: departmentAverages.pctBaoHiem },
         ];
-        
-        const titleHtml = `CHI TIẾT - ${employeeData.hoTen} <span class="font-normal text-sm">(Trên TB: <span class="font-bold text-green-300">${evaluationCounts.above}</span>, Dưới TB: <span class="font-bold text-yellow-300">${evaluationCounts.below}</span> / Tổng: ${evaluationCounts.total})</span>`;
+        hieuQuaData.forEach(d => countEvaluation('hieuqua', d.rawValue, d.rawAverage));
 
-        detailsContainer.innerHTML = `<div class="p-4 mb-6 bg-blue-600 text-white rounded-lg shadow-lg border border-blue-700"><h3 class="text-2xl font-bold text-center uppercase">${titleHtml}</h3></div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="space-y-6">${createDetailTableHtml('Doanh thu', 'header-bg-blue', doanhThuData)}</div>
-                <div class="space-y-6">${createDetailTableHtml('Năng suất', 'header-bg-green', nangSuatData)}</div>
-                <div class="md:col-span-2">${createDetailTableHtml('Hiệu quả khai thác', 'header-bg-yellow', hieuQuaData)}</div>
+        const donGiaData = [
+             { label: 'Đơn giá TB', value: ui.formatNumberOrDash(employeeData.donGiaTrungBinh / 1000000), average: ui.formatNumberOrDash(departmentAverages.donGiaTrungBinh / 1000000), rawValue: employeeData.donGiaTrungBinh, rawAverage: departmentAverages.donGiaTrungBinh },
+             { label: 'Đơn giá Tivi', value: ui.formatNumberOrDash(employeeData.donGiaTivi / 1000000), average: ui.formatNumberOrDash(departmentAverages.donGiaTivi / 1000000), rawValue: employeeData.donGiaTivi, rawAverage: departmentAverages.donGiaTivi },
+             { label: 'Đơn giá Tủ lạnh', value: ui.formatNumberOrDash(employeeData.donGiaTuLanh / 1000000), average: ui.formatNumberOrDash(departmentAverages.donGiaTuLanh / 1000000), rawValue: employeeData.donGiaTuLanh, rawAverage: departmentAverages.donGiaTuLanh },
+             { label: 'Đơn giá Máy giặt', value: ui.formatNumberOrDash(employeeData.donGiaMayGiat / 1000000), average: ui.formatNumberOrDash(departmentAverages.donGiaMayGiat / 1000000), rawValue: employeeData.donGiaMayGiat, rawAverage: departmentAverages.donGiaMayGiat },
+             { label: 'Đơn giá Máy lạnh', value: ui.formatNumberOrDash(employeeData.donGiaMayLanh / 1000000), average: ui.formatNumberOrDash(departmentAverages.donGiaMayLanh / 1000000), rawValue: employeeData.donGiaMayLanh, rawAverage: departmentAverages.donGiaMayLanh },
+             { label: 'Đơn giá Điện thoại', value: ui.formatNumberOrDash(employeeData.donGiaDienThoai / 1000000), average: ui.formatNumberOrDash(departmentAverages.donGiaDienThoai / 1000000), rawValue: employeeData.donGiaDienThoai, rawAverage: departmentAverages.donGiaDienThoai },
+             { label: 'Đơn giá Laptop', value: ui.formatNumberOrDash(employeeData.donGiaLaptop / 1000000), average: ui.formatNumberOrDash(departmentAverages.donGiaLaptop / 1000000), rawValue: employeeData.donGiaLaptop, rawAverage: departmentAverages.donGiaLaptop },
+        ];
+        donGiaData.forEach(d => countEvaluation('dongia', d.rawValue, d.rawAverage));
+
+        const totalAbove = evaluationCounts.doanhthu.above + evaluationCounts.nangsuat.above + evaluationCounts.hieuqua.above + evaluationCounts.dongia.above + evaluationCounts.qdc.above;
+        const totalBelow = evaluationCounts.doanhthu.below + evaluationCounts.nangsuat.below + evaluationCounts.hieuqua.below + evaluationCounts.dongia.below + evaluationCounts.qdc.below;
+        const totalCriteria = evaluationCounts.doanhthu.total + evaluationCounts.nangsuat.total + evaluationCounts.hieuqua.total + evaluationCounts.dongia.total + evaluationCounts.qdc.total;
+        const titleHtml = `CHI TIẾT - ${employeeData.hoTen} <span class="font-normal text-sm">(Trên TB: <span class="font-bold text-green-300">${totalAbove}</span>, Dưới TB: <span class="font-bold text-yellow-300">${totalBelow}</span> / Tổng: ${totalCriteria})</span>`;
+
+        detailsContainer.innerHTML = `<div class="p-4 mb-6 bg-blue-600 text-white rounded-lg shadow-lg border border-blue-700" data-capture-group="1"><h3 class="text-2xl font-bold text-center uppercase">${titleHtml}</h3></div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" data-capture-layout="grid">
+                <div class="space-y-6" data-capture-group="1">${createDetailTableHtml('Doanh thu', 'header-bg-blue', doanhThuData)}</div>
+                <div class="space-y-6" data-capture-group="1">${createDetailTableHtml('Năng suất', 'header-bg-green', nangSuatData)}</div>
+                <div class="space-y-6" data-capture-group="1">${createDetailTableHtml('Hiệu quả khai thác', 'header-bg-blue', hieuQuaData)}</div>
+                <div class="space-y-6" data-capture-group="1">${createDetailTableHtml('Đơn giá (Triệu)', 'header-bg-yellow', donGiaData)}</div>
+                <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6" data-capture-layout="grid">
+                    <div data-capture-group="1">${ui.renderSknvQdcTable(employeeData, departmentAverages, countEvaluation, evaluationCounts)}</div>
+                    <div data-capture-group="1">${ui.renderSknvNganhHangTable(employeeData)}</div>
+                </div>
             </div>`;
     },
+
     displaySknvSummaryReport: (reportData) => {
         const container = document.getElementById('sknv-summary-container');
         if (!container) return;
@@ -713,38 +754,58 @@ const ui = {
             const counts = {
                 doanhthu: { above: 0, below: 0, total: 7 },
                 nangsuat: { above: 0, below: 0, total: 7 },
-                hieuqua: { above: 0, below: 0, total: 6 }
+                hieuqua: { above: 0, below: 0, total: 6 },
+                dongia: { above: 0, below: 0, total: 7 },
+                qdc: { above: 0, below: 0, total: 0 }
             };
 
-            const check = (value, avg) => {
-                if (avg === undefined || !isFinite(value) || !isFinite(avg)) return 'equal';
-                return value >= avg ? 'above' : 'below';
+            const checkAndCount = (group, value, avg, higherIsBetter = true) => {
+                if (!isFinite(value) || avg === undefined || !isFinite(avg)) return;
+                const isAbove = higherIsBetter ? (value >= avg) : (value <= avg);
+                if (isAbove) counts[group].above++; else counts[group].below++;
             };
             
-            counts.doanhthu[check(employee.doanhThu, departmentAverages.doanhThu)]++;
-            counts.doanhthu[check(employee.doanhThuQuyDoi, departmentAverages.doanhThuQuyDoi)]++;
-            counts.doanhthu[check(employee.hieuQuaQuyDoi, departmentAverages.hieuQuaQuyDoi)]++;
-            counts.doanhthu[check(employee.dtCE, departmentAverages.dtCE)]++;
-            counts.doanhthu[check(employee.dtICT, departmentAverages.dtICT)]++;
-            counts.doanhthu[check(employee.doanhThuTraGop, departmentAverages.doanhThuTraGop)]++;
-            counts.doanhthu[check(employee.tyLeTraCham, departmentAverages.tyLeTraCham)]++;
+            checkAndCount('doanhthu', employee.doanhThu, departmentAverages.doanhThu);
+            checkAndCount('doanhthu', employee.doanhThuQuyDoi, departmentAverages.doanhThuQuyDoi);
+            checkAndCount('doanhthu', employee.hieuQuaQuyDoi, departmentAverages.hieuQuaQuyDoi);
+            checkAndCount('doanhthu', employee.dtCE, departmentAverages.dtCE);
+            checkAndCount('doanhthu', employee.dtICT, departmentAverages.dtICT);
+            checkAndCount('doanhthu', employee.doanhThuTraGop, departmentAverages.doanhThuTraGop);
+            checkAndCount('doanhthu', employee.tyLeTraCham, departmentAverages.tyLeTraCham);
 
-            counts.nangsuat[check(employee.thuongNong, departmentAverages.thuongNong)]++;
-            counts.nangsuat[check(employee.thuongERP, departmentAverages.thuongERP)]++;
-            counts.nangsuat[check(employee.tongThuNhap, departmentAverages.tongThuNhap)]++;
-            counts.nangsuat[check(employee.thuNhapDuKien, departmentAverages.thuNhapDuKien)]++;
-            counts.nangsuat[check(employee.gioCong, departmentAverages.gioCong)]++;
-            counts.nangsuat[check(employee.gioCong > 0 ? employee.tongThuNhap / employee.gioCong : 0, departmentAverages.gioCong > 0 ? departmentAverages.tongThuNhap / departmentAverages.gioCong : 0)]++;
-            counts.nangsuat[check(employee.gioCong > 0 ? employee.doanhThuQuyDoi / employee.gioCong : 0, departmentAverages.gioCong > 0 ? departmentAverages.doanhThuQuyDoi / departmentAverages.gioCong : 0)]++;
+            checkAndCount('nangsuat', employee.thuongNong, departmentAverages.thuongNong);
+            checkAndCount('nangsuat', employee.thuongERP, departmentAverages.thuongERP);
+            checkAndCount('nangsuat', employee.tongThuNhap, departmentAverages.tongThuNhap);
+            checkAndCount('nangsuat', employee.thuNhapDuKien, departmentAverages.thuNhapDuKien);
+            checkAndCount('nangsuat', employee.gioCong, departmentAverages.gioCong);
+            checkAndCount('nangsuat', employee.gioCong > 0 ? employee.tongThuNhap / employee.gioCong : 0, departmentAverages.gioCong > 0 ? departmentAverages.tongThuNhap / departmentAverages.gioCong : 0);
+            checkAndCount('nangsuat', employee.gioCong > 0 ? employee.doanhThuQuyDoi / employee.gioCong : 0, departmentAverages.gioCong > 0 ? departmentAverages.doanhThuQuyDoi / departmentAverages.gioCong : 0);
             
-            counts.hieuqua[check(employee.pctPhuKien, departmentAverages.pctPhuKien)]++;
-            counts.hieuqua[check(employee.pctGiaDung, departmentAverages.pctGiaDung)]++;
-            counts.hieuqua[check(employee.pctMLN, departmentAverages.pctMLN)]++;
-            counts.hieuqua[check(employee.pctSim, departmentAverages.pctSim)]++;
-            counts.hieuqua[check(employee.pctVAS, departmentAverages.pctVAS)]++;
-            counts.hieuqua[check(employee.pctBaoHiem, departmentAverages.pctBaoHiem)]++;
-            
-            const totalAbove = counts.doanhthu.above + counts.nangsuat.above + counts.hieuqua.above;
+            checkAndCount('hieuqua', employee.pctPhuKien, departmentAverages.pctPhuKien);
+            checkAndCount('hieuqua', employee.pctGiaDung, departmentAverages.pctGiaDung);
+            checkAndCount('hieuqua', employee.pctMLN, departmentAverages.pctMLN);
+            checkAndCount('hieuqua', employee.pctSim, departmentAverages.pctSim);
+            checkAndCount('hieuqua', employee.pctVAS, departmentAverages.pctVAS);
+            checkAndCount('hieuqua', employee.pctBaoHiem, departmentAverages.pctBaoHiem);
+
+            checkAndCount('dongia', employee.donGiaTrungBinh, departmentAverages.donGiaTrungBinh);
+            checkAndCount('dongia', employee.donGiaTivi, departmentAverages.donGiaTivi);
+            checkAndCount('dongia', employee.donGiaTuLanh, departmentAverages.donGiaTuLanh);
+            checkAndCount('dongia', employee.donGiaMayGiat, departmentAverages.donGiaMayGiat);
+            checkAndCount('dongia', employee.donGiaMayLanh, departmentAverages.donGiaMayLanh);
+            checkAndCount('dongia', employee.donGiaDienThoai, departmentAverages.donGiaDienThoai);
+            checkAndCount('dongia', employee.donGiaLaptop, departmentAverages.donGiaLaptop);
+
+            if(employee.qdc && departmentAverages.qdc) {
+                for (const key in employee.qdc) {
+                    if(departmentAverages.qdc[key]) {
+                        counts.qdc.total++;
+                        checkAndCount('qdc', employee.qdc[key].dtqd, departmentAverages.qdc[key].dtqd);
+                    }
+                }
+            }
+
+            const totalAbove = counts.doanhthu.above + counts.nangsuat.above + counts.hieuqua.above + counts.dongia.above + counts.qdc.above;
             return { ...employee, summary: counts, totalAbove };
         });
 
@@ -769,11 +830,15 @@ const ui = {
                     <th colspan="2">Doanh thu</th>
                     <th colspan="2">Năng suất</th>
                     <th colspan="2">Hiệu quả</th>
+                    <th colspan="2">Đơn giá</th>
+                    <th colspan="2">Nhóm Hàng QĐC</th>
                 </tr>
                 <tr>
-                    <th class="${headerClass('doanhthuAbove')}" data-sort="doanhthuAbove">Trên TB</th><th class="${headerClass('doanhthuBelow')}" data-sort="doanhthuBelow">Dưới TB</th>
-                    <th class="${headerClass('nangsuatAbove')}" data-sort="nangsuatAbove">Trên TB</th><th class="${headerClass('nangsuatBelow')}" data-sort="nangsuatBelow">Dưới TB</th>
-                    <th class="${headerClass('hieuquaAbove')}" data-sort="hieuquaAbove">Trên TB</th><th class="${headerClass('hieuquaBelow')}" data-sort="hieuquaBelow">Dưới TB</th>
+                    <th class="${headerClass('doanhthuAbove')}" data-sort="doanhthuAbove">Trên</th><th class="${headerClass('doanhthuBelow')}" data-sort="doanhthuBelow">Dưới</th>
+                    <th class="${headerClass('nangsuatAbove')}" data-sort="nangsuatAbove">Trên</th><th class="${headerClass('nangsuatBelow')}" data-sort="nangsuatBelow">Dưới</th>
+                    <th class="${headerClass('hieuquaAbove')}" data-sort="hieuquaAbove">Trên</th><th class="${headerClass('hieuquaBelow')}" data-sort="hieuquaBelow">Dưới</th>
+                    <th class="${headerClass('dongiaAbove')}" data-sort="dongiaAbove">Trên</th><th class="${headerClass('dongiaBelow')}" data-sort="dongiaBelow">Dưới</th>
+                    <th class="${headerClass('qdcAbove')}" data-sort="qdcAbove">Trên</th><th class="${headerClass('qdcBelow')}" data-sort="qdcBelow">Dưới</th>
                 </tr>
             </thead><tbody>`;
         
@@ -785,14 +850,16 @@ const ui = {
 
         config.DEPARTMENT_GROUPS.forEach(deptName => {
             if (groupedByDept[deptName]) {
-                tableHTML += `<tr class="font-bold bg-slate-100"><td colspan="9" class="px-4 py-2">${deptName}</td></tr>`;
+                tableHTML += `<tr class="font-bold bg-slate-100"><td colspan="12" class="px-4 py-2">${deptName}</td></tr>`;
                 groupedByDept[deptName].forEach(item => {
                     tableHTML += `<tr class="hover:bg-gray-50">
-                        <td class="px-2 py-2 font-semibold">${item.hoTen}</td>
+                        <td class="px-2 py-2 font-semibold line-clamp-2">${item.hoTen}</td>
                         <td class="px-2 py-2 text-center font-bold text-lg text-blue-600">${item.totalAbove}</td>
                         <td class="px-2 py-2 text-center text-green-600 font-semibold">${item.summary.doanhthu.above}/${item.summary.doanhthu.total}</td><td class="px-2 py-2 text-center text-red-600">${item.summary.doanhthu.below}/${item.summary.doanhthu.total}</td>
                         <td class="px-2 py-2 text-center text-green-600 font-semibold">${item.summary.nangsuat.above}/${item.summary.nangsuat.total}</td><td class="px-2 py-2 text-center text-red-600">${item.summary.nangsuat.below}/${item.summary.nangsuat.total}</td>
                         <td class="px-2 py-2 text-center text-green-600 font-semibold">${item.summary.hieuqua.above}/${item.summary.hieuqua.total}</td><td class="px-2 py-2 text-center text-red-600">${item.summary.hieuqua.below}/${item.summary.hieuqua.total}</td>
+                        <td class="px-2 py-2 text-center text-green-600 font-semibold">${item.summary.dongia.above}/${item.summary.dongia.total}</td><td class="px-2 py-2 text-center text-red-600">${item.summary.dongia.below}/${item.summary.dongia.total}</td>
+                        <td class="px-2 py-2 text-center text-green-600 font-semibold">${item.summary.qdc.above}/${item.summary.qdc.total}</td><td class="px-2 py-2 text-center text-red-600">${item.summary.qdc.below}/${item.summary.qdc.total}</td>
                     </tr>`;
                 });
             }
@@ -819,59 +886,74 @@ const ui = {
         const phanTramQD = thucHienDTThuc > 0 ? (thucHienDTQD / thucHienDTThuc) - 1 : 0;
         const phanTramTC = thucHienDTThuc > 0 ? (data.doanhThuTraGop || 0) / thucHienDTThuc : 0;
     
-        setContent('rt-kpi-dt-thuc-main', ui.formatNumberOrDash(thucHienDTThuc / 1000000, 0));
-        setContent('rt-kpi-dt-thuc-sub1', `% HT: <span class="kpi-percentage-value">${ui.formatPercentage(phanTramThucHienThuc)}</span> / Target: ${ui.formatNumberOrDash(targetDTThuc / 1000000, 0)}`);
-        setContent('rt-kpi-dt-thuc-sub2', `DT Chưa xuất: ${ui.formatNumberOrDash((data.doanhThuChuaXuat || 0) / 1000000, 2)}`);
+        setContent('rt-kpi-dt-thuc-main', ui.formatNumberOrDash(thucHienDTThuc / 1000000));
+        setContent('rt-kpi-dt-thuc-sub1', `% HT: <span class="kpi-percentage-value">${ui.formatPercentage(phanTramThucHienThuc)}</span> / Target: ${ui.formatNumberOrDash(targetDTThuc / 1000000)}`);
+        setContent('rt-kpi-dt-thuc-sub2', `DT Chưa xuất: ${ui.formatNumberOrDash((data.doanhThuChuaXuat || 0) / 1000000)}`);
     
-        setContent('rt-kpi-dt-qd-main', ui.formatNumberOrDash(thucHienDTQD / 1000000, 0));
-        setContent('rt-kpi-dt-qd-sub1', `% HT: <span class="kpi-percentage-value">${ui.formatPercentage(phanTramThucHienQD)}</span> / Target: ${ui.formatNumberOrDash(targetDTQD / 1000000, 0)}`);
-        setContent('rt-kpi-dt-qd-sub2', `DTQĐ Chưa xuất: ${ui.formatNumberOrDash((data.doanhThuQuyDoiChuaXuat || 0) / 1000000, 2)}`);
+        setContent('rt-kpi-dt-qd-main', ui.formatNumberOrDash(thucHienDTQD / 1000000));
+        setContent('rt-kpi-dt-qd-sub1', `% HT: <span class="kpi-percentage-value">${ui.formatPercentage(phanTramThucHienQD)}</span> / Target: ${ui.formatNumberOrDash(targetDTQD / 1000000)}`);
+        setContent('rt-kpi-dt-qd-sub2', `DTQĐ Chưa xuất: ${ui.formatNumberOrDash((data.doanhThuQuyDoiChuaXuat || 0) / 1000000)}`);
         
         setContent('rt-kpi-tl-qd-main', `<span class="kpi-percentage-value">${ui.formatPercentage(phanTramQD)}</span>`);
         setContent('rt-kpi-tl-qd-sub', `Mục tiêu: ${ui.formatPercentage(targetPTQD)}`);
     
-        setContent('rt-kpi-dt-tc-main', ui.formatNumberOrDash((data.doanhThuTraGop || 0) / 1000000, 0));
+        setContent('rt-kpi-dt-tc-main', ui.formatNumberOrDash((data.doanhThuTraGop || 0) / 1000000));
         setContent('rt-kpi-dt-tc-sub', `% thực trả chậm: <span class="kpi-percentage-value">${ui.formatPercentage(phanTramTC)}</span>`);
     },
-
-    renderLuykeKpiCards: (luykeData, chuaXuatData, goals) => {
-        const targetDTThuc = (parseFloat(goals.doanhThuThuc) || 0) * 1000000000;
-        const targetDTQD = (parseFloat(goals.doanhThuQD) || 0) * 1000000000;
-
+    
+    // [*] MODIFIED: Fixed data loss bug for comparison percentage.
+    renderLuykeKpiCards: (luykeData, comparisonData, chuaXuatData, goals) => {
+        const targetDTThuc = (parseFloat(goals.doanhThuThuc) || 0);
+        const targetDTQD = (parseFloat(goals.doanhThuQD) || 0);
+    
         const dtThucLK = luykeData.dtThucLK || 0;
         const dtQdLK = luykeData.dtQdLK || 0;
-        const dtGop = luykeData.dtGop || 0;
-        const phanTramQd = luykeData.phanTramQd || 0;
-        const phanTramGop = luykeData.phanTramGop || 0;
-        const phanTramTargetThuc = luykeData.phanTramTargetThuc || 0;
-        const phanTramTargetQd = luykeData.phanTramTargetQd || 0;
         
-        const dtChuaXuatQD = chuaXuatData.reduce((sum, nv) => sum + (nv.doanhThuQuyDoiChuaXuat || 0), 0);
-
+        const phanTramTargetThuc = targetDTThuc > 0 ? (dtThucLK / 1000000) / targetDTThuc : 0;
+        const phanTramTargetQd = luykeData.phanTramTargetQd || 0;
+        const phanTramGop = luykeData.phanTramGop || 0;
+        const dtGop = dtThucLK * phanTramGop;
+        
+        const phanTramQd = luykeData.phanTramQd || 0;
+        
+        const dtChuaXuatQD = Array.isArray(chuaXuatData) 
+            ? chuaXuatData.reduce((sum, nv) => sum + (nv.doanhThuQuyDoiChuaXuat || 0), 0)
+            : 0;
+    
         const setContent = (id, value) => {
             const el = document.getElementById(id);
             if (el) el.innerHTML = value;
         };
-
-        setContent('luyke-kpi-dt-thuc-main', ui.formatNumberOrDash(dtThucLK / 1000000, 0));
-        setContent('luyke-kpi-dt-thuc-sub1', `% HT: <span class="kpi-percentage-value">${ui.formatPercentage(phanTramTargetThuc)}</span> / Target: ${ui.formatNumberOrDash(targetDTThuc / 1000000000, 2)} tỷ`);
+    
+        setContent('luyke-kpi-dt-thuc-main', ui.formatNumberOrDash(dtThucLK / 1000000));
+        setContent('luyke-kpi-dt-thuc-sub1', `% HT: <span class="kpi-percentage-value">${ui.formatPercentage(phanTramTargetThuc)}</span> / Target: ${ui.formatNumberOrDash(targetDTThuc)}`);
         
-        setContent('luyke-kpi-dt-qd-main', ui.formatNumberOrDash(dtQdLK / 1000000, 0));
-        setContent('luyke-kpi-dt-qd-sub1', `% HT: <span class="kpi-percentage-value">${ui.formatPercentage(phanTramTargetQd)}</span> / Target: ${ui.formatNumberOrDash(targetDTQD / 1000000000, 2)} tỷ`);
-
+        setContent('luyke-kpi-dt-qd-main', ui.formatNumberOrDash(dtQdLK / 1000000));
+        setContent('luyke-kpi-dt-qd-sub1', `% HT: <span class="kpi-percentage-value">${ui.formatPercentage(phanTramTargetQd)}</span> / Target: ${ui.formatNumberOrDash(targetDTQD)}`);
+    
         setContent('luyke-kpi-tl-qd-main', `<span class="kpi-percentage-value">${ui.formatPercentage(phanTramQd)}</span>`);
         setContent('luyke-kpi-tl-qd-sub', `Mục tiêu: ${ui.formatPercentage((goals.phanTramQD || 0) / 100)}`);
         
-        setContent('luyke-kpi-dt-tc-main', ui.formatNumberOrDash(dtGop / 1000000, 0));
+        setContent('luyke-kpi-dt-tc-main', ui.formatNumberOrDash(dtGop / 1000000));
         setContent('luyke-kpi-dt-tc-sub', `% thực trả chậm: <span class="kpi-percentage-value">${ui.formatPercentage(phanTramGop)}</span>`);
-
-        setContent('luyke-kpi-dtqd-chua-xuat-main', ui.formatNumberOrDash(dtChuaXuatQD / 1000000, 0));
+    
+        setContent('luyke-kpi-dtqd-chua-xuat-main', ui.formatNumberOrDash(dtChuaXuatQD / 1000000));
+    
+        // FIX: Restore the original logic to prevent data loss.
+        const comparisonPercentageText = comparisonData.percentage || '-';
+        setContent('luyke-kpi-dtck-main', comparisonPercentageText);
+        setContent('luyke-kpi-dtck-sub', ui.formatNumberOrDash(comparisonData.value));
     },
     
     renderLuykeCategoryDetailsTable: (data, numDays) => {
         const container = document.getElementById('luyke-category-details-content');
-        if (!container) return;
-        const categoryArray = Object.entries(data.nganhHangChiTiet || {}).map(([name, values]) => ({ name, ...values })).sort((a, b) => b.revenue - a.revenue);
+        const title = document.getElementById('luyke-category-details-title');
+        if (!container || !title) return;
+        
+        title.style.backgroundColor = '';
+        title.className = 'text-xl font-bold text-gray-700 mb-4 uppercase flex items-center gap-2 bg-purple-100 text-purple-800 p-2 rounded-md';
+
+        const categoryArray = Object.entries(data.nganhHangChiTiet || {}).map(([name, values]) => ({ name, ...values })).sort((a, b) => b.revenue - a.revenue).slice(0, 15);
         if (categoryArray.length === 0) { container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; return; }
 
         const { key, direction } = appState.sortState.luyke_nganhhang;
@@ -893,14 +975,19 @@ const ui = {
                 <tr class="hover:bg-gray-50">
                     <td class="px-4 py-2 font-semibold">${cat.name}</td>
                     <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(cat.quantity)}</td>
-                    <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(cat.revenue / 1000000, 2)}</td>
-                    <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(cat.revenueQuyDoi / 1000000, 2)}</td>
+                    <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(cat.revenue / 1000000)}</td>
+                    <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(cat.revenueQuyDoi / 1000000)}</td>
                 </tr>`).join('')}</tbody></table></div>`;
     },
 
     renderLuykeQdcTable: (data, numDays) => {
         const container = document.getElementById('luyke-qdc-content');
-        if (!container) return;
+        const title = document.getElementById('luyke-qdc-title');
+        if (!container || !title) return;
+
+        title.style.backgroundColor = '';
+        title.className = 'text-xl font-bold text-gray-700 mb-4 uppercase flex items-center gap-2 bg-indigo-100 text-indigo-800 p-2 rounded-md';
+
         const qdcArray = Object.entries(data.qdc || {}).map(([key, values]) => ({ key, ...values })).filter(item => item.sl > 0);
         if (qdcArray.length === 0) { container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; return; }
 
@@ -927,7 +1014,7 @@ const ui = {
                     tableContent += `<tr class="border-t">
                         <td class="px-4 py-2 font-medium text-gray-700">${item.name}</td>
                         <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item.sl)}</td>
-                        <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item.dtqd / 1000000, 2)}</td>
+                        <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item.dtqd / 1000000)}</td>
                     </tr>`;
                 });
             }
@@ -955,7 +1042,7 @@ const ui = {
             { label: '% VAS', thucHien: data.pctVAS, mucTieu: (goals.phanTramVAS || 0) / 100 },
             { label: '% Bảo hiểm', thucHien: data.pctBaoHiem, mucTieu: (goals.phanTramBaoHiem || 0) / 100 },
         ];
-        container.innerHTML = `<div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped">
+        container.innerHTML = `<div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-capture-columns="3">
             <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                 <tr><th class="px-4 py-2">Tiêu chí</th><th class="px-4 py-2 text-right">Thực hiện</th><th class="px-4 py-2 text-right">Mục tiêu</th></tr>
             </thead>
@@ -972,7 +1059,14 @@ const ui = {
 
         const categoryArray = Object.entries(data.nganhHangChiTiet || {}).map(([name, values]) => ({ name, ...values })).sort((a, b) => b.revenue - a.revenue).slice(0, 15);
         if (categoryArray.length === 0) { container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu ngành hàng chi tiết.</p>`; return; }
-        container.innerHTML = `<div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="realtime_nganhhang">
+        
+        const title = document.getElementById('realtime-category-title');
+        if(title) {
+            title.style.backgroundColor = '';
+            title.className = 'text-xl font-bold text-gray-700 mb-4 uppercase flex items-center gap-2 bg-green-100 text-green-800 p-2 rounded-md';
+        }
+
+        container.innerHTML = `<div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="realtime_nganhhang" data-capture-columns="5">
                     <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                         <tr>
                             <th class="px-4 py-2 sortable" data-sort="name">Ngành hàng <span class="sort-indicator"></span></th>
@@ -985,9 +1079,9 @@ const ui = {
                             <tr class="hover:bg-gray-50">
                                 <td class="px-4 py-2 font-semibold">${cat.name}</td>
                                 <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(cat.quantity)}</td>
-                                <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(cat.revenue / 1000000, 2)}</td>
-                                <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(cat.revenueQuyDoi / 1000000, 2)}</td>
-                                <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(cat.donGia / 1000000, 2)}</td></tr>`).join('')}</tbody></table></div>`;
+                                <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(cat.revenue / 1000000)}</td>
+                                <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(cat.revenueQuyDoi / 1000000)}</td>
+                                <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(cat.donGia / 1000000)}</td></tr>`).join('')}</tbody></table></div>`;
     },
 
     renderRealtimeEfficiencyTable: (data, goals) => {
@@ -1001,7 +1095,7 @@ const ui = {
             { label: '% VAS', thucHien: data.pctVAS, mucTieu: (goals.phanTramVAS || 0) / 100 },
             { label: '% Bảo hiểm', thucHien: data.pctBaoHiem, mucTieu: (goals.phanTramBaoHiem || 0) / 100 },
         ];
-        container.innerHTML = `<div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped">
+        container.innerHTML = `<div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-capture-columns="3">
                     <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                         <tr><th class="px-4 py-2">Tiêu chí</th><th class="px-4 py-2 text-right">Thực hiện</th><th class="px-4 py-2 text-right">Mục tiêu</th></tr></thead><tbody>${rows.map(row => 
                             `<tr class="hover:bg-gray-50"><td class="px-4 py-2 font-semibold">${row.label}</td>
@@ -1011,7 +1105,11 @@ const ui = {
     
     renderRealtimeQdcTable: (data) => {
         const container = document.getElementById('realtime-qdc-content');
-        if(!container) return;
+        const title = document.getElementById('realtime-qdc-title');
+        if(!container || !title) return;
+
+        title.style.backgroundColor = '';
+        title.className = 'text-xl font-bold text-gray-700 mb-4 uppercase flex items-center gap-2 bg-indigo-100 text-indigo-800 p-2 rounded-md';
         
         let tableContent = '';
         const qdcTableGroups = [
@@ -1031,14 +1129,14 @@ const ui = {
                 if(sl > 0) groupHasData = true;
                 return `<tr class="border-t"><td class="px-4 py-2 font-medium text-gray-700">${name}</td>
                     <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(sl)}</td>
-                    <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(dtqd / 1000000, 2)}</td></tr>`;
+                    <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(dtqd / 1000000)}</td></tr>`;
             }).join('');
             if (groupHasData) tableContent += `<tr class="qdc-group-title ${group.colorClass}"><td colspan="3" class="px-4 py-2">${group.title}</td></tr>` + groupRows;
         });
 
         if (!tableContent) { container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; return; }
 
-        container.innerHTML = `<div class="overflow-x-auto"><table class="min-w-full text-sm table-bordered table-striped" data-table-type="realtime_qdc">
+        container.innerHTML = `<div class="overflow-x-auto"><table class="min-w-full text-sm table-bordered table-striped" data-table-type="realtime_qdc" data-capture-columns="3">
             <thead class="sknv-subtable-header text-xs text-slate-800 uppercase bg-slate-200 font-bold"><tr>
                 <th class="px-4 py-2 text-left">Nhóm hàng</th><th class="px-4 py-2 text-right">Số lượng</th>
                 <th class="px-4 py-2 text-right">DT QĐ</th></tr></thead>
@@ -1056,7 +1154,112 @@ const ui = {
         const timeString = dateTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
         const dateString = dateTime.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
         titleEl.textContent = `DOANH THU REALTIME - ${warehouse || 'TOÀN BỘ'} - ${timeString} ${dateString}`;
+    },
+
+    renderSknvDonGiaTbTable: (employeeData, departmentAverages, countCallback) => {
+        const rows = [
+             { key: 'donGiaTrungBinh', label: 'Đơn giá TB' },
+             { key: 'donGiaTivi', label: 'Đơn giá Tivi' },
+             { key: 'donGiaTuLanh', label: 'Đơn giá Tủ lạnh' },
+             { key: 'donGiaMayGiat', label: 'Đơn giá Máy giặt' },
+             { key: 'donGiaMayLanh', label: 'Đơn giá Máy lạnh' },
+             { key: 'donGiaDienThoai', label: 'Đơn giá Điện thoại' },
+             { key: 'donGiaLaptop', label: 'Đơn giá Laptop' },
+        ];
+        
+        let rowsHtml = rows.map(row => {
+            const empValue = employeeData[row.key];
+            const avgValue = departmentAverages[row.key];
+            countCallback('dongia', empValue, avgValue);
+            const evaluation = ui.getSknvEvaluation(empValue, avgValue);
+            return `<tr class="border-t"><td class="px-4 py-2 font-medium text-gray-700">${row.label}</td><td class="px-4 py-2 text-right font-bold text-gray-900">${ui.formatNumberOrDash(empValue / 1000000)}</td><td class="px-4 py-2 text-right font-medium text-gray-500">${ui.formatNumberOrDash(avgValue / 1000000)}</td><td class="px-4 py-2 text-center font-semibold ${evaluation.class}">${evaluation.text}</td></tr>`
+        }).join('');
+
+        return `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"><h4 class="text-lg font-bold p-3 border-b header-bg-yellow">Đơn giá (Triệu)</h4><table class="min-w-full text-sm table-bordered table-striped" data-capture-columns="4">
+            <thead class="sknv-subtable-header"><tr><th class="px-4 py-2 text-left">Chỉ số</th><th class="px-4 py-2 text-right">Giá trị</th><th class="px-4 py-2 text-right">Giá trị TB</th><th class="px-4 py-2 text-center">Đánh giá</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
+    },
+
+    renderSknvNganhHangTable(employeeData) {
+        const categoryArray = Object.entries(employeeData.doanhThuTheoNganhHang || {}).map(([name, values]) => ({ name, ...values })).sort((a, b) => b.revenue - a.revenue).slice(0, 15);
+        if (categoryArray.length === 0) return '';
+        
+        const { key, direction } = appState.sortState.sknv_nganhhang_chitiet;
+        const sortedData = [...categoryArray].sort((a,b) => {
+            const valA = a[key] || 0; const valB = b[key] || 0;
+            return direction === 'asc' ? valA - valB : valB - valA;
+        });
+        const headerClass = (sortKey) => `px-4 py-2 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
+
+        return `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"><h4 class="text-lg font-bold p-3 border-b header-bg-green">Top 15 Ngành hàng chi tiết</h4>
+            <div class="overflow-x-auto"><table class="min-w-full text-sm table-bordered table-striped" data-table-type="sknv_nganhhang_chitiet" data-capture-columns="3">
+            <thead class="sknv-subtable-header"><tr>
+                <th class="${headerClass('name')}" data-sort="name">Ngành hàng</th>
+                <th class="${headerClass('revenue')} text-right" data-sort="revenue">Doanh thu (tr)</th>
+                <th class="${headerClass('quantity')} text-right" data-sort="quantity">Số lượng</th>
+            </tr></thead>
+            <tbody>${sortedData.map(cat => `<tr class="border-t"><td class="px-4 py-2 font-medium text-gray-700">${cat.name}</td><td class="px-4 py-2 text-right font-bold">${this.formatNumberOrDash(cat.revenue / 1000000)}</td><td class="px-4 py-2 text-right font-bold">${this.formatNumberOrDash(cat.quantity)}</td></tr>`).join('')}</tbody>
+            </table></div></div>`;
+    },
+    
+    renderSknvQdcTable(employeeData, departmentAverages, countCallback, evaluationCounts) {
+        const qdcArray = Object.entries(employeeData.qdc || {}).map(([key, values]) => ({ key, ...values })).filter(item => item.sl > 0);
+        if (qdcArray.length === 0) return '';
+
+        const { key, direction } = appState.sortState.sknv_qdc;
+        const sortedData = [...qdcArray].sort((a,b) => {
+            const valA = a[key] || 0; const valB = b[key] || 0;
+            return direction === 'asc' ? valA - valB : valB - valA;
+        });
+
+        let tableContent = '';
+        const qdcTableGroups = [
+            { title: 'Nhóm ICT', items: ['PIN_SDP', 'TAI_NGHE_BLT', 'DONG_HO', 'CAMERA', 'LOA'], colorClass: 'qdc-group-ict' },
+            { title: 'VAS', items: ['UDDD', 'BAO_HIEM'], colorClass: 'qdc-group-vas' },
+            { title: 'Gia dụng', items: ['NOI_COM', 'NOI_CHIEN', 'MAY_LOC_NUOC', 'ROBOT_HB'], colorClass: 'qdc-group-giadung' },
+            { title: 'SIM', items: ['SIM_ONLINE'], colorClass: 'qdc-group-sim' }
+        ];
+        
+        evaluationCounts.qdc.total = qdcArray.length;
+
+        qdcTableGroups.forEach((group) => {
+            const groupItems = sortedData.filter(item => group.items.includes(item.key));
+            if (groupItems.length > 0) {
+                tableContent += `<tr class="qdc-group-title ${group.colorClass}"><td colspan="4" class="px-4 py-2">${group.title}</td></tr>`;
+                groupItems.forEach(item => {
+                    const avgValue = departmentAverages.qdc?.[item.key]?.dtqd || 0;
+                    countCallback('qdc', item.dtqd, avgValue);
+                    const evaluation = ui.getSknvEvaluation(item.dtqd, avgValue);
+                    tableContent += `<tr class="border-t">
+                        <td class="px-4 py-2 font-medium text-gray-700">${item.name}</td>
+                        <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item.sl)}</td>
+                        <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item.dtqd / 1000000)}</td>
+                        <td class="px-4 py-2 text-center font-semibold ${evaluation.class}">${evaluation.text}</td>
+                    </tr>`;
+                });
+            }
+        });
+
+        return `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"><h4 class="text-lg font-bold p-3 border-b header-bg-indigo">Nhóm hàng quy đổi cao</h4>
+            <div class="overflow-x-auto"><table class="min-w-full text-sm table-bordered table-striped" data-table-type="sknv_qdc" data-capture-columns="4">
+            <thead class="sknv-subtable-header"><tr>
+                <th class="px-4 py-2 text-left">Nhóm hàng</th>
+                <th class="px-4 py-2 text-right">Số lượng</th>
+                <th class="px-4 py-2 text-right">DT QĐ</th>
+                <th class="px-4 py-2 text-center">Đánh giá</th>
+            </tr></thead>
+            <tbody>${tableContent}</tbody></table></div></div>`;
+    },
+
+    getSknvEvaluation: (value, avgValue, higherIsBetter = true) => {
+        const result = { text: '-', class: '' };
+        if (!isFinite(value) || avgValue === undefined || !isFinite(avgValue)) return result;
+        
+        let isAbove = higherIsBetter ? (value >= avgValue) : (value <= avgValue);
+
+        if (isAbove) { result.text = 'Trên TB'; result.class = 'text-green-600'; } 
+        else { result.text = 'Dưới TB'; result.class = 'cell-performance is-below text-red-600'; }
+        return result;
     }
 };
-
 export { ui };
+

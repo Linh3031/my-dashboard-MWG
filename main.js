@@ -1,4 +1,4 @@
-// Version 7.5 - Final Polishing & Bug Fix
+// Version 9.7 - Ultimate Capture Logic
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -27,7 +27,7 @@ const app = {
             const savedSettings = localStorage.getItem('interfaceSettings');
             const defaultSettings = {
                 kpiCard1Bg: '#38bdf8', kpiCard2Bg: '#34d399', kpiCard3Bg: '#fbbf24',
-                kpiCard4Bg: '#2dd4bf', kpiCard5Bg: '#a78bfa', kpiTextColor: '#ffffff'
+                kpiCard4Bg: '#2dd4bf', kpiCard5Bg: '#a78bfa', kpiCard6Bg: '#f472b6', kpiTextColor: '#ffffff'
             };
             const settings = savedSettings ? JSON.parse(savedSettings) : defaultSettings;
             ui.applyInterfaceSettings(settings);
@@ -36,6 +36,7 @@ const app = {
             document.getElementById('kpi-color-3')?.setAttribute('value', settings.kpiCard3Bg || defaultSettings.kpiCard3Bg);
             document.getElementById('kpi-color-4')?.setAttribute('value', settings.kpiCard4Bg || defaultSettings.kpiCard4Bg);
             document.getElementById('kpi-color-5')?.setAttribute('value', settings.kpiCard5Bg || defaultSettings.kpiCard5Bg);
+            document.getElementById('kpi-color-6')?.setAttribute('value', settings.kpiCard6Bg || defaultSettings.kpiCard6Bg);
             document.getElementById('kpi-text-color')?.setAttribute('value', settings.kpiTextColor || defaultSettings.kpiTextColor);
         } catch (e) {
             console.error("Lỗi khi tải cài đặt giao diện:", e);
@@ -49,6 +50,7 @@ const app = {
             kpiCard3Bg: document.getElementById('kpi-color-3')?.value,
             kpiCard4Bg: document.getElementById('kpi-color-4')?.value,
             kpiCard5Bg: document.getElementById('kpi-color-5')?.value,
+            kpiCard6Bg: document.getElementById('kpi-color-6')?.value,
             kpiTextColor: document.getElementById('kpi-text-color')?.value,
         };
         localStorage.setItem('interfaceSettings', JSON.stringify(settings));
@@ -107,7 +109,16 @@ const app = {
     },
 
     processAndRenderAllReports() {
-        if (appState.danhSachNhanVien.length === 0) return;
+        if (appState.danhSachNhanVien.length === 0) {
+            ui.togglePlaceholder('health-section', true);
+            ui.togglePlaceholder('health-employee-section', true);
+            ui.togglePlaceholder('realtime-section', true);
+            return;
+        }
+        ui.togglePlaceholder('health-section', false);
+        ui.togglePlaceholder('health-employee-section', false);
+        ui.togglePlaceholder('realtime-section', false);
+
         app.applyHealthSectionFiltersAndRender();
         app.applySknvFiltersAndRender();
         app.applyRealtimeFiltersAndRender();
@@ -494,45 +505,37 @@ const app = {
     
         localStorage.setItem('dailyGoalPercentage', percentageInput.value);
         const goals = app.getLuykeGoalSettings(document.getElementById('luyke-filter-warehouse').value).goals;
-        const targetQd = (goals.doanhThuQD || 0) * 1000;
+        const targetQd = (goals.doanhThuQD || 0); // Use raw value, not multiplied
     
         const pastedData = services.parseLuyKePastedData(document.getElementById('paste-luyke').value);
         const thucHienQd = parseFloat(pastedData.mainKpis['Thực hiện DTQĐ']?.replace(/,/g, '')) || 0;
         const targetPercentage = parseFloat(percentageInput.value) / 100 || 0;
     
-        if (targetPercentage === 0) {
-            container.innerHTML = '<p class="text-gray-500 font-bold p-4 text-center">Nhập % mục tiêu để tính toán.</p>';
-            return;
-        }
-    
         const today = new Date();
         const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-        const daysRemaining = daysInMonth - today.getDate();
+        const daysRemaining = Math.max(1, daysInMonth - today.getDate());
     
-        let requiredRevenue = 0;
-        if (daysRemaining > 0) {
-            requiredRevenue = ((targetQd * targetPercentage) - thucHienQd) / daysRemaining;
-        } else { 
-            requiredRevenue = (targetQd * targetPercentage) - thucHienQd;
+        let requiredRevenue = ((targetQd * targetPercentage) - thucHienQd) / daysRemaining;
+        
+        const savedCustomGoals = JSON.parse(localStorage.getItem('customDailyGoals')) || {};
+
+        let tableHTML = `<div class="overflow-x-auto"><table class="min-w-full text-sm table-bordered"><tbody>
+            <tr class="border-b"><td class="py-2 px-3 font-semibold text-gray-600">Mục tiêu DT QĐ</td><td class="py-2 px-3 text-right font-bold text-red-600">${ui.formatNumberOrDash(requiredRevenue, 2)} tr</td></tr>`;
+        
+        for (let i = 1; i <= 6; i++) {
+            const label = savedCustomGoals[`label${i}`] || `Mục tiêu ${i}`;
+            const value = savedCustomGoals[`value${i}`] || '';
+            tableHTML += `<tr class="border-b last:border-b-0">
+                <td class="py-0 px-0 font-semibold text-gray-600 daily-goal-cell" contenteditable="true" data-key="label${i}">${label}</td>
+                <td class="py-0 px-0 text-right font-bold text-gray-800 daily-goal-cell" contenteditable="true" data-key="value${i}">${value}</td>
+            </tr>`;
         }
-    
-        const rows = [
-            { label: 'Mục tiêu DT QĐ', value: `${ui.formatNumberOrDash(requiredRevenue, 2)} tr`, highlight: true },
-            { label: '% Quy đổi', value: ui.formatPercentage((goals.phanTramQD || 0) / 100) },
-            { label: '% Gia dụng', value: ui.formatPercentage((goals.phanTramGiaDung || 0) / 100) },
-            { label: '% MLN', value: ui.formatPercentage((goals.phanTramMLN || 0) / 100) },
-            { label: '% Phụ kiện', value: ui.formatPercentage((goals.phanTramPhuKien || 0) / 100) },
-            { label: '% Sim', value: ui.formatPercentage((goals.phanTramSim || 0) / 100) },
-            { label: '% VAS', value: ui.formatPercentage((goals.phanTramVAS || 0) / 100) },
-            { label: '% Bảo hiểm', value: ui.formatPercentage((goals.phanTramBaoHiem || 0) / 100) }
-        ];
-    
-        container.innerHTML = `<div class="overflow-x-auto"><table class="min-w-full text-sm table-bordered"><tbody>${rows.map(row =>
-            `<tr class="border-b last:border-b-0">
-                <td class="py-2 px-3 font-semibold text-gray-600">${row.label}</td>
-                <td class="py-2 px-3 text-right font-bold ${row.highlight ? 'text-red-600' : 'text-gray-800'}">${row.value}</td>
-            </tr>`
-        ).join('')}</tbody></table></div>`;
+        
+        tableHTML += `</tbody></table></div>`;
+        container.innerHTML = tableHTML;
+
+        const realtimeContainer = document.getElementById('realtime-daily-goal-content');
+        if(realtimeContainer) realtimeContainer.innerHTML = tableHTML;
     },
 
     exportTableToExcel(activeTabContent, fileName) {
@@ -558,9 +561,95 @@ const app = {
         }
     },
 
+    // [*] REWRITTEN: The core image generation worker. It now takes a pre-assembled element,
+    // adds the final touches (title, container), and generates the image.
+    async captureAndDownload(elementToCapture, title) {
+        if (!elementToCapture) {
+            ui.showNotification('Không tìm thấy nội dung để chụp.', 'error');
+            return;
+        }
+        ui.showNotification('Chuẩn bị chụp ảnh thông minh, vui lòng đợi...', 'success');
+
+        const captureArea = document.createElement('div');
+        captureArea.classList.add('capture-container');
+
+        const titleEl = document.createElement('h2');
+        titleEl.className = 'capture-title';
+        const date = new Date();
+        const timeString = date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+        const dateString = date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+        titleEl.textContent = `${title.replace(/_/g, ' ')} - ${timeString} ${dateString}`;
+        
+        captureArea.appendChild(titleEl);
+        
+        // Add a wrapper that applies the special styling from dashboard.css
+        const contentWrapper = document.createElement('div');
+        contentWrapper.classList.add('prepare-for-capture');
+        contentWrapper.appendChild(elementToCapture);
+        captureArea.appendChild(contentWrapper);
+        
+        document.body.appendChild(captureArea);
+    
+        try {
+            const canvas = await html2canvas(captureArea, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: '#f3f4f6'
+            });
+            const link = document.createElement('a');
+            link.download = `${title}_${dateString.replace(/\//g, '-')}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            ui.showNotification('Đã chụp và tải xuống hình ảnh!', 'success');
+        } catch (err) {
+            console.error('Lỗi chụp màn hình:', err);
+            ui.showNotification(`Lỗi khi chụp ảnh: ${err.message}.`, 'error');
+        } finally {
+            document.body.removeChild(captureArea);
+        }
+    },
+
+    // [*] REWRITTEN: The "manager" function that groups elements based on 'data-capture-group'.
+    async captureDashboardInParts(contentContainer, baseTitle) {
+        if (!contentContainer) {
+            ui.showNotification('Không tìm thấy vùng nội dung để chụp.', 'error');
+            return;
+        }
+    
+        ui.showNotification(`Bắt đầu chụp báo cáo ${baseTitle} theo nhóm...`, 'success');
+
+        const captureGroups = new Map();
+        contentContainer.querySelectorAll('[data-capture-group]').forEach(el => {
+            const group = el.dataset.captureGroup;
+            if (!captureGroups.has(group)) {
+                captureGroups.set(group, []);
+            }
+            captureGroups.get(group).push(el);
+        });
+
+        if (captureGroups.size === 0) {
+            ui.showNotification('Không tìm thấy nhóm chụp ảnh nào được khai báo cho tab này.', 'error');
+            return;
+        }
+
+        for (const [group, elements] of captureGroups.entries()) {
+            const layoutContainer = document.createElement('div');
+            layoutContainer.className = 'capture-layout-container';
+            
+            elements.forEach(el => {
+                layoutContainer.appendChild(el.cloneNode(true));
+            });
+            
+            const captureTitle = captureGroups.size > 1 ? `${baseTitle}_Nhom_${group}` : baseTitle;
+            await app.captureAndDownload(layoutContainer, captureTitle);
+        }
+
+        ui.showNotification(`Đã hoàn tất chụp ảnh báo cáo ${baseTitle}!`, 'success');
+    },
+    
     setupEventListeners() {
         try {
-            // --- Khởi tạo các thư viện ---
+            // --- Initialize libraries ---
             ['luyke', 'sknv', 'realtime'].forEach(prefix => {
                 const el = document.getElementById(`${prefix}-filter-name`);
                 if (el) appState.choices[`${prefix}_employee`] = new Choices(el, { removeItemButton: true, placeholder: true, placeholderValue: 'Chọn nhân viên...' });
@@ -570,9 +659,7 @@ const app = {
                     if (highlightEl) appState.choices[`${prefix}_highlight_${type}`] = new Choices(highlightEl, { removeItemButton: true, placeholder: true });
                 });
             });
-        } catch (error) {
-            console.error("Lỗi khi khởi tạo Choices.js:", error);
-        }
+        } catch (error) { console.error("Lỗi khi khởi tạo Choices.js:", error); }
 
         try {
             const initDatePicker = (prefix) => {
@@ -599,11 +686,9 @@ const app = {
                 document.getElementById(`${prefix}-clear-date`)?.addEventListener('click', () => { datePicker.clear(); applyFilter(); });
             };
             initDatePicker('luyke'); initDatePicker('sknv');
-        } catch (error) {
-            console.error("Lỗi khi khởi tạo Flatpickr:", error);
-        }
+        } catch (error) { console.error("Lỗi khi khởi tạo Flatpickr:", error); }
 
-        // --- Gán sự kiện cho các element ---
+        // --- Assign events to elements ---
         document.querySelectorAll('a.nav-link').forEach(link => link.addEventListener('click', (e) => { e.preventDefault(); app.switchTab(link.getAttribute('href').substring(1)); }));
         document.getElementById('admin-access-btn')?.addEventListener('click', () => document.getElementById('admin-modal').classList.remove('hidden'));
         document.getElementById('admin-submit-btn')?.addEventListener('click', () => {
@@ -667,9 +752,9 @@ const app = {
                     if (fileType === 'danhsachnv') {
                         if (normalizedData.length > 0) {
                             ui.populateAllFilters();
-                            app.processAndRenderAllReports();
-                        } else ui.showNotification('DSNV trống, không thể tính toán các báo cáo khác.', 'error');
-                    } else app.processAndRenderAllReports();
+                        }
+                    }
+                    app.processAndRenderAllReports();
                 } else { 
                     const errorMessage = `Lỗi file "${dataName}": Thiếu cột: ${missingColumns.join(', ')}.`;
                     if (fileStatusSpan) { fileStatusSpan.textContent = `Lỗi: Thiếu cột dữ liệu.`; fileStatusSpan.className = 'text-sm text-red-500'; }
@@ -775,6 +860,23 @@ const app = {
             }
         });
         
+        document.body.addEventListener('input', (e) => {
+            const cell = e.target.closest('.daily-goal-cell[contenteditable="true"]');
+            if(cell) {
+                const key = cell.dataset.key;
+                const value = cell.textContent;
+                const savedGoals = JSON.parse(localStorage.getItem('customDailyGoals')) || {};
+                savedGoals[key] = value;
+                localStorage.setItem('customDailyGoals', JSON.stringify(savedGoals));
+                
+                const otherTableSelector = cell.closest('#daily-goal-content') ? '#realtime-daily-goal-content' : '#daily-goal-content';
+                const otherCell = document.querySelector(`${otherTableSelector} [data-key="${key}"]`);
+                if(otherCell && otherCell.textContent !== value) {
+                    otherCell.textContent = value;
+                }
+            }
+        });
+        
         document.querySelectorAll('.toggle-filters-btn').forEach(button => {
             button.addEventListener('click', () => {
                 const targetContainer = document.getElementById(button.dataset.target);
@@ -816,63 +918,51 @@ const app = {
         document.getElementById('luyke-goal-warehouse-select')?.addEventListener('change', app.loadAndApplyLuykeGoalSettings);
         document.querySelectorAll('.luyke-goal-input').forEach(input => input.addEventListener('input', app.saveLuykeGoalSettings));
 
-        const captureAndDownload = async (element, title) => {
-            if (!element) { ui.showNotification('Không tìm thấy nội dung để chụp.', 'error'); return; }
-            
-            const captureArea = document.createElement('div');
-            captureArea.style.padding = '1rem';
-            captureArea.style.backgroundColor = '#f3f4f6';
-
-            const titleEl = document.createElement('h2');
-            titleEl.className = 'text-2xl font-bold text-center text-gray-700 mb-4';
-            const date = new Date();
-            const timeString = date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-            const dateString = date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
-            titleEl.textContent = `${title.replace(/_/g, ' ')} - ${timeString} ${dateString}`;
-            
-            captureArea.appendChild(titleEl);
-            captureArea.appendChild(element.cloneNode(true));
-            document.body.appendChild(captureArea);
-            
-            try {
-                const canvas = await html2canvas(captureArea, { scale: 2, useCORS: true, backgroundColor: '#f3f4f6' });
-                const link = document.createElement('a');
-                link.download = `${title}_${dateString.replace(/\//g, '-')}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-            } catch (err) {
-                console.error('Lỗi chụp màn hình:', err);
-                ui.showNotification(`Lỗi khi chụp ảnh ${title}.`, 'error');
-            } finally {
-                document.body.removeChild(captureArea);
-            }
-        };
-
-        const setupActionButtons = (prefix) => {
-            const captureBtnId = prefix === 'luyke' ? 'capture-health-btn' : (prefix === 'sknv' ? 'capture-employee-health-btn' : `capture-realtime-btn`);
+        this.setupActionButtons();
+    },
+    
+    // [*] REWRITTEN: The "dispatcher" function. It now checks for 'data-capture-group'
+    // to decide whether to capture by group or capture the whole tab directly.
+    setupActionButtons() {
+        const setupButton = (prefix) => {
+            const isSknv = prefix === 'sknv';
+            const captureBtnId = isSknv ? 'capture-employee-health-btn' : `capture-${prefix === 'luyke' ? 'health' : prefix}-btn`;
             const exportBtnId = `export-${prefix}-btn`;
-
+            const navSelector = isSknv ? '#employee-subtabs-nav' : `#${prefix}-subtabs-nav`;
+            const contentSelector = isSknv ? '#employee-subtabs-content' : `#${prefix}-subtabs-content`;
+            
             document.getElementById(captureBtnId)?.addEventListener('click', () => {
-                const activeTabButton = document.querySelector(`#${prefix}-subtabs-nav .sub-tab-btn.active`);
-                const activeTabContent = document.querySelector(`#${prefix}-subtabs-content .sub-tab-content:not(.hidden)`);
-                if (activeTabContent && activeTabButton) {
-                    captureAndDownload(activeTabContent, activeTabButton.dataset.title || 'BaoCao');
+                const activeTabButton = document.querySelector(`${navSelector} .sub-tab-btn.active`);
+                if (!activeTabButton) { ui.showNotification('Không tìm thấy tab đang hoạt động.', 'error'); return; }
+                
+                const title = activeTabButton.dataset.title || 'BaoCao';
+                const activeTabContent = document.querySelector(`${contentSelector} .sub-tab-content:not(.hidden)`);
+                if (!activeTabContent) { ui.showNotification('Không tìm thấy nội dung để chụp.', 'error'); return; }
+
+                const groupedElements = activeTabContent.querySelectorAll('[data-capture-group]');
+                
+                if (groupedElements.length > 0) {
+                    app.captureDashboardInParts(activeTabContent, title);
+                } else {
+                    app.captureAndDownload(activeTabContent.cloneNode(true), title);
                 }
             });
 
             document.getElementById(exportBtnId)?.addEventListener('click', () => {
-                const activeTabButton = document.querySelector(`#${prefix}-subtabs-nav .sub-tab-btn.active`);
-                const activeTabContent = document.querySelector(`#${prefix}-subtabs-content .sub-tab-content:not(.hidden)`);
+                const activeTabButton = document.querySelector(`${navSelector} .sub-tab-btn.active`);
+                const activeTabContent = document.querySelector(`${contentSelector} .sub-tab-content:not(.hidden)`);
                 if (activeTabContent && activeTabButton) {
                     const title = activeTabButton.dataset.title || 'BaoCao';
                     const timestamp = new Date().toLocaleDateString('vi-VN').replace(/\//g, '-');
                     app.exportTableToExcel(activeTabContent, `${title}_${timestamp}`);
+                } else {
+                     ui.showNotification('Không tìm thấy tab để xuất.', 'error');
                 }
             });
         };
-        setupActionButtons('luyke');
-        setupActionButtons('sknv');
-        setupActionButtons('realtime');
+        setupButton('luyke');
+        setupButton('sknv');
+        setupButton('realtime');
     }
 };
 
