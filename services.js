@@ -1,4 +1,4 @@
-// Version 9.1 - Data Parsing Hotfix
+// Version 9.2 - Validated Logic Update
 // MODULE 3: KỆ "DỊCH VỤ" (SERVICES)
 // File này chứa tất cả các hàm xử lý logic, tính toán, và chuyển đổi dữ liệu.
 
@@ -143,7 +143,6 @@ const services = {
         return results;
     },
 
-    // [*] MODIFIED: Replaced faulty parsing logic with a robust Regex-based approach.
     parseLuyKePastedData: (text) => {
         const mainKpis = {};
         const comparisonData = { value: 0, percentage: 'N/A' };
@@ -152,7 +151,6 @@ const services = {
         const allLines = text.split('\n').map(line => line.trim());
         const textContent = allLines.join(' ');
 
-        // Use robust Regex patterns to find values, tolerant of spacing and positioning issues.
         const patterns = {
             'Thực hiện DT thực': /DTLK\s+([\d,.]+)/,
             'Thực hiện DTQĐ': /DTQĐ\s+([\d,.]+)/,
@@ -167,7 +165,6 @@ const services = {
             }
         }
         
-        // Retain the logic for comparison data (so sánh cùng kỳ)
         const dtckIndex = allLines.findIndex(line => line.includes('DTCK Tháng'));
         if (dtckIndex !== -1 && dtckIndex + 1 < allLines.length) {
             const valueLine = allLines[dtckIndex + 1];
@@ -181,7 +178,6 @@ const services = {
         return { mainKpis, allLines, comparisonData };
     },
 
-    // [*] MODIFIED: Corrected parsing logic for competition data.
     parseCompetitionDataFromLuyKe: (text) => {
         if (!text || !text.trim()) return [];
         const lines = text.split('\n').map(l => l.trim());
@@ -300,25 +296,33 @@ const services = {
                 if (msnvMatch && msnvMatch[1].trim() === employee.maNV) {
                     const isDoanhThuHTX = hinhThucXuatTinhDoanhThu.has(row.hinhThucXuat);
                     const isBaseValid = (row.trangThaiThuTien || "").trim() === 'Đã thu' && (row.trangThaiHuy || "").trim() === 'Chưa hủy' && (row.tinhTrangTra || "").trim() === 'Chưa trả';
+                    
                     if (isBaseValid && isDoanhThuHTX) {
                         const thanhTien = parseFloat(String(row.thanhTien || "0").replace(/,/g, '')) || 0;
                         if(isNaN(thanhTien)) return;
 
                         const heSo = heSoQuyDoi[row.nhomHang] || 1;
+                        const trangThaiXuat = (row.trangThaiXuat || "").trim();
 
-                        if ((row.trangThaiXuat || "").trim() === 'Chưa xuất') {
+                        // --- START REFACTORED LOGIC ---
+                        const nhomHangCode = String(row.nhomHang || '').match(/^\d+/)?.[0] || null;
+                        const nganhHangCode = String(row.nganhHang || '').match(/^\d+/)?.[0] || null;
+
+                        const isICT = PG.ICT.includes(nhomHangCode);
+                        const isCE = PG.CE.includes(nhomHangCode);
+                        const isPhuKien = PG.PHU_KIEN.includes(nganhHangCode);
+                        const isGiaDung = PG.GIA_DUNG.includes(nganhHangCode);
+                        const isMLN = PG.MAY_LOC_NUOC.includes(nhomHangCode);
+
+                        if (trangThaiXuat === 'Chưa xuất') {
                             data.doanhThuChuaXuat += thanhTien;
                             data.doanhThuQuyDoiChuaXuat += thanhTien * heSo;
-                        }
-
-                        if ((row.trangThaiXuat || "").trim() === 'Đã xuất') {
+                        } else if (trangThaiXuat === 'Đã xuất') {
                             const soLuong = parseInt(String(row.soLuong || "0"), 10) || 0;
                             if(isNaN(soLuong)) return;
-
-                            const nhomHangCode = String(row.nhomHang || '').match(/^\d+/)?.[0] || null;
-                            const nganhHangCode = String(row.nganhHang || '').match(/^\d+/)?.[0] || null;
                             const nganhHangName = (String(row.nganhHang || '').split(/-(.+)/)[1] || 'Không xác định').trim();
 
+                            // General Revenue
                             if (row.hinhThucXuat !== 'Xuất dịch vụ thu hộ bảo hiểm') { 
                                 data.doanhThu += thanhTien; 
                                 data.doanhThuQuyDoi += thanhTien * heSo; 
@@ -333,29 +337,24 @@ const services = {
                                 }
                             }
                             if (hinhThucXuatTraGop.has(row.hinhThucXuat)) { data.doanhThuTraGop += thanhTien; data.doanhThuTraGopQuyDoi += thanhTien * heSo; }
+                            
+                            // Detailed Revenue by NganhHang Name
                             if (nganhHangName) {
                                 if (!data.doanhThuTheoNganhHang[nganhHangName]) data.doanhThuTheoNganhHang[nganhHangName] = { revenue: 0, quantity: 0, revenueQuyDoi: 0 };
                                 data.doanhThuTheoNganhHang[nganhHangName].revenue += thanhTien;
                                 data.doanhThuTheoNganhHang[nganhHangName].quantity += soLuong;
                                 data.doanhThuTheoNganhHang[nganhHangName].revenueQuyDoi += thanhTien * heSo;
                             }
-                            if (PG.ICT.includes(nhomHangCode)) data.dtICT += thanhTien;
-                            if (PG.CE.includes(nhomHangCode)) { data.dtCE += thanhTien; data.slCE += soLuong; }
-                            if (nhomHangCode === PG.PHU_KIEN) { data.dtPhuKien += thanhTien; data.slPhuKien += soLuong; }
                             
-                            const isMLN = PG.MAY_LOC_NUOC.includes(nhomHangCode);
-                            const isGiaDung = PG.GIA_DUNG.includes(nganhHangCode);
+                            // Major Group Revenue (Based on validated logic)
+                            if (isICT) { data.dtICT += thanhTien; }
+                            if (isCE) { data.dtCE += thanhTien; data.slCE += soLuong; }
+                            if (isPhuKien) { data.dtPhuKien += thanhTien; data.slPhuKien += soLuong; }
+                            if (isGiaDung) { data.dtGiaDung += thanhTien; data.slGiaDung += soLuong; }
+                            if (isMLN) { data.dtMLN += thanhTien; data.slMLN += soLuong; }
+                            // --- END REFACTORED LOGIC ---
 
-                            if (isMLN) {
-                                data.dtMLN += thanhTien;
-                                data.slMLN += soLuong;
-                                data.dtGiaDung += thanhTien;
-                                data.slGiaDung += soLuong;
-                            } else if (isGiaDung) {
-                                data.dtGiaDung += thanhTien;
-                                data.slGiaDung += soLuong;
-                            }
-
+                            // --- Specific product types (logic remains the same) ---
                             if (PG.DIEN_THOAI.includes(nhomHangCode)) { data.dtDienThoai += thanhTien; data.slDienThoai += soLuong; }
                             if (PG.LAPTOP.includes(nhomHangCode)) { data.dtLaptop += thanhTien; data.slLaptop += soLuong; }
                             if (PG.TIVI.includes(nhomHangCode)) { data.dtTivi += thanhTien; data.slTivi += soLuong; }
@@ -476,3 +475,4 @@ const services = {
 };
 
 export { services };
+

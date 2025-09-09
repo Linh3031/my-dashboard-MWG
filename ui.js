@@ -1,4 +1,4 @@
-// Version 9.7 - Final Capture & Formatting Fix
+// Version 9.9 - UI Consistency Fix
 // MODULE 4: KỆ "GIAO DIỆN" (UI)
 // File này chứa tất cả các hàm chịu trách nhiệm cập nhật và hiển thị dữ liệu ra màn hình.
 
@@ -39,6 +39,13 @@ const ui = {
         }).format(value);
     },
     
+    getShortEmployeeName: (hoTen, maNV) => {
+        if (!hoTen) return maNV || 'N/A';
+        const nameParts = String(hoTen).trim().split(' ');
+        const firstName = nameParts[nameParts.length - 1];
+        return `${firstName} - ${maNV}`;
+    },
+
     togglePlaceholder: (sectionId, show) => {
         const placeholder = document.getElementById(`${sectionId}-placeholder`);
         const content = document.getElementById(`${sectionId}-content`);
@@ -295,8 +302,9 @@ const ui = {
             const { mucTieu } = item;
             const qdClass = item.hieuQuaQuyDoi < (mucTieu.phanTramQD / 100) ? 'cell-performance is-below' : '';
             const tcClass = item.tyLeTraCham < (mucTieu.phanTramTC / 100) ? 'cell-performance is-below' : '';
+            const displayName = ui.getShortEmployeeName(item.hoTen, item.maNV);
             tableHTML += `<tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2 font-semibold line-clamp-2">${item.hoTen}</td>
+                    <td class="px-4 py-2 font-semibold line-clamp-2">${displayName}</td>
                     <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item.doanhThu / 1000000)}</td>
                     <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item.doanhThuQuyDoi / 1000000)}</td>
                     <td class="px-4 py-2 text-right font-bold ${qdClass}">${ui.formatPercentage(item.hieuQuaQuyDoi)}</td>
@@ -375,11 +383,13 @@ const ui = {
                         </thead><tbody>`;
         sortedData.forEach(nv => {
             const incomeDkCellClass = nv.thuNhapDuKien < averageProjectedIncome ? 'cell-performance is-below' : '';
+            const displayName = ui.getShortEmployeeName(nv.hoTen, nv.maNV);
+            // [*] MODIFIED: Added font-bold class for consistency.
             tableHTML += `<tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2 font-semibold line-clamp-2">${nv.hoTen}</td>
-                    <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(nv.gioCong)}</td>
-                    <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(nv.thuongNong / 1000000)}</td>
-                    <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(nv.thuongERP / 1000000)}</td>
+                    <td class="px-4 py-2 font-semibold line-clamp-2">${displayName}</td>
+                    <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(nv.gioCong)}</td>
+                    <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(nv.thuongNong / 1000000)}</td>
+                    <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(nv.thuongERP / 1000000)}</td>
                     <td class="px-4 py-2 text-right font-bold text-blue-600">${ui.formatNumberOrDash(nv.tongThuNhap / 1000000)}</td>
                     <td class="px-4 py-2 text-right font-bold text-green-600 ${incomeDkCellClass}">${ui.formatNumberOrDash(nv.thuNhapDuKien / 1000000)}</td></tr>`;
         });
@@ -475,9 +485,9 @@ const ui = {
             const simClass = item.pctSim < (mucTieu.phanTramSim / 100) ? 'cell-performance is-below' : '';
             const vasClass = item.pctVAS < (mucTieu.phanTramVAS / 100) ? 'cell-performance is-below' : '';
             const bhClass = item.pctBaoHiem < (mucTieu.phanTramBaoHiem / 100) ? 'cell-performance is-below' : '';
-
+            const displayName = ui.getShortEmployeeName(item.hoTen, item.maNV);
             tableHTML += `<tr class="hover:bg-gray-50">
-                <td class="px-4 py-2 font-semibold line-clamp-2">${item.hoTen}</td>
+                <td class="px-4 py-2 font-semibold line-clamp-2">${displayName}</td>
                 <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item.dtICT / 1000000)}</td>
                 <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item.dtPhuKien / 1000000)}</td>
                 <td class="px-4 py-2 text-right font-bold ${pkClass}">${ui.formatPercentage(item.pctPhuKien)}</td>
@@ -558,7 +568,8 @@ const ui = {
         });
         tableHTML += `</tr></thead><tbody>`;
         sortedData.forEach(item => {
-            tableHTML += `<tr class="hover:bg-gray-50"><td class="px-4 py-2 font-semibold line-clamp-2">${item.hoTen}</td>
+            const displayName = ui.getShortEmployeeName(item.hoTen, item.maNV);
+            tableHTML += `<tr class="hover:bg-gray-50"><td class="px-4 py-2 font-semibold line-clamp-2">${displayName}</td>
                 <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item[slField])}</td>
                 <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item[revenueField] / 1000000)}</td>`;
             keys.forEach(k => { tableHTML += `<td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item[k])}</td>`; });
@@ -726,7 +737,9 @@ const ui = {
         const totalAbove = evaluationCounts.doanhthu.above + evaluationCounts.nangsuat.above + evaluationCounts.hieuqua.above + evaluationCounts.dongia.above + evaluationCounts.qdc.above;
         const totalBelow = evaluationCounts.doanhthu.below + evaluationCounts.nangsuat.below + evaluationCounts.hieuqua.below + evaluationCounts.dongia.below + evaluationCounts.qdc.below;
         const totalCriteria = evaluationCounts.doanhthu.total + evaluationCounts.nangsuat.total + evaluationCounts.hieuqua.total + evaluationCounts.dongia.total + evaluationCounts.qdc.total;
-        const titleHtml = `CHI TIẾT - ${employeeData.hoTen} <span class="font-normal text-sm">(Trên TB: <span class="font-bold text-green-300">${totalAbove}</span>, Dưới TB: <span class="font-bold text-yellow-300">${totalBelow}</span> / Tổng: ${totalCriteria})</span>`;
+        
+        const displayName = ui.getShortEmployeeName(employeeData.hoTen, employeeData.maNV);
+        const titleHtml = `CHI TIẾT - ${displayName} <span class="font-normal text-sm">(Trên TB: <span class="font-bold text-green-300">${totalAbove}</span>, Dưới TB: <span class="font-bold text-yellow-300">${totalBelow}</span> / Tổng: ${totalCriteria})</span>`;
 
         detailsContainer.innerHTML = `<div class="p-4 mb-6 bg-blue-600 text-white rounded-lg shadow-lg border border-blue-700" data-capture-group="1"><h3 class="text-2xl font-bold text-center uppercase">${titleHtml}</h3></div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6" data-capture-layout="grid">
@@ -852,8 +865,9 @@ const ui = {
             if (groupedByDept[deptName]) {
                 tableHTML += `<tr class="font-bold bg-slate-100"><td colspan="12" class="px-4 py-2">${deptName}</td></tr>`;
                 groupedByDept[deptName].forEach(item => {
+                    const displayName = ui.getShortEmployeeName(item.hoTen, item.maNV);
                     tableHTML += `<tr class="hover:bg-gray-50">
-                        <td class="px-2 py-2 font-semibold line-clamp-2">${item.hoTen}</td>
+                        <td class="px-2 py-2 font-semibold line-clamp-2">${displayName}</td>
                         <td class="px-2 py-2 text-center font-bold text-lg text-blue-600">${item.totalAbove}</td>
                         <td class="px-2 py-2 text-center text-green-600 font-semibold">${item.summary.doanhthu.above}/${item.summary.doanhthu.total}</td><td class="px-2 py-2 text-center text-red-600">${item.summary.doanhthu.below}/${item.summary.doanhthu.total}</td>
                         <td class="px-2 py-2 text-center text-green-600 font-semibold">${item.summary.nangsuat.above}/${item.summary.nangsuat.total}</td><td class="px-2 py-2 text-center text-red-600">${item.summary.nangsuat.below}/${item.summary.nangsuat.total}</td>
@@ -901,7 +915,6 @@ const ui = {
         setContent('rt-kpi-dt-tc-sub', `% thực trả chậm: <span class="kpi-percentage-value">${ui.formatPercentage(phanTramTC)}</span>`);
     },
     
-    // [*] MODIFIED: Fixed data loss bug for comparison percentage.
     renderLuykeKpiCards: (luykeData, comparisonData, chuaXuatData, goals) => {
         const targetDTThuc = (parseFloat(goals.doanhThuThuc) || 0);
         const targetDTQD = (parseFloat(goals.doanhThuQD) || 0);
@@ -939,7 +952,6 @@ const ui = {
     
         setContent('luyke-kpi-dtqd-chua-xuat-main', ui.formatNumberOrDash(dtChuaXuatQD / 1000000));
     
-        // FIX: Restore the original logic to prevent data loss.
         const comparisonPercentageText = comparisonData.percentage || '-';
         setContent('luyke-kpi-dtck-main', comparisonPercentageText);
         setContent('luyke-kpi-dtck-sub', ui.formatNumberOrDash(comparisonData.value));
