@@ -40,12 +40,12 @@ const config = {
     PRODUCT_GROUPS: {
         ICT: ['1491', '931', '42'],
         CE: ['1097', '1098', '1099', '1094', '894'],
-        PHU_KIEN: '16',
+        PHU_KIEN: ['16', '1394', '184', '764'], // 16 - Phụ kiện tiện ích, 1394 - Phụ kiện lắp đặt, 184 - Phụ kiện trang trí, 764 - Loa vi tính
         GIA_DUNG: ['484', '1214'], // Mã ngành hàng Gia Dụng
         MAY_LOC_NUOC: ['4171', '4172'], // Mã nhóm hàng Máy Lọc Nước
         PIN_SDP: '12',
         CAMERA_TRONG_NHA: '6479',
-        CAMERA_NGOAI_TROI: '4219',
+        CAMERA_NGOAI_TROi: '4219',
         TAI_NGHE_BLT: '4540',
         NOI_CHIEN: '4099',
         ROBOT_HB: '4439',

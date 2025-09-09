@@ -1,4 +1,4 @@
-// Version 9.8 - SKNV Capture & Logic Hotfix
+// Version 9.9 - UI Consistency Fix
 // MODULE 4: KỆ "GIAO DIỆN" (UI)
 // File này chứa tất cả các hàm chịu trách nhiệm cập nhật và hiển thị dữ liệu ra màn hình.
 
@@ -39,6 +39,13 @@ const ui = {
         }).format(value);
     },
     
+    getShortEmployeeName: (hoTen, maNV) => {
+        if (!hoTen) return maNV || 'N/A';
+        const nameParts = String(hoTen).trim().split(' ');
+        const firstName = nameParts[nameParts.length - 1];
+        return `${firstName} - ${maNV}`;
+    },
+
     togglePlaceholder: (sectionId, show) => {
         const placeholder = document.getElementById(`${sectionId}-placeholder`);
         const content = document.getElementById(`${sectionId}-content`);
@@ -295,8 +302,9 @@ const ui = {
             const { mucTieu } = item;
             const qdClass = item.hieuQuaQuyDoi < (mucTieu.phanTramQD / 100) ? 'cell-performance is-below' : '';
             const tcClass = item.tyLeTraCham < (mucTieu.phanTramTC / 100) ? 'cell-performance is-below' : '';
+            const displayName = ui.getShortEmployeeName(item.hoTen, item.maNV);
             tableHTML += `<tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2 font-semibold line-clamp-2">${item.hoTen}</td>
+                    <td class="px-4 py-2 font-semibold line-clamp-2">${displayName}</td>
                     <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item.doanhThu / 1000000)}</td>
                     <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item.doanhThuQuyDoi / 1000000)}</td>
                     <td class="px-4 py-2 text-right font-bold ${qdClass}">${ui.formatPercentage(item.hieuQuaQuyDoi)}</td>
@@ -375,8 +383,10 @@ const ui = {
                         </thead><tbody>`;
         sortedData.forEach(nv => {
             const incomeDkCellClass = nv.thuNhapDuKien < averageProjectedIncome ? 'cell-performance is-below' : '';
+            const displayName = ui.getShortEmployeeName(nv.hoTen, nv.maNV);
+            // [*] MODIFIED: Added font-bold class for consistency.
             tableHTML += `<tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2 font-semibold line-clamp-2">${nv.hoTen}</td>
+                    <td class="px-4 py-2 font-semibold line-clamp-2">${displayName}</td>
                     <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(nv.gioCong)}</td>
                     <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(nv.thuongNong / 1000000)}</td>
                     <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(nv.thuongERP / 1000000)}</td>
@@ -386,11 +396,11 @@ const ui = {
         tableHTML += `</tbody><tfoot class="table-footer font-bold">
             <tr>
                 <td class="px-4 py-2">Tổng</td>
-                <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(totals.gioCong)}</td>
-                <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(totals.thuongNong / 1000000)}</td>
-                <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(totals.thuongERP / 1000000)}</td>
-                <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(totals.tongThuNhap / 1000000)}</td>
-                <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(totals.thuNhapDuKien / 1000000)}</td>
+                <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.gioCong)}</td>
+                <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.thuongNong / 1000000)}</td>
+                <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.thuongERP / 1000000)}</td>
+                <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.tongThuNhap / 1000000)}</td>
+                <td class="px-4 py-2 text-right">${ui.formatNumberOrDash(totals.thuNhapDuKien / 1000000)}</td>
             </tr>
         </tfoot></table></div></div>`;
         return tableHTML;
@@ -475,9 +485,9 @@ const ui = {
             const simClass = item.pctSim < (mucTieu.phanTramSim / 100) ? 'cell-performance is-below' : '';
             const vasClass = item.pctVAS < (mucTieu.phanTramVAS / 100) ? 'cell-performance is-below' : '';
             const bhClass = item.pctBaoHiem < (mucTieu.phanTramBaoHiem / 100) ? 'cell-performance is-below' : '';
-
+            const displayName = ui.getShortEmployeeName(item.hoTen, item.maNV);
             tableHTML += `<tr class="hover:bg-gray-50">
-                <td class="px-4 py-2 font-semibold line-clamp-2">${item.hoTen}</td>
+                <td class="px-4 py-2 font-semibold line-clamp-2">${displayName}</td>
                 <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item.dtICT / 1000000)}</td>
                 <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item.dtPhuKien / 1000000)}</td>
                 <td class="px-4 py-2 text-right font-bold ${pkClass}">${ui.formatPercentage(item.pctPhuKien)}</td>
@@ -558,7 +568,8 @@ const ui = {
         });
         tableHTML += `</tr></thead><tbody>`;
         sortedData.forEach(item => {
-            tableHTML += `<tr class="hover:bg-gray-50"><td class="px-4 py-2 font-semibold line-clamp-2">${item.hoTen}</td>
+            const displayName = ui.getShortEmployeeName(item.hoTen, item.maNV);
+            tableHTML += `<tr class="hover:bg-gray-50"><td class="px-4 py-2 font-semibold line-clamp-2">${displayName}</td>
                 <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item[slField])}</td>
                 <td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item[revenueField] / 1000000)}</td>`;
             keys.forEach(k => { tableHTML += `<td class="px-4 py-2 text-right font-bold">${ui.formatNumberOrDash(item[k])}</td>`; });
@@ -723,24 +734,23 @@ const ui = {
         ];
         donGiaData.forEach(d => countEvaluation('dongia', d.rawValue, d.rawAverage));
 
-        // [*] FIX: Calculate the number of QDC criteria BEFORE calculating the total.
-        const qdcArray = Object.entries(employeeData.qdc || {}).map(([key, values]) => ({ key, ...values })).filter(item => item.sl > 0);
-        evaluationCounts.qdc.total = qdcArray.length;
-
         const totalAbove = evaluationCounts.doanhthu.above + evaluationCounts.nangsuat.above + evaluationCounts.hieuqua.above + evaluationCounts.dongia.above + evaluationCounts.qdc.above;
         const totalBelow = evaluationCounts.doanhthu.below + evaluationCounts.nangsuat.below + evaluationCounts.hieuqua.below + evaluationCounts.dongia.below + evaluationCounts.qdc.below;
         const totalCriteria = evaluationCounts.doanhthu.total + evaluationCounts.nangsuat.total + evaluationCounts.hieuqua.total + evaluationCounts.dongia.total + evaluationCounts.qdc.total;
-        const titleHtml = `CHI TIẾT - ${employeeData.hoTen} <span class="font-normal text-sm">(Trên TB: <span class="font-bold text-green-300">${totalAbove}</span>, Dưới TB: <span class="font-bold text-yellow-300">${totalBelow}</span> / Tổng: ${totalCriteria})</span>`;
+        
+        const displayName = ui.getShortEmployeeName(employeeData.hoTen, employeeData.maNV);
+        const titleHtml = `CHI TIẾT - ${displayName} <span class="font-normal text-sm">(Trên TB: <span class="font-bold text-green-300">${totalAbove}</span>, Dưới TB: <span class="font-bold text-yellow-300">${totalBelow}</span> / Tổng: ${totalCriteria})</span>`;
 
-        // [*] FIX: Refactored the grid structure and added a custom layout attribute for SKNV screenshots.
-        detailsContainer.innerHTML = `<div class="p-4 mb-6 bg-blue-600 text-white rounded-lg shadow-lg border border-blue-700"><h3 class="text-2xl font-bold text-center uppercase">${titleHtml}</h3></div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" data-capture-layout="sknv-custom">
-                <div>${createDetailTableHtml('Doanh thu', 'header-bg-blue', doanhThuData)}</div>
-                <div>${createDetailTableHtml('Năng suất', 'header-bg-green', nangSuatData)}</div>
-                <div>${createDetailTableHtml('Hiệu quả khai thác', 'header-bg-blue', hieuQuaData)}</div>
-                <div>${createDetailTableHtml('Đơn giá (Triệu)', 'header-bg-yellow', donGiaData)}</div>
-                <div>${ui.renderSknvQdcTable(employeeData, departmentAverages, countEvaluation, evaluationCounts)}</div>
-                <div>${ui.renderSknvNganhHangTable(employeeData)}</div>
+        detailsContainer.innerHTML = `<div class="p-4 mb-6 bg-blue-600 text-white rounded-lg shadow-lg border border-blue-700" data-capture-group="1"><h3 class="text-2xl font-bold text-center uppercase">${titleHtml}</h3></div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" data-capture-layout="grid">
+                <div class="space-y-6" data-capture-group="1">${createDetailTableHtml('Doanh thu', 'header-bg-blue', doanhThuData)}</div>
+                <div class="space-y-6" data-capture-group="1">${createDetailTableHtml('Năng suất', 'header-bg-green', nangSuatData)}</div>
+                <div class="space-y-6" data-capture-group="1">${createDetailTableHtml('Hiệu quả khai thác', 'header-bg-blue', hieuQuaData)}</div>
+                <div class="space-y-6" data-capture-group="1">${createDetailTableHtml('Đơn giá (Triệu)', 'header-bg-yellow', donGiaData)}</div>
+                <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6" data-capture-layout="grid">
+                    <div data-capture-group="1">${ui.renderSknvQdcTable(employeeData, departmentAverages, countEvaluation, evaluationCounts)}</div>
+                    <div data-capture-group="1">${ui.renderSknvNganhHangTable(employeeData)}</div>
+                </div>
             </div>`;
     },
 
@@ -801,7 +811,7 @@ const ui = {
 
             if(employee.qdc && departmentAverages.qdc) {
                 for (const key in employee.qdc) {
-                    if(departmentAverages.qdc[key] && employee.qdc[key].sl > 0) {
+                    if(departmentAverages.qdc[key]) {
                         counts.qdc.total++;
                         checkAndCount('qdc', employee.qdc[key].dtqd, departmentAverages.qdc[key].dtqd);
                     }
@@ -855,8 +865,9 @@ const ui = {
             if (groupedByDept[deptName]) {
                 tableHTML += `<tr class="font-bold bg-slate-100"><td colspan="12" class="px-4 py-2">${deptName}</td></tr>`;
                 groupedByDept[deptName].forEach(item => {
+                    const displayName = ui.getShortEmployeeName(item.hoTen, item.maNV);
                     tableHTML += `<tr class="hover:bg-gray-50">
-                        <td class="px-2 py-2 font-semibold line-clamp-2">${item.hoTen}</td>
+                        <td class="px-2 py-2 font-semibold line-clamp-2">${displayName}</td>
                         <td class="px-2 py-2 text-center font-bold text-lg text-blue-600">${item.totalAbove}</td>
                         <td class="px-2 py-2 text-center text-green-600 font-semibold">${item.summary.doanhthu.above}/${item.summary.doanhthu.total}</td><td class="px-2 py-2 text-center text-red-600">${item.summary.doanhthu.below}/${item.summary.doanhthu.total}</td>
                         <td class="px-2 py-2 text-center text-green-600 font-semibold">${item.summary.nangsuat.above}/${item.summary.nangsuat.total}</td><td class="px-2 py-2 text-center text-red-600">${item.summary.nangsuat.below}/${item.summary.nangsuat.total}</td>
@@ -1262,6 +1273,5 @@ const ui = {
         return result;
     }
 };
-
 export { ui };
 
