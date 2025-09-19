@@ -1,4 +1,4 @@
-// Version 5.0
+// Version 12.0 - New Features & Refinements
 // MODULE 1: TỦ CẤU HÌNH (CONFIG)
 // File này chứa tất cả các cấu hình tĩnh của ứng dụng.
 
@@ -19,6 +19,8 @@ const config = {
             soLuong: { required: true, displayName: 'Số lượng', aliases: ['sl bán', 'số lượng'] },
             nhomHang: { required: true, displayName: 'Nhóm hàng', aliases: ['nhóm hàng'] },
             tenSanPham: { required: true, displayName: 'Tên sản phẩm', aliases: ['tên sản phẩm'] },
+            tenKhachHang: { required: true, displayName: 'Tên khách hàng', aliases: ['tên khách hàng', 'tenkhachhang'] },
+            nhaSanXuat: { required: true, displayName: 'Nhà sản xuất', aliases: ['nhà sản xuất', 'nhasanxuat'] },
             nganhHang: { required: true, displayName: 'Ngành hàng', aliases: ['ngành hàng'] },
             hinhThucXuat: { required: true, displayName: 'Hình thức xuất', aliases: ['hình thức xuất'] },
             trangThaiThuTien: { required: true, displayName: 'Trạng thái thu tiền', aliases: ['trạng thái thu tiền'] },
@@ -84,7 +86,7 @@ const config = {
         HINH_THUC_XUAT_TINH_DOANH_THU: [
             'Xuất bán hàng tại siêu thị', 'Xuất cung ứng dịch vụ',
             'Xuất bán pre-order tại siêu thị', 'Xuất SIM trắng kèm theo SIM',
-            'Xuất bán ưu đãi cho nhân viên', 'Xuất bán hàng tại siêu thị (TCĐM)',
+            'Xuất bán hàng ưu đãi cho nhân viên', 'Xuất bán hàng tại siêu thị (TCĐM)',
             'Xuất dịch vụ bảo hành trọn đời', 'Xuất dịch vụ bảo dưỡng trọn đời',
             'Xuất bán hàng trả góp tại siêu thị', 'Xuất bán trả góp ưu đãi cho nhân viên',
             'Xuất bán trả góp cho NV phục vụ công việc', 'Xuất bán pre-order trả góp tại siêu thị',
