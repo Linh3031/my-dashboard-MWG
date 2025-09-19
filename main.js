@@ -1,4 +1,4 @@
-// Version 9.7 - Ultimate Capture Logic
+// Version 15.0 - Fix initialization of detail filters
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -6,58 +6,47 @@ import { config } from './config.js';
 import { appState } from './state.js';
 import { services } from './services.js';
 import { ui } from './ui.js';
+import { firebase } from './firebase.js';
+import { luykeTab } from './tab-luyke.js';
+import { sknvTab } from './tab-sknv.js';
+import { realtimeTab } from './tab-realtime.js';
+import { utils } from './utils.js';
 
 const app = {
-    init() {
+    currentVersion: '15.0',
+
+    async init() {
         try {
+            await firebase.init();
             this.loadDataFromStorage();
-            this.loadInterfaceSettings();
+            utils.loadInterfaceSettings();
             this.setupEventListeners();
-            this.applyContrastSetting();
-            this.loadHighlightSettings();
+            utils.applyContrastSetting();
+            utils.loadHighlightSettings();
             ui.populateAllFilters();
-            this.switchTab('data-section');
+            this.switchTab('home-section');
+
+            this.checkForUpdates();
+            setInterval(() => this.checkForUpdates(), 15 * 60 * 1000); 
         } catch (error) {
             console.error("Lỗi nghiêm trọng trong quá trình khởi tạo ứng dụng:", error);
         }
     },
 
-    loadInterfaceSettings() {
+    async checkForUpdates() {
         try {
-            const savedSettings = localStorage.getItem('interfaceSettings');
-            const defaultSettings = {
-                kpiCard1Bg: '#38bdf8', kpiCard2Bg: '#34d399', kpiCard3Bg: '#fbbf24',
-                kpiCard4Bg: '#2dd4bf', kpiCard5Bg: '#a78bfa', kpiCard6Bg: '#f472b6', kpiTextColor: '#ffffff'
-            };
-            const settings = savedSettings ? JSON.parse(savedSettings) : defaultSettings;
-            ui.applyInterfaceSettings(settings);
-            document.getElementById('kpi-color-1')?.setAttribute('value', settings.kpiCard1Bg || defaultSettings.kpiCard1Bg);
-            document.getElementById('kpi-color-2')?.setAttribute('value', settings.kpiCard2Bg || defaultSettings.kpiCard2Bg);
-            document.getElementById('kpi-color-3')?.setAttribute('value', settings.kpiCard3Bg || defaultSettings.kpiCard3Bg);
-            document.getElementById('kpi-color-4')?.setAttribute('value', settings.kpiCard4Bg || defaultSettings.kpiCard4Bg);
-            document.getElementById('kpi-color-5')?.setAttribute('value', settings.kpiCard5Bg || defaultSettings.kpiCard5Bg);
-            document.getElementById('kpi-color-6')?.setAttribute('value', settings.kpiCard6Bg || defaultSettings.kpiCard6Bg);
-            document.getElementById('kpi-text-color')?.setAttribute('value', settings.kpiTextColor || defaultSettings.kpiTextColor);
-        } catch (e) {
-            console.error("Lỗi khi tải cài đặt giao diện:", e);
+            const response = await fetch(`./version.json?v=${new Date().getTime()}`);
+            if (!response.ok) return;
+            const serverConfig = await response.json();
+            if (serverConfig.version && serverConfig.version !== this.currentVersion) {
+                console.log(`Phiên bản mới ${serverConfig.version} đã sẵn sàng!`);
+                ui.showUpdateNotification();
+            }
+        } catch (error) {
+            console.error('Không thể kiểm tra phiên bản mới:', error);
         }
     },
-    
-    saveInterfaceSettings() {
-        const settings = {
-            kpiCard1Bg: document.getElementById('kpi-color-1')?.value,
-            kpiCard2Bg: document.getElementById('kpi-color-2')?.value,
-            kpiCard3Bg: document.getElementById('kpi-color-3')?.value,
-            kpiCard4Bg: document.getElementById('kpi-color-4')?.value,
-            kpiCard5Bg: document.getElementById('kpi-color-5')?.value,
-            kpiCard6Bg: document.getElementById('kpi-color-6')?.value,
-            kpiTextColor: document.getElementById('kpi-text-color')?.value,
-        };
-        localStorage.setItem('interfaceSettings', JSON.stringify(settings));
-        ui.applyInterfaceSettings(settings);
-        ui.showNotification('Đã cập nhật màu giao diện!', 'success');
-    },
-    
+
     loadDataFromStorage() {
         document.getElementById('declaration-ycx').value = localStorage.getItem('declaration_ycx') || config.DEFAULT_DATA.HINH_THUC_XUAT_TINH_DOANH_THU.join('\n');
         document.getElementById('declaration-ycx-gop').value = localStorage.getItem('declaration_ycx_gop') || config.DEFAULT_DATA.HINH_THUC_XUAT_TRA_GOP.join('\n');
@@ -70,25 +59,22 @@ const app = {
                 const { normalizedData, success } = services.normalizeData(rawData, 'danhsachnv');
                 if (success) {
                     appState.danhSachNhanVien = normalizedData;
-                    appState.danhSachNhanVien.forEach(nv => {
-                        if (nv.maNV) appState.employeeMaNVMap.set(String(nv.maNV).trim(), nv);
-                        if (nv.hoTen) appState.employeeNameToMaNVMap.set(nv.hoTen.toLowerCase().replace(/\s+/g, ' '), String(nv.maNV).trim());
-                    });
+                    services.updateEmployeeMaps();
                     document.getElementById('danhsachnv-saved-status').textContent = `Đã lưu ${appState.danhSachNhanVien.length} nhân viên.`;
                 }
             } catch (e) { console.error("Lỗi đọc DSNV từ localStorage:", e); localStorage.removeItem('saved_danhsachnv'); }
         }
+        
         try {
             const savedLuykeGoals = localStorage.getItem('luykeGoalSettings');
             if(savedLuykeGoals) appState.luykeGoalSettings = JSON.parse(savedLuykeGoals);
-        } catch (e) { console.error("Lỗi đọc luykeGoalSettings từ localStorage:", e); localStorage.removeItem('luykeGoalSettings'); appState.luykeGoalSettings = {}; }
-        
-        try {
             const savedRealtimeGoals = localStorage.getItem('realtimeGoalSettings');
             if (savedRealtimeGoals) appState.realtimeGoalSettings = JSON.parse(savedRealtimeGoals);
-        } catch(e) { console.error("Lỗi đọc realtimeGoalSettings từ localStorage:", e); localStorage.removeItem('realtimeGoalSettings'); appState.realtimeGoalSettings = {}; }
+            const savedTemplates = localStorage.getItem('composerTemplates');
+            if (savedTemplates) appState.composerTemplates = JSON.parse(savedTemplates);
+        } catch (e) { console.error("Lỗi đọc cài đặt từ localStorage:", e); }
         
-        this.loadAndApplyLuykeGoalSettings();
+        utils.loadAndApplyLuykeGoalSettings();
     },
 
     handleFileRead(file) {
@@ -109,860 +95,480 @@ const app = {
     },
 
     processAndRenderAllReports() {
-        if (appState.danhSachNhanVien.length === 0) {
-            ui.togglePlaceholder('health-section', true);
-            ui.togglePlaceholder('health-employee-section', true);
-            ui.togglePlaceholder('realtime-section', true);
-            return;
-        }
-        ui.togglePlaceholder('health-section', false);
-        ui.togglePlaceholder('health-employee-section', false);
-        ui.togglePlaceholder('realtime-section', false);
-
-        app.applyHealthSectionFiltersAndRender();
-        app.applySknvFiltersAndRender();
-        app.applyRealtimeFiltersAndRender();
-    },
-
-    applyHealthSectionFiltersAndRender() {
         if (appState.danhSachNhanVien.length === 0) return;
-        const selectedWarehouse = document.getElementById('luyke-filter-warehouse').value;
-        const selectedDept = document.getElementById('luyke-filter-department').value;
-        const selectedNames = appState.choices.luyke_employee ? appState.choices.luyke_employee.getValue(true) : [];
-        const selectedDates = appState.choices.luyke_date_picker ? appState.choices.luyke_date_picker.selectedDates : [];
-        
-        let filteredYCXData = appState.ycxData;
-        if (selectedDates && selectedDates.length > 0) {
-            const startOfDay = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
-            const selectedDateSet = new Set(selectedDates.map(d => startOfDay(d)));
-            filteredYCXData = appState.ycxData.filter(row => row.ngayTao instanceof Date && !isNaN(row.ngayTao) && selectedDateSet.has(startOfDay(row.ngayTao)));
-        }
-        
-        const goals = app.getLuykeGoalSettings(selectedWarehouse).goals;
-        appState.masterReportData.luyke = services.generateMasterReportData(filteredYCXData, goals);
-        
-        let filteredReport = appState.masterReportData.luyke;
-        if (selectedWarehouse) filteredReport = filteredReport.filter(nv => nv.maKho == selectedWarehouse);
-        if (selectedDept) filteredReport = filteredReport.filter(nv => nv.boPhan === selectedDept);
-        if (selectedNames && selectedNames.length > 0) filteredReport = filteredReport.filter(nv => selectedNames.includes(String(nv.maNV)));
-
-        const supermarketReport = filteredReport.reduce((acc, curr) => {
-            for (const key in curr) { 
-                if (typeof curr[key] === 'number') acc[key] = (acc[key] || 0) + curr[key];
-                else if (key === 'qdc') {
-                    if(!acc.qdc) acc.qdc = {};
-                    for (const qdcKey in curr.qdc) {
-                        if(!acc.qdc[qdcKey]) acc.qdc[qdcKey] = { sl: 0, dt: 0, dtqd: 0, name: curr.qdc[qdcKey].name };
-                        acc.qdc[qdcKey].sl += curr.qdc[qdcKey].sl;
-                        acc.qdc[qdcKey].dt += curr.qdc[qdcKey].dt;
-                        acc.qdc[qdcKey].dtqd += curr.qdc[qdcKey].dtqd;
-                    }
-                }
-            }
-            acc.maKho = selectedWarehouse || '';
-            return acc;
-        }, {});
-
-        const aggregatedNganhHang = {};
-        filteredReport.forEach(employee => {
-            Object.entries(employee.doanhThuTheoNganhHang).forEach(([name, values]) => {
-                if (!aggregatedNganhHang[name]) aggregatedNganhHang[name] = { quantity: 0, revenue: 0, revenueQuyDoi: 0, donGia: 0 };
-                aggregatedNganhHang[name].quantity += values.quantity;
-                aggregatedNganhHang[name].revenue += values.revenue;
-                aggregatedNganhHang[name].revenueQuyDoi += values.revenueQuyDoi;
-            });
-        });
-        for(const name in aggregatedNganhHang) {
-            const item = aggregatedNganhHang[name];
-            item.donGia = item.quantity > 0 ? item.revenue / item.quantity : 0;
-        }
-        supermarketReport.nganhHangChiTiet = aggregatedNganhHang;
-        
-        supermarketReport.pctGiaDung = supermarketReport.dtCE > 0 ? supermarketReport.dtGiaDung / supermarketReport.dtCE : 0;
-        supermarketReport.pctMLN = supermarketReport.dtCE > 0 ? supermarketReport.dtMLN / supermarketReport.dtCE : 0;
-        supermarketReport.pctPhuKien = supermarketReport.dtICT > 0 ? supermarketReport.dtPhuKien / supermarketReport.dtICT : 0;
-        supermarketReport.pctSim = supermarketReport.slSmartphone > 0 ? supermarketReport.slSimOnline / supermarketReport.slSmartphone : 0;
-        supermarketReport.pctVAS = supermarketReport.slSmartphone > 0 ? supermarketReport.slUDDD / supermarketReport.slSmartphone : 0;
-        supermarketReport.pctBaoHiem = supermarketReport.slBaoHiemDenominator > 0 ? supermarketReport.slBaoHiemVAS / supermarketReport.slBaoHiemDenominator : 0;
-        
-        const numDays = new Set(filteredYCXData.map(row => new Date(row.ngayTao).toDateString())).size;
-        
-        ui.updateLuykeSupermarketTitle(selectedWarehouse, new Date());
-        ui.renderLuykeEfficiencyTable(supermarketReport, goals);
-        ui.renderLuykeCategoryDetailsTable(supermarketReport, numDays);
-        ui.renderLuykeQdcTable(supermarketReport, numDays);
-
-        const pastedData = services.parseLuyKePastedData(document.getElementById('paste-luyke').value);
-        ui.displayHealthKpiTable(pastedData, goals, app.updateDailyGoal); 
-        ui.displayCompetitionResultsFromLuyKe(document.getElementById('paste-luyke').value);
-        app.populateHighlightFilters('luyke', filteredYCXData, filteredReport);
-        app.applyHighlights('luyke');
-    },
-
-    applySknvFiltersAndRender() {
-        if (appState.danhSachNhanVien.length === 0) return;
-        const selectedWarehouse = document.getElementById('sknv-filter-warehouse').value;
-        const selectedDept = document.getElementById('sknv-filter-department').value;
-        const selectedNames = appState.choices.sknv_employee ? appState.choices.sknv_employee.getValue(true) : [];
-        const selectedDates = appState.choices.sknv_date_picker ? appState.choices.sknv_date_picker.selectedDates : [];
-        
-        let filteredYCXData = appState.ycxData;
-        if (selectedDates && selectedDates.length > 0) {
-            const startOfDay = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
-            const selectedDateSet = new Set(selectedDates.map(d => startOfDay(d)));
-            filteredYCXData = appState.ycxData.filter(row => row.ngayTao instanceof Date && !isNaN(row.ngayTao) && selectedDateSet.has(startOfDay(row.ngayTao)));
-        }
-        
-        const goals = app.getLuykeGoalSettings(selectedWarehouse).goals;
-        appState.masterReportData.sknv = services.generateMasterReportData(filteredYCXData, goals);
-        
-        let filteredReport = appState.masterReportData.sknv;
-        if (selectedWarehouse) filteredReport = filteredReport.filter(nv => nv.maKho == selectedWarehouse);
-        if (selectedDept) filteredReport = filteredReport.filter(nv => nv.boPhan === selectedDept);
-        if (selectedNames && selectedNames.length > 0) filteredReport = filteredReport.filter(nv => selectedNames.includes(String(nv.maNV)));
-        
-        ui.displayEmployeeRevenueReport(filteredReport, 'subtab-doanhthu-lk', 'doanhthu_lk');
-        ui.displayEmployeeIncomeReport(filteredReport);
-        ui.displayEmployeeEfficiencyReport(filteredReport, 'subtab-hieu-qua-khai-thac', 'hieu_qua');
-        ui.displayCategoryRevenueReport(filteredReport, 'subtab-doanhthu-nganhhang', 'sknv');
-        ui.displaySknvReport(filteredReport);
-        app.populateHighlightFilters('sknv', filteredYCXData, filteredReport);
-        app.applyHighlights('sknv');
-    },
-    
-    applyRealtimeFiltersAndRender() {
-        ui.updateRealtimeSupermarketTitle(document.getElementById('realtime-filter-warehouse').value, new Date());
-        if (appState.realtimeYCXData.length === 0) {
-             ui.renderRealtimeKpiCards({}, {});
-             return;
-        };
-        const selectedWarehouse = document.getElementById('realtime-filter-warehouse').value;
-        const selectedDept = document.getElementById('realtime-filter-department').value;
-        const selectedEmployees = appState.choices.realtime_employee ? appState.choices.realtime_employee.getValue(true) : [];
-        
-        const settings = app.getRealtimeGoalSettings(selectedWarehouse);
-        
-        let filteredRealtimeYCX = appState.realtimeYCXData;
-        if (selectedWarehouse || selectedDept || (selectedEmployees && selectedEmployees.length > 0)) {
-            const visibleEmployees = appState.danhSachNhanVien.filter(nv => 
-                (!selectedWarehouse || nv.maKho == selectedWarehouse) &&
-                (!selectedDept || nv.boPhan === selectedDept) &&
-                (!selectedEmployees || selectedEmployees.length === 0 || selectedEmployees.includes(String(nv.maNV)))
-            ).map(nv => String(nv.maNV));
-            filteredRealtimeYCX = appState.realtimeYCXData.filter(row => {
-                const msnvMatch = String(row.nguoiTao || '').match(/^(\d+)/);
-                return msnvMatch && visibleEmployees.includes(msnvMatch[1].trim());
-            });
-        }
-        
-        appState.masterReportData.realtime = services.generateMasterReportData(filteredRealtimeYCX, settings.goals, true);
-         let filteredReport = appState.masterReportData.realtime;
-         if (selectedWarehouse) filteredReport = filteredReport.filter(nv => nv.maKho == selectedWarehouse);
-         if (selectedDept) filteredReport = filteredReport.filter(nv => nv.boPhan === selectedDept);
-         if (selectedEmployees && selectedEmployees.length > 0) filteredReport = filteredReport.filter(nv => selectedEmployees.includes(String(nv.maNV)));
-
-        const supermarketReport = filteredReport.reduce((acc, curr) => {
-             for (const key in curr) { 
-                if (typeof curr[key] === 'number') acc[key] = (acc[key] || 0) + curr[key];
-                else if (key === 'qdc') {
-                    if(!acc.qdc) acc.qdc = {};
-                    for (const qdcKey in curr.qdc) {
-                        if(!acc.qdc[qdcKey]) acc.qdc[qdcKey] = { sl: 0, dt: 0, dtqd: 0, name: curr.qdc[qdcKey].name };
-                        acc.qdc[qdcKey].sl += curr.qdc[qdcKey].sl;
-                        acc.qdc[qdcKey].dt += curr.qdc[qdcKey].dt;
-                        acc.qdc[qdcKey].dtqd += curr.qdc[qdcKey].dtqd;
-                    }
-                }
-            }
-            return acc;
-        }, {
-            doanhThu: 0, doanhThuQuyDoi: 0, dtICT: 0, dtCE: 0, dtPhuKien: 0, dtGiaDung: 0, dtMLN: 0, qdc: {}
-        });
-
-        const aggregatedNganhHang = {};
-        filteredReport.forEach(employee => {
-            Object.entries(employee.doanhThuTheoNganhHang).forEach(([name, values]) => {
-                if (!aggregatedNganhHang[name]) aggregatedNganhHang[name] = { quantity: 0, revenue: 0, revenueQuyDoi: 0, donGia: 0 };
-                aggregatedNganhHang[name].quantity += values.quantity;
-                aggregatedNganhHang[name].revenue += values.revenue;
-                aggregatedNganhHang[name].revenueQuyDoi += values.revenueQuyDoi;
-            });
-        });
-        for(const name in aggregatedNganhHang) {
-            const item = aggregatedNganhHang[name];
-            item.donGia = item.quantity > 0 ? item.revenue / item.quantity : 0;
-        }
-        supermarketReport.nganhHangChiTiet = aggregatedNganhHang;
-
-        supermarketReport.pctGiaDung = supermarketReport.dtCE > 0 ? supermarketReport.dtGiaDung / supermarketReport.dtCE : 0;
-        supermarketReport.pctMLN = supermarketReport.dtCE > 0 ? supermarketReport.dtMLN / supermarketReport.dtCE : 0;
-        supermarketReport.pctPhuKien = supermarketReport.dtICT > 0 ? supermarketReport.dtPhuKien / supermarketReport.dtICT : 0;
-        supermarketReport.pctSim = supermarketReport.slSmartphone > 0 ? supermarketReport.slSimOnline / supermarketReport.slSmartphone : 0;
-        supermarketReport.pctVAS = supermarketReport.slSmartphone > 0 ? supermarketReport.slUDDD / supermarketReport.slSmartphone : 0;
-        supermarketReport.pctBaoHiem = supermarketReport.slBaoHiemDenominator > 0 ? supermarketReport.slBaoHiemVAS / supermarketReport.slBaoHiemDenominator : 0;
-        
-        ui.renderRealtimeKpiCards(supermarketReport, settings.goals);
-        ui.renderRealtimeCategoryDetailsTable(supermarketReport);
-        ui.renderRealtimeEfficiencyTable(supermarketReport, settings.goals);
-        ui.renderRealtimeQdcTable(supermarketReport);
-
-        ui.displayEmployeeRevenueReport(filteredReport, 'subtab-realtime-nhan-vien', 'realtime_dt_nhanvien');
-        ui.displayEmployeeEfficiencyReport(filteredReport, 'subtab-realtime-hieu-qua', 'realtime_hieuqua_nhanvien');
-        ui.displayCategoryRevenueReport(filteredReport, 'subtab-realtime-nganh-hang', 'realtime');
-        app.populateHighlightFilters('realtime', filteredRealtimeYCX, filteredReport);
-        app.applyHighlights('realtime');
+        luykeTab.render();
+        sknvTab.render();
+        realtimeTab.render();
     },
 
     switchTab(targetId) {
         document.querySelectorAll('.page-section').forEach(section => section.classList.toggle('hidden', section.id !== targetId));
-    },
-
-    saveRealtimeGoalSettings() {
-        const warehouse = document.getElementById('rt-goal-warehouse-select').value;
-        if (!warehouse) { return; }
-        const settings = { goals: {}, timing: {} };
-        document.querySelectorAll('.rt-goal-input').forEach(input => settings.goals[input.dataset.goal] = input.value);
-        document.querySelectorAll('.rt-setting-input').forEach(input => settings.timing[input.id] = input.value);
-        if (!appState.realtimeGoalSettings) appState.realtimeGoalSettings = {};
-        appState.realtimeGoalSettings[warehouse] = settings;
-        localStorage.setItem('realtimeGoalSettings', JSON.stringify(appState.realtimeGoalSettings));
-        ui.showNotification(`Đã lưu cài đặt Realtime cho kho ${warehouse}!`, 'success');
-        app.applyRealtimeFiltersAndRender();
-    },
-
-    loadAndApplyRealtimeGoalSettings() {
-        const warehouse = document.getElementById('rt-goal-warehouse-select').value;
-        const settings = appState.realtimeGoalSettings ? appState.realtimeGoalSettings[warehouse] : null;
-        if (settings) {
-            document.querySelectorAll('.rt-goal-input').forEach(input => input.value = settings.goals?.[input.dataset.goal] || '');
-            document.querySelectorAll('.rt-setting-input').forEach(input => input.value = settings.timing?.[input.id] || '');
-        } else {
-            document.querySelectorAll('.rt-goal-input, .rt-setting-input').forEach(input => input.value = '');
-        }
-    },
-
-    saveLuykeGoalSettings() {
-        const warehouse = document.getElementById('luyke-goal-warehouse-select').value;
-        if (!warehouse) { return; }
-        const settings = {};
-        document.querySelectorAll('.luyke-goal-input').forEach(input => {
-            settings[input.dataset.goal] = input.value;
+        document.querySelectorAll('.nav-link').forEach(link => {
+            const isActive = link.getAttribute('href') === `#${targetId}`;
+            link.classList.toggle('bg-blue-100', isActive);
+            link.classList.toggle('text-blue-700', isActive);
         });
-        if(!appState.luykeGoalSettings) appState.luykeGoalSettings = {};
-        appState.luykeGoalSettings[warehouse] = settings;
-        localStorage.setItem('luykeGoalSettings', JSON.stringify(appState.luykeGoalSettings));
-        ui.showNotification(`Đã lưu cài đặt mục tiêu Lũy kế cho kho ${warehouse}!`, 'success');
-        app.processAndRenderAllReports();
+        
+        if (targetId === 'home-section') ui.renderHomePage();
+        else if (targetId === 'health-section') luykeTab.render();
+        else if (targetId === 'health-employee-section') sknvTab.render();
+        else if (targetId === 'realtime-section') realtimeTab.render();
+        else if (targetId === 'declaration-section' && appState.isAdmin) ui.renderAdminHelpEditors();
     },
 
-    loadAndApplyLuykeGoalSettings() {
-        const warehouse = document.getElementById('luyke-goal-warehouse-select').value;
-        const settings = (appState.luykeGoalSettings && appState.luykeGoalSettings[warehouse]) ? appState.luykeGoalSettings[warehouse] : {};
-         document.querySelectorAll('.luyke-goal-input').forEach(input => {
-            input.value = settings[input.dataset.goal] || '';
-        });
-        const savedPercentage = localStorage.getItem('dailyGoalPercentage');
-        if(savedPercentage) document.getElementById('daily-goal-percentage').value = savedPercentage;
-    },
-
-    getLuykeGoalSettings(selectedWarehouse = null) {
-        const settings = { goals: {} };
-        const goalKeys = ['doanhThuThuc', 'doanhThuQD', 'phanTramQD', 'phanTramTC', 'phanTramGiaDung', 'phanTramMLN', 'phanTramPhuKien', 'phanTramBaoHiem', 'phanTramSim', 'phanTramVAS'];
-
-        if (selectedWarehouse && appState.luykeGoalSettings[selectedWarehouse]) {
-             const source = appState.luykeGoalSettings[selectedWarehouse];
-             goalKeys.forEach(key => settings.goals[key] = parseFloat(source[key]) || 0);
-        } else if (!selectedWarehouse) {
-            const allSettings = appState.luykeGoalSettings || {};
-            const warehouseKeys = Object.keys(allSettings);
-            const percentCounts = {};
-            
-            goalKeys.forEach(key => settings.goals[key] = 0);
-
-            warehouseKeys.forEach(whKey => {
-                const source = allSettings[whKey];
-                goalKeys.forEach(key => {
-                    const value = parseFloat(source[key]) || 0;
-                    if (key.startsWith('phanTram')) {
-                        settings.goals[key] += value;
-                        percentCounts[key] = (percentCounts[key] || 0) + 1;
-                    } else {
-                        settings.goals[key] += value;
-                    }
-                });
-            });
-            
-            Object.keys(percentCounts).forEach(key => {
-                if (percentCounts[key] > 0) {
-                    settings.goals[key] /= percentCounts[key];
-                }
-            });
-        }
-        return settings;
-    },
-
-    getRealtimeGoalSettings(selectedWarehouse = null) {
-        if (selectedWarehouse && appState.realtimeGoalSettings && appState.realtimeGoalSettings[selectedWarehouse]) {
-            return appState.realtimeGoalSettings[selectedWarehouse];
-        }
-        if (!selectedWarehouse) {
-            const allSettings = appState.realtimeGoalSettings || {};
-            const validWarehouseSettings = Object.values(allSettings).filter(s => s.goals && Object.keys(s.goals).length > 0);
-            if(validWarehouseSettings.length === 0) return { goals: {}, timing: {} };
-            const aggregatedGoals = { doanhThuThuc: 0, doanhThuQD: 0 };
-            const percentGoals = {}; const percentCounts = {};
-            validWarehouseSettings.forEach(ws => {
-                aggregatedGoals.doanhThuThuc += parseFloat(ws.goals.doanhThuThuc || 0);
-                aggregatedGoals.doanhThuQD += parseFloat(ws.goals.doanhThuQD || 0);
-                Object.entries(ws.goals).forEach(([key, value]) => {
-                    if (key.startsWith('phanTram')) {
-                        if (!percentGoals[key]) { percentGoals[key] = 0; percentCounts[key] = 0; }
-                        const numValue = parseFloat(value);
-                        if(!isNaN(numValue)) { percentGoals[key] += numValue; percentCounts[key]++; }
-                    }
-                });
-            });
-            Object.keys(percentCounts).forEach(key => { if(percentCounts[key] > 0) aggregatedGoals[key] = percentGoals[key] / percentCounts[key]; });
-            const representativeTiming = validWarehouseSettings.length > 0 ? (validWarehouseSettings[0].timing || {}) : {};
-            return { goals: aggregatedGoals, timing: representativeTiming };
-        }
-        return { goals: {}, timing: {} };
-    },
-
-    applyContrastSetting() {
-        const savedLevel = localStorage.getItem('contrastLevel') || '1';
-        document.body.dataset.contrast = savedLevel;
-        document.querySelectorAll('.contrast-selector').forEach(sel => sel.value = savedLevel);
-    },
-
-    handleContrastChange(event) {
-        const level = event.target.value;
-        localStorage.setItem('contrastLevel', level);
-        document.body.dataset.contrast = level;
-        document.querySelectorAll('.contrast-selector').forEach(sel => {
-            if (sel !== event.target) sel.value = level;
-        });
-    },
-
-    loadHighlightSettings() {
+    setupEventListeners() {
         try {
-            const saved = localStorage.getItem('highlightSettings');
-            if (saved) appState.highlightSettings = JSON.parse(saved);
-        } catch(e) {
-            console.error("Error loading highlight settings", e);
-            appState.highlightSettings = { luyke: {}, sknv: {}, realtime: {} };
-        }
-    },
+            const multiSelectConfig = { 
+                removeItemButton: true, 
+                placeholder: true, 
+                placeholderValue: 'Chọn hoặc gõ để tìm...', 
+                searchPlaceholderValue: 'Tìm kiếm...' 
+            };
 
-    populateHighlightFilters(prefix, ycxData, reportData) {
-        if (!appState.choices[`${prefix}_highlight_nhanhang`]) return; 
-        const uniqueNganhHang = [...new Set(ycxData.map(r => (String(r.nganhHang || '').split(/-(.+)/)[1] || '').trim()).filter(Boolean))].sort();
-        const uniqueNhomHang = [...new Set(ycxData.map(r => r.nhomHang).filter(Boolean))].sort();
-        const uniqueEmployees = [...new Set(reportData.map(r => r.hoTen).filter(Boolean))].sort();
+            ['luyke', 'sknv', 'realtime'].forEach(prefix => {
+                const employeeEl = document.getElementById(`${prefix}-filter-name`);
+                if (employeeEl) {
+                    appState.choices[`${prefix}_employee`] = new Choices(employeeEl, multiSelectConfig);
+                }
+                
+                ['warehouse', 'department'].forEach(type => {
+                    const el = document.getElementById(`${prefix}-filter-${type}`);
+                    if(el) new Choices(el, { searchEnabled: true, removeItemButton: false, itemSelectText: 'Chọn' });
+                });
 
-        const createOptions = (arr) => arr.map(item => ({ value: item, label: item, selected: false }));
-        
-        appState.choices[`${prefix}_highlight_nhanhang`]?.setChoices(createOptions(uniqueNganhHang), 'value', 'label', true);
-        appState.choices[`${prefix}_highlight_nhomhang`]?.setChoices(createOptions(uniqueNhomHang), 'value', 'label', true);
-        appState.choices[`${prefix}_highlight_employee`]?.setChoices(createOptions(uniqueEmployees), 'value', 'label', true);
-    },
+                ['nhanhang', 'nhomhang', 'employee'].forEach(type => {
+                    const highlightEl = document.getElementById(`${prefix}-highlight-${type}`);
+                    if (highlightEl) {
+                        appState.choices[`${prefix}_highlight_${type}`] = new Choices(highlightEl, multiSelectConfig);
+                    }
+                });
+            });
 
-    applyHighlights(prefix) {
-        const settings = appState.highlightSettings[prefix] || {};
-        const tableContainer = document.getElementById(`${prefix === 'luyke' ? 'health' : (prefix === 'sknv' ? 'health-employee' : 'realtime')}-section`);
-        if (!tableContainer) return;
-        
-        tableContainer.querySelectorAll('tbody tr').forEach(row => {
-             row.classList.remove('highlighted-row');
-             row.style.backgroundColor = '';
+            // FIX: Store single-select instances correctly in appState
+            const singleSelectConfig = { 
+                searchEnabled: true, 
+                removeItemButton: false, 
+                itemSelectText: 'Chọn', 
+                searchPlaceholderValue: 'Tìm kiếm...' 
+            };
+            const singleSelects = {
+                'sknv-employee-filter': 'sknv_employee_detail',
+                'thidua-employee-filter': 'thidua_employee_detail',
+                'realtime-employee-detail-filter': 'realtime_employee_detail'
+            };
+            for (const [id, key] of Object.entries(singleSelects)) {
+                 const el = document.getElementById(id);
+                 if (el) {
+                    appState.choices[key] = new Choices(el, singleSelectConfig);
+                 }
+            }
+
+        } catch (error) { console.error("Lỗi khi khởi tạo Choices.js:", error); }
+
+        try {
+            const initDatePicker = (prefix, renderFunc) => {
+                const datePickerEl = document.getElementById(`${prefix}-filter-date`);
+                if (!datePickerEl) return;
+                const datePicker = flatpickr(datePickerEl, {
+                    mode: "multiple", dateFormat: "d/m", maxDate: "today",
+                    onClose: (selectedDates, dateStr, instance) => {
+                        if (selectedDates.length === 2) {
+                            const [start, end] = selectedDates.sort((a,b) => a - b);
+                            const dateRange = Array.from({length: (end - start) / 86400000 + 1}, (_, i) => new Date(start.getTime() + i * 86400000));
+                            instance.setDate(dateRange, false);
+                        }
+                        ui.updateDateSummary(document.getElementById(`${prefix}-date-summary`), instance);
+                        renderFunc();
+                    }
+                });
+                appState.choices[`${prefix}_date_picker`] = datePicker;
+                document.getElementById(`${prefix}-clear-date`)?.addEventListener('click', () => { datePicker.clear(); renderFunc(); });
+            };
+            initDatePicker('luyke', luykeTab.render);
+            initDatePicker('sknv', sknvTab.render);
+        } catch (error) { console.error("Lỗi khi khởi tạo Flatpickr:", error); }
+
+        document.querySelectorAll('a.nav-link').forEach(link => link.addEventListener('click', (e) => { e.preventDefault(); this.switchTab(link.getAttribute('href').substring(1)); }));
+        document.querySelectorAll('.sub-tab-btn').forEach(btn => btn.addEventListener('click', (e) => ui.handleSubTabClick(e.currentTarget)));
+        document.querySelectorAll('.toggle-filters-btn').forEach(button => button.addEventListener('click', () => ui.toggleFilterSection(button.dataset.target)));
+        document.querySelectorAll('.file-input').forEach(input => input.addEventListener('change', (e) => this.handleFileInputChange(e)));
+        document.getElementById('paste-luyke')?.addEventListener('input', () => { ui.updatePasteStatus('status-luyke'); this.processAndRenderAllReports(); });
+        document.getElementById('paste-thiduanv')?.addEventListener('input', (e) => {
+            sknvTab.render();
+            ui.updatePasteStatus('status-thiduanv', `✓ Đã xử lý ${appState.thiDuaReportData.length} nhân viên.`);
+            ui.displayPastedDebugInfo('thiduanv-pasted');
         });
+        document.getElementById('paste-thuongerp')?.addEventListener('input', () => this.handleErpPaste());
+        document.getElementById('paste-thuongerp-thangtruoc')?.addEventListener('input', (e) => this.handleErpThangTruocPaste(e));
+        document.getElementById('realtime-file-input')?.addEventListener('change', (e) => this.handleRealtimeFileInput(e));
 
-        if (settings.values && settings.values.length > 0) {
-            tableContainer.querySelectorAll('tbody tr').forEach(row => {
-                const cellText = row.cells[0] ? row.cells[0].textContent : '';
-                if (settings.values.includes(cellText)) {
-                    row.classList.add('highlighted-row');
-                    row.style.backgroundColor = settings.color;
+        ['luyke', 'sknv', 'realtime'].forEach(prefix => {
+            document.getElementById(`${prefix}-filter-warehouse`)?.addEventListener('change', () => this.handleFilterChange(prefix));
+            document.getElementById(`${prefix}-filter-department`)?.addEventListener('change', () => this.handleFilterChange(prefix));
+            document.getElementById(`${prefix}-filter-name`)?.addEventListener('change', () => this.handleFilterChange(prefix));
+        });
+        document.getElementById('sknv-view-selector')?.addEventListener('click', (e) => this.handleSknvViewChange(e));
+        document.getElementById('sknv-employee-filter')?.addEventListener('change', () => sknvTab.render());
+        document.getElementById('luyke-thidua-view-selector')?.addEventListener('click', (e) => this.handleLuykeThiDuaViewChange(e));
+        document.getElementById('thidua-view-selector')?.addEventListener('click', (e) => this.handleThiDuaViewChange(e));
+        document.getElementById('thidua-employee-filter')?.addEventListener('change', () => ui.displayCompetitionReport('employee'));
+        document.getElementById('dtnv-realtime-view-selector')?.addEventListener('click', (e) => this.handleDtnvRealtimeViewChange(e));
+        document.getElementById('realtime-employee-detail-filter')?.addEventListener('change', () => realtimeTab.handleEmployeeDetailChange());
+        document.getElementById('dthang-realtime-view-selector')?.addEventListener('click', (e) => this.handleDthangRealtimeViewChange(e));
+        document.getElementById('realtime-brand-category-filter')?.addEventListener('change', () => realtimeTab.handleBrandFilterChange());
+        document.getElementById('realtime-brand-filter')?.addEventListener('change', () => realtimeTab.handleBrandFilterChange());
+
+        this.setupSettingsAndModals();
+        this.setupHighlightingEventListeners();
+        this.setupActionButtons();
+        this.setupCollaborationEventListeners();
+    },
+
+    setupSettingsAndModals() {
+        document.getElementById('admin-access-btn')?.addEventListener('click', () => ui.toggleModal('admin-modal', true));
+        document.getElementById('admin-submit-btn')?.addEventListener('click', () => this.handleAdminLogin());
+        document.getElementById('admin-cancel-btn')?.addEventListener('click', () => ui.toggleModal('admin-modal', false));
+        document.getElementById('interface-settings-btn')?.addEventListener('click', () => ui.toggleDrawer('interface-drawer', true));
+        document.getElementById('goal-settings-btn')?.addEventListener('click', () => ui.toggleDrawer('goal-drawer', true));
+        document.querySelectorAll('.close-drawer-btn, #drawer-overlay').forEach(el => el.addEventListener('click', () => ui.closeAllDrawers()));
+        document.querySelectorAll('.contrast-selector').forEach(sel => sel.addEventListener('change', (e) => this.handleContrastChange(e)));
+        
+        document.getElementById('global-font-size-slider')?.addEventListener('input', (e) => utils.handleFontSizeChange(e, 'global'));
+        document.getElementById('kpi-font-size-slider')?.addEventListener('input', (e) => utils.handleFontSizeChange(e, 'kpi'));
+
+        document.querySelectorAll('.kpi-color-input').forEach(picker => picker.addEventListener('input', () => utils.saveInterfaceSettings()));
+        document.getElementById('save-declaration-btn')?.addEventListener('click', () => this.saveDeclarations());
+        document.getElementById('rt-goal-warehouse-select')?.addEventListener('change', () => utils.loadAndApplyRealtimeGoalSettings());
+        document.querySelectorAll('.rt-goal-input, .rt-setting-input').forEach(input => input.addEventListener('input', () => utils.saveRealtimeGoalSettings()));
+        document.getElementById('luyke-goal-warehouse-select')?.addEventListener('change', () => utils.loadAndApplyLuykeGoalSettings());
+        document.querySelectorAll('.luyke-goal-input').forEach(input => input.addEventListener('input', () => utils.saveLuykeGoalSettings()));
+        document.getElementById('toggle-debug-btn')?.addEventListener('click', (e) => ui.toggleDebugTool(e.currentTarget));
+        document.body.addEventListener('click', (e) => {
+            const helpTrigger = e.target.closest('.page-header__help-btn');
+            if(helpTrigger) ui.showHelpModal(helpTrigger.dataset.helpId);
+            const closeModalTrigger = e.target.closest('[data-close-modal]');
+            if (closeModalTrigger) ui.toggleModal(closeModalTrigger.closest('.modal').id, false);
+        });
+    },
+
+    setupHighlightingEventListeners() {
+        ['luyke', 'sknv', 'realtime'].forEach(prefix => {
+            document.getElementById(`${prefix}-highlight-nhanhang`)?.addEventListener('change', () => this.handleHighlightFilterChange(prefix, 'nhanhang'));
+            document.getElementById(`${prefix}-highlight-nhomhang`)?.addEventListener('change', () => this.handleHighlightFilterChange(prefix, 'nhomhang'));
+            document.getElementById(`${prefix}-highlight-employee`)?.addEventListener('change', () => this.handleHighlightFilterChange(prefix, 'employee'));
+            document.getElementById(`${prefix}-highlight-color`)?.addEventListener('input', (e) => this.handleHighlightColorChange(prefix));
+            document.getElementById(`${prefix}-clear-highlight`)?.addEventListener('click', () => this.handleClearHighlight(prefix));
+        });
+    },
+
+    setupCollaborationEventListeners() {
+        document.body.addEventListener('click', async (e) => {
+            const target = e.target;
+            if (target.id === 'submit-feedback-btn') this.handleSubmitFeedback();
+            const feedbackItem = target.closest('.feedback-item');
+            if (feedbackItem) this.handleFeedbackReplyActions(e, feedbackItem);
+            const composerTrigger = target.closest('.action-btn--composer');
+            if (composerTrigger) ui.showComposerModal(composerTrigger.id.split('-')[1]);
+            const composerModal = target.closest('#composer-modal');
+            if (composerModal) this.handleComposerActions(e, composerModal);
+            if (target.id === 'copy-from-preview-btn') ui.copyFromPreview();
+            if (target.id === 'save-help-content-btn') this.saveHelpContent();
+        });
+    },
+
+    setupActionButtons() {
+        ['luyke', 'sknv', 'realtime'].forEach(prefix => {
+            const captureBtn = document.getElementById(`capture-${prefix}-btn`);
+            if (!captureBtn) return;
+            captureBtn.addEventListener('click', () => {
+                const activeTabButton = document.querySelector(`#${prefix}-subtabs-nav .sub-tab-btn.active`);
+                if (!activeTabButton) { ui.showNotification('Không tìm thấy tab đang hoạt động.', 'error'); return; }
+                const title = activeTabButton.dataset.title || 'BaoCao';
+                const activeTabContent = document.querySelector(`#${prefix}-subtabs-content .sub-tab-content:not(.hidden)`);
+                if (!activeTabContent) { ui.showNotification('Không tìm thấy nội dung để chụp.', 'error'); return; }
+                utils.captureDashboardInParts(activeTabContent, title);
+            });
+
+            document.getElementById(`export-${prefix}-btn`)?.addEventListener('click', () => {
+                const activeTabButton = document.querySelector(`#${prefix}-subtabs-nav .sub-tab-btn.active`);
+                const activeTabContent = document.querySelector(`#${prefix}-subtabs-content .sub-tab-content:not(.hidden)`);
+                if (activeTabContent && activeTabButton) {
+                    const title = activeTabButton.dataset.title || 'BaoCao';
+                    const timestamp = new Date().toLocaleDateString('vi-VN').replace(/\//g, '-');
+                    utils.exportTableToExcel(activeTabContent, `${title}_${timestamp}`);
+                } else {
+                     ui.showNotification('Không tìm thấy tab để xuất.', 'error');
                 }
             });
-        }
+        });
     },
 
-    handleHighlightChange(prefix, type) {
+    async handleFileInputChange(e) {
+        const fileInput = e.target;
+        const file = fileInput.files[0];
+        const fileType = fileInput.id.replace('file-', '');
+        const dataName = fileInput.dataset.name || fileType;
+        const stateKey = fileInput.dataset.stateKey; 
+        
+        if (!file || !stateKey) return; 
+        
+        ui.updateFileStatus(fileType, file.name, 'Đang xử lý...', 'default');
+        ui.showProgressBar(fileType);
+
+        try {
+            const rawData = await this.handleFileRead(file);
+            const normalizeType = fileType.includes('thangtruoc') ? fileType.replace('-thangtruoc', '') : fileType;
+            const { normalizedData, success, missingColumns } = services.normalizeData(rawData, normalizeType);
+            ui.displayDebugInfo(fileType);
+
+            if (success) {
+                appState[stateKey] = normalizedData;
+                if (stateKey === 'danhSachNhanVien') {
+                    services.updateEmployeeMaps();
+                    ui.populateAllFilters();
+                }
+                ui.updateFileStatus(fileType, file.name, `✓ Đã tải ${normalizedData.length} dòng.`, 'success');
+                ui.showNotification(`Tải thành công file "${dataName}"!`, 'success');
+                if (fileInput.dataset.saveKey) {
+                    localStorage.setItem(fileInput.dataset.saveKey, JSON.stringify(rawData));
+                    const savedStatusSpan = document.getElementById(`${fileType}-saved-status`);
+                    if (savedStatusSpan) savedStatusSpan.textContent = `Đã lưu ${normalizedData.length} dòng.`;
+                }
+                this.processAndRenderAllReports();
+            } else { 
+                const errorMessage = `Lỗi file "${dataName}": Thiếu cột: ${missingColumns.join(', ')}.`;
+                ui.updateFileStatus(fileType, file.name, `Lỗi: Thiếu cột dữ liệu.`, 'error');
+                ui.showNotification(errorMessage, 'error');
+                if (document.getElementById('debug-tool-container')?.classList.contains('hidden')) {
+                    document.getElementById('toggle-debug-btn')?.click();
+                }
+            }
+        } catch (error) {
+            console.error(`Lỗi xử lý file ${dataName}:`, error);
+            ui.updateFileStatus(fileType, file.name, `Lỗi: ${error.message}`, 'error');
+            ui.showNotification(`Lỗi khi xử lý file "${dataName}".`, 'error');
+        } finally {
+            ui.hideProgressBar(fileType);
+        }
+    },
+    
+    async handleRealtimeFileInput(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        ui.showNotification('Đang xử lý file realtime...', 'success');
+        appState.realtimeYCXData = []; 
+        e.target.value = '';
+        try {
+            const rawData = await this.handleFileRead(file);
+            const { normalizedData, success, missingColumns } = services.normalizeData(rawData, 'ycx'); 
+            ui.displayDebugInfo('ycx-realtime');
+            if (success) {
+                appState.realtimeYCXData = normalizedData;
+                ui.populateRealtimeBrandCategoryFilter();
+                ui.showNotification(`Tải thành công ${normalizedData.length} dòng realtime!`, 'success');
+                realtimeTab.render();
+            } else {
+                 ui.showNotification(`File realtime lỗi: Thiếu cột ${missingColumns.join(', ')}.`, 'error');
+                 if (document.getElementById('debug-tool-container')?.classList.contains('hidden')) {
+                    document.getElementById('toggle-debug-btn')?.click();
+                 }
+            }
+        } catch (err) { ui.showNotification(`Có lỗi khi đọc file: ${err.message}`, 'error'); console.error(err); }
+    },
+
+    handleFilterChange(prefix) {
+        ui.updateEmployeeFilter(prefix);
+        if (prefix === 'luyke') luykeTab.render();
+        else if (prefix === 'sknv') sknvTab.render();
+        else if (prefix === 'realtime') realtimeTab.render();
+    },
+
+    handleHighlightFilterChange(prefix, type) {
         const choicesInstance = appState.choices[`${prefix}_highlight_${type}`];
         if (!choicesInstance) return;
         const values = choicesInstance.getValue(true);
         const color = document.getElementById(`${prefix}-highlight-color`).value;
         appState.highlightSettings[prefix] = { type, values, color };
         localStorage.setItem('highlightSettings', JSON.stringify(appState.highlightSettings));
-        app.applyHighlights(prefix);
-    },
-
-    updateDailyGoal() {
-        const percentageInput = document.getElementById('daily-goal-percentage');
-        const container = document.getElementById('daily-goal-content');
-        if (!percentageInput || !container) return;
-    
-        localStorage.setItem('dailyGoalPercentage', percentageInput.value);
-        const goals = app.getLuykeGoalSettings(document.getElementById('luyke-filter-warehouse').value).goals;
-        const targetQd = (goals.doanhThuQD || 0); // Use raw value, not multiplied
-    
-        const pastedData = services.parseLuyKePastedData(document.getElementById('paste-luyke').value);
-        const thucHienQd = parseFloat(pastedData.mainKpis['Thực hiện DTQĐ']?.replace(/,/g, '')) || 0;
-        const targetPercentage = parseFloat(percentageInput.value) / 100 || 0;
-    
-        const today = new Date();
-        const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-        const daysRemaining = Math.max(1, daysInMonth - today.getDate());
-    
-        let requiredRevenue = ((targetQd * targetPercentage) - thucHienQd) / daysRemaining;
-        
-        const savedCustomGoals = JSON.parse(localStorage.getItem('customDailyGoals')) || {};
-
-        let tableHTML = `<div class="overflow-x-auto"><table class="min-w-full text-sm table-bordered"><tbody>
-            <tr class="border-b"><td class="py-2 px-3 font-semibold text-gray-600">Mục tiêu DT QĐ</td><td class="py-2 px-3 text-right font-bold text-red-600">${ui.formatNumberOrDash(requiredRevenue, 2)} tr</td></tr>`;
-        
-        for (let i = 1; i <= 6; i++) {
-            const label = savedCustomGoals[`label${i}`] || `Mục tiêu ${i}`;
-            const value = savedCustomGoals[`value${i}`] || '';
-            tableHTML += `<tr class="border-b last:border-b-0">
-                <td class="py-0 px-0 font-semibold text-gray-600 daily-goal-cell" contenteditable="true" data-key="label${i}">${label}</td>
-                <td class="py-0 px-0 text-right font-bold text-gray-800 daily-goal-cell" contenteditable="true" data-key="value${i}">${value}</td>
-            </tr>`;
-        }
-        
-        tableHTML += `</tbody></table></div>`;
-        container.innerHTML = tableHTML;
-
-        const realtimeContainer = document.getElementById('realtime-daily-goal-content');
-        if(realtimeContainer) realtimeContainer.innerHTML = tableHTML;
-    },
-
-    exportTableToExcel(activeTabContent, fileName) {
-        if (!activeTabContent) {
-            ui.showNotification('Không tìm thấy tab đang hoạt động để xuất.', 'error');
-            return;
-        }
-    
-        let table = activeTabContent.querySelector('.department-block table, #sknv-summary-container table, #luyke-competition-content table, table');
-    
-        if (!table) {
-            ui.showNotification('Không tìm thấy bảng dữ liệu trong tab này để xuất.', 'error');
-            return;
-        }
-    
-        try {
-            const wb = XLSX.utils.table_to_book(table, { sheet: "Sheet1" });
-            XLSX.writeFile(wb, `${fileName}.xlsx`);
-            ui.showNotification(`Đã xuất file ${fileName}.xlsx thành công!`, 'success');
-        } catch (e) {
-            console.error('Lỗi xuất Excel:', e);
-            ui.showNotification('Có lỗi xảy ra khi xuất file Excel.', 'error');
-        }
-    },
-
-    // [*] REWRITTEN: The core image generation worker. It now takes a pre-assembled element,
-    // adds the final touches (title, container), and generates the image.
-    async captureAndDownload(elementToCapture, title) {
-        if (!elementToCapture) {
-            ui.showNotification('Không tìm thấy nội dung để chụp.', 'error');
-            return;
-        }
-        ui.showNotification('Chuẩn bị chụp ảnh thông minh, vui lòng đợi...', 'success');
-
-        const captureArea = document.createElement('div');
-        captureArea.classList.add('capture-container');
-
-        const titleEl = document.createElement('h2');
-        titleEl.className = 'capture-title';
-        const date = new Date();
-        const timeString = date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-        const dateString = date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
-        titleEl.textContent = `${title.replace(/_/g, ' ')} - ${timeString} ${dateString}`;
-        
-        captureArea.appendChild(titleEl);
-        
-        // Add a wrapper that applies the special styling from dashboard.css
-        const contentWrapper = document.createElement('div');
-        contentWrapper.classList.add('prepare-for-capture');
-        contentWrapper.appendChild(elementToCapture);
-        captureArea.appendChild(contentWrapper);
-        
-        document.body.appendChild(captureArea);
-    
-        try {
-            const canvas = await html2canvas(captureArea, {
-                scale: 2,
-                useCORS: true,
-                backgroundColor: '#f3f4f6'
-            });
-            const link = document.createElement('a');
-            link.download = `${title}_${dateString.replace(/\//g, '-')}.png`;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-            ui.showNotification('Đã chụp và tải xuống hình ảnh!', 'success');
-        } catch (err) {
-            console.error('Lỗi chụp màn hình:', err);
-            ui.showNotification(`Lỗi khi chụp ảnh: ${err.message}.`, 'error');
-        } finally {
-            document.body.removeChild(captureArea);
-        }
-    },
-
-    // [*] REWRITTEN: The "manager" function that groups elements based on 'data-capture-group'.
-    async captureDashboardInParts(contentContainer, baseTitle) {
-        if (!contentContainer) {
-            ui.showNotification('Không tìm thấy vùng nội dung để chụp.', 'error');
-            return;
-        }
-    
-        ui.showNotification(`Bắt đầu chụp báo cáo ${baseTitle} theo nhóm...`, 'success');
-
-        const captureGroups = new Map();
-        contentContainer.querySelectorAll('[data-capture-group]').forEach(el => {
-            const group = el.dataset.captureGroup;
-            if (!captureGroups.has(group)) {
-                captureGroups.set(group, []);
-            }
-            captureGroups.get(group).push(el);
-        });
-
-        if (captureGroups.size === 0) {
-            ui.showNotification('Không tìm thấy nhóm chụp ảnh nào được khai báo cho tab này.', 'error');
-            return;
-        }
-
-        for (const [group, elements] of captureGroups.entries()) {
-            const layoutContainer = document.createElement('div');
-            layoutContainer.className = 'capture-layout-container';
-            
-            elements.forEach(el => {
-                layoutContainer.appendChild(el.cloneNode(true));
-            });
-            
-            const captureTitle = captureGroups.size > 1 ? `${baseTitle}_Nhom_${group}` : baseTitle;
-            await app.captureAndDownload(layoutContainer, captureTitle);
-        }
-
-        ui.showNotification(`Đã hoàn tất chụp ảnh báo cáo ${baseTitle}!`, 'success');
+        utils.applyHighlights(prefix);
     },
     
-    setupEventListeners() {
-        try {
-            // --- Initialize libraries ---
-            ['luyke', 'sknv', 'realtime'].forEach(prefix => {
-                const el = document.getElementById(`${prefix}-filter-name`);
-                if (el) appState.choices[`${prefix}_employee`] = new Choices(el, { removeItemButton: true, placeholder: true, placeholderValue: 'Chọn nhân viên...' });
-                
-                ['nhanhang', 'nhomhang', 'employee'].forEach(type => {
-                    const highlightEl = document.getElementById(`${prefix}-highlight-${type}`);
-                    if (highlightEl) appState.choices[`${prefix}_highlight_${type}`] = new Choices(highlightEl, { removeItemButton: true, placeholder: true });
-                });
-            });
-        } catch (error) { console.error("Lỗi khi khởi tạo Choices.js:", error); }
+    handleHighlightColorChange(prefix) {
+        const activeType = appState.highlightSettings[prefix]?.type;
+        if (activeType) this.handleHighlightFilterChange(prefix, activeType);
+    },
 
-        try {
-            const initDatePicker = (prefix) => {
-                const datePickerEl = document.getElementById(`${prefix}-filter-date`);
-                if (!datePickerEl) return;
-                const applyFilter = () => (prefix === 'luyke') ? app.applyHealthSectionFiltersAndRender() : app.applySknvFiltersAndRender();
-                const datePicker = flatpickr(datePickerEl, {
-                    mode: "multiple", dateFormat: "d/m", maxDate: "today",
-                    onClose: function(selectedDates, dateStr, instance) {
-                        if (selectedDates.length === 2) {
-                            const [start, end] = selectedDates.sort((a,b) => a - b);
-                            const dateRange = Array.from({length: (end - start) / 86400000 + 1}, (_, i) => new Date(start.getTime() + i * 86400000));
-                            instance.setDate(dateRange, false); selectedDates = instance.selectedDates;
-                        }
-                        const summaryEl = document.getElementById(`${prefix}-date-summary`);
-                        if (summaryEl) {
-                            if (selectedDates.length > 1) summaryEl.textContent = `Đang chọn ${selectedDates.length} ngày: ${instance.formatDate(selectedDates.sort((a,b)=>a-b)[0], "d/m")} - ${instance.formatDate(selectedDates[selectedDates.length - 1], "d/m")}`;
-                            else if (selectedDates.length === 1) summaryEl.textContent = `Đang chọn 1 ngày`; else summaryEl.textContent = '';
-                        }
-                        applyFilter();
-                    }
-                });
-                appState.choices[`${prefix}_date_picker`] = datePicker;
-                document.getElementById(`${prefix}-clear-date`)?.addEventListener('click', () => { datePicker.clear(); applyFilter(); });
-            };
-            initDatePicker('luyke'); initDatePicker('sknv');
-        } catch (error) { console.error("Lỗi khi khởi tạo Flatpickr:", error); }
+    handleClearHighlight(prefix) {
+        appState.highlightSettings[prefix] = {};
+        localStorage.setItem('highlightSettings', JSON.stringify(appState.highlightSettings));
+        ['nhanhang', 'nhomhang', 'employee'].forEach(type => {
+             appState.choices[`${prefix}_highlight_${type}`]?.removeActiveItemsByValue(appState.choices[`${prefix}_highlight_${type}`]?.getValue(true) || []);
+        });
+        utils.applyHighlights(prefix);
+    },
 
-        // --- Assign events to elements ---
-        document.querySelectorAll('a.nav-link').forEach(link => link.addEventListener('click', (e) => { e.preventDefault(); app.switchTab(link.getAttribute('href').substring(1)); }));
-        document.getElementById('admin-access-btn')?.addEventListener('click', () => document.getElementById('admin-modal').classList.remove('hidden'));
-        document.getElementById('admin-submit-btn')?.addEventListener('click', () => {
-            if (document.getElementById('admin-password-input').value === config.ADMIN_PASSWORD) {
-                app.switchTab('declaration-section');
-                document.getElementById('admin-modal').classList.add('hidden');
-                document.getElementById('admin-password-input').value = '';
-                document.getElementById('admin-error-msg').classList.add('hidden');
-            } else document.getElementById('admin-error-msg').classList.remove('hidden');
-        });
-        document.getElementById('admin-cancel-btn')?.addEventListener('click', () => document.getElementById('admin-modal').classList.add('hidden'));
-        document.getElementById('save-declaration-btn')?.addEventListener('click', () => {
-            localStorage.setItem('declaration_ycx', document.getElementById('declaration-ycx').value);
-            localStorage.setItem('declaration_ycx_gop', document.getElementById('declaration-ycx-gop').value);
-            localStorage.setItem('declaration_heso', document.getElementById('declaration-heso').value);
-            ui.showNotification('Đã lưu khai báo!', 'success');
-            app.processAndRenderAllReports();
-        });
-        
-        document.getElementById('interface-settings-btn')?.addEventListener('click', () => ui.toggleDrawer('interface-drawer', true));
-        document.getElementById('goal-settings-btn')?.addEventListener('click', () => ui.toggleDrawer('goal-drawer', true));
-        document.querySelectorAll('.close-drawer-btn, #drawer-overlay').forEach(el => {
-            el.addEventListener('click', (e) => {
-                const drawer = e.target.closest('.settings-drawer');
-                if (drawer) ui.toggleDrawer(drawer.id, false);
-                else { ui.toggleDrawer('interface-drawer', false); ui.toggleDrawer('goal-drawer', false); }
-            });
-        });
-        
-        document.querySelectorAll('.kpi-color-input').forEach(picker => picker.addEventListener('input', app.saveInterfaceSettings));
+    handleContrastChange(e) {
+        const level = e.target.value;
+        localStorage.setItem('contrastLevel', level);
+        document.documentElement.dataset.contrast = level;
+    },
 
-        document.querySelectorAll('.file-input').forEach(input => input.addEventListener('change', async (e) => {
-            const fileInput = e.target, file = fileInput.files[0], fileType = fileInput.id.replace('file-', '');
-            const dataName = fileInput.dataset.name || fileType, shouldSave = fileInput.dataset.save === 'true';
-            const fileNameSpan = document.getElementById(`file-name-${fileType}`), fileStatusSpan = document.getElementById(`file-status-${fileType}`);
-            if (!file) return;
-            if (fileNameSpan) fileNameSpan.textContent = file.name;
-            if (fileStatusSpan) { fileStatusSpan.textContent = 'Đang xử lý...'; fileStatusSpan.className = 'text-sm text-gray-500'; }
-            ui.showProgressBar(fileType);
-            try {
-                const rawData = await app.handleFileRead(file);
-                const { normalizedData, success, missingColumns } = services.normalizeData(rawData, fileType);
-                ui.displayDebugInfo(fileType);
-                if (success) {
-                    if (fileType === 'danhsachnv') {
-                        appState.danhSachNhanVien = normalizedData;
-                        appState.employeeMaNVMap.clear(); appState.employeeNameToMaNVMap.clear();
-                        appState.danhSachNhanVien.forEach(nv => {
-                            if (nv.maNV) appState.employeeMaNVMap.set(String(nv.maNV).trim(), nv);
-                            if (nv.hoTen) appState.employeeNameToMaNVMap.set(nv.hoTen.toLowerCase().replace(/\s+/g, ' '), String(nv.maNV).trim());
-                        });
-                    } else if (fileType === 'giocong') appState.gioCongData = normalizedData;
-                    else if (fileType === 'thuongnong') appState.thuongNongData = normalizedData;
-                    else if (fileType === 'ycx') appState.ycxData = normalizedData;
-                    if (fileStatusSpan) { fileStatusSpan.textContent = `✓ Đã tải ${normalizedData.length} dòng.`; fileStatusSpan.className = 'text-sm text-green-600'; }
-                    ui.showNotification(`Tải thành công file "${dataName}"!`, 'success');
-                    if (shouldSave) {
-                        localStorage.setItem(`saved_${fileType}`, JSON.stringify(rawData));
-                        document.getElementById(`${fileType}-saved-status`).textContent = `Đã lưu ${normalizedData.length} dòng.`;
-                    }
-                    if (fileType === 'danhsachnv') {
-                        if (normalizedData.length > 0) {
-                            ui.populateAllFilters();
-                        }
-                    }
-                    app.processAndRenderAllReports();
-                } else { 
-                    const errorMessage = `Lỗi file "${dataName}": Thiếu cột: ${missingColumns.join(', ')}.`;
-                    if (fileStatusSpan) { fileStatusSpan.textContent = `Lỗi: Thiếu cột dữ liệu.`; fileStatusSpan.className = 'text-sm text-red-500'; }
-                    ui.showNotification(errorMessage, 'error');
-                    const debugContainer = document.getElementById('debug-tool-container');
-                    if (debugContainer?.classList.contains('hidden')) document.getElementById('toggle-debug-btn')?.click();
-                }
-            } catch (error) {
-                console.error(`Lỗi xử lý file ${dataName}:`, error);
-                if (fileStatusSpan) { fileStatusSpan.textContent = `Lỗi: ${error.message}`; fileStatusSpan.className = 'text-sm text-red-500'; }
-                ui.showNotification(`Lỗi khi xử lý file "${dataName}".`, 'error');
-            } finally { ui.hideProgressBar(fileType); }
-        }));
-        
-        document.getElementById('paste-luyke')?.addEventListener('input', () => {
-            const statusSpan = document.getElementById('status-luyke');
-            if (statusSpan) statusSpan.textContent = '✓ Đã nhận dữ liệu.';
-            app.processAndRenderAllReports();
-        });
+    handleErpPaste() {
+        const pastedText = document.getElementById('paste-thuongerp')?.value || '';
+        appState.thuongERPData = services.processThuongERP(pastedText);
+        ui.updatePasteStatus('status-thuongerp', `✓ Đã xử lý ${appState.thuongERPData.length} nhân viên.`);
+        this.processAndRenderAllReports();
+    },
 
-        const handleErpPaste = () => {
-            const combinedText = (document.getElementById('paste-thuongerp-1')?.value || '') + '\n' + (document.getElementById('paste-thuongerp-2')?.value || '');
-            appState.thuongERPData = services.processThuongERP(combinedText);
-            const statusEl = document.getElementById('status-thuongerp');
-            if(statusEl) statusEl.textContent = `✓ Đã xử lý ${appState.thuongERPData.length} nhân viên.`;
-            app.processAndRenderAllReports();
+    handleErpThangTruocPaste(e) {
+         const pastedText = e.target.value;
+         appState.thuongERPDataThangTruoc = services.processThuongERP(pastedText);
+         ui.updatePasteStatus('status-thuongerp-thangtruoc', `✓ Đã xử lý ${appState.thuongERPDataThangTruoc.length} nhân viên.`);
+         sknvTab.render();
+    },
+    
+    handleAdminLogin() {
+        if (document.getElementById('admin-password-input').value === config.ADMIN_PASSWORD) {
+            appState.isAdmin = true;
+            ui.renderFeedbackSection();
+            ui.renderAdminHelpEditors();
+            this.switchTab('declaration-section');
+            ui.toggleModal('admin-modal', false);
+            document.getElementById('admin-password-input').value = '';
+            document.getElementById('admin-error-msg').classList.add('hidden');
+        } else {
+            document.getElementById('admin-error-msg').classList.remove('hidden');
+        }
+    },
+    
+    saveDeclarations() {
+        localStorage.setItem('declaration_ycx', document.getElementById('declaration-ycx').value);
+        localStorage.setItem('declaration_ycx_gop', document.getElementById('declaration-ycx-gop').value);
+        localStorage.setItem('declaration_heso', document.getElementById('declaration-heso').value);
+        ui.showNotification('Đã lưu khai báo!', 'success');
+        this.processAndRenderAllReports();
+    },
+    
+    saveHelpContent() {
+        const contents = {
+            data: document.getElementById('edit-help-data').value,
+            luyke: document.getElementById('edit-help-luyke').value,
+            sknv: document.getElementById('edit-help-sknv').value,
+            realtime: document.getElementById('edit-help-realtime').value
         };
-        document.getElementById('paste-thuongerp-1')?.addEventListener('input', handleErpPaste);
-        document.getElementById('paste-thuongerp-2')?.addEventListener('input', handleErpPaste);
-        
-        ['luyke', 'sknv', 'realtime'].forEach(prefix => {
-            const applyFilter = () => {
-                if (prefix === 'luyke') app.applyHealthSectionFiltersAndRender();
-                else if (prefix === 'sknv') app.applySknvFiltersAndRender();
-                else if (prefix === 'realtime') app.applyRealtimeFiltersAndRender();
-            };
-            document.getElementById(`${prefix}-filter-warehouse`)?.addEventListener('change', () => { ui.updateEmployeeFilter(prefix); applyFilter(); });
-            document.getElementById(`${prefix}-filter-department`)?.addEventListener('change', () => { ui.updateEmployeeFilter(prefix); applyFilter(); });
+        firebase.saveHelpContent(contents);
+    },
+    
+    async handleSubmitFeedback() {
+        const textarea = document.getElementById('feedback-textarea');
+        const success = await firebase.submitFeedback(textarea.value.trim());
+        if (success) textarea.value = '';
+    },
+    
+    async handleFeedbackReplyActions(e, feedbackItem) {
+        const docId = feedbackItem.dataset.id;
+        const replyForm = feedbackItem.querySelector('.reply-form-container');
+        if (e.target.classList.contains('reply-btn')) {
+            replyForm.classList.remove('hidden');
+        }
+        if (e.target.classList.contains('cancel-reply-btn')) {
+            replyForm.classList.add('hidden');
+        }
+        if (e.target.classList.contains('submit-reply-btn')) {
+            const textarea = replyForm.querySelector('textarea');
+            const success = await firebase.submitReply(docId, textarea.value.trim());
+            if (success) {
+                textarea.value = '';
+                replyForm.classList.add('hidden');
+            }
+        }
+    },
+    
+    handleComposerActions(e, modal) {
+        const sectionId = modal.dataset.sectionId;
+        const textarea = document.getElementById('composer-textarea');
+        if (e.target.matches('.composer__tag-btn')) {
+            ui.insertComposerTag(textarea, e.target.dataset.tag);
+        }
+        if (e.target.id === 'save-composer-template-btn') {
+            appState.composerTemplates[sectionId] = textarea.value;
+            localStorage.setItem('composerTemplates', JSON.stringify(appState.composerTemplates));
+            ui.showNotification(`Đã lưu mẫu cho tab ${sectionId.toUpperCase()}!`, 'success');
+        }
+        if (e.target.id === 'copy-composed-notification-btn') {
+            const template = textarea.value;
+            let supermarketReport, goals;
+            const rankingReportData = appState.masterReportData.sknv;
 
-            const employeeFilterEl = document.getElementById(`${prefix}-filter-name`);
-            if (employeeFilterEl) employeeFilterEl.addEventListener('change', applyFilter);
-            
-            document.getElementById(`${prefix}-highlight-nhanhang`)?.addEventListener('change', () => app.handleHighlightChange(prefix, 'nhanhang'));
-            document.getElementById(`${prefix}-highlight-nhomhang`)?.addEventListener('change', () => app.handleHighlightChange(prefix, 'nhomhang'));
-            document.getElementById(`${prefix}-highlight-employee`)?.addEventListener('change', () => app.handleHighlightChange(prefix, 'employee'));
+            if (sectionId === 'luyke') {
+                const pastedData = services.parseLuyKePastedData(document.getElementById('paste-luyke').value);
+                supermarketReport = services.getSupermarketReportFromPastedData(pastedData);
+                const selectedWarehouse = document.getElementById('luyke-filter-warehouse').value;
+                goals = utils.getLuykeGoalSettings(selectedWarehouse).goals;
+            } else { 
+                const reportData = appState.masterReportData[sectionId];
+                if (!reportData || reportData.length === 0) {
+                    ui.showNotification("Lỗi: Không có dữ liệu để tạo nhận xét.", "error"); return;
+                }
+                supermarketReport = services.aggregateReport(reportData);
+                const selectedWarehouse = document.getElementById(`${sectionId}-filter-warehouse`).value;
+                goals = sectionId === 'realtime' ? utils.getRealtimeGoalSettings(selectedWarehouse).goals : utils.getLuykeGoalSettings(selectedWarehouse).goals;
+            }
 
-            document.getElementById(`${prefix}-highlight-color`)?.addEventListener('input', () => {
-                const activeType = appState.highlightSettings[prefix]?.type;
-                if (activeType) app.handleHighlightChange(prefix, activeType);
-            });
-            document.getElementById(`${prefix}-clear-highlight`)?.addEventListener('click', () => {
-                appState.highlightSettings[prefix] = {};
-                localStorage.setItem('highlightSettings', JSON.stringify(appState.highlightSettings));
-                ['nhanhang', 'nhomhang', 'employee'].forEach(type => {
-                     appState.choices[`${prefix}_highlight_${type}`]?.removeActiveItemsByValue(appState.choices[`${prefix}_highlight_${type}`].getValue(true));
-                });
-                app.applyHighlights(prefix);
-            });
-        });
-        
-        document.querySelectorAll('.sub-tab-btn').forEach(btn => btn.addEventListener('click', (e) => {
-            const button = e.currentTarget;
-            const nav = button.closest('nav');
-            const targetId = button.dataset.target;
-            const contentContainer = document.getElementById(nav.dataset.contentContainer);
-            if (!nav || !contentContainer) return;
-            nav.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
+            const processedText = services.processComposerTemplate(template, supermarketReport, goals, rankingReportData);
+            ui.showPreviewAndCopy(processedText);
+        }
+    },
+
+    handleSknvViewChange(e) {
+        const button = e.target.closest('.view-switcher__btn');
+        if (button) {
+            document.querySelectorAll('#sknv-view-selector .view-switcher__btn').forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
-            contentContainer.querySelectorAll('.sub-tab-content').forEach(content => content.classList.toggle('hidden', content.id !== targetId));
-        }));
-
-        document.getElementById('calculate-income-btn')?.addEventListener('click', app.applySknvFiltersAndRender);
-        document.getElementById('toggle-debug-btn')?.addEventListener('click', (e) => {
-            const container = document.getElementById('debug-tool-container');
-            if(container) container.classList.toggle('hidden');
-            e.target.textContent = container.classList.contains('hidden') ? 'Hiển thị Công cụ Gỡ lỗi' : 'Ẩn Công cụ Gỡ lỗi';
-        });
-        document.getElementById('sknv-employee-filter')?.addEventListener('change', () => app.applySknvFiltersAndRender());
-        document.getElementById('daily-goal-percentage')?.addEventListener('input', app.updateDailyGoal);
-        document.querySelectorAll('.contrast-selector').forEach(sel => sel.addEventListener('change', app.handleContrastChange));
-
-        document.body.addEventListener('click', (e) => {
-            const sortableHeader = e.target.closest('.sortable');
-            if (sortableHeader) {
-                const table = sortableHeader.closest('table');
-                if (!table) return;
-                const tableType = table.dataset.tableType, sortKey = sortableHeader.dataset.sort;
-                if (!tableType || !sortKey || !appState.sortState[tableType]) return;
-                const currentSort = appState.sortState[tableType];
-                const newDirection = (currentSort.key === sortKey && currentSort.direction === 'desc') ? 'asc' : 'desc';
-                appState.sortState[tableType] = { key: sortKey, direction: newDirection };
-                
-                if (tableType.startsWith('realtime')) app.applyRealtimeFiltersAndRender();
-                else if (tableType.startsWith('sknv') || ['doanhthu_lk', 'thunhap', 'hieu_qua'].includes(tableType)) app.applySknvFiltersAndRender();
-                else app.applyHealthSectionFiltersAndRender();
-            }
-
-            const highlightIcon = e.target.closest('.highlight-trigger');
-            if(highlightIcon) {
-                const section = highlightIcon.dataset.target;
-                const filterBtn = document.querySelector(`.toggle-filters-btn[data-target="${section}-filter-container"]`);
-                if(filterBtn) filterBtn.click();
-            }
-        });
-        
-        document.body.addEventListener('input', (e) => {
-            const cell = e.target.closest('.daily-goal-cell[contenteditable="true"]');
-            if(cell) {
-                const key = cell.dataset.key;
-                const value = cell.textContent;
-                const savedGoals = JSON.parse(localStorage.getItem('customDailyGoals')) || {};
-                savedGoals[key] = value;
-                localStorage.setItem('customDailyGoals', JSON.stringify(savedGoals));
-                
-                const otherTableSelector = cell.closest('#daily-goal-content') ? '#realtime-daily-goal-content' : '#daily-goal-content';
-                const otherCell = document.querySelector(`${otherTableSelector} [data-key="${key}"]`);
-                if(otherCell && otherCell.textContent !== value) {
-                    otherCell.textContent = value;
-                }
-            }
-        });
-        
-        document.querySelectorAll('.toggle-filters-btn').forEach(button => {
-            button.addEventListener('click', () => {
-                const targetContainer = document.getElementById(button.dataset.target);
-                const textSpan = button.querySelector('.text');
-                if (targetContainer) {
-                    targetContainer.classList.toggle('hidden');
-                    const isHidden = targetContainer.classList.contains('hidden');
-                    button.classList.toggle('active', !isHidden);
-                    if(textSpan) textSpan.textContent = isHidden ? 'Hiện bộ lọc nâng cao' : 'Ẩn bộ lọc nâng cao';
-                }
-            });
-        });
-
-        document.getElementById('realtime-file-input')?.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            ui.showNotification('Đang xử lý file realtime...', 'success');
-            appState.realtimeYCXData = []; 
-            e.target.value = '';
-            try {
-                const rawData = await app.handleFileRead(file);
-                const { normalizedData, success, missingColumns } = services.normalizeData(rawData, 'ycx'); 
-                ui.displayDebugInfo('ycx');
-                if (success) {
-                    appState.realtimeYCXData = normalizedData;
-                    ui.showNotification(`Tải thành công ${normalizedData.length} dòng realtime!`, 'success');
-                    app.applyRealtimeFiltersAndRender();
-                } else {
-                     ui.showNotification(`File realtime lỗi: Thiếu cột ${missingColumns.join(', ')}.`, 'error');
-                     const debugContainer = document.getElementById('debug-tool-container');
-                     if (debugContainer?.classList.contains('hidden')) document.getElementById('toggle-debug-btn')?.click();
-                }
-            } catch (err) { ui.showNotification(`Có lỗi khi đọc file: ${err.message}`, 'error'); console.error(err); }
-        });
-        
-        document.getElementById('rt-goal-warehouse-select')?.addEventListener('change', app.loadAndApplyRealtimeGoalSettings);
-        document.querySelectorAll('.rt-goal-input, .rt-setting-input').forEach(input => input.addEventListener('input', app.saveRealtimeGoalSettings));
-        
-        document.getElementById('luyke-goal-warehouse-select')?.addEventListener('change', app.loadAndApplyLuykeGoalSettings);
-        document.querySelectorAll('.luyke-goal-input').forEach(input => input.addEventListener('input', app.saveLuykeGoalSettings));
-
-        this.setupActionButtons();
+            const view = button.dataset.view;
+            document.getElementById('sknv-employee-selector-container').classList.toggle('hidden', view !== 'detail');
+            sknvTab.render();
+        }
     },
-    
-    // [*] REWRITTEN: The "dispatcher" function. It now checks for 'data-capture-group'
-    // to decide whether to capture by group or capture the whole tab directly.
-    setupActionButtons() {
-        const setupButton = (prefix) => {
-            const isSknv = prefix === 'sknv';
-            const captureBtnId = isSknv ? 'capture-employee-health-btn' : `capture-${prefix === 'luyke' ? 'health' : prefix}-btn`;
-            const exportBtnId = `export-${prefix}-btn`;
-            const navSelector = isSknv ? '#employee-subtabs-nav' : `#${prefix}-subtabs-nav`;
-            const contentSelector = isSknv ? '#employee-subtabs-content' : `#${prefix}-subtabs-content`;
-            
-            document.getElementById(captureBtnId)?.addEventListener('click', () => {
-                const activeTabButton = document.querySelector(`${navSelector} .sub-tab-btn.active`);
-                if (!activeTabButton) { ui.showNotification('Không tìm thấy tab đang hoạt động.', 'error'); return; }
-                
-                const title = activeTabButton.dataset.title || 'BaoCao';
-                const activeTabContent = document.querySelector(`${contentSelector} .sub-tab-content:not(.hidden)`);
-                if (!activeTabContent) { ui.showNotification('Không tìm thấy nội dung để chụp.', 'error'); return; }
 
-                const groupedElements = activeTabContent.querySelectorAll('[data-capture-group]');
-                
-                if (groupedElements.length > 0) {
-                    app.captureDashboardInParts(activeTabContent, title);
-                } else {
-                    app.captureAndDownload(activeTabContent.cloneNode(true), title);
-                }
-            });
+    handleLuykeThiDuaViewChange(e) {
+        const button = e.target.closest('.view-switcher__btn');
+        if (button) {
+            document.querySelectorAll('#luyke-thidua-view-selector .view-switcher__btn').forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            luykeTab.render();
+        }
+    },
 
-            document.getElementById(exportBtnId)?.addEventListener('click', () => {
-                const activeTabButton = document.querySelector(`${navSelector} .sub-tab-btn.active`);
-                const activeTabContent = document.querySelector(`${contentSelector} .sub-tab-content:not(.hidden)`);
-                if (activeTabContent && activeTabButton) {
-                    const title = activeTabButton.dataset.title || 'BaoCao';
-                    const timestamp = new Date().toLocaleDateString('vi-VN').replace(/\//g, '-');
-                    app.exportTableToExcel(activeTabContent, `${title}_${timestamp}`);
-                } else {
-                     ui.showNotification('Không tìm thấy tab để xuất.', 'error');
-                }
-            });
-        };
-        setupButton('luyke');
-        setupButton('sknv');
-        setupButton('realtime');
+    handleDtnvRealtimeViewChange(e) {
+        const button = e.target.closest('.view-switcher__btn');
+        if (button) {
+            document.querySelectorAll('#dtnv-realtime-view-selector .view-switcher__btn').forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            const view = button.dataset.view;
+            document.getElementById('dtnv-realtime-employee-selector-container').classList.toggle('hidden', view !== 'detail');
+            realtimeTab.render();
+        }
+    },
+
+    handleDthangRealtimeViewChange(e) {
+        const button = e.target.closest('.view-switcher__btn');
+        if (button) {
+            document.querySelectorAll('#dthang-realtime-view-selector .view-switcher__btn').forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            realtimeTab.render();
+        }
+    },
+
+    handleThiDuaViewChange(e) {
+        const button = e.target.closest('.view-switcher__btn');
+        if (button) {
+            document.querySelectorAll('#thidua-view-selector .view-switcher__btn').forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            const view = button.dataset.view;
+            document.getElementById('thidua-employee-selector-container').classList.toggle('hidden', view !== 'employee');
+            ui.displayCompetitionReport(view);
+        }
     }
 };
 
