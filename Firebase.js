@@ -1,3 +1,4 @@
+// Version 1.1 - Sửa lỗi logic kiểm tra cấu hình
 // MODULE: FIREBASE
 // Chịu trách nhiệm kết nối, thiết lập listener với Firebase.
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -7,24 +8,28 @@ import { ui } from './ui.js';
 
 const firebase = {
     async init() {
-        const firebaseConfig = {
-            // IMPORTANT: Replace with your actual Firebase config
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
+       const firebaseConfig = {
+  apiKey: "AIzaSyAQ3TWcpa4AnTN-32igGseYDlXrCf1BVew",
+  authDomain: "qlst-9e6bd.firebaseapp.com",
+  projectId: "qlst-9e6bd",
+  storageBucket: "qlst-9e6bd.firebasestorage.app",
+  messagingSenderId: "2316705291",
+  appId: "1:2316705291:web:ebec2963816aea7585b10e",
+  measurementId: "G-M0SM0XHCEK"
+};
 
         try {
+            // SỬA LỖI: So sánh với giá trị mẫu "YOUR_API_KEY" thay vì key thật.
+            if (firebaseConfig.apiKey === "YOUR_API_KEY") {
+                throw new Error("Thông tin cấu hình Firebase chưa được cập nhật.");
+            }
             const firebaseApp = initializeApp(firebaseConfig);
             appState.db = getFirestore(firebaseApp);
             console.log("Firebase connected successfully!");
             this.setupListeners();
         } catch (error) {
             console.error("Firebase initialization failed:", error);
-            ui.showNotification("Không thể kết nối tới cơ sở dữ liệu.", "error");
+            ui.showNotification(error.message || "Không thể kết nối tới cơ sở dữ liệu.", "error");
         }
     },
 
@@ -39,25 +44,37 @@ const firebase = {
                 const data = doc.data();
                 appState.feedbackList.push({ id: doc.id, ...data, timestamp: data.timestamp?.toDate() });
             });
-            ui.renderFeedbackSection();
+            // Chỉ render lại nếu tab hiện tại là trang chủ
+            if (document.getElementById('home-section')?.classList.contains('hidden') === false) {
+                ui.renderFeedbackSection();
+            }
+        }, (error) => {
+            console.error("Error listening to feedback collection: ", error);
+            ui.showNotification("Lỗi khi tải danh sách góp ý.", "error");
         });
 
         // Listener for help content
         const helpContentRef = collection(appState.db, "help_content");
         onSnapshot(helpContentRef, (querySnapshot) => {
+            let contentUpdated = false;
             querySnapshot.forEach((doc) => {
                 if (appState.helpContent.hasOwnProperty(doc.id)) {
                     appState.helpContent[doc.id] = doc.data().content;
+                    contentUpdated = true;
                 }
             });
-            if (appState.isAdmin) {
+            // Chỉ render lại editor nếu đang ở tab khai báo
+            if (contentUpdated && appState.isAdmin && document.getElementById('declaration-section')?.classList.contains('hidden') === false) {
                 ui.renderAdminHelpEditors();
             }
+        }, (error) => {
+            console.error("Error listening to help_content collection: ", error);
+            ui.showNotification("Lỗi khi tải nội dung hướng dẫn.", "error");
         });
     },
 
     async submitFeedback(content) {
-        if (!content || !appState.db) return;
+        if (!content || !appState.db) return false;
         try {
             await addDoc(collection(appState.db, "feedback"), {
                 user: "Người dùng ẩn danh",
@@ -75,7 +92,7 @@ const firebase = {
     },
 
     async submitReply(docId, content) {
-        if (!docId || !content || !appState.db) return;
+        if (!docId || !content || !appState.db) return false;
         try {
             const feedbackRef = doc(appState.db, "feedback", docId);
             await updateDoc(feedbackRef, {
@@ -96,10 +113,12 @@ const firebase = {
         if (!appState.db || !appState.isAdmin) return;
         ui.showNotification('Đang lưu nội dung hướng dẫn...', 'success');
         try {
-            await setDoc(doc(appState.db, "help_content", "data"), { content: contents.data });
-            await setDoc(doc(appState.db, "help_content", "luyke"), { content: contents.luyke });
-            await setDoc(doc(appState.db, "help_content", "sknv"), { content: contents.sknv });
-            await setDoc(doc(appState.db, "help_content", "realtime"), { content: contents.realtime });
+            await Promise.all([
+                setDoc(doc(appState.db, "help_content", "data"), { content: contents.data }),
+                setDoc(doc(appState.db, "help_content", "luyke"), { content: contents.luyke }),
+                setDoc(doc(appState.db, "help_content", "sknv"), { content: contents.sknv }),
+                setDoc(doc(appState.db, "help_content", "realtime"), { content: contents.realtime })
+            ]);
             ui.showNotification('Đã cập nhật nội dung hướng dẫn thành công!', 'success');
         } catch (error) {
             console.error("Error saving help content:", error);
@@ -109,3 +128,4 @@ const firebase = {
 };
 
 export { firebase };
+

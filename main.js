@@ -1,4 +1,4 @@
-// Version 15.0 - Fix initialization of detail filters
+// Version 16.0 - Kích hoạt Tích hợp Firebase
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -6,18 +6,20 @@ import { config } from './config.js';
 import { appState } from './state.js';
 import { services } from './services.js';
 import { ui } from './ui.js';
-import { firebase } from './firebase.js';
+import { firebase } from './firebase.js'; // KÍCH HOẠT: Nhập module firebase
 import { luykeTab } from './tab-luyke.js';
 import { sknvTab } from './tab-sknv.js';
 import { realtimeTab } from './tab-realtime.js';
 import { utils } from './utils.js';
 
 const app = {
-    currentVersion: '15.0',
+    currentVersion: '13.0', // Sẽ được cập nhật từ version.json
 
     async init() {
         try {
-            await firebase.init();
+            // KÍCH HOẠT: Khởi tạo kết nối Firebase ngay khi ứng dụng bắt đầu
+            await firebase.init(); 
+            
             this.loadDataFromStorage();
             utils.loadInterfaceSettings();
             this.setupEventListeners();
@@ -40,6 +42,7 @@ const app = {
             const serverConfig = await response.json();
             if (serverConfig.version && serverConfig.version !== this.currentVersion) {
                 console.log(`Phiên bản mới ${serverConfig.version} đã sẵn sàng!`);
+                this.currentVersion = serverConfig.version; // Cập nhật phiên bản hiện tại
                 ui.showUpdateNotification();
             }
         } catch (error) {
@@ -144,7 +147,6 @@ const app = {
                 });
             });
 
-            // FIX: Store single-select instances correctly in appState
             const singleSelectConfig = { 
                 searchEnabled: true, 
                 removeItemButton: false, 
@@ -546,7 +548,7 @@ const app = {
             document.querySelectorAll('#dtnv-realtime-view-selector .view-switcher__btn').forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
             const view = button.dataset.view;
-            document.getElementById('dtnv-realtime-employee-selector-container').classList.toggle('hidden', view !== 'detail');
+            document.getElementById('dtnv-realtime-employee-selector-container').classList.toggle('hidden', view !== 'infographic');
             realtimeTab.render();
         }
     },
