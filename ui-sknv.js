@@ -1,4 +1,4 @@
-// Version 1.5 - Fix invalid reference to DEPARTMENT_GROUPS
+// Version 1.6 - Fix reference to config.DEPARTMENT_GROUPS
 // MODULE: UI SKNV
 // Chứa các hàm render giao diện cho tab "Sức khỏe nhân viên".
 
@@ -867,4 +867,3 @@ export const uiSknv = {
         </div>`;
     },
 };
-

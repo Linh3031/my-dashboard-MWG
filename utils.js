@@ -1,4 +1,4 @@
-// Version 18.0 - Safe Capture with Guaranteed Cleanup
+// Version 2.0 - Safe Capture with Guaranteed Cleanup
 // MODULE: UTILITIES
 // Chứa các hàm tiện ích chung không thuộc về logic hay giao diện cụ thể.
 import { appState } from './state.js';

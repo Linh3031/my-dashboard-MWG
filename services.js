@@ -1,4 +1,4 @@
-// Version 13.5 - Fix KPI comparison parsing & logic
+// Version 2.0 - Fix KPI comparison parsing & logic
 // MODULE 3: KỆ "DỊCH VỤ" (SERVICES)
 // File này chứa tất cả các hàm xử lý logic, tính toán, và chuyển đổi dữ liệu.
 

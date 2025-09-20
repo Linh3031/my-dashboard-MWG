@@ -1,4 +1,4 @@
-// Version 16.0 - Auto-save daily data & Add template download
+// Version 2.0 - Combined: IndexedDB & SKNV Capture Fix
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -12,13 +12,67 @@ import { sknvTab } from './tab-sknv.js';
 import { realtimeTab } from './tab-realtime.js';
 import { utils } from './utils.js';
 
+// --- IndexedDB Helper ---
+const idbHelper = {
+    db: null,
+    dbName: 'AppStorageDB',
+    storeName: 'fileStore',
+
+    openDB() {
+        return new Promise((resolve, reject) => {
+            if (this.db) return resolve(this.db);
+            const request = indexedDB.open(this.dbName, 1);
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains(this.storeName)) {
+                    db.createObjectStore(this.storeName, { keyPath: 'id' });
+                }
+            };
+            request.onsuccess = (event) => {
+                this.db = event.target.result;
+                resolve(this.db);
+            };
+            request.onerror = (event) => {
+                console.error("IndexedDB error:", event.target.errorCode);
+                reject(event.target.error);
+            };
+        });
+    },
+
+    async setItem(id, value) {
+        const db = await this.openDB();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([this.storeName], 'readwrite');
+            const store = transaction.objectStore(this.storeName);
+            const request = store.put({ id, value });
+            request.onsuccess = () => resolve();
+            request.onerror = (event) => reject(event.target.error);
+        });
+    },
+
+    async getItem(id) {
+        const db = await this.openDB();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([this.storeName], 'readonly');
+            const store = transaction.objectStore(this.storeName);
+            const request = store.get(id);
+            request.onsuccess = (event) => {
+                resolve(event.target.result ? event.target.result.value : null);
+            };
+            request.onerror = (event) => reject(event.target.error);
+        });
+    }
+};
+
+
 const app = {
-    currentVersion: '16.0',
+    currentVersion: '18.0',
 
     async init() {
         try {
             await firebase.init();
-            this.loadDataFromStorage(); // Tải cả dữ liệu cố định và dữ liệu hàng ngày
+            await idbHelper.openDB(); // Mở kết nối với IndexedDB
+            await this.loadDataFromStorage(); // Tải cả dữ liệu cố định và dữ liệu hàng ngày
             utils.loadInterfaceSettings();
             this.setupEventListeners();
             utils.applyContrastSetting();
@@ -47,23 +101,42 @@ const app = {
         }
     },
 
-    loadDataFromStorage() {
-        // --- Dữ liệu khai báo & dữ liệu cố định (tháng) ---
+    async loadDataFromStorage() {
+        // --- Dữ liệu khai báo (vẫn dùng localStorage vì nhỏ) ---
         document.getElementById('declaration-ycx').value = localStorage.getItem('declaration_ycx') || config.DEFAULT_DATA.HINH_THUC_XUAT_TINH_DOANH_THU.join('\n');
         document.getElementById('declaration-ycx-gop').value = localStorage.getItem('declaration_ycx_gop') || config.DEFAULT_DATA.HINH_THUC_XUAT_TRA_GOP.join('\n');
         document.getElementById('declaration-heso').value = localStorage.getItem('declaration_heso') || Object.entries(config.DEFAULT_DATA.HE_SO_QUY_DOI).map(([k, v]) => `${k},${v}`).join('\n');
 
-        const savedNvData = localStorage.getItem('saved_danhsachnv');
-        if (savedNvData) {
+        // Helper function to load saved files (DSNV, YCXL thang truoc, etc.) from IndexedDB
+        const loadSavedFile = async (saveKey, stateKey, fileType, uiId, uiName) => {
+            const savedData = await idbHelper.getItem(saveKey);
+            if (!savedData) return;
             try {
-                const rawData = JSON.parse(savedNvData);
-                const { normalizedData, success } = services.normalizeData(rawData, 'danhsachnv');
+                // savedData đã là rawData (đối tượng JSON)
+                const { normalizedData, success } = services.normalizeData(savedData, fileType);
                 if (success) {
-                    appState.danhSachNhanVien = normalizedData;
-                    services.updateEmployeeMaps();
-                    document.getElementById('danhsachnv-saved-status').textContent = `Đã lưu ${appState.danhSachNhanVien.length} nhân viên.`;
+                    appState[stateKey] = normalizedData;
+                    if (stateKey === 'danhSachNhanVien') {
+                         services.updateEmployeeMaps();
+                         document.getElementById('danhsachnv-saved-status').textContent = `Đã lưu ${appState.danhSachNhanVien.length} nhân viên.`;
+                    }
+                    ui.updateFileStatus(uiId, 'Tải từ bộ nhớ đệm', `✓ Đã tải ${normalizedData.length} dòng.`, 'success');
                 }
-            } catch (e) { console.error("Lỗi đọc DSNV từ localStorage:", e); localStorage.removeItem('saved_danhsachnv'); }
+            } catch (e) { console.error(`Lỗi đọc ${uiName} từ IndexedDB:`, e); }
+        };
+
+        await loadSavedFile('saved_danhsachnv', 'danhSachNhanVien', 'danhsachnv', 'danhsachnv', 'DSNV');
+        await loadSavedFile('saved_ycx_thangtruoc', 'ycxDataThangTruoc', 'ycx', 'ycx-thangtruoc', 'YCXL Tháng Trước');
+        await loadSavedFile('saved_thuongnong_thangtruoc', 'thuongNongDataThangTruoc', 'thuongnong', 'thuongnong-thangtruoc', 'Thưởng Nóng Tháng Trước');
+
+        // Load saved ERP Thang Truoc (vẫn dùng localStorage vì là text nhỏ)
+        const pasteThuongERPThangTruoc = localStorage.getItem('saved_thuongerp_thangtruoc');
+        if (pasteThuongERPThangTruoc) {
+            const el = document.getElementById('paste-thuongerp-thangtruoc');
+            if(el) {
+                el.value = pasteThuongERPThangTruoc;
+                this.handleErpThangTruocPaste({ target: el });
+            }
         }
         
         try {
@@ -77,7 +150,7 @@ const app = {
         
         utils.loadAndApplyLuykeGoalSettings();
 
-        // --- Dữ liệu hàng ngày ---
+        // --- Dữ liệu hàng ngày (vẫn dùng localStorage) ---
         const loadDailyData = (key, stateKey, fileType, uiName) => {
             const savedData = localStorage.getItem(key);
             if (!savedData) return;
@@ -91,7 +164,6 @@ const app = {
             } catch(e) { console.error(`Lỗi đọc ${uiName} từ localStorage:`, e); localStorage.removeItem(key); }
         };
         
-        loadDailyData('daily_ycx_data_raw', 'ycxData', 'ycx', 'YCX Lũy kế');
         loadDailyData('daily_giocong_data_raw', 'rawGioCongData', 'giocong', 'Giờ công');
         loadDailyData('daily_thuongnong_data_raw', 'thuongNongData', 'thuongnong', 'Thưởng nóng');
 
@@ -327,17 +399,29 @@ const app = {
             const captureBtn = document.getElementById(`capture-${prefix}-btn`);
             if (!captureBtn) return;
             captureBtn.addEventListener('click', () => {
-                const activeTabButton = document.querySelector(`#${prefix}-subtabs-nav .sub-tab-btn.active`);
+                // *** FIX STARTS HERE ***
+                const navId = prefix === 'sknv' ? 'sknv-subtabs-nav' : `${prefix}-subtabs-nav`;
+                const contentContainerId = prefix === 'sknv' ? 'employee-subtabs-content' : `${prefix}-subtabs-content`;
+                // *** FIX ENDS HERE ***
+
+                const activeTabButton = document.querySelector(`#${navId} .sub-tab-btn.active`);
                 if (!activeTabButton) { ui.showNotification('Không tìm thấy tab đang hoạt động.', 'error'); return; }
+                
                 const title = activeTabButton.dataset.title || 'BaoCao';
-                const activeTabContent = document.querySelector(`#${prefix}-subtabs-content .sub-tab-content:not(.hidden)`);
+                const activeTabContent = document.querySelector(`#${contentContainerId} .sub-tab-content:not(.hidden)`);
                 if (!activeTabContent) { ui.showNotification('Không tìm thấy nội dung để chụp.', 'error'); return; }
+
                 utils.captureDashboardInParts(activeTabContent, title);
             });
 
             document.getElementById(`export-${prefix}-btn`)?.addEventListener('click', () => {
-                const activeTabButton = document.querySelector(`#${prefix}-subtabs-nav .sub-tab-btn.active`);
-                const activeTabContent = document.querySelector(`#${prefix}-subtabs-content .sub-tab-content:not(.hidden)`);
+                // *** FIX STARTS HERE ***
+                const navId = prefix === 'sknv' ? 'sknv-subtabs-nav' : `${prefix}-subtabs-nav`;
+                const contentContainerId = prefix === 'sknv' ? 'employee-subtabs-content' : `${prefix}-subtabs-content`;
+                // *** FIX ENDS HERE ***
+                
+                const activeTabButton = document.querySelector(`#${navId} .sub-tab-btn.active`);
+                const activeTabContent = document.querySelector(`#${contentContainerId} .sub-tab-content:not(.hidden)`);
                 if (activeTabContent && activeTabButton) {
                     const title = activeTabButton.dataset.title || 'BaoCao';
                     const timestamp = new Date().toLocaleDateString('vi-VN').replace(/\//g, '-');
@@ -376,14 +460,14 @@ const app = {
                 ui.updateFileStatus(fileType, file.name, `✓ Đã tải ${normalizedData.length} dòng.`, 'success');
                 ui.showNotification(`Tải thành công file "${dataName}"!`, 'success');
                 
-                // Logic lưu trữ dữ liệu
-                if (fileInput.dataset.saveKey) { // Dữ liệu tháng (cố định)
-                    localStorage.setItem(fileInput.dataset.saveKey, JSON.stringify(rawData));
+                // --- LOGIC LƯU TRỮ DỮ LIỆU ĐÃ NÂNG CẤP ---
+                if (fileInput.dataset.saveKey) { // Dữ liệu tháng (cố định) -> LƯU VÀO INDEXEDDB
+                    await idbHelper.setItem(fileInput.dataset.saveKey, rawData);
                     const savedStatusSpan = document.getElementById(`${fileType}-saved-status`);
                     if (savedStatusSpan) savedStatusSpan.textContent = `Đã lưu ${normalizedData.length} dòng.`;
-                } else { // Dữ liệu ngày
+                    ui.showNotification(`Đã lưu "${dataName}" vào bộ nhớ đệm của trình duyệt.`, 'success');
+                } else { // Dữ liệu ngày -> VẪN DÙNG LOCALSTORAGE
                     const dailySaveKeys = {
-                        'ycx': 'daily_ycx_data_raw',
                         'giocong': 'daily_giocong_data_raw',
                         'thuongnong': 'daily_thuongnong_data_raw'
                     };
@@ -497,6 +581,7 @@ const app = {
 
     handleErpThangTruocPaste(e) {
          const pastedText = e.target.value;
+         localStorage.setItem('saved_thuongerp_thangtruoc', pastedText);
          appState.thuongERPDataThangTruoc = services.processThuongERP(pastedText);
          ui.updatePasteStatus('status-thuongerp-thangtruoc', `✓ Đã xử lý ${appState.thuongERPDataThangTruoc.length} nhân viên.`);
          sknvTab.render();

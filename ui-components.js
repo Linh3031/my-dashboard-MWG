@@ -253,10 +253,10 @@ export const uiComponents = {
         const container = document.getElementById('update-history-list');
         if (!container) return;
         const updateHistory = [
-            { version: "15.0", date: "16/09/2025", notes: ["Sửa lỗi KPI so sánh cùng kỳ.", "Sửa lỗi nghiêm trọng bộ lọc nhân viên chi tiết (SKNV & Realtime)."] },
-            { version: "14.0", date: "15/09/2025", notes: ["Sửa lỗi bố cục chụp ảnh thẻ KPI.", "Nâng cấp cài đặt cỡ chữ thành thanh trượt.", "Sửa lỗi định dạng doanh thu ở các bảng chi tiết.", "Sửa lỗi bộ lọc nhân viên ở tab Realtime."] },
-            { version: "13.0", date: "14/09/2025", notes: ["Thêm tính năng tự động thông báo phiên bản mới.", "Nâng cấp toàn bộ bộ lọc có tính năng tìm kiếm.", "Làm sạch tên ngành hàng/nhóm hàng trên toàn hệ thống."] },
-            { version: "12.0", date: "14/09/2025", notes: ["Thêm tùy chọn cỡ chữ.", "Nâng cấp độ tương phản.", "Gộp ô nhập liệu Thưởng ERP.", "Thêm bộ chuyển đổi chế độ xem cho nhiều tab.", "Sửa nhiều lỗi logic nghiêm trọng."] },
+            { version: "1.3", date: "16/09/2025", notes: ["Sửa lỗi KPI so sánh cùng kỳ.", "Sửa lỗi nghiêm trọng bộ lọc nhân viên chi tiết (SKNV & Realtime)."] },
+            { version: "1.2", date: "15/09/2025", notes: ["Sửa lỗi bố cục chụp ảnh thẻ KPI.", "Nâng cấp cài đặt cỡ chữ thành thanh trượt.", "Sửa lỗi định dạng doanh thu ở các bảng chi tiết.", "Sửa lỗi bộ lọc nhân viên ở tab Realtime."] },
+            { version: "1.1", date: "14/09/2025", notes: ["Thêm tính năng tự động thông báo phiên bản mới.", "Nâng cấp toàn bộ bộ lọc có tính năng tìm kiếm.", "Làm sạch tên ngành hàng/nhóm hàng trên toàn hệ thống."] },
+            { version: "1.0", date: "14/09/2025", notes: ["Thêm tùy chọn cỡ chữ.", "Nâng cấp độ tương phản.", "Gộp ô nhập liệu Thưởng ERP.", "Thêm bộ chuyển đổi chế độ xem cho nhiều tab.", "Sửa nhiều lỗi logic nghiêm trọng."] },
         ];
 
         container.innerHTML = updateHistory.map(item => `

@@ -1,3 +1,4 @@
+// Version 1.1 - Fix module export issue
 // MODULE: TAB SKNV
 // Chịu trách nhiệm render và xử lý logic cho tab "Sức khỏe nhân viên"
 import { appState } from './state.js';
@@ -5,7 +6,7 @@ import { services } from './services.js';
 import { ui } from './ui.js';
 import { utils } from './utils.js';
 
-const sknvTab = {
+export const sknvTab = {
     render() {
         if (appState.danhSachNhanVien.length === 0) {
             ui.togglePlaceholder('health-employee-section', true);
@@ -48,5 +49,3 @@ const sknvTab = {
         utils.applyHighlights('sknv');
     }
 };
-
-export { sknvTab };
