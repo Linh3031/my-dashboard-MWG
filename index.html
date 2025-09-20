@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Công cụ phân tích số cho QLST MWG 14.1</title>
+    <title>Công cụ phân tích số cho QLST MWG 16.0</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -297,16 +297,19 @@
                 
                 <section id="data-section" class="page-section">
                     <div class="page-header">
-                        <h2 class="page-header__title">Cập nhật dữ liệu</h2>
-                        <button class="page-header__help-btn" data-help-id="data" title="Xem hướng dẫn">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                        </button>
+                        <div class="flex items-center gap-x-3">
+                            <h2 class="page-header__title">Cập nhật dữ liệu</h2>
+                            <button class="page-header__help-btn" data-help-id="data" title="Xem hướng dẫn">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                            </button>
+                            <span class="text-sm italic text-gray-500 font-normal hidden md:inline">Hướng dẫn sử dụng</span>
+                        </div>
                     </div>
                     <div class="content-card">
                         <h3 class="content-card__header">DỮ LIỆU CẬP NHẬT HÀNG NGÀY</h3>
                         
-                        <div class="grid md:grid-cols-3 gap-6">
-                            <div class="space-y-4">
+                        <div class="flex flex-col gap-6">
+                            <div class="grid md:grid-cols-3 gap-6">
                                 <div class="data-input-group">
                                     <label class="data-input-group__label">Yêu cầu xuất lũy kế:</label>
                                     <div class="data-input-group__content">
@@ -347,42 +350,35 @@
                                     </div>
                                 </div>
                             </div>
-
-                            <div class="space-y-4">
+                            <div class="grid md:grid-cols-3 gap-6">
                                 <div class="data-input-group h-full">
                                     <label class="data-input-group__label">Thưởng ERP:<br><span class="font-normal">(Copy từ BI)</span></label>
                                     <div class="data-input-group__content">
-                                        <textarea id="paste-thuongerp" rows="12" class="data-textarea" placeholder="Dán toàn bộ dữ liệu thưởng ERP vào đây..."></textarea>
+                                        <textarea id="paste-thuongerp" rows="5" class="data-textarea" placeholder="Dán toàn bộ dữ liệu thưởng ERP..."></textarea>
                                         <div class="flex items-center gap-x-4">
                                             <a href="https://bi.thegioididong.com/reward?id=-1&tab=1" target="_blank" class="data-input-group__link">Lấy file tại đây</a>
                                             <div class="data-input-group__status-wrapper"><span id="status-thuongerp" class="data-input-group__status-text"></span></div>
                                         </div>
-                                        <div id="progress-thuongerp" class="progress-bar-container hidden"><div class="progress-bar"></div></div>
                                     </div>
                                 </div>
-                            </div>
-
-                            <div class="space-y-4">
-                                <div class="data-input-group">
+                                <div class="data-input-group h-full">
                                     <label class="data-input-group__label">Data lũy kế:<br><span class="font-normal">(Copy từ BI)</span></label>
                                     <div class="data-input-group__content">
-                                        <textarea id="paste-luyke" rows="5" class="data-textarea" placeholder="Dán dữ liệu đã sao chép vào đây..."></textarea>
+                                        <textarea id="paste-luyke" rows="5" class="data-textarea" placeholder="Dán dữ liệu đã sao chép..."></textarea>
                                         <div class="flex items-center gap-x-4">
                                             <a href="https://bi.thegioididong.com/sieu-thi-con?id=16612&tab=1" target="_blank" class="data-input-group__link">Lấy file tại đây</a>
                                             <div class="data-input-group__status-wrapper"><span id="status-luyke" class="data-input-group__status-text"></span></div>
                                         </div>
-                                        <div id="progress-luyke" class="progress-bar-container hidden"><div class="progress-bar"></div></div>
                                     </div>
                                 </div>
-                                <div class="data-input-group">
+                                <div class="data-input-group h-full">
                                     <label class="data-input-group__label">Thi đua nhân viên:<br><span class="font-normal">(Copy từ BI)</span></label>
                                     <div class="data-input-group__content">
-                                        <textarea id="paste-thiduanv" rows="5" class="data-textarea" placeholder="Dán dữ liệu đã sao chép vào đây..."></textarea>
+                                        <textarea id="paste-thiduanv" rows="5" class="data-textarea" placeholder="Dán dữ liệu đã sao chép..."></textarea>
                                         <div class="flex items-center gap-x-4">
                                             <a href="https://bi.thegioididong.com/sieu-thi-con?id=16758&tab=bcdtnv&rt=2&dm=1" target="_blank" class="data-input-group__link">Lấy file tại đây</a>
                                             <div class="data-input-group__status-wrapper"><span id="status-thiduanv" class="data-input-group__status-text"></span></div>
                                         </div>
-                                        <div id="progress-thiduanv" class="progress-bar-container hidden"><div class="progress-bar"></div></div>
                                     </div>
                                 </div>
                             </div>
@@ -414,6 +410,7 @@
                                             <label for="file-danhsachnv" class="data-input-group__file-trigger">Thêm file</label>
                                             <span id="file-name-danhsachnv" class="data-input-group__file-name">Chưa thêm file</span>
                                         </div>
+                                        <button id="download-danhsachnv-template-btn" class="data-input-group__link text-left">Tải file mẫu</button>
                                         <input type="file" id="file-danhsachnv" class="hidden file-input" data-name="Danh sách nhân viên" data-state-key="danhSachNhanVien" data-save-key="saved_danhsachnv" accept=".xlsx, .xls, .csv">
                                         <div class="data-input-group__status-wrapper">
                                             <span id="file-status-danhsachnv" class="data-input-group__status-text"></span>
@@ -461,7 +458,6 @@
                                         <div class="data-input-group__status-wrapper">
                                             <span id="status-thuongerp-thangtruoc" class="data-input-group__status-text"></span>
                                         </div>
-                                        <div id="progress-thuongerp-thangtruoc" class="progress-bar-container hidden"><div class="progress-bar"></div></div>
                                     </div>
                                 </div>
                             </div>
@@ -474,10 +470,13 @@
                     <div id="health-section-content">
                         <div class="content-card">
                              <div class="page-header border-b pb-4 mb-6">
-                                <h2 class="page-header__title">Doanh thu siêu thị Lũy Kế</h2>
-                                <button class="page-header__help-btn" data-help-id="luyke" title="Xem hướng dẫn">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                                </button>
+                                <div class="flex items-center gap-x-3">
+                                    <h2 class="page-header__title">Doanh thu siêu thị Lũy Kế</h2>
+                                    <button class="page-header__help-btn" data-help-id="luyke" title="Xem hướng dẫn">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                                    </button>
+                                    <span class="text-sm italic text-gray-500 font-normal hidden md:inline">Hướng dẫn sử dụng</span>
+                                </div>
                             </div>
 
                             <button class="toggle-filters-btn" data-target="luyke-filter-container">
@@ -616,10 +615,13 @@
                     <div id="health-employee-section-content">
                         <div class="content-card">
                              <div class="page-header border-b pb-4 mb-6">
-                                <h2 class="page-header__title">Sức khỏe nhân viên</h2>
-                                <button class="page-header__help-btn" data-help-id="sknv" title="Xem hướng dẫn">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                                </button>
+                                <div class="flex items-center gap-x-3">
+                                    <h2 class="page-header__title">Sức khỏe nhân viên</h2>
+                                    <button class="page-header__help-btn" data-help-id="sknv" title="Xem hướng dẫn">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                                    </button>
+                                    <span class="text-sm italic text-gray-500 font-normal hidden md:inline">Hướng dẫn sử dụng</span>
+                                </div>
                             </div>
 
                             <button class="toggle-filters-btn" data-target="sknv-filter-container">
@@ -742,10 +744,13 @@
                     <div id="realtime-section-content">
                         <div class="content-card">
                             <div class="page-header border-b pb-4 mb-6">
-                                <h2 class="page-header__title">Phân Tích Doanh Thu Realtime</h2>
-                                <button class="page-header__help-btn" data-help-id="realtime" title="Xem hướng dẫn">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                                </button>
+                                <div class="flex items-center gap-x-3">
+                                    <h2 class="page-header__title">Phân Tích Doanh Thu Realtime</h2>
+                                    <button class="page-header__help-btn" data-help-id="realtime" title="Xem hướng dẫn">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                                    </button>
+                                    <span class="text-sm italic text-gray-500 font-normal hidden md:inline">Hướng dẫn sử dụng</span>
+                                </div>
                                 <div class="flex-shrink-0 flex items-center gap-x-4 ml-auto">
                                     <label for="realtime-file-input" class="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium whitespace-nowrap">Thêm file Realtime</label>
                                     <input type="file" id="realtime-file-input" class="hidden" accept=".xlsx, .xls, .csv">
@@ -846,7 +851,6 @@
                                         <h3 id="realtime-efficiency-title" class="text-xl font-bold text-gray-700 mb-4 uppercase bg-yellow-100 text-yellow-800 p-2 rounded-md">HIỆU QUẢ KHAI THÁC</h3>
                                         <div id="realtime-efficiency-content"><p class="text-gray-500 font-bold">Vui lòng tải file realtime để xem chi tiết.</p></div>
                                     </div>
-                                    <!-- YÊU CẦU 2b: Thay đổi bảng Mục tiêu ngày thành Doanh thu chưa xuất -->
                                     <div id="realtime-unexported-revenue-panel" data-capture-group="2" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200 flex flex-col">
                                          <h3 class="text-xl font-bold uppercase mb-4 bg-red-100 text-red-800 p-2 rounded-md">DOANH THU CHƯA XUẤT</h3>
                                          <div id="realtime-unexported-revenue-content" class="flex-grow"><p class="text-gray-500 font-bold text-center">Vui lòng tải file realtime để xem chi tiết.</p></div>
@@ -858,7 +862,6 @@
                                 <div class="flex flex-wrap items-center gap-4">
                                     <div id="dtnv-realtime-view-selector" class="view-switcher">
                                         <button data-view="summary" class="view-switcher__btn active">Tổng hợp</button>
-                                        <!-- YÊU CẦU 1b: Đổi tên nút -->
                                         <button data-view="infographic" class="view-switcher__btn">Chi tiết</button>
                                     </div>
                                     <div id="dtnv-realtime-employee-selector-container" class="hidden">

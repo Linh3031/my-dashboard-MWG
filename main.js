@@ -1,4 +1,4 @@
-// Version 16.0 - Kích hoạt Tích hợp Firebase
+// Version 16.0 - Auto-save daily data & Add template download
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -13,14 +13,12 @@ import { realtimeTab } from './tab-realtime.js';
 import { utils } from './utils.js';
 
 const app = {
-    currentVersion: '13.0', // Sẽ được cập nhật từ version.json
+    currentVersion: '16.0',
 
     async init() {
         try {
-            // KÍCH HOẠT: Khởi tạo kết nối Firebase ngay khi ứng dụng bắt đầu
-            await firebase.init(); 
-            
-            this.loadDataFromStorage();
+            await firebase.init();
+            this.loadDataFromStorage(); // Tải cả dữ liệu cố định và dữ liệu hàng ngày
             utils.loadInterfaceSettings();
             this.setupEventListeners();
             utils.applyContrastSetting();
@@ -51,6 +49,7 @@ const app = {
     },
 
     loadDataFromStorage() {
+        // --- Dữ liệu khai báo & dữ liệu cố định (tháng) ---
         document.getElementById('declaration-ycx').value = localStorage.getItem('declaration_ycx') || config.DEFAULT_DATA.HINH_THUC_XUAT_TINH_DOANH_THU.join('\n');
         document.getElementById('declaration-ycx-gop').value = localStorage.getItem('declaration_ycx_gop') || config.DEFAULT_DATA.HINH_THUC_XUAT_TRA_GOP.join('\n');
         document.getElementById('declaration-heso').value = localStorage.getItem('declaration_heso') || Object.entries(config.DEFAULT_DATA.HE_SO_QUY_DOI).map(([k, v]) => `${k},${v}`).join('\n');
@@ -78,6 +77,44 @@ const app = {
         } catch (e) { console.error("Lỗi đọc cài đặt từ localStorage:", e); }
         
         utils.loadAndApplyLuykeGoalSettings();
+
+        // --- Dữ liệu hàng ngày ---
+        const loadDailyData = (key, stateKey, fileType, uiName) => {
+            const savedData = localStorage.getItem(key);
+            if (!savedData) return;
+            try {
+                const rawData = JSON.parse(savedData);
+                const { normalizedData, success } = services.normalizeData(rawData, fileType);
+                if (success) {
+                    appState[stateKey] = normalizedData;
+                    ui.updateFileStatus(fileType, 'Tải từ bộ nhớ đệm', `✓ Đã tải ${normalizedData.length} dòng.`, 'success');
+                }
+            } catch(e) { console.error(`Lỗi đọc ${uiName} từ localStorage:`, e); localStorage.removeItem(key); }
+        };
+        
+        loadDailyData('daily_ycx_data_raw', 'ycxData', 'ycx', 'YCX Lũy kế');
+        loadDailyData('daily_giocong_data_raw', 'rawGioCongData', 'giocong', 'Giờ công');
+        loadDailyData('daily_thuongnong_data_raw', 'thuongNongData', 'thuongnong', 'Thưởng nóng');
+
+        const pasteLuyke = localStorage.getItem('daily_paste_luyke');
+        if (pasteLuyke) document.getElementById('paste-luyke').value = pasteLuyke;
+
+        const pasteThiduaNV = localStorage.getItem('daily_paste_thiduanv');
+        if (pasteThiduaNV) document.getElementById('paste-thiduanv').value = pasteThiduaNV;
+
+        const pasteThuongERP = localStorage.getItem('daily_paste_thuongerp');
+        if (pasteThuongERP) {
+            const el = document.getElementById('paste-thuongerp');
+            if(el) {
+                el.value = pasteThuongERP;
+                this.handleErpPaste(); // Xử lý dữ liệu đã tải
+            }
+        }
+
+        // Nếu có bất kỳ dữ liệu hàng ngày nào được tải, hãy render lại báo cáo
+        if (appState.ycxData.length > 0 || pasteLuyke) {
+            this.processAndRenderAllReports();
+        }
     },
 
     handleFileRead(file) {
@@ -194,8 +231,14 @@ const app = {
         document.querySelectorAll('.sub-tab-btn').forEach(btn => btn.addEventListener('click', (e) => ui.handleSubTabClick(e.currentTarget)));
         document.querySelectorAll('.toggle-filters-btn').forEach(button => button.addEventListener('click', () => ui.toggleFilterSection(button.dataset.target)));
         document.querySelectorAll('.file-input').forEach(input => input.addEventListener('change', (e) => this.handleFileInputChange(e)));
-        document.getElementById('paste-luyke')?.addEventListener('input', () => { ui.updatePasteStatus('status-luyke'); this.processAndRenderAllReports(); });
+        
+        document.getElementById('paste-luyke')?.addEventListener('input', (e) => { 
+            localStorage.setItem('daily_paste_luyke', e.target.value);
+            ui.updatePasteStatus('status-luyke'); 
+            this.processAndRenderAllReports(); 
+        });
         document.getElementById('paste-thiduanv')?.addEventListener('input', (e) => {
+            localStorage.setItem('daily_paste_thiduanv', e.target.value);
             sknvTab.render();
             ui.updatePasteStatus('status-thiduanv', `✓ Đã xử lý ${appState.thiDuaReportData.length} nhân viên.`);
             ui.displayPastedDebugInfo('thiduanv-pasted');
@@ -203,6 +246,8 @@ const app = {
         document.getElementById('paste-thuongerp')?.addEventListener('input', () => this.handleErpPaste());
         document.getElementById('paste-thuongerp-thangtruoc')?.addEventListener('input', (e) => this.handleErpThangTruocPaste(e));
         document.getElementById('realtime-file-input')?.addEventListener('change', (e) => this.handleRealtimeFileInput(e));
+        document.getElementById('download-danhsachnv-template-btn')?.addEventListener('click', () => this.handleTemplateDownload());
+
 
         ['luyke', 'sknv', 'realtime'].forEach(prefix => {
             document.getElementById(`${prefix}-filter-warehouse`)?.addEventListener('change', () => this.handleFilterChange(prefix));
@@ -331,11 +376,23 @@ const app = {
                 }
                 ui.updateFileStatus(fileType, file.name, `✓ Đã tải ${normalizedData.length} dòng.`, 'success');
                 ui.showNotification(`Tải thành công file "${dataName}"!`, 'success');
-                if (fileInput.dataset.saveKey) {
+                
+                // Logic lưu trữ dữ liệu
+                if (fileInput.dataset.saveKey) { // Dữ liệu tháng (cố định)
                     localStorage.setItem(fileInput.dataset.saveKey, JSON.stringify(rawData));
                     const savedStatusSpan = document.getElementById(`${fileType}-saved-status`);
                     if (savedStatusSpan) savedStatusSpan.textContent = `Đã lưu ${normalizedData.length} dòng.`;
+                } else { // Dữ liệu ngày
+                    const dailySaveKeys = {
+                        'ycx': 'daily_ycx_data_raw',
+                        'giocong': 'daily_giocong_data_raw',
+                        'thuongnong': 'daily_thuongnong_data_raw'
+                    };
+                    if (dailySaveKeys[fileType]) {
+                        localStorage.setItem(dailySaveKeys[fileType], JSON.stringify(rawData));
+                    }
                 }
+
                 this.processAndRenderAllReports();
             } else { 
                 const errorMessage = `Lỗi file "${dataName}": Thiếu cột: ${missingColumns.join(', ')}.`;
@@ -378,6 +435,22 @@ const app = {
         } catch (err) { ui.showNotification(`Có lỗi khi đọc file: ${err.message}`, 'error'); console.error(err); }
     },
 
+    async handleTemplateDownload() {
+        ui.showNotification('Đang chuẩn bị file mẫu...', 'success');
+        try {
+            const url = await firebase.getTemplateDownloadURL();
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'Danh_Sach_Nhan_Vien_Mau.xlsx'; // Tên file mặc định khi tải
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (error) {
+            console.error("Lỗi khi tải file mẫu:", error);
+            ui.showNotification('Không thể tải file mẫu. Vui lòng thử lại.', 'error');
+        }
+    },
+
     handleFilterChange(prefix) {
         ui.updateEmployeeFilter(prefix);
         if (prefix === 'luyke') luykeTab.render();
@@ -417,6 +490,7 @@ const app = {
 
     handleErpPaste() {
         const pastedText = document.getElementById('paste-thuongerp')?.value || '';
+        localStorage.setItem('daily_paste_thuongerp', pastedText);
         appState.thuongERPData = services.processThuongERP(pastedText);
         ui.updatePasteStatus('status-thuongerp', `✓ Đã xử lý ${appState.thuongERPData.length} nhân viên.`);
         this.processAndRenderAllReports();
