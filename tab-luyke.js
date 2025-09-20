@@ -1,4 +1,4 @@
-// Version 12.3 - Refined KPI data flow
+// Version 2.0 - Refined KPI data flow
 // MODULE: Chịu trách nhiệm cho Tab Sức khỏe Siêu thị (Lũy kế)
 
 import { appState } from './state.js';

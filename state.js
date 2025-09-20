@@ -1,4 +1,4 @@
-// Version 12.1 - Bug Fixes & Stability Improvements
+// Version 2.0 - Bug Fixes & Stability Improvements
 // MODULE 2: TỦ TRẠNG THÁI (APPSTATE)
 // File này chứa đối tượng trạng thái chung của ứng dụng, hoạt động như một "bộ nhớ".
 
