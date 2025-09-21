@@ -48,4 +48,4 @@ export const sknvTab = {
         utils.populateHighlightFilters('sknv', filteredYCXData, filteredReport);
         utils.applyHighlights('sknv');
     }
-};
+};  

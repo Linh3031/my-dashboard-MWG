@@ -1,4 +1,4 @@
-// Version 2.0 - New Features & Refinements
+// Version 2.2 - New Features & Refinements
 // MODULE 1: TỦ CẤU HÌNH (CONFIG)
 // File này chứa tất cả các cấu hình tĩnh của ứng dụng.
 

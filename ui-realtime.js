@@ -1,4 +1,4 @@
-// Version 1.1 - Add dedicated employee revenue report
+// Version 2.2 - Add capture group to summary table
 // MODULE: UI REALTIME
 // Chứa các hàm render giao diện cho tab "Doanh thu Realtime".
 
@@ -39,7 +39,8 @@ export const uiRealtime = {
 
         const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
         
-        let tableHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+        // FIX: Add data-capture-group="1" to make this container capturable
+        let tableHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden" data-capture-group="1">
             <div class="p-4 header-group-1 text-gray-800">
                 <h3 class="text-xl font-bold uppercase">Doanh thu nhân viên Realtime</h3>
                 <p class="text-sm italic text-gray-600">(đơn vị tính: Triệu đồng)</p>
@@ -364,4 +365,3 @@ export const uiRealtime = {
         container.innerHTML = brandTableHtml + employeeTableHtml;
     }
 };
-
