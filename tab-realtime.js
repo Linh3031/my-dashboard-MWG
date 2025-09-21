@@ -1,4 +1,4 @@
-// Version 2.0 - Fix report rendering call
+// Version 2.2 - Fix report rendering call
 // MODULE: Chịu trách nhiệm cho Tab Doanh thu Realtime
 
 import { appState } from './state.js';

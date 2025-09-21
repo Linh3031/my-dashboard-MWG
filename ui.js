@@ -1,4 +1,4 @@
-// Version 2.0 - Add new realtime employee report function
+// Version 2.2 - Add new realtime employee report function
 // MODULE: UI FACADE (Mặt tiền Giao diện)
 
 import { uiComponents } from './ui-components.js';

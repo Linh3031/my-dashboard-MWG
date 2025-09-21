@@ -1,4 +1,4 @@
-// Version 2.0 - Combined: IndexedDB & SKNV Capture Fix
+// Version 2.2 - Fix SKNV capture button selector
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -66,7 +66,7 @@ const idbHelper = {
 
 
 const app = {
-    currentVersion: '18.0',
+    currentVersion: '20.0',
 
     async init() {
         try {
@@ -107,12 +107,10 @@ const app = {
         document.getElementById('declaration-ycx-gop').value = localStorage.getItem('declaration_ycx_gop') || config.DEFAULT_DATA.HINH_THUC_XUAT_TRA_GOP.join('\n');
         document.getElementById('declaration-heso').value = localStorage.getItem('declaration_heso') || Object.entries(config.DEFAULT_DATA.HE_SO_QUY_DOI).map(([k, v]) => `${k},${v}`).join('\n');
 
-        // Helper function to load saved files (DSNV, YCXL thang truoc, etc.) from IndexedDB
         const loadSavedFile = async (saveKey, stateKey, fileType, uiId, uiName) => {
             const savedData = await idbHelper.getItem(saveKey);
             if (!savedData) return;
             try {
-                // savedData đã là rawData (đối tượng JSON)
                 const { normalizedData, success } = services.normalizeData(savedData, fileType);
                 if (success) {
                     appState[stateKey] = normalizedData;
@@ -125,11 +123,12 @@ const app = {
             } catch (e) { console.error(`Lỗi đọc ${uiName} từ IndexedDB:`, e); }
         };
 
+        // --- Tải dữ liệu cố định từ IndexedDB ---
         await loadSavedFile('saved_danhsachnv', 'danhSachNhanVien', 'danhsachnv', 'danhsachnv', 'DSNV');
         await loadSavedFile('saved_ycx_thangtruoc', 'ycxDataThangTruoc', 'ycx', 'ycx-thangtruoc', 'YCXL Tháng Trước');
         await loadSavedFile('saved_thuongnong_thangtruoc', 'thuongNongDataThangTruoc', 'thuongnong', 'thuongnong-thangtruoc', 'Thưởng Nóng Tháng Trước');
+        await loadSavedFile('saved_ycx', 'ycxData', 'ycx', 'ycx', 'Yêu cầu xuất lũy kế');
 
-        // Load saved ERP Thang Truoc (vẫn dùng localStorage vì là text nhỏ)
         const pasteThuongERPThangTruoc = localStorage.getItem('saved_thuongerp_thangtruoc');
         if (pasteThuongERPThangTruoc) {
             const el = document.getElementById('paste-thuongerp-thangtruoc');
@@ -178,11 +177,10 @@ const app = {
             const el = document.getElementById('paste-thuongerp');
             if(el) {
                 el.value = pasteThuongERP;
-                this.handleErpPaste(); // Xử lý dữ liệu đã tải
+                this.handleErpPaste();
             }
         }
 
-        // Nếu có bất kỳ dữ liệu hàng ngày nào được tải, hãy render lại báo cáo
         if (appState.ycxData.length > 0 || pasteLuyke) {
             this.processAndRenderAllReports();
         }
@@ -399,10 +397,9 @@ const app = {
             const captureBtn = document.getElementById(`capture-${prefix}-btn`);
             if (!captureBtn) return;
             captureBtn.addEventListener('click', () => {
-                // *** FIX STARTS HERE ***
-                const navId = prefix === 'sknv' ? 'sknv-subtabs-nav' : `${prefix}-subtabs-nav`;
+                // FIX: Revert to original selector for SKNV tab to fix regression
+                const navId = prefix === 'sknv' ? 'employee-subtabs-nav' : `${prefix}-subtabs-nav`;
                 const contentContainerId = prefix === 'sknv' ? 'employee-subtabs-content' : `${prefix}-subtabs-content`;
-                // *** FIX ENDS HERE ***
 
                 const activeTabButton = document.querySelector(`#${navId} .sub-tab-btn.active`);
                 if (!activeTabButton) { ui.showNotification('Không tìm thấy tab đang hoạt động.', 'error'); return; }
@@ -415,10 +412,8 @@ const app = {
             });
 
             document.getElementById(`export-${prefix}-btn`)?.addEventListener('click', () => {
-                // *** FIX STARTS HERE ***
-                const navId = prefix === 'sknv' ? 'sknv-subtabs-nav' : `${prefix}-subtabs-nav`;
+                const navId = prefix === 'sknv' ? 'employee-subtabs-nav' : `${prefix}-subtabs-nav`;
                 const contentContainerId = prefix === 'sknv' ? 'employee-subtabs-content' : `${prefix}-subtabs-content`;
-                // *** FIX ENDS HERE ***
                 
                 const activeTabButton = document.querySelector(`#${navId} .sub-tab-btn.active`);
                 const activeTabContent = document.querySelector(`#${contentContainerId} .sub-tab-content:not(.hidden)`);
@@ -460,13 +455,12 @@ const app = {
                 ui.updateFileStatus(fileType, file.name, `✓ Đã tải ${normalizedData.length} dòng.`, 'success');
                 ui.showNotification(`Tải thành công file "${dataName}"!`, 'success');
                 
-                // --- LOGIC LƯU TRỮ DỮ LIỆU ĐÃ NÂNG CẤP ---
-                if (fileInput.dataset.saveKey) { // Dữ liệu tháng (cố định) -> LƯU VÀO INDEXEDDB
+                if (fileInput.dataset.saveKey) {
                     await idbHelper.setItem(fileInput.dataset.saveKey, rawData);
                     const savedStatusSpan = document.getElementById(`${fileType}-saved-status`);
                     if (savedStatusSpan) savedStatusSpan.textContent = `Đã lưu ${normalizedData.length} dòng.`;
                     ui.showNotification(`Đã lưu "${dataName}" vào bộ nhớ đệm của trình duyệt.`, 'success');
-                } else { // Dữ liệu ngày -> VẪN DÙNG LOCALSTORAGE
+                } else {
                     const dailySaveKeys = {
                         'giocong': 'daily_giocong_data_raw',
                         'thuongnong': 'daily_thuongnong_data_raw'
@@ -524,7 +518,7 @@ const app = {
             const url = await firebase.getTemplateDownloadURL();
             const link = document.createElement('a');
             link.href = url;
-            link.download = 'Danh_Sach_Nhan_Vien_Mau.xlsx'; // Tên file mặc định khi tải
+            link.download = 'Danh_Sach_Nhan_Vien_Mau.xlsx';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);

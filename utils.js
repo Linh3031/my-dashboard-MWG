@@ -1,8 +1,86 @@
-// Version 2.0 - Safe Capture with Guaranteed Cleanup
+// Version 2.2 - Add visibility check to capture logic
 // MODULE: UTILITIES
 // Chứa các hàm tiện ích chung không thuộc về logic hay giao diện cụ thể.
 import { appState } from './state.js';
 import { ui } from './ui.js';
+
+// --- HELPER for Screenshot CSS Injection ---
+const _injectCaptureStyles = () => {
+    const styleId = 'dynamic-capture-styles';
+    document.getElementById(styleId)?.remove();
+
+    const styles = `
+        .capture-container { 
+            padding: 24px; 
+            background-color: #f3f4f6; 
+            box-sizing: border-box; 
+            width: fit-content; 
+            position: absolute;
+            left: -9999px;
+            top: 0;
+            z-index: -1;
+        }
+        .capture-layout-container { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 24px; 
+        }
+        .capture-title { 
+            font-size: 28px; 
+            font-weight: 700; 
+            text-align: center; 
+            color: #1f2937; 
+            margin-bottom: 24px; 
+            padding: 12px; 
+            background-color: #ffffff; 
+            border-radius: 0.75rem; 
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); 
+        }
+        /* --- VIRTUAL STAGES / PRESETS --- */
+        .prepare-for-kpi-capture {
+            display: grid !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 24px !important;
+            width: 900px !important;
+        }
+        .preset-mobile-portrait {
+            width: 750px !important;
+        }
+        .preset-landscape-table {
+            width: fit-content !important;
+        }
+        .preset-landscape-table table {
+            table-layout: fixed !important;
+        }
+        .preset-landscape-table th, 
+        .preset-landscape-table td {
+            width: 95px !important;
+            word-wrap: break-word;
+        }
+        .preset-landscape-table th:first-child,
+        .preset-landscape-table td:first-child {
+            width: 180px !important;
+        }
+        .preset-large-font-report {
+            width: 800px !important;
+        }
+        .preset-large-font-report table th {
+            white-space: normal !important;
+            vertical-align: middle;
+        }
+        .preset-large-font-report table td {
+            font-size: 22px !important;
+            vertical-align: middle;
+        }
+    `;
+
+    const styleElement = document.createElement('style');
+    styleElement.id = styleId;
+    styleElement.innerHTML = styles;
+    document.head.appendChild(styleElement);
+    return styleElement;
+};
+
 
 const utils = {
     cleanCategoryName(name) {
@@ -10,7 +88,6 @@ const utils = {
         return name.replace(/^\d+\s*-\s*/, '').trim();
     },
 
-    // --- SETTINGS MANAGEMENT (No changes) ---
     loadInterfaceSettings() {
         try {
             const savedSettings = JSON.parse(localStorage.getItem('interfaceSettings')) || {};
@@ -192,7 +269,6 @@ const utils = {
         document.querySelectorAll('.contrast-selector').forEach(sel => sel.value = savedLevel);
     },
 
-    // --- HIGHLIGHTING (No changes) ---
     loadHighlightSettings() {
         try {
             const saved = localStorage.getItem('highlightSettings');
@@ -237,7 +313,6 @@ const utils = {
         }
     },
 
-    // --- ACTIONS (EXPORT, CAPTURE) ---
     exportTableToExcel(activeTabContent, fileName) {
         if (!activeTabContent) {
             ui.showNotification('Không tìm thấy tab đang hoạt động để xuất.', 'error');
@@ -258,8 +333,7 @@ const utils = {
         }
     },
 
-    // Simplified capture function for single elements
-    async captureAndDownload(elementToCapture, title) {
+    async captureAndDownload(elementToCapture, title, presetClass = '') {
         const date = new Date();
         const timeString = date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
         const dateString = date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
@@ -272,11 +346,13 @@ const utils = {
         titleEl.className = 'capture-title';
         titleEl.textContent = finalTitle;
         captureWrapper.appendChild(titleEl);
-    
-        // Append the CLONED element to avoid moving the original
-        captureWrapper.appendChild(elementToCapture.cloneNode(true));
-    
-        // Temporarily append to body to ensure rendering
+        
+        const contentClone = elementToCapture.cloneNode(true);
+        if (presetClass) {
+            contentClone.classList.add(presetClass);
+        }
+        captureWrapper.appendChild(contentClone);
+
         document.body.appendChild(captureWrapper);
     
         try {
@@ -295,14 +371,12 @@ const utils = {
             console.error('Lỗi chụp màn hình:', err);
             ui.showNotification(`Lỗi khi chụp ảnh: ${err.message}.`, 'error');
         } finally {
-            // Cleanup
             if (document.body.contains(captureWrapper)) {
                 document.body.removeChild(captureWrapper);
             }
         }
     },
     
-    // Main capture logic
     async captureDashboardInParts(contentContainer, baseTitle) {
         if (!contentContainer) {
             ui.showNotification('Không tìm thấy vùng nội dung để chụp.', 'error');
@@ -311,66 +385,66 @@ const utils = {
         ui.showNotification(`Bắt đầu chụp báo cáo ${baseTitle}...`, 'success');
     
         const captureGroups = new Map();
+        // FIX: Only find VISIBLE elements with the capture group attribute
         contentContainer.querySelectorAll('[data-capture-group]').forEach(el => {
-            const group = el.dataset.captureGroup;
-            if (!captureGroups.has(group)) {
-                captureGroups.set(group, []);
+            // offsetParent is null for hidden elements (display: none)
+            if (el.offsetParent !== null) {
+                const group = el.dataset.captureGroup;
+                if (!captureGroups.has(group)) {
+                    captureGroups.set(group, []);
+                }
+                captureGroups.get(group).push(el);
             }
-            captureGroups.get(group).push(el);
         });
-    
-        if (captureGroups.size === 0) {
-            await utils.captureAndDownload(contentContainer, baseTitle);
-            return;
-        }
-    
-        for (const [group, elements] of captureGroups.entries()) {
-            const captureTitle = captureGroups.size > 1 ? `${baseTitle}_Nhom_${group}` : baseTitle;
-            
-            // This is the element we will capture. It might be a single element or a container of clones.
-            let elementToCapture; 
-            const isKpiGroup = group === 'kpi';
-            const targetElement = elements[0]; // The first element of the group is our main target
-
-            // Add capture classes to body and the target element
-            document.body.classList.add('capturing-now');
-            if (isKpiGroup) {
-                targetElement.classList.add('prepare-for-kpi-capture');
+        
+        const styleElement = _injectCaptureStyles();
+        try {
+            if (captureGroups.size === 0) {
+                // Fallback for containers that don't use groups but might have a preset
+                if (contentContainer.offsetParent !== null) {
+                    const preset = contentContainer.dataset.capturePreset;
+                    const presetClass = preset ? `preset-${preset}` : '';
+                    await utils.captureAndDownload(contentContainer, baseTitle, presetClass);
+                } else {
+                     ui.showNotification('Không tìm thấy đối tượng hiển thị để chụp.', 'error');
+                }
+                return;
             }
-            
-            // This container will hold all elements for a multi-element group
-            const tempContainer = document.createElement('div');
-            tempContainer.className = 'capture-layout-container';
 
-            try {
-                // Wait for the browser to apply the new CSS styles
-                await new Promise(resolve => setTimeout(resolve, 150));
-    
+            for (const [group, elements] of captureGroups.entries()) {
+                const captureTitle = captureGroups.size > 1 ? `${baseTitle}_Nhom_${group}` : baseTitle;
+                
+                const targetElement = elements[0];
+                const preset = targetElement.dataset.capturePreset;
+                const isKpiGroup = group === 'kpi';
+                
+                let elementToCapture;
+                let presetClass = '';
+
+                if (isKpiGroup) {
+                    presetClass = 'prepare-for-kpi-capture';
+                } else if (preset) {
+                    presetClass = `preset-${preset}`;
+                }
+
                 if (elements.length > 1 && !isKpiGroup) {
-                    // For groups of tables, clone them into a temporary container
+                    const tempContainer = document.createElement('div');
+                    tempContainer.className = 'capture-layout-container';
                     elements.forEach(el => tempContainer.appendChild(el.cloneNode(true)));
                     elementToCapture = tempContainer;
                 } else {
-                    // For single elements or the special KPI group, capture the element directly
                     elementToCapture = targetElement;
                 }
     
-                await utils.captureAndDownload(elementToCapture, captureTitle);
-    
-            } catch (err) {
-                console.error(`Lỗi trong quá trình chụp nhóm ${group}:`, err);
-                ui.showNotification(`Lỗi khi chụp ảnh nhóm ${group}.`, 'error');
-            } finally {
-                // GUARANTEED CLEANUP: This block will always run, preventing freezes.
-                document.body.classList.remove('capturing-now');
-                if (isKpiGroup) {
-                    targetElement.classList.remove('prepare-for-kpi-capture');
-                }
+                await utils.captureAndDownload(elementToCapture, captureTitle, presetClass);
+                await new Promise(resolve => setTimeout(resolve, 150));
             }
+        } finally {
+            styleElement.remove();
         }
+
         ui.showNotification(`Đã hoàn tất chụp ảnh báo cáo ${baseTitle}!`, 'success');
     },
 };
 
 export { utils };
-
