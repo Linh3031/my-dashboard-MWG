@@ -1,4 +1,4 @@
-// Version 2.2 - Fix SKNV capture button selector
+// Version 3.0 - Store warehouse/department Choices.js instances for dynamic updates
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -71,13 +71,25 @@ const app = {
     async init() {
         try {
             await firebase.init();
-            await idbHelper.openDB(); // Mở kết nối với IndexedDB
-            await this.loadDataFromStorage(); // Tải cả dữ liệu cố định và dữ liệu hàng ngày
-            utils.loadInterfaceSettings();
+            await idbHelper.openDB();
+            
+            await this.loadDataFromStorage(); 
+            
+            // FIX: Thứ tự đã được thay đổi trong phiên bản 2.9, giữ nguyên
+            // 1. Setup event listeners, bước này đồng thời khởi tạo các đối tượng Choices.js
             this.setupEventListeners();
+            
+            // 2. Điền dữ liệu vào các bộ lọc (dropdowns) sau khi chúng đã được khởi tạo
+            ui.populateAllFilters();
+
+            // 3. Áp dụng các cài đặt đã lưu vào UI (vì dropdown giờ đã có giá trị để đọc)
+            utils.loadAndApplyLuykeGoalSettings();
+            utils.loadAndApplyRealtimeGoalSettings();
+            
+            // 4. Các bước thiết lập còn lại
+            utils.loadInterfaceSettings();
             utils.applyContrastSetting();
             utils.loadHighlightSettings();
-            ui.populateAllFilters();
             this.switchTab('home-section');
 
             this.checkForUpdates();
@@ -103,7 +115,6 @@ const app = {
     },
 
     async loadDataFromStorage() {
-        // --- Dữ liệu khai báo (vẫn dùng localStorage vì nhỏ) ---
         document.getElementById('declaration-ycx').value = localStorage.getItem('declaration_ycx') || config.DEFAULT_DATA.HINH_THUC_XUAT_TINH_DOANH_THU.join('\n');
         document.getElementById('declaration-ycx-gop').value = localStorage.getItem('declaration_ycx_gop') || config.DEFAULT_DATA.HINH_THUC_XUAT_TRA_GOP.join('\n');
         document.getElementById('declaration-heso').value = localStorage.getItem('declaration_heso') || Object.entries(config.DEFAULT_DATA.HE_SO_QUY_DOI).map(([k, v]) => `${k},${v}`).join('\n');
@@ -124,7 +135,6 @@ const app = {
             } catch (e) { console.error(`Lỗi đọc ${uiName} từ IndexedDB:`, e); }
         };
 
-        // --- Tải dữ liệu cố định từ IndexedDB ---
         await loadSavedFile('saved_danhsachnv', 'danhSachNhanVien', 'danhsachnv', 'danhsachnv', 'DSNV');
         await loadSavedFile('saved_ycx_thangtruoc', 'ycxDataThangTruoc', 'ycx', 'ycx-thangtruoc', 'YCXL Tháng Trước');
         await loadSavedFile('saved_thuongnong_thangtruoc', 'thuongNongDataThangTruoc', 'thuongnong', 'thuongnong-thangtruoc', 'Thưởng Nóng Tháng Trước');
@@ -148,9 +158,6 @@ const app = {
             if (savedTemplates) appState.composerTemplates = JSON.parse(savedTemplates);
         } catch (e) { console.error("Lỗi đọc cài đặt từ localStorage:", e); }
         
-        utils.loadAndApplyLuykeGoalSettings();
-
-        // --- Dữ liệu hàng ngày (vẫn dùng localStorage) ---
         const loadDailyData = (key, stateKey, fileType, uiName) => {
             const savedData = localStorage.getItem(key);
             if (!savedData) return;
@@ -241,9 +248,12 @@ const app = {
                     appState.choices[`${prefix}_employee`] = new Choices(employeeEl, multiSelectConfig);
                 }
                 
+                // FIX: Lưu lại các instance của Choices.js để có thể cập nhật chúng sau này
                 ['warehouse', 'department'].forEach(type => {
                     const el = document.getElementById(`${prefix}-filter-${type}`);
-                    if(el) new Choices(el, { searchEnabled: true, removeItemButton: false, itemSelectText: 'Chọn' });
+                    if(el) {
+                        appState.choices[`${prefix}_${type}`] = new Choices(el, { searchEnabled: true, removeItemButton: false, itemSelectText: 'Chọn' });
+                    }
                 });
 
                 ['nhanhang', 'nhomhang', 'employee'].forEach(type => {
@@ -258,6 +268,8 @@ const app = {
                 searchEnabled: true, 
                 removeItemButton: false, 
                 itemSelectText: 'Chọn', 
+                placeholder: true,
+                placeholderValue: 'Chọn nhân viên để xem chi tiết',
                 searchPlaceholderValue: 'Tìm kiếm...' 
             };
             const singleSelects = {
@@ -355,10 +367,20 @@ const app = {
 
         document.querySelectorAll('.kpi-color-input').forEach(picker => picker.addEventListener('input', () => utils.saveInterfaceSettings()));
         document.getElementById('save-declaration-btn')?.addEventListener('click', () => this.saveDeclarations());
+        
         document.getElementById('rt-goal-warehouse-select')?.addEventListener('change', () => utils.loadAndApplyRealtimeGoalSettings());
-        document.querySelectorAll('.rt-goal-input, .rt-setting-input').forEach(input => input.addEventListener('input', () => utils.saveRealtimeGoalSettings()));
+        document.querySelectorAll('.rt-goal-input, .rt-setting-input').forEach(input => input.addEventListener('change', () => {
+            utils.saveRealtimeGoalSettings();
+            realtimeTab.render();
+        }));
+        
         document.getElementById('luyke-goal-warehouse-select')?.addEventListener('change', () => utils.loadAndApplyLuykeGoalSettings());
-        document.querySelectorAll('.luyke-goal-input').forEach(input => input.addEventListener('input', () => utils.saveLuykeGoalSettings()));
+        document.querySelectorAll('.luyke-goal-input').forEach(input => input.addEventListener('change', () => {
+            utils.saveLuykeGoalSettings();
+            luykeTab.render();
+            sknvTab.render();
+        }));
+
         document.getElementById('toggle-debug-btn')?.addEventListener('click', (e) => ui.toggleDebugTool(e.currentTarget));
         document.body.addEventListener('click', (e) => {
             const helpTrigger = e.target.closest('.page-header__help-btn');
@@ -397,8 +419,8 @@ const app = {
         ['luyke', 'sknv', 'realtime'].forEach(prefix => {
             const captureBtn = document.getElementById(`capture-${prefix}-btn`);
             if (!captureBtn) return;
-            captureBtn.addEventListener('click', () => {
-                // FIX: Revert to original selector for SKNV tab to fix regression
+            captureBtn.addEventListener('click', (event) => {
+                event.preventDefault();
                 const navId = prefix === 'sknv' ? 'employee-subtabs-nav' : `${prefix}-subtabs-nav`;
                 const contentContainerId = prefix === 'sknv' ? 'employee-subtabs-content' : `${prefix}-subtabs-content`;
 
@@ -412,7 +434,8 @@ const app = {
                 utils.captureDashboardInParts(activeTabContent, title);
             });
 
-            document.getElementById(`export-${prefix}-btn`)?.addEventListener('click', () => {
+            document.getElementById(`export-${prefix}-btn`)?.addEventListener('click', (event) => {
+                event.preventDefault();
                 const navId = prefix === 'sknv' ? 'employee-subtabs-nav' : `${prefix}-subtabs-nav`;
                 const contentContainerId = prefix === 'sknv' ? 'employee-subtabs-content' : `${prefix}-subtabs-content`;
                 

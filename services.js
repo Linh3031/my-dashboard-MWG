@@ -1,4 +1,4 @@
-// Version 2.0 - Fix KPI comparison parsing & logic
+// Version 2.3 - Revert generateMasterReportData to accept goalSettings parameter for stability
 // MODULE 3: KỆ "DỊCH VỤ" (SERVICES)
 // File này chứa tất cả các hàm xử lý logic, tính toán, và chuyển đổi dữ liệu.
 
@@ -149,7 +149,6 @@ const services = {
 
     parseLuyKePastedData: (text) => {
         const mainKpis = {};
-        // FIX: Initialize comparisonData correctly
         const comparisonData = { value: 0, percentage: 'N/A' };
         if (!text) return { mainKpis, comparisonData };
 
@@ -170,16 +169,12 @@ const services = {
             }
         }
         
-        // FIX: Re-implement correct logic to find and parse "DTCK Tháng"
         const dtckIndex = allLines.findIndex(line => line.includes('DTCK Tháng'));
         if (dtckIndex !== -1 && dtckIndex + 1 < allLines.length) {
             const valueLine = allLines[dtckIndex + 1];
-            // Split by one or more whitespace characters
             const values = valueLine.split(/\s+/);
             if (values.length >= 2) {
-                // First part is the value, remove commas before parsing
                 comparisonData.value = parseFloat(values[0].replace(/,/g, '')) || 0;
-                // Second part is the percentage string
                 comparisonData.percentage = values[1] || 'N/A';
             }
         }
@@ -365,6 +360,7 @@ const services = {
         return gioCongByMSNV;
     },
 
+    // FIX: Reverted to the simpler, more stable pattern of accepting goalSettings as a parameter.
     generateMasterReportData: (sourceData, goalSettings, isRealtime = false) => {
         if (appState.danhSachNhanVien.length === 0) return [];
 
@@ -577,7 +573,6 @@ const services = {
     
         const currentTotal = sumRevenue(currentData);
     
-        // Find the start date of the previous month's data
         const firstDayOfPreviousMonth = previousData.reduce((earliest, row) => {
             const rowDate = new Date(row.ngayTao);
             return rowDate < earliest ? rowDate : earliest;
@@ -735,13 +730,17 @@ const services = {
         const hinhThucXuatTinhDoanhThu = services.getHinhThucXuatTinhDoanhThu();
         const heSoQuyDoi = services.getHeSoQuyDoi();
         
-        const summary = { totalRealRevenue: 0, totalConvertedRevenue: 0 };
+        const summary = { 
+            totalRealRevenue: 0, 
+            totalConvertedRevenue: 0,
+            unexportedRevenue: 0
+        };
         const byProductGroup = {};
         const byCustomer = {};
     
         employeeData.forEach(row => {
             const isDoanhThuHTX = hinhThucXuatTinhDoanhThu.has(row.hinhThucXuat);
-            const isBaseValid = (row.trangThaiThuTien || "").trim() === 'Đã thu' && (row.trangThaiHuy || "").trim() === 'Chưa hủy' && (row.tinhTrangTra || "").trim() === 'Chưa trả' && (row.trangThaiXuat || "").trim() === 'Đã xuất';
+            const isBaseValid = (row.trangThaiThuTien || "").trim() === 'Đã thu' && (row.trangThaiHuy || "").trim() === 'Chưa hủy' && (row.tinhTrangTra || "").trim() === 'Chưa trả';
     
             if (isDoanhThuHTX && isBaseValid) {
                 const realRevenue = parseFloat(String(row.thanhTien || "0").replace(/,/g, '')) || 0;
@@ -751,29 +750,35 @@ const services = {
                 const groupName = utils.cleanCategoryName(row.nhomHang || 'Khác');
                 const customerName = row.tenKhachHang || 'Khách lẻ';
     
-                summary.totalRealRevenue += realRevenue;
-                summary.totalConvertedRevenue += convertedRevenue;
-    
-                if (!byProductGroup[groupName]) {
-                    byProductGroup[groupName] = { name: groupName, quantity: 0, realRevenue: 0, convertedRevenue: 0 };
+                if ((row.trangThaiXuat || "").trim() === 'Đã xuất') {
+                    summary.totalRealRevenue += realRevenue;
+                    summary.totalConvertedRevenue += convertedRevenue;
+
+                    if (!byProductGroup[groupName]) {
+                        byProductGroup[groupName] = { name: groupName, quantity: 0, realRevenue: 0, convertedRevenue: 0 };
+                    }
+                    byProductGroup[groupName].quantity += quantity;
+                    byProductGroup[groupName].realRevenue += realRevenue;
+                    byProductGroup[groupName].convertedRevenue += convertedRevenue;
+        
+                    if (!byCustomer[customerName]) {
+                        byCustomer[customerName] = { name: customerName, products: [], totalQuantity: 0 };
+                    }
+                    byCustomer[customerName].products.push({
+                        productName: row.tenSanPham,
+                        quantity: quantity,
+                        realRevenue: realRevenue,
+                        convertedRevenue: convertedRevenue,
+                    });
+                    byCustomer[customerName].totalQuantity += quantity;
+                } else if ((row.trangThaiXuat || "").trim() === 'Chưa xuất') {
+                    summary.unexportedRevenue += realRevenue;
                 }
-                byProductGroup[groupName].quantity += quantity;
-                byProductGroup[groupName].realRevenue += realRevenue;
-                byProductGroup[groupName].convertedRevenue += convertedRevenue;
-    
-                if (!byCustomer[customerName]) {
-                    byCustomer[customerName] = { name: customerName, products: [] };
-                }
-                byCustomer[customerName].products.push({
-                    productName: row.tenSanPham,
-                    quantity: quantity,
-                    realRevenue: realRevenue,
-                    convertedRevenue: convertedRevenue,
-                });
             }
         });
     
         summary.totalOrders = Object.keys(byCustomer).length;
+        summary.bundledOrderCount = Object.values(byCustomer).filter(c => c.totalQuantity > 1).length;
         summary.conversionRate = summary.totalRealRevenue > 0 ? (summary.totalConvertedRevenue / summary.totalRealRevenue) - 1 : 0;
     
         return {
@@ -1003,4 +1008,3 @@ const services = {
 };
 
 export { services };
-

@@ -1,4 +1,4 @@
-/* Version 2.2 - Removed screenshot-specific CSS */
+/* Version 2.7 - Fix CSS variable scope for contrast settings */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -21,12 +21,14 @@ body {
     font-size: var(--global-font-size);
 }
 
-body[data-contrast="1"] { --bg-lightness: var(--bg-lightness-1); --header-lightness: var(--header-lightness-1); --header-text-lightness: var(--header-text-lightness-1); --special-header-lightness: var(--special-header-lightness-1); --below-target-lightness: var(--below-target-lightness-1); }
-body[data-contrast="2"] { --bg-lightness: var(--bg-lightness-2); --header-lightness: var(--header-lightness-2); --header-text-lightness: var(--header-text-lightness-2); --special-header-lightness: var(--special-header-lightness-2); --below-target-lightness: var(--below-target-lightness-2); }
-body[data-contrast="3"] { --bg-lightness: var(--bg-lightness-3); --header-lightness: var(--header-lightness-3); --header-text-lightness: var(--header-text-lightness-3); --special-header-lightness: var(--special-header-lightness-3); --below-target-lightness: var(--below-target-lightness-3); }
-body[data-contrast="4"] { --bg-lightness: var(--bg-lightness-4); --header-lightness: var(--header-lightness-4); --header-text-lightness: var(--header-text-lightness-4); --special-header-lightness: var(--special-header-lightness-4); --below-target-lightness: var(--below-target-lightness-4); }
-body[data-contrast="5"] { --bg-lightness: var(--bg-lightness-5); --header-lightness: var(--header-lightness-5); --header-text-lightness: var(--header-text-lightness-5); --special-header-lightness: var(--special-header-lightness-5); --below-target-lightness: var(--below-target-lightness-5); }
-body[data-contrast="6"] { --bg-lightness: var(--bg-lightness-6); --header-lightness: var(--header-lightness-6); --header-text-lightness: var(--header-text-lightness-6); --special-header-lightness: var(--special-header-lightness-6); --below-target-lightness: var(--below-target-lightness-6); }
+/* FIX: Changed selector from body[data-contrast] to html[data-contrast] */
+html[data-contrast="1"] { --bg-lightness: var(--bg-lightness-1); --header-lightness: var(--header-lightness-1); --header-text-lightness: var(--header-text-lightness-1); --special-header-lightness: var(--special-header-lightness-1); --below-target-lightness: var(--below-target-lightness-1); }
+html[data-contrast="2"] { --bg-lightness: var(--bg-lightness-2); --header-lightness: var(--header-lightness-2); --header-text-lightness: var(--header-text-lightness-2); --special-header-lightness: var(--special-header-lightness-2); --below-target-lightness: var(--below-target-lightness-2); }
+html[data-contrast="3"] { --bg-lightness: var(--bg-lightness-3); --header-lightness: var(--header-lightness-3); --header-text-lightness: var(--header-text-lightness-3); --special-header-lightness: var(--special-header-lightness-3); --below-target-lightness: var(--below-target-lightness-3); }
+html[data-contrast="4"] { --bg-lightness: var(--bg-lightness-4); --header-lightness: var(--header-lightness-4); --header-text-lightness: var(--header-text-lightness-4); --special-header-lightness: var(--special-header-lightness-4); --below-target-lightness: var(--below-target-lightness-4); }
+html[data-contrast="5"] { --bg-lightness: var(--bg-lightness-5); --header-lightness: var(--header-lightness-5); --header-text-lightness: var(--header-text-lightness-5); --special-header-lightness: var(--special-header-lightness-5); --below-target-lightness: var(--below-target-lightness-5); }
+html[data-contrast="6"] { --bg-lightness: var(--bg-lightness-6); --header-lightness: var(--header-lightness-6); --header-text-lightness: var(--header-text-lightness-6); --special-header-lightness: var(--special-header-lightness-6); --below-target-lightness: var(--below-target-lightness-6); }
+
 
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: #f1f1f1; }
@@ -96,7 +98,7 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #
 .table-bordered th, .table-bordered td { border: 1px solid #e5e7eb; }
 .table-striped tbody tr:nth-child(even) { background-color: #f9fafb; }
 .table-footer { background-color: hsl(210, 20%, var(--header-lightness)); border-top: 2px solid #9ca3af; }
-.cell-performance.is-below { background-color: hsl(0, 80%, var(--below-target-lightness)); }
+.cell-performance.is-below { background-color: hsl(0, 80%, var(--below-target-lightness)) !important; }
 .header-bg-blue { background-color: hsl(217, 95%, var(--special-header-lightness)) !important; color: hsl(217, 80%, var(--header-text-lightness)) !important; }
 .header-bg-green { background-color: hsl(145, 80%, var(--special-header-lightness)) !important; color: hsl(145, 70%, var(--header-text-lightness)) !important; }
 .header-bg-yellow { background-color: hsl(45, 95%, var(--special-header-lightness)) !important; color: hsl(45, 80%, var(--header-text-lightness)) !important; }
@@ -108,6 +110,12 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #
 .header-group-4 { background-color: hsl(240, 90%, var(--header-lightness)); }
 .header-group-5 { background-color: hsl(300, 90%, var(--header-lightness)); }
 .header-group-6 { background-color: hsl(0, 90%, var(--header-lightness)); }
+.header-group-7 { background-color: hsl(160, 80%, var(--header-lightness)) !important; } /* Teal */
+.header-group-8 { background-color: hsl(280, 80%, var(--header-lightness)) !important; } /* Purple */
+.header-group-9 { background-color: hsl(70, 80%, var(--header-lightness)) !important; }  /* Lime */
+.header-group-10 { background-color: hsl(190, 80%, var(--header-lightness)) !important; } /* Cyan */
+.header-group-11 { background-color: hsl(340, 80%, var(--header-lightness)) !important; } /* Pink */
+.header-group-12 { background-color: hsl(20, 80%, var(--header-lightness)) !important; }  /* Orange */
 
 .income-positive { color: #16a34a; }
 .income-negative { color: #dc2626; }
@@ -132,11 +140,15 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #
 .header-highlight-special { background-color: hsl(25, 90%, var(--header-lightness)) !important; }
 .competition-row-below-100 td { background-color: #fee2e2; color: #991b1b; }
 
-/* Các lớp màu mới cho tiêu đề bảng Realtime */
-.header-bg-bright-1 { background-color: #67e8f9 !important; color: #0e7490 !important; } /* Bright Cyan */
-.header-bg-bright-2 { background-color: #a7f3d0 !important; color: #065f46 !important; } /* Bright Green */
 .header-highlight { background-color: hsl(50, 95%, var(--special-header-lightness)) !important; }
 
+/* FIX: Bung rộng bộ lọc chi tiết nhân viên Realtime */
+#dtnv-realtime-employee-selector-container .choices__inner {
+    min-width: 300px;
+}
+#dtnv-realtime-employee-selector-container .choices__list--single {
+    min-width: 300px;
+}
 
 .kpi-card { color: var(--kpi-text-color); }
 .kpi-card p { color: inherit; }
@@ -228,10 +240,12 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #
 .rt-infographic-container { background-color: #f9fafb; border-radius: 0.75rem; border: 1px solid #e5e7eb; padding: 1.5rem; }
 .rt-infographic-header .employee-name { font-size: 1.5rem; font-weight: 800; color: #111827; }
 .rt-infographic-header .employee-title { font-size: 1rem; font-weight: 500; color: #6b7280; }
-.rt-infographic-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+.rt-infographic-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
 .rt-infographic-summary-card { background-color: white; border-radius: 0.5rem; padding: 1rem; text-align: center; border: 1px solid #e5e7eb; }
 .rt-infographic-summary-card .label { font-size: 0.875em; color: #4b5563; font-weight: 500; }
 .rt-infographic-summary-card .value { font-size: 1.75rem; font-weight: 700; color: #3b82f6; margin-top: 0.25rem; }
+.rt-infographic-summary-card .value.is-positive { color: #2563eb; }
+.rt-infographic-summary-card .value.is-negative { color: #dc2626; }
 .rt-infographic-grid { display: grid; grid-template-columns: repeat(1, minmax(0, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
 @media (min-width: 1024px) { .rt-infographic-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .rt-infographic-section h4 { font-size: 1.125rem; font-weight: 700; color: #1f2937; margin-bottom: 1rem; }
@@ -244,6 +258,7 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #
 .rt-customer-header::-webkit-details-marker { display: none; }
 .rt-customer-header:hover { background-color: #f9fafb; }
 .rt-customer-header .arrow { transition: transform 0.3s; }
+.rt-customer-header .product-count { color: #dc2626; font-weight: bold; }
 details[open] > summary .arrow { transform: rotate(180deg); }
 .rt-customer-details { background-color: #f9fafb; padding: 1rem; }
 .rt-customer-details table { font-size: 0.8rem; }

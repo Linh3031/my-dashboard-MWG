@@ -1,4 +1,4 @@
-// Version 2.2 - Add visibility check to capture logic
+// Version 2.4 - Improve robustness of goal setting UI functions
 // MODULE: UTILITIES
 // Chứa các hàm tiện ích chung không thuộc về logic hay giao diện cụ thể.
 import { appState } from './state.js';
@@ -167,21 +167,24 @@ const utils = {
         const settings = { goals: {}, timing: {} };
         document.querySelectorAll('.rt-goal-input').forEach(input => settings.goals[input.dataset.goal] = input.value);
         document.querySelectorAll('.rt-setting-input').forEach(input => settings.timing[input.id] = input.value);
+        
         if (!appState.realtimeGoalSettings) appState.realtimeGoalSettings = {};
         appState.realtimeGoalSettings[warehouse] = settings;
         localStorage.setItem('realtimeGoalSettings', JSON.stringify(appState.realtimeGoalSettings));
         ui.showNotification(`Đã lưu cài đặt Realtime cho kho ${warehouse}!`, 'success');
     },
 
+    // FIX: Sửa logic để hàm này chỉ chịu trách nhiệm điền dữ liệu vào UI
     loadAndApplyRealtimeGoalSettings() {
-        const warehouse = document.getElementById('rt-goal-warehouse-select').value;
-        const settings = appState.realtimeGoalSettings ? appState.realtimeGoalSettings[warehouse] : null;
-        if (settings) {
-            document.querySelectorAll('.rt-goal-input').forEach(input => input.value = settings.goals?.[input.dataset.goal] || '');
-            document.querySelectorAll('.rt-setting-input').forEach(input => input.value = settings.timing?.[input.id] || '');
-        } else {
-            document.querySelectorAll('.rt-goal-input, .rt-setting-input').forEach(input => input.value = '');
-        }
+        const warehouseSelect = document.getElementById('rt-goal-warehouse-select');
+        if (!warehouseSelect) return;
+        const warehouse = warehouseSelect.value;
+        const settings = (warehouse && appState.realtimeGoalSettings && appState.realtimeGoalSettings[warehouse]) 
+            ? appState.realtimeGoalSettings[warehouse] 
+            : { goals: {}, timing: {} };
+
+        document.querySelectorAll('.rt-goal-input').forEach(input => input.value = settings.goals?.[input.dataset.goal] || '');
+        document.querySelectorAll('.rt-setting-input').forEach(input => input.value = settings.timing?.[input.id] || '');
     },
 
     saveLuykeGoalSettings() {
@@ -189,16 +192,22 @@ const utils = {
         if (!warehouse) return;
         const settings = {};
         document.querySelectorAll('.luyke-goal-input').forEach(input => settings[input.dataset.goal] = input.value);
+
         if(!appState.luykeGoalSettings) appState.luykeGoalSettings = {};
         appState.luykeGoalSettings[warehouse] = settings;
         localStorage.setItem('luykeGoalSettings', JSON.stringify(appState.luykeGoalSettings));
         ui.showNotification(`Đã lưu cài đặt mục tiêu Lũy kế cho kho ${warehouse}!`, 'success');
     },
 
+    // FIX: Sửa logic để hàm này chỉ chịu trách nhiệm điền dữ liệu vào UI
     loadAndApplyLuykeGoalSettings() {
-        const warehouse = document.getElementById('luyke-goal-warehouse-select').value;
-        const settings = (appState.luykeGoalSettings && appState.luykeGoalSettings[warehouse]) ? appState.luykeGoalSettings[warehouse] : {};
-         document.querySelectorAll('.luyke-goal-input').forEach(input => input.value = settings[input.dataset.goal] || '');
+        const warehouseSelect = document.getElementById('luyke-goal-warehouse-select');
+        if (!warehouseSelect) return;
+        const warehouse = warehouseSelect.value;
+        const settings = (warehouse && appState.luykeGoalSettings && appState.luykeGoalSettings[warehouse]) 
+            ? appState.luykeGoalSettings[warehouse] 
+            : {};
+        document.querySelectorAll('.luyke-goal-input').forEach(input => input.value = settings[input.dataset.goal] || '');
     },
 
     getLuykeGoalSettings(selectedWarehouse = null) {
@@ -385,9 +394,7 @@ const utils = {
         ui.showNotification(`Bắt đầu chụp báo cáo ${baseTitle}...`, 'success');
     
         const captureGroups = new Map();
-        // FIX: Only find VISIBLE elements with the capture group attribute
         contentContainer.querySelectorAll('[data-capture-group]').forEach(el => {
-            // offsetParent is null for hidden elements (display: none)
             if (el.offsetParent !== null) {
                 const group = el.dataset.captureGroup;
                 if (!captureGroups.has(group)) {
@@ -400,7 +407,6 @@ const utils = {
         const styleElement = _injectCaptureStyles();
         try {
             if (captureGroups.size === 0) {
-                // Fallback for containers that don't use groups but might have a preset
                 if (contentContainer.offsetParent !== null) {
                     const preset = contentContainer.dataset.capturePreset;
                     const presetClass = preset ? `preset-${preset}` : '';

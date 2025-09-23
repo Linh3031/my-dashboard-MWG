@@ -1,4 +1,4 @@
-// Version 1.3 - Fix comparison KPI value display
+// Version 1.4 - Add target comparison for efficiency table
 // MODULE: UI LUY KE
 // Chứa các hàm render giao diện cho tab "Sức khỏe Siêu thị (Lũy kế)".
 
@@ -210,8 +210,6 @@ export const uiLuyke = {
         
         if (comparisonData) {
             document.getElementById('luyke-kpi-dtck-main').textContent = comparisonData.percentage || 'N/A';
-            // FIX: The comparison value is not in millions. Do not divide it.
-            // It's a direct number representing revenue difference.
             document.getElementById('luyke-kpi-dtck-sub').textContent = uiComponents.formatNumber(comparisonData.value || 0, 0);
         }
     },
@@ -321,4 +319,3 @@ export const uiLuyke = {
         if (titleEl) titleEl.textContent = `Báo cáo lũy kế ${warehouse ? 'kho ' + warehouse : 'toàn bộ'} - Tính đến ${date.toLocaleDateString('vi-VN')}`;
     },
 };
-
