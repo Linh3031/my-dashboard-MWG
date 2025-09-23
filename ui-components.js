@@ -1,4 +1,4 @@
-// Version 1.4 - Robust employee filter updates
+// Version 1.6 - Use Choices.js API to populate warehouse and department filters
 // MODULE: UI COMPONENTS
 // Chứa các hàm UI chung, tái sử dụng được trên toàn bộ ứng dụng.
 
@@ -393,30 +393,47 @@ export const uiComponents = {
         const uniqueWarehouses = [...new Set(danhSachNhanVien.map(nv => nv.maKho).filter(Boolean))].sort();
         const uniqueDepartments = [...new Set(danhSachNhanVien.map(nv => nv.boPhan).filter(Boolean))].sort();
 
-        const createOptionsHTML = (items, includeAllOption = true) => {
-            let html = includeAllOption ? '<option value="">Tất cả</option>' : '';
-            html += items.map(item => `<option value="${item}">${item}</option>`).join('');
-            return html;
+        // FIX: Chuyển đổi mảng dữ liệu sang định dạng mà Choices.js yêu cầu
+        const createChoicesOptions = (items, includeAllOption = true) => {
+            const options = items.map(item => ({ value: String(item), label: String(item) }));
+            if (includeAllOption) {
+                options.unshift({ value: '', label: 'Tất cả' });
+            }
+            return options;
         };
 
-        const warehouseOptions = createOptionsHTML(uniqueWarehouses);
-        const departmentOptions = createOptionsHTML(uniqueDepartments);
+        const warehouseChoicesOptions = createChoicesOptions(uniqueWarehouses);
+        const departmentChoicesOptions = createChoicesOptions(uniqueDepartments);
 
         ['luyke', 'sknv', 'realtime'].forEach(prefix => {
-            const warehouseEl = document.getElementById(`${prefix}-filter-warehouse`);
-            if (warehouseEl) warehouseEl.innerHTML = warehouseOptions;
+            // FIX: Sử dụng API của Choices.js để nạp dữ liệu, thay vì .innerHTML
+            const warehouseInstance = appState.choices[`${prefix}_warehouse`];
+            if (warehouseInstance) {
+                warehouseInstance.clearStore();
+                warehouseInstance.setChoices(warehouseChoicesOptions, 'value', 'label', true);
+            }
             
-            const departmentEl = document.getElementById(`${prefix}-filter-department`);
-            if (departmentEl) departmentEl.innerHTML = departmentOptions;
-
+            const departmentInstance = appState.choices[`${prefix}_department`];
+            if (departmentInstance) {
+                departmentInstance.clearStore();
+                departmentInstance.setChoices(departmentChoicesOptions, 'value', 'label', true);
+            }
+            
+            // Hàm này đã dùng API đúng cách từ trước
             uiComponents.updateEmployeeFilter(prefix);
         });
         
+        // Các bộ lọc trong Cài đặt không dùng Choices.js, giữ nguyên .innerHTML
+        const createOptionsHTML = (items, includeAllOption = false) => {
+             let html = includeAllOption ? '<option value="">Tất cả</option>' : '';
+             html += items.map(item => `<option value="${item}">${item}</option>`).join('');
+             return html;
+        };
         const luykeGoalEl = document.getElementById('luyke-goal-warehouse-select');
-        if (luykeGoalEl) luykeGoalEl.innerHTML = createOptionsHTML(uniqueWarehouses, false);
+        if (luykeGoalEl) luykeGoalEl.innerHTML = createOptionsHTML(uniqueWarehouses);
         
         const rtGoalEl = document.getElementById('rt-goal-warehouse-select');
-        if (rtGoalEl) rtGoalEl.innerHTML = createOptionsHTML(uniqueWarehouses, false);
+        if (rtGoalEl) rtGoalEl.innerHTML = createOptionsHTML(uniqueWarehouses);
     },
 
     populateRealtimeBrandCategoryFilter: () => {
@@ -436,11 +453,11 @@ export const uiComponents = {
 
     updateEmployeeFilter: (prefix) => {
         const multiSelectInstance = appState.choices[`${prefix}_employee`];
-        const selectedWarehouse = document.getElementById(`${prefix}-filter-warehouse`)?.value;
-        const selectedDept = document.getElementById(`${prefix}-filter-department`)?.value;
+        const selectedWarehouse = appState.choices[`${prefix}_warehouse`]?.getValue(true) || '';
+        const selectedDept = appState.choices[`${prefix}_department`]?.getValue(true) || '';
 
         const filteredEmployees = appState.danhSachNhanVien.filter(nv => 
-            (!selectedWarehouse || nv.maKho == selectedWarehouse) &&
+            (!selectedWarehouse || String(nv.maKho) == selectedWarehouse) &&
             (!selectedDept || nv.boPhan === selectedDept)
         );
 
@@ -455,7 +472,6 @@ export const uiComponents = {
             multiSelectInstance.setChoices(multiSelectOptions, 'value', 'label', false);
         }
 
-        // FIX: Update all corresponding single-select (detail) filters robustly
         const singleSelectOptions = filteredEmployees.map(nv => ({
             value: nv.maNV,
             label: uiComponents.getShortEmployeeName(nv.hoTen, nv.maNV)
@@ -466,18 +482,10 @@ export const uiComponents = {
             if (instance) {
                 const currentValue = instance.getValue(true);
                 instance.clearStore();
-                instance.setChoices(
-                    [
-                        { value: '', label: '-- Chọn nhân viên --', selected: !currentValue, disabled: false },
-                        ...singleSelectOptions
-                    ],
-                    'value', 'label', false
-                );
-                // Re-select previous value if it still exists in the new list
-                if (currentValue && filteredEmployees.some(e => e.maNV == currentValue)) {
+                instance.setChoices(singleSelectOptions, 'value', 'label', false);
+                
+                if (currentValue && filteredEmployees.some(e => String(e.maNV) == currentValue)) {
                     instance.setValue([currentValue]);
-                } else {
-                    instance.setValue(['']); // Reset to placeholder
                 }
             }
         };

@@ -1,4 +1,4 @@
-// Version 1.1 - Fix module export issue
+// Version 1.4 - Restore correct goal data flow by passing goals to the service
 // MODULE: TAB SKNV
 // Chịu trách nhiệm render và xử lý logic cho tab "Sức khỏe nhân viên"
 import { appState } from './state.js';
@@ -30,8 +30,9 @@ export const sknvTab = {
             filteredYCXData = appState.ycxData.filter(row => row.ngayTao instanceof Date && !isNaN(row.ngayTao) && selectedDateSet.has(startOfDay(row.ngayTao)));
         }
         
+        // FIX: Lấy mục tiêu và truyền nó vào hàm tính toán để đảm bảo luồng dữ liệu chính xác
         const goals = utils.getLuykeGoalSettings(selectedWarehouse).goals;
-        appState.masterReportData.sknv = services.generateMasterReportData(filteredYCXData, goals);
+        appState.masterReportData.sknv = services.generateMasterReportData(filteredYCXData, goals, false); // false cho isRealtime
         
         let filteredReport = appState.masterReportData.sknv;
         if (selectedWarehouse) filteredReport = filteredReport.filter(nv => nv.maKho == selectedWarehouse);
@@ -48,4 +49,4 @@ export const sknvTab = {
         utils.populateHighlightFilters('sknv', filteredYCXData, filteredReport);
         utils.applyHighlights('sknv');
     }
-};  
+};

@@ -1,9 +1,8 @@
-// Version 1.6 - Fix reference to config.DEPARTMENT_GROUPS
+// Version 2.1 - Add header coloring for data tables
 // MODULE: UI SKNV
 // Chứa các hàm render giao diện cho tab "Sức khỏe nhân viên".
 
 import { appState } from './state.js';
-// FIX: Thêm import config còn thiếu để truy cập DEPARTMENT_GROUPS
 import { config } from './config.js';
 import { services } from './services.js';
 import { uiComponents } from './ui-components.js';
@@ -26,7 +25,6 @@ export const uiSknv = {
             groupedByDept[dept].push(item);
         });
         
-        // FIX: Change utils.DEPARTMENT_GROUPS to config.DEPARTMENT_GROUPS
         if (config && config.DEPARTMENT_GROUPS) {
             config.DEPARTMENT_GROUPS.forEach(deptName => {
                 if (groupedByDept[deptName]) {
@@ -62,36 +60,25 @@ export const uiSknv = {
         if (title.includes('Tư Vấn')) titleClass = 'department-header-tv';
         else if (title.includes('Kho')) titleClass = 'department-header-kho';
         else if (title.includes('Trang Trí')) titleClass = 'department-header-tt';
-
-        const isRealtime = sortStateKey === 'realtime_dt_nhanvien';
-        const headerClasses = {
-            hoTen: '',
-            doanhThu: isRealtime ? 'header-group-4' : 'header-bg-blue',
-            doanhThuQuyDoi: isRealtime ? 'header-group-4' : 'header-bg-blue',
-            hieuQuaQuyDoi: isRealtime ? 'header-group-4' : 'header-bg-blue',
-            doanhThuTraGop: isRealtime ? 'header-group-5' : 'header-bg-green',
-            tyLeTraCham: isRealtime ? 'header-group-5' : 'header-bg-green',
-            doanhThuChuaXuat: isRealtime ? 'header-group-6' : 'header-bg-yellow'
-        };
-
-        const headerClass = (sortKey) => `px-4 py-3 sortable ${headerClasses[sortKey]} ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
+        
+        const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
         
         let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="7">
                         <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                             <tr>
                                 <th class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('doanhThu')} text-right" data-sort="doanhThu">Doanh Thu <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('doanhThuQuyDoi')} text-right" data-sort="doanhThuQuyDoi">Doanh Thu QĐ <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('hieuQuaQuyDoi')} text-right" data-sort="hieuQuaQuyDoi">% QĐ <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('doanhThuTraGop')} text-right" data-sort="doanhThuTraGop">DT trả chậm <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('tyLeTraCham')} text-right" data-sort="tyLeTraCham">% trả chậm <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('doanhThuChuaXuat')} text-right" data-sort="doanhThuChuaXuat">DT Chưa Xuất <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('doanhThu')} text-right header-group-7" data-sort="doanhThu">Doanh Thu <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('doanhThuQuyDoi')} text-right header-group-7" data-sort="doanhThuQuyDoi">Doanh Thu QĐ <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('hieuQuaQuyDoi')} text-right header-group-7" data-sort="hieuQuaQuyDoi">% QĐ <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('doanhThuTraGop')} text-right header-group-8" data-sort="doanhThuTraGop">DT trả chậm <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('tyLeTraCham')} text-right header-group-8" data-sort="tyLeTraCham">% trả chậm <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('doanhThuChuaXuat')} text-right header-group-9" data-sort="doanhThuChuaXuat">DT Chưa Xuất <span class="sort-indicator"></span></th>
                             </tr>
                         </thead><tbody>`;
         sortedData.forEach(item => {
             const { mucTieu } = item;
-            const qdClass = item.hieuQuaQuyDoi < (mucTieu.phanTramQD / 100) ? 'cell-performance is-below' : '';
-            const tcClass = item.tyLeTraCham < (mucTieu.phanTramTC / 100) ? 'cell-performance is-below' : '';
+            const qdClass = item.hieuQuaQuyDoi < ((mucTieu?.phanTramQD || 0) / 100) ? 'cell-performance is-below' : '';
+            const tcClass = item.tyLeTraCham < ((mucTieu?.phanTramTC || 0) / 100) ? 'cell-performance is-below' : '';
             tableHTML += `<tr class="hover:bg-gray-50">
                     <td class="px-4 py-2 font-semibold line-clamp-2">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</td>
                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThu)}</td>
@@ -261,47 +248,32 @@ export const uiSknv = {
         else if (title.includes('Kho')) titleClass = 'department-header-kho';
         else if (title.includes('Trang Trí')) titleClass = 'department-header-tt';
 
-        const isRealtime = sortStateKey === 'realtime_hieuqua_nhanvien';
-        const headerClasses = {
-            hoTen: '',
-            dtICT: isRealtime ? 'header-group-4' : 'header-bg-yellow',
-            dtPhuKien: isRealtime ? 'header-group-4' : 'header-bg-yellow',
-            pctPhuKien: isRealtime ? 'header-group-4' : 'header-bg-yellow',
-            dtCE: isRealtime ? 'header-group-5' : 'header-bg-blue',
-            dtGiaDung: isRealtime ? 'header-group-5' : 'header-bg-blue',
-            pctGiaDung: isRealtime ? 'header-group-5' : 'header-bg-blue',
-            pctMLN: isRealtime ? 'header-group-5' : 'header-bg-blue',
-            pctSim: isRealtime ? 'header-group-6' : 'header-bg-green',
-            pctVAS: isRealtime ? 'header-group-6' : 'header-bg-green',
-            pctBaoHiem: isRealtime ? 'header-group-6' : 'header-bg-green'
-        };
-
-        const headerClass = (sortKey) => `px-4 py-3 sortable ${headerClasses[sortKey]} ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
+        const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
 
         let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="11">
                     <thead class="text-xs text-slate-800 uppercase font-bold">
                         <tr>
                             <th class="${headerClass('hoTen')}" data-sort="hoTen">Tên nhân viên <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('dtICT')} text-right" data-sort="dtICT">DT ICT <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('dtPhuKien')} text-right" data-sort="dtPhuKien">DT Phụ kiện <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('pctPhuKien')} text-right" data-sort="pctPhuKien">% Phụ kiện <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('dtCE')} text-right" data-sort="dtCE">DT CE <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('dtGiaDung')} text-right" data-sort="dtGiaDung">DT Gia dụng <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('pctGiaDung')} text-right" data-sort="pctGiaDung">% Gia dụng <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('pctMLN')} text-right" data-sort="pctMLN">% MLN <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('pctSim')} text-right" data-sort="pctSim">% Sim <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('pctVAS')} text-right" data-sort="pctVAS">% VAS <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('pctBaoHiem')} text-right" data-sort="pctBaoHiem">% Bảo hiểm <span class="sort-indicator"></span></th>
+                            <th class="${headerClass('dtICT')} text-right header-group-10" data-sort="dtICT">DT ICT <span class="sort-indicator"></span></th>
+                            <th class="${headerClass('dtPhuKien')} text-right header-group-10" data-sort="dtPhuKien">DT Phụ kiện <span class="sort-indicator"></span></th>
+                            <th class="${headerClass('pctPhuKien')} text-right header-group-10" data-sort="pctPhuKien">% Phụ kiện <span class="sort-indicator"></span></th>
+                            <th class="${headerClass('dtCE')} text-right header-group-11" data-sort="dtCE">DT CE <span class="sort-indicator"></span></th>
+                            <th class="${headerClass('dtGiaDung')} text-right header-group-11" data-sort="dtGiaDung">DT Gia dụng <span class="sort-indicator"></span></th>
+                            <th class="${headerClass('pctGiaDung')} text-right header-group-11" data-sort="pctGiaDung">% Gia dụng <span class="sort-indicator"></span></th>
+                            <th class="${headerClass('pctMLN')} text-right header-group-12" data-sort="pctMLN">% MLN <span class="sort-indicator"></span></th>
+                            <th class="${headerClass('pctSim')} text-right header-group-12" data-sort="pctSim">% Sim <span class="sort-indicator"></span></th>
+                            <th class="${headerClass('pctVAS')} text-right header-group-12" data-sort="pctVAS">% VAS <span class="sort-indicator"></span></th>
+                            <th class="${headerClass('pctBaoHiem')} text-right header-group-12" data-sort="pctBaoHiem">% Bảo hiểm <span class="sort-indicator"></span></th>
                         </tr>
                     </thead><tbody>`;
         sortedData.forEach(item => {
             const { mucTieu } = item;
-            const pkClass = item.pctPhuKien < (mucTieu.phanTramPhuKien / 100) ? 'cell-performance is-below' : '';
-            const gdClass = item.pctGiaDung < (mucTieu.phanTramGiaDung / 100) ? 'cell-performance is-below' : '';
-            const mlnClass = item.pctMLN < (mucTieu.phanTramMLN / 100) ? 'cell-performance is-below' : '';
-            const simClass = item.pctSim < (mucTieu.phanTramSim / 100) ? 'cell-performance is-below' : '';
-            const vasClass = item.pctVAS < (mucTieu.phanTramVAS / 100) ? 'cell-performance is-below' : '';
-            const bhClass = item.pctBaoHiem < (mucTieu.phanTramBaoHiem / 100) ? 'cell-performance is-below' : '';
+            const pkClass = item.pctPhuKien < ((mucTieu?.phanTramPhuKien || 0) / 100) ? 'cell-performance is-below' : '';
+            const gdClass = item.pctGiaDung < ((mucTieu?.phanTramGiaDung || 0) / 100) ? 'cell-performance is-below' : '';
+            const mlnClass = item.pctMLN < ((mucTieu?.phanTramMLN || 0) / 100) ? 'cell-performance is-below' : '';
+            const simClass = item.pctSim < ((mucTieu?.phanTramSim || 0) / 100) ? 'cell-performance is-below' : '';
+            const vasClass = item.pctVAS < ((mucTieu?.phanTramVAS || 0) / 100) ? 'cell-performance is-below' : '';
+            const bhClass = item.pctBaoHiem < ((mucTieu?.phanTramBaoHiem || 0) / 100) ? 'cell-performance is-below' : '';
 
             tableHTML += `<tr class="hover:bg-gray-50">
                 <td class="px-4 py-2 font-semibold line-clamp-2">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</td>
@@ -373,11 +345,10 @@ export const uiSknv = {
             return acc;
         }, {});
 
-        const isRealtime = type.startsWith('realtime');
         const headerClass = (sortKey) => {
             let classes = `px-4 py-3 sortable `;
-            if (isRealtime && (sortKey === slField || sortKey === revenueField)) {
-                classes += 'header-highlight ';
+            if (sortKey === slField || sortKey === revenueField) {
+                classes += 'header-highlight-special ';
             }
             if (key === sortKey) {
                 classes += direction === 'asc' ? 'sorted-asc' : 'sorted-desc';
@@ -473,11 +444,11 @@ export const uiSknv = {
         const doanhThuData = [
             { label: 'Doanh thu thực', value: uiComponents.formatRevenue(employeeData.doanhThu), average: uiComponents.formatRevenue(departmentAverages.doanhThu || 0), rawValue: employeeData.doanhThu, rawAverage: departmentAverages.doanhThu },
             { label: 'Doanh thu quy đổi', value: uiComponents.formatRevenue(employeeData.doanhThuQuyDoi), average: uiComponents.formatRevenue(departmentAverages.doanhThuQuyDoi || 0), rawValue: employeeData.doanhThuQuyDoi, rawAverage: departmentAverages.doanhThuQuyDoi },
-            { label: '% Quy đổi', value: uiComponents.formatPercentage(employeeData.hieuQuaQuyDoi), valueClass: employeeData.hieuQuaQuyDoi < (mucTieu.phanTramQD/100) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.hieuQuaQuyDoi), rawValue: employeeData.hieuQuaQuyDoi, rawAverage: departmentAverages.hieuQuaQuyDoi },
+            { label: '% Quy đổi', value: uiComponents.formatPercentage(employeeData.hieuQuaQuyDoi), valueClass: employeeData.hieuQuaQuyDoi < ((mucTieu?.phanTramQD || 0) /100) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.hieuQuaQuyDoi), rawValue: employeeData.hieuQuaQuyDoi, rawAverage: departmentAverages.hieuQuaQuyDoi },
             { label: 'Doanh thu CE', value: uiComponents.formatRevenue(employeeData.dtCE), average: uiComponents.formatRevenue(departmentAverages.dtCE || 0), rawValue: employeeData.dtCE, rawAverage: departmentAverages.dtCE },
             { label: 'Doanh thu ICT', value: uiComponents.formatRevenue(employeeData.dtICT), average: uiComponents.formatRevenue(departmentAverages.dtICT || 0), rawValue: employeeData.dtICT, rawAverage: departmentAverages.dtICT },
             { label: 'Doanh thu trả chậm', value: uiComponents.formatRevenue(employeeData.doanhThuTraGop), average: uiComponents.formatRevenue(departmentAverages.doanhThuTraGop || 0), rawValue: employeeData.doanhThuTraGop, rawAverage: departmentAverages.doanhThuTraGop },
-            { label: '% Trả chậm', value: uiComponents.formatPercentage(employeeData.tyLeTraCham), valueClass: employeeData.tyLeTraCham < (mucTieu.phanTramTC/100) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.tyLeTraCham), rawValue: employeeData.tyLeTraCham, rawAverage: departmentAverages.tyLeTraCham }
+            { label: '% Trả chậm', value: uiComponents.formatPercentage(employeeData.tyLeTraCham), valueClass: employeeData.tyLeTraCham < ((mucTieu?.phanTramTC || 0) /100) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.tyLeTraCham), rawValue: employeeData.tyLeTraCham, rawAverage: departmentAverages.tyLeTraCham }
         ];
         doanhThuData.forEach(d => countEvaluation('doanhthu', d.rawValue, d.rawAverage));
 
@@ -493,12 +464,12 @@ export const uiSknv = {
         nangSuatData.forEach(d => countEvaluation('nangsuat', d.rawValue, d.rawAverage));
 
         const hieuQuaData = [
-            { label: '% PK', value: uiComponents.formatPercentage(employeeData.pctPhuKien), valueClass: employeeData.pctPhuKien < (mucTieu.phanTramPhuKien/100) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctPhuKien), rawValue: employeeData.pctPhuKien, rawAverage: departmentAverages.pctPhuKien },
-            { label: '% Gia dụng', value: uiComponents.formatPercentage(employeeData.pctGiaDung), valueClass: employeeData.pctGiaDung < (mucTieu.phanTramGiaDung/100) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctGiaDung), rawValue: employeeData.pctGiaDung, rawAverage: departmentAverages.pctGiaDung },
-            { label: '% MLN', value: uiComponents.formatPercentage(employeeData.pctMLN), valueClass: employeeData.pctMLN < (mucTieu.phanTramMLN/100) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctMLN), rawValue: employeeData.pctMLN, rawAverage: departmentAverages.pctMLN },
-            { label: '% Sim', value: uiComponents.formatPercentage(employeeData.pctSim), valueClass: employeeData.pctSim < (mucTieu.phanTramSim/100) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctSim), rawValue: employeeData.pctSim, rawAverage: departmentAverages.pctSim },
-            { label: '% VAS', value: uiComponents.formatPercentage(employeeData.pctVAS), valueClass: employeeData.pctVAS < (mucTieu.phanTramVAS/100) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctVAS), rawValue: employeeData.pctVAS, rawAverage: departmentAverages.pctVAS },
-            { label: '% Bảo hiểm', value: uiComponents.formatPercentage(employeeData.pctBaoHiem), valueClass: employeeData.pctBaoHiem < (mucTieu.phanTramBaoHiem/100) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctBaoHiem), rawValue: employeeData.pctBaoHiem, rawAverage: departmentAverages.pctBaoHiem },
+            { label: '% PK', value: uiComponents.formatPercentage(employeeData.pctPhuKien), valueClass: employeeData.pctPhuKien < ((mucTieu?.phanTramPhuKien || 0)/100) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctPhuKien), rawValue: employeeData.pctPhuKien, rawAverage: departmentAverages.pctPhuKien },
+            { label: '% Gia dụng', value: uiComponents.formatPercentage(employeeData.pctGiaDung), valueClass: employeeData.pctGiaDung < ((mucTieu?.phanTramGiaDung || 0)/100) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctGiaDung), rawValue: employeeData.pctGiaDung, rawAverage: departmentAverages.pctGiaDung },
+            { label: '% MLN', value: uiComponents.formatPercentage(employeeData.pctMLN), valueClass: employeeData.pctMLN < ((mucTieu?.phanTramMLN || 0)/100) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctMLN), rawValue: employeeData.pctMLN, rawAverage: departmentAverages.pctMLN },
+            { label: '% Sim', value: uiComponents.formatPercentage(employeeData.pctSim), valueClass: employeeData.pctSim < ((mucTieu?.phanTramSim || 0)/100) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctSim), rawValue: employeeData.pctSim, rawAverage: departmentAverages.pctSim },
+            { label: '% VAS', value: uiComponents.formatPercentage(employeeData.pctVAS), valueClass: employeeData.pctVAS < ((mucTieu?.phanTramVAS || 0)/100) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctVAS), rawValue: employeeData.pctVAS, rawAverage: departmentAverages.pctVAS },
+            { label: '% Bảo hiểm', value: uiComponents.formatPercentage(employeeData.pctBaoHiem), valueClass: employeeData.pctBaoHiem < ((mucTieu?.phanTramBaoHiem || 0)/100) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctBaoHiem), rawValue: employeeData.pctBaoHiem, rawAverage: departmentAverages.pctBaoHiem },
         ];
         hieuQuaData.forEach(d => countEvaluation('hieuqua', d.rawValue, d.rawAverage));
 

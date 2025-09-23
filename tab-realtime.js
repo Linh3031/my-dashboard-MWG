@@ -1,4 +1,4 @@
-// Version 2.2 - Fix report rendering call
+// Version 2.5 - Restore correct goal data flow by passing goals to the service
 // MODULE: Chịu trách nhiệm cho Tab Doanh thu Realtime
 
 import { appState } from './state.js';
@@ -31,8 +31,10 @@ const realtimeTab = {
 
         const selectedDept = document.getElementById('realtime-filter-department').value;
         const selectedEmployees = appState.choices.realtime_employee ? appState.choices.realtime_employee.getValue(true) : [];
+        
         const settings = utils.getRealtimeGoalSettings(selectedWarehouse);
         
+        // FIX: Lấy mục tiêu và truyền nó vào hàm tính toán để đảm bảo luồng dữ liệu chính xác
         appState.masterReportData.realtime = services.generateMasterReportData(appState.realtimeYCXData, settings.goals, true);
         
         let filteredReport = appState.masterReportData.realtime;
@@ -67,9 +69,6 @@ const realtimeTab = {
         } else {
             document.getElementById('realtime-revenue-report-container').classList.remove('hidden');
             document.getElementById('realtime-employee-detail-container').classList.add('hidden');
-            // =================================================================
-            // SỬA LỖI: Gọi hàm mới dành riêng cho Realtime
-            // =================================================================
             ui.displayRealtimeEmployeeRevenueReport(filteredReport, 'realtime-revenue-report-container', 'realtime_dt_nhanvien');
         }
 
