@@ -1,4 +1,4 @@
-// Version 1.6 - Use Choices.js API to populate warehouse and department filters
+// Version 1.7 - Fetch update history dynamically from changelog.json
 // MODULE: UI COMPONENTS
 // Chứa các hàm UI chung, tái sử dụng được trên toàn bộ ứng dụng.
 
@@ -23,10 +23,7 @@ export const uiComponents = {
         const notification = document.getElementById('update-notification');
         if (notification) {
             notification.classList.add('show');
-            const reloadBtn = notification.querySelector('.update-notification__reload-btn');
-            if(reloadBtn) reloadBtn.onclick = () => window.location.reload();
-            const closeBtn = notification.querySelector('.update-notification__close-btn');
-            if(closeBtn) closeBtn.onclick = () => notification.classList.remove('show');
+            notification.querySelector('button').onclick = () => window.location.reload();
         }
     },
 
@@ -249,24 +246,30 @@ export const uiComponents = {
         this.renderFeedbackSection();
     },
 
-    renderUpdateHistory() {
+    async renderUpdateHistory() {
         const container = document.getElementById('update-history-list');
         if (!container) return;
-        const updateHistory = [
-            { version: "1.3", date: "16/09/2025", notes: ["Sửa lỗi KPI so sánh cùng kỳ.", "Sửa lỗi nghiêm trọng bộ lọc nhân viên chi tiết (SKNV & Realtime)."] },
-            { version: "1.2", date: "15/09/2025", notes: ["Sửa lỗi bố cục chụp ảnh thẻ KPI.", "Nâng cấp cài đặt cỡ chữ thành thanh trượt.", "Sửa lỗi định dạng doanh thu ở các bảng chi tiết.", "Sửa lỗi bộ lọc nhân viên ở tab Realtime."] },
-            { version: "1.1", date: "14/09/2025", notes: ["Thêm tính năng tự động thông báo phiên bản mới.", "Nâng cấp toàn bộ bộ lọc có tính năng tìm kiếm.", "Làm sạch tên ngành hàng/nhóm hàng trên toàn hệ thống."] },
-            { version: "1.0", date: "14/09/2025", notes: ["Thêm tùy chọn cỡ chữ.", "Nâng cấp độ tương phản.", "Gộp ô nhập liệu Thưởng ERP.", "Thêm bộ chuyển đổi chế độ xem cho nhiều tab.", "Sửa nhiều lỗi logic nghiêm trọng."] },
-        ];
+        
+        try {
+            const response = await fetch(`./changelog.json?v=${new Date().getTime()}`);
+            if (!response.ok) {
+                throw new Error('Không thể tải lịch sử cập nhật.');
+            }
+            const updateHistory = await response.json();
+            
+            container.innerHTML = updateHistory.map(item => `
+                <div class="bg-white rounded-xl shadow-md p-5 border border-gray-200">
+                    <h4 class="font-bold text-blue-600 mb-2">Phiên bản ${item.version} (${item.date})</h4>
+                    <ul class="list-disc list-inside text-gray-700 space-y-1 text-sm">
+                        ${item.notes.map(note => `<li>${note}</li>`).join('')}
+                    </ul>
+                </div>
+            `).join('');
 
-        container.innerHTML = updateHistory.map(item => `
-            <div class="bg-white rounded-xl shadow-md p-5 border border-gray-200">
-                <h4 class="font-bold text-blue-600 mb-2">Phiên bản ${item.version} (${item.date})</h4>
-                <ul class="list-disc list-inside text-gray-700 space-y-1 text-sm">
-                    ${item.notes.map(note => `<li>${note}</li>`).join('')}
-                </ul>
-            </div>
-        `).join('');
+        } catch (error) {
+            console.error("Lỗi khi render lịch sử cập nhật:", error);
+            container.innerHTML = '<p class="text-red-500">Không thể tải lịch sử cập nhật.</p>';
+        }
     },
     
     renderFeedbackSection() {
@@ -393,7 +396,6 @@ export const uiComponents = {
         const uniqueWarehouses = [...new Set(danhSachNhanVien.map(nv => nv.maKho).filter(Boolean))].sort();
         const uniqueDepartments = [...new Set(danhSachNhanVien.map(nv => nv.boPhan).filter(Boolean))].sort();
 
-        // FIX: Chuyển đổi mảng dữ liệu sang định dạng mà Choices.js yêu cầu
         const createChoicesOptions = (items, includeAllOption = true) => {
             const options = items.map(item => ({ value: String(item), label: String(item) }));
             if (includeAllOption) {
@@ -406,7 +408,6 @@ export const uiComponents = {
         const departmentChoicesOptions = createChoicesOptions(uniqueDepartments);
 
         ['luyke', 'sknv', 'realtime'].forEach(prefix => {
-            // FIX: Sử dụng API của Choices.js để nạp dữ liệu, thay vì .innerHTML
             const warehouseInstance = appState.choices[`${prefix}_warehouse`];
             if (warehouseInstance) {
                 warehouseInstance.clearStore();
@@ -419,11 +420,9 @@ export const uiComponents = {
                 departmentInstance.setChoices(departmentChoicesOptions, 'value', 'label', true);
             }
             
-            // Hàm này đã dùng API đúng cách từ trước
             uiComponents.updateEmployeeFilter(prefix);
         });
         
-        // Các bộ lọc trong Cài đặt không dùng Choices.js, giữ nguyên .innerHTML
         const createOptionsHTML = (items, includeAllOption = false) => {
              let html = includeAllOption ? '<option value="">Tất cả</option>' : '';
              html += items.map(item => `<option value="${item}">${item}</option>`).join('');

@@ -1,0 +1,26 @@
+[
+  {
+    "version": "2.2",
+    "date": "23/09/2025",
+    "notes": [
+      "Sửa lỗi nghiêm trọng: Tính toán sai giá trị doanh thu sau khi cập nhật bộ lọc.",
+      "Cấu trúc lại hệ thống quản lý phiên bản và lịch sử cập nhật."
+    ]
+  },
+  {
+    "version": "2.1",
+    "date": "23/09/2025",
+    "notes": [
+      "Sửa lỗi bộ lọc nâng cao không có dữ liệu để chọn.",
+      "Sửa lỗi tô màu tiêu đề bảng không hoạt động do sai CSS Selector."
+    ]
+  },
+  {
+    "version": "2.0",
+    "date": "16/09/2025",
+    "notes": [
+      "Phiên bản phát hành đầu tiên.",
+      "Bao gồm các chức năng cốt lõi: SKNV, SKST Lũy kế, Doanh thu Realtime."
+    ]
+  }
+]
