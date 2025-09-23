@@ -1,4 +1,4 @@
-// Version 3.0 - Store warehouse/department Choices.js instances for dynamic updates
+// Version 3.1 - Update current version constant and sync changelog logic
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -75,18 +75,13 @@ const app = {
             
             await this.loadDataFromStorage(); 
             
-            // FIX: Thứ tự đã được thay đổi trong phiên bản 2.9, giữ nguyên
-            // 1. Setup event listeners, bước này đồng thời khởi tạo các đối tượng Choices.js
             this.setupEventListeners();
             
-            // 2. Điền dữ liệu vào các bộ lọc (dropdowns) sau khi chúng đã được khởi tạo
             ui.populateAllFilters();
 
-            // 3. Áp dụng các cài đặt đã lưu vào UI (vì dropdown giờ đã có giá trị để đọc)
             utils.loadAndApplyLuykeGoalSettings();
             utils.loadAndApplyRealtimeGoalSettings();
             
-            // 4. Các bước thiết lập còn lại
             utils.loadInterfaceSettings();
             utils.applyContrastSetting();
             utils.loadHighlightSettings();
@@ -248,7 +243,6 @@ const app = {
                     appState.choices[`${prefix}_employee`] = new Choices(employeeEl, multiSelectConfig);
                 }
                 
-                // FIX: Lưu lại các instance của Choices.js để có thể cập nhật chúng sau này
                 ['warehouse', 'department'].forEach(type => {
                     const el = document.getElementById(`${prefix}-filter-${type}`);
                     if(el) {
