@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Công cụ phân tích số cho QLST MWG 20.0</title>
+    <title>Công cụ phân tích số cho QLST MWG 2.5</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -13,6 +13,8 @@
     
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <link rel="stylesheet" href="./dashboard.css">
 </head>
@@ -515,6 +517,7 @@
                             <nav id="luyke-subtabs-nav" class="border-b border-gray-200 -mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs" data-content-container="luyke-subtabs-content">
                                 <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-luyke-sieu-thi" data-title="SieuThiLuyKe">Siêu thị Lũy kế</button>
                                 <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-luyke-thi-dua" data-title="ThiDuaNganhHang">Thi đua ngành hàng</button>
+                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-luyke-thidua-vung" data-title="ThiDuaVung">Thi đua vùng</button>
                             </nav>
                             <div class="flex items-center gap-x-2">
                                 <button id="compose-luyke-notification-btn" class="action-btn action-btn--composer" title="Nhận xét">
@@ -606,6 +609,36 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <div id="subtab-luyke-thidua-vung" class="sub-tab-content hidden space-y-8">
+                                <div class="content-card">
+                                    <div class="grid md:grid-cols-2 gap-6 items-start">
+                                        <div class="data-input-group">
+                                            <label class="data-input-group__label">File Thi Đua Vùng:</label>
+                                            <div class="data-input-group__content">
+                                                <div class="flex items-center gap-2">
+                                                    <label for="file-thidua-vung" class="data-input-group__file-trigger">Thêm file Excel</label>
+                                                    <span id="file-name-thidua-vung" class="data-input-group__file-name">Chưa thêm file</span>
+                                                </div>
+                                                <input type="file" id="file-thidua-vung" class="hidden file-input" data-name="Thi Đua Vùng" accept=".xlsx, .xls">
+                                                <div class="data-input-group__status-wrapper"><span id="file-status-thidua-vung" class="data-input-group__status-text"></span></div>
+                                            </div>
+                                        </div>
+                                        <div class="data-input-group">
+                                            <label for="thidua-vung-filter-supermarket" class="data-input-group__label">Chọn Siêu Thị:</label>
+                                            <div class="data-input-group__content">
+                                                 <select id="thidua-vung-filter-supermarket"></select>
+                                                 <span class="text-xs text-gray-500 mt-1">Gõ để tìm kiếm siêu thị.</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="thidua-vung-infographic-container" data-capture-preset="infographic-wide">
+                                    <div class="placeholder-message">
+                                        Vui lòng tải file và chọn một siêu thị để xem báo cáo.
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -659,9 +692,9 @@
                                     <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-sknv" data-title="SKNV">SKNV</button>
                                     <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-doanhthu-lk" data-title="DoanhThuLK">Doanh thu LK</button>
                                     <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-thunhap" data-title="ThuNhap">Thu nhập</button>
-                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-khai-thac" data-title="HieuQuaKhaiThac">Hiệu quả khai thác</button>
+                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-khai-thac-luy-ke" data-title="HieuQuaKhaiThacLuyKe">Hiệu quả khai thác LK</button>
                                     <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-doanhthu-nganhhang" data-title="DTNganhHang">DT ngành hàng</button>
-                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-thidua" data-title="ThiDua">Thi đua</button>
+                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-thiduaNV" data-title="ThiDuaNV">Thi đua NV</button>
                                 </nav>
                                  <div class="flex items-center gap-x-2">
                                      <button id="compose-sknv-notification-btn" class="action-btn action-btn--composer" title="Nhận xét">
@@ -986,6 +1019,19 @@
                 <button class="modal__close-btn" data-close-modal>&times;</button>
             </div>
             <div id="help-modal-content" class="modal__content">
+            </div>
+        </div>
+    </div>
+
+    <div id="chart-modal" class="modal hidden">
+        <div class="modal__overlay" data-close-modal></div>
+        <div class="modal__container modal__container--large">
+             <div class="modal__header">
+                <h3 id="chart-modal-title" class="modal__title"></h3>
+                <button class="modal__close-btn" data-close-modal>&times;</button>
+            </div>
+            <div class="modal__content">
+                <canvas id="top10-chart"></canvas>
             </div>
         </div>
     </div>

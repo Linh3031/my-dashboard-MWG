@@ -1,4 +1,4 @@
-// Version 2.3 - Revert generateMasterReportData to accept goalSettings parameter for stability
+// Version 3.4 - Refine Thi Đua Vùng classification logic
 // MODULE 3: KỆ "DỊCH VỤ" (SERVICES)
 // File này chứa tất cả các hàm xử lý logic, tính toán, và chuyển đổi dữ liệu.
 
@@ -322,6 +322,51 @@ const services = {
         return finalReport;
     },
 
+    // --- HÀM MỚI ---
+    parsePastedThiDuaTableData(rawText) {
+        if (!rawText || !rawText.trim()) {
+            return { success: false, error: 'Dữ liệu đầu vào rỗng.' };
+        }
+
+        const lines = rawText.split('\n').map(line => line.trim()).filter(line => line);
+
+        const mainHeaders = [];
+        let startHeaderIndex = lines.findIndex(line => line.includes('Phòng ban'));
+
+        if (startHeaderIndex === -1) {
+            return { success: false, error: 'Không tìm thấy dòng "Phòng ban".' };
+        }
+
+        for (let i = startHeaderIndex + 1; i < lines.length; i++) {
+            const currentLine = lines[i];
+            if (currentLine.startsWith('SLLK') || currentLine.startsWith('DTQĐ')) {
+                break;
+            }
+            mainHeaders.push(currentLine);
+        }
+
+        let subHeaderLine = lines
+            .filter(line => line.startsWith('SLLK') || line.startsWith('DTQĐ'))
+            .join('\t');
+        const subHeaders = subHeaderLine.split(/\s+/).filter(Boolean);
+
+        const dataRows = [];
+        for (const line of lines) {
+            const parts = line.split(/\s{2,}|\t/);
+            if (parts.length > 1 && /^-?[\d,.]+$/.test(parts[1].trim())) {
+                const name = parts[0];
+                const values = parts.slice(1);
+                dataRows.push({ name, values });
+            }
+        }
+        
+        if (mainHeaders.length === 0 || dataRows.length === 0) {
+            return { success: false, error: 'Không thể xử lý dữ liệu. Định dạng không hợp lệ.' };
+        }
+
+        return { success: true, mainHeaders, subHeaders, dataRows };
+    },
+
     // --- MAIN DATA PROCESSING ---
     classifyInsurance: (productName) => {
         if (!productName || typeof productName !== 'string') return null;
@@ -345,22 +390,22 @@ const services = {
 
         for (const row of appState.rawGioCongData) {
             const maNV = String(row.maNV || '').trim();
-            const hoTen = String(row.hoTen || '').trim();
-            const gioCongValue = parseFloat(String(row.tongGioCong || '0').replace(/,/g, '')) || 0;
+            const hoTen = String(row.hoTen || '').trim().replace(/\s+/g, ' ');
+            let foundMaNV = maNV || appState.employeeNameToMaNVMap.get(hoTen.toLowerCase()) || null;
+            if (foundMaNV) currentMaNV = foundMaNV;
 
-            if (maNV || hoTen) {
-                let foundMaNV = maNV || appState.employeeNameToMaNVMap.get(hoTen.toLowerCase().replace(/\s+/g, ' ')) || null;
-                if (foundMaNV) currentMaNV = foundMaNV;
+            if (currentMaNV && gioCongByMSNV[currentMaNV] === undefined) {
+                 gioCongByMSNV[currentMaNV] = 0;
             }
-
+            
+            const gioCongValue = parseFloat(String(row.tongGioCong || '0').replace(/,/g, '')) || 0;
             if (currentMaNV && gioCongValue > 0) {
-                gioCongByMSNV[currentMaNV] = (gioCongByMSNV[currentMaNV] || 0) + gioCongValue;
+                gioCongByMSNV[currentMaNV] += gioCongValue;
             }
         }
         return gioCongByMSNV;
     },
 
-    // FIX: Reverted to the simpler, more stable pattern of accepting goalSettings as a parameter.
     generateMasterReportData: (sourceData, goalSettings, isRealtime = false) => {
         if (appState.danhSachNhanVien.length === 0) return [];
 
@@ -1004,6 +1049,145 @@ const services = {
             if (nv.maNV) appState.employeeMaNVMap.set(String(nv.maNV).trim(), nv);
             if (nv.hoTen) appState.employeeNameToMaNVMap.set(nv.hoTen.toLowerCase().replace(/\s+/g, ' '), String(nv.maNV).trim());
         });
+    },
+    
+    // --- THI ĐUA VÙNG - HÀM MỚI ---
+    _findHeaderAndProcess(sheet, requiredKeywords) {
+        if (!sheet) return [];
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null });
+        if (rows.length === 0) return [];
+    
+        let headerRowIndex = -1;
+        let foundHeaders = [];
+    
+        for (let i = 0; i < Math.min(rows.length, 10); i++) {
+            const row = rows[i];
+            const lowerCaseRow = row.map(cell => String(cell || '').trim().toLowerCase());
+            
+            const allKeywordsFound = requiredKeywords.every(keyword => 
+                lowerCaseRow.some(cell => cell.includes(keyword))
+            );
+    
+            if (allKeywordsFound) {
+                headerRowIndex = i;
+                foundHeaders = rows[i].map(cell => String(cell || '').trim());
+                break;
+            }
+        }
+    
+        if (headerRowIndex === -1) {
+            throw new Error(`Không tìm thấy dòng tiêu đề chứa đủ các từ khóa: ${requiredKeywords.join(', ')}.`);
+        }
+    
+        const dataRows = rows.slice(headerRowIndex + 1);
+        const jsonData = dataRows.map(row => {
+            const obj = {};
+            foundHeaders.forEach((header, index) => {
+                if (header) { // Chỉ thêm vào object nếu header có tên
+                    const value = row[index];
+                    const upperKey = header.toUpperCase();
+                    if (upperKey.includes('KÊNH') || upperKey.includes('SIÊU THỊ') || upperKey.includes('NGÀNH HÀNG') || upperKey.includes('TỈNH') || upperKey.includes('BOSS')) {
+                        obj[header] = value;
+                    } else if (typeof value === 'string' && value.includes('%')) {
+                        obj[header] = parseFloat(value.replace(/%|,/g, '')) / 100 || 0;
+                    } else if (value !== null && value !== undefined) {
+                        obj[header] = parseFloat(String(value).replace(/,/g, '')) || 0;
+                    } else {
+                        obj[header] = 0;
+                    }
+                }
+            });
+            return obj;
+        }).filter(obj => {
+            const supermarketKey = Object.keys(obj).find(k => k.toLowerCase().includes('siêu thị'));
+            return supermarketKey && obj[supermarketKey]; // Chỉ giữ lại những dòng có dữ liệu ở cột siêu thị
+        });
+    
+        return jsonData;
+    },
+
+    processThiDuaVungFile(workbook) {
+        const sheetNames = workbook.SheetNames;
+        const chiTietSheet = workbook.Sheets[sheetNames.find(name => name.toUpperCase().includes('CHITIET'))];
+        const tongSheet = workbook.Sheets[sheetNames.find(name => name.toUpperCase().includes('TONG'))];
+
+        if (!chiTietSheet || !tongSheet) {
+            throw new Error('File Excel phải chứa sheet có tên chứa "CHITIET" và "TONG".');
+        }
+        
+        const chiTietData = this._findHeaderAndProcess(chiTietSheet, ['siêu thị', 'ngành hàng', 'kênh']);
+        const tongData = this._findHeaderAndProcess(tongSheet, ['siêu thị', 'tổng thưởng']);
+        
+        return { chiTietData, tongData };
+    },
+
+    generateThiDuaVungReport(selectedSupermarket) {
+        if (!selectedSupermarket || !appState.thiDuaVungChiTiet || appState.thiDuaVungChiTiet.length === 0 || !appState.thiDuaVungTong || appState.thiDuaVungTong.length === 0) {
+            return null;
+        }
+        
+        const findKey = (data, keyword) => {
+            if (!data || data.length === 0) return null;
+            return Object.keys(data[0]).find(k => k.trim().toLowerCase().includes(keyword.toLowerCase()));
+        };
+        const supermarketKeyTong = findKey(appState.thiDuaVungTong, 'siêu thị');
+        const supermarketKeyChiTiet = findKey(appState.thiDuaVungChiTiet, 'siêu thị');
+        const tongThuongKey = findKey(appState.thiDuaVungChiTiet, 'tổng thưởng');
+        const hangVuotTroiKey = findKey(appState.thiDuaVungChiTiet, 'hạng vượt trội');
+        const hangTargetKey = findKey(appState.thiDuaVungChiTiet, 'hạng % target');
+        const layTopKey = findKey(appState.thiDuaVungChiTiet, 'lấy top');
+        const kenhKey = findKey(appState.thiDuaVungChiTiet, 'kênh');
+        const nganhHangKey = findKey(appState.thiDuaVungChiTiet, 'ngành hàng');
+        
+        if (!supermarketKeyTong || !supermarketKeyChiTiet) {
+            console.error("Không thể tìm thấy cột 'siêu thị' trong dữ liệu.");
+            return null;
+        }
+
+        const summary = appState.thiDuaVungTong.find(row => row[supermarketKeyTong] === selectedSupermarket);
+        if (!summary) return null;
+        const chiTiet = appState.thiDuaVungChiTiet.filter(row => row[supermarketKeyChiTiet] === selectedSupermarket);
+
+        const report = { summary, coGiai: [], sapCoGiai: [], tiemNang: [], canCoGangNhieu: [] };
+        
+        const getPotentialPrize = (kenh, nganhHang) => {
+            const winningSupermarkets = appState.thiDuaVungChiTiet.filter(sm => 
+                sm[kenhKey] === kenh && sm[nganhHangKey] === nganhHang && sm[tongThuongKey] > 0
+            );
+            if (winningSupermarkets.length === 0) return 0;
+            return Math.min(...winningSupermarkets.map(s => s[tongThuongKey]));
+        };
+
+        chiTiet.forEach(nganhHang => {
+            if (nganhHang[tongThuongKey] > 0) {
+                report.coGiai.push(nganhHang);
+            } else {
+                const hangVuotTroi = nganhHang[hangVuotTroiKey] || Infinity;
+                const hangTarget = nganhHang[hangTargetKey] || Infinity;
+                const hangCoGiai = nganhHang[layTopKey] || 0;
+                
+                const khoangCach = Math.min(
+                    (hangVuotTroi > 0 && hangVuotTroi > hangCoGiai) ? hangVuotTroi - hangCoGiai : Infinity, 
+                    (hangTarget > 0 && hangTarget > hangCoGiai) ? hangTarget - hangCoGiai : Infinity
+                );
+                nganhHang.khoangCach = khoangCach;
+
+                if (hangCoGiai > 0 && khoangCach <= 20) {
+                    nganhHang.thuongTiemNang = getPotentialPrize(nganhHang[kenhKey], nganhHang[nganhHangKey]);
+                    report.sapCoGiai.push(nganhHang);
+                } else if (hangCoGiai > 0 && khoangCach > 20 && khoangCach <= 40) {
+                    report.tiemNang.push(nganhHang);
+                } else {
+                    report.canCoGangNhieu.push(nganhHang);
+                }
+            }
+        });
+        
+        report.coGiai.sort((a, b) => b[tongThuongKey] - a[tongThuongKey]);
+        report.sapCoGiai.sort((a, b) => a.khoangCach - b.khoangCach);
+        report.tiemNang.sort((a, b) => a.khoangCach - b.khoangCach);
+
+        return report;
     }
 };
 

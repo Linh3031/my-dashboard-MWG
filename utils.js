@@ -1,4 +1,4 @@
-// Version 2.4 - Improve robustness of goal setting UI functions
+// Version 2.5 - Add new screenshot preset for Thi Đua Vùng
 // MODULE: UTILITIES
 // Chứa các hàm tiện ích chung không thuộc về logic hay giao diện cụ thể.
 import { appState } from './state.js';
@@ -71,6 +71,10 @@ const _injectCaptureStyles = () => {
         .preset-large-font-report table td {
             font-size: 22px !important;
             vertical-align: middle;
+        }
+        /* --- PRESET MỚI CHO THI ĐUA VÙNG --- */
+        .preset-infographic-wide {
+            width: 1100px !important;
         }
     `;
 
