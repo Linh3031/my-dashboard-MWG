@@ -1,4 +1,4 @@
-// Version 2.1 - Add header coloring for data tables
+// Version 2.2 - Add raw pasted data renderer for Thi Đua NV
 // MODULE: UI SKNV
 // Chứa các hàm render giao diện cho tab "Sức khỏe nhân viên".
 
@@ -710,25 +710,66 @@ export const uiSknv = {
             </tbody></table></div></div>`;
     },
 
-    displayCompetitionReport(viewType = 'summary') {
+    // --- HÀM ĐƯỢC CẬP NHẬT ---
+    displayCompetitionReport() {
         const container = document.getElementById('employee-competition-container');
         if (!container) return;
-
-        const reportData = appState.thiDuaReportData;
-        if (!reportData || reportData.length === 0) {
-            container.innerHTML = `<p class="text-gray-500">Vui lòng dán dữ liệu vào ô "Thi đua nhân viên" và "Data lũy kế" ở tab Cập nhật dữ liệu để xem báo cáo.</p>`;
+    
+        const rawText = document.getElementById('paste-thiduanv')?.value || '';
+    
+        if (!rawText.trim()) {
+            container.innerHTML = `<p class="text-gray-500">Vui lòng dán dữ liệu vào ô "Thi đua nhân viên" ở tab Cập nhật dữ liệu để xem báo cáo.</p>`;
             return;
         }
+    
+        const parsedData = services.parsePastedThiDuaTableData(rawText);
+        container.innerHTML = this.renderPastedThiDuaTable(parsedData);
+    },
 
-        if (viewType === 'summary') {
-            container.innerHTML = uiSknv.renderCompetitionSummary(reportData);
-        } else if (viewType === 'category') {
-             container.innerHTML = uiSknv.renderCompetitionByCategory(reportData);
-        } else if (viewType === 'employee') {
-            const selectedMaNV = document.getElementById('thidua-employee-filter').value;
-            const employeeData = reportData.find(e => e.maNV === selectedMaNV);
-            container.innerHTML = uiSknv.renderCompetitionByEmployee(employeeData);
+    // --- HÀM MỚI ---
+    renderPastedThiDuaTable(data) {
+        if (!data || !data.success) {
+            return `<div class="p-4 bg-red-100 text-red-700 rounded-lg">
+                        <p class="font-bold">Lỗi xử lý dữ liệu!</p>
+                        <p>${data.error || 'Vui lòng kiểm tra lại định dạng dữ liệu đã dán.'}</p>
+                    </div>`;
         }
+    
+        let tableHTML = '<div class="overflow-x-auto border border-slate-200 rounded-lg"><table class="min-w-full text-sm">';
+        
+        tableHTML += '<thead class="font-semibold text-slate-700">';
+        
+        if (data.mainHeaders.length > 0) {
+            tableHTML += '<tr>';
+            tableHTML += '<th class="p-3 text-left sticky left-0 z-10 bg-slate-200">Nhân viên / Bộ phận</th>';
+            data.mainHeaders.forEach(header => {
+                tableHTML += `<th class="p-3 text-center bg-slate-200">${header}</th>`;
+            });
+            tableHTML += '</tr>';
+        }
+
+        if (data.subHeaders.length > 0) {
+            tableHTML += '<tr>';
+            tableHTML += `<th class="p-3 sticky left-0 z-10 bg-slate-100"></th>`;
+            data.subHeaders.forEach(subHeader => {
+                tableHTML += `<th class="p-3 text-center bg-slate-100">${subHeader}</th>`;
+            });
+            tableHTML += '</tr>';
+        }
+        tableHTML += '</thead>';
+
+        tableHTML += '<tbody class="bg-white">';
+        data.dataRows.forEach(row => {
+            tableHTML += '<tr class="border-t hover:bg-gray-50">';
+            tableHTML += `<td class="p-3 font-semibold text-slate-800 sticky left-0 z-10 bg-white">${row.name}</td>`;
+            row.values.forEach(value => {
+                tableHTML += `<td class="p-3 text-right">${value}</td>`;
+            });
+            tableHTML += '</tr>';
+        });
+        tableHTML += '</tbody></table></div>';
+    
+        return tableHTML;
     },
 
     renderCompetitionSummary(data) {

@@ -1,4 +1,4 @@
-// Version 3.1 - Update current version constant and sync changelog logic
+// Version 20.2 - Add selective screenshot logic for Thi Đua Vùng
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -66,25 +66,18 @@ const idbHelper = {
 
 
 const app = {
-    currentVersion: '2.2',
+    currentVersion: '2.4',
 
     async init() {
         try {
             await firebase.init();
-            await idbHelper.openDB();
-            
-            await this.loadDataFromStorage(); 
-            
-            this.setupEventListeners();
-            
-            ui.populateAllFilters();
-
-            utils.loadAndApplyLuykeGoalSettings();
-            utils.loadAndApplyRealtimeGoalSettings();
-            
+            await idbHelper.openDB(); // Mở kết nối với IndexedDB
+            await this.loadDataFromStorage(); // Tải cả dữ liệu cố định và dữ liệu hàng ngày
             utils.loadInterfaceSettings();
+            this.setupEventListeners();
             utils.applyContrastSetting();
             utils.loadHighlightSettings();
+            ui.populateAllFilters();
             this.switchTab('home-section');
 
             this.checkForUpdates();
@@ -110,6 +103,7 @@ const app = {
     },
 
     async loadDataFromStorage() {
+        // --- Dữ liệu khai báo (vẫn dùng localStorage vì nhỏ) ---
         document.getElementById('declaration-ycx').value = localStorage.getItem('declaration_ycx') || config.DEFAULT_DATA.HINH_THUC_XUAT_TINH_DOANH_THU.join('\n');
         document.getElementById('declaration-ycx-gop').value = localStorage.getItem('declaration_ycx_gop') || config.DEFAULT_DATA.HINH_THUC_XUAT_TRA_GOP.join('\n');
         document.getElementById('declaration-heso').value = localStorage.getItem('declaration_heso') || Object.entries(config.DEFAULT_DATA.HE_SO_QUY_DOI).map(([k, v]) => `${k},${v}`).join('\n');
@@ -130,10 +124,11 @@ const app = {
             } catch (e) { console.error(`Lỗi đọc ${uiName} từ IndexedDB:`, e); }
         };
 
+        // --- Tải dữ liệu cố định từ IndexedDB ---
         await loadSavedFile('saved_danhsachnv', 'danhSachNhanVien', 'danhsachnv', 'danhsachnv', 'DSNV');
         await loadSavedFile('saved_ycx_thangtruoc', 'ycxDataThangTruoc', 'ycx', 'ycx-thangtruoc', 'YCXL Tháng Trước');
         await loadSavedFile('saved_thuongnong_thangtruoc', 'thuongNongDataThangTruoc', 'thuongnong', 'thuongnong-thangtruoc', 'Thưởng Nóng Tháng Trước');
-        await loadSavedFile('saved_ycx', 'ycxData', 'ycx', 'ycx', 'Yêu cầu xuất lũy kế');
+        await loadSavedFile('saved_ycx', 'ycxData', 'ycx', 'ycx', 'Yêu cầu xuất lũy kế'); // THÊM MỚI
 
         const pasteThuongERPThangTruoc = localStorage.getItem('saved_thuongerp_thangtruoc');
         if (pasteThuongERPThangTruoc) {
@@ -153,6 +148,9 @@ const app = {
             if (savedTemplates) appState.composerTemplates = JSON.parse(savedTemplates);
         } catch (e) { console.error("Lỗi đọc cài đặt từ localStorage:", e); }
         
+        utils.loadAndApplyLuykeGoalSettings();
+
+        // --- Dữ liệu hàng ngày (vẫn dùng localStorage) ---
         const loadDailyData = (key, stateKey, fileType, uiName) => {
             const savedData = localStorage.getItem(key);
             if (!savedData) return;
@@ -197,8 +195,7 @@ const app = {
                 try {
                     const data = new Uint8Array(event.target.result);
                     const workbook = XLSX.read(data, { type: 'array', cellDates: true });
-                    const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-                    resolve(jsonData);
+                    resolve(workbook); // Trả về toàn bộ workbook
                 } catch (err) { reject(err); }
             };
             reader.onerror = (err) => reject(new Error("Could not read the file: " + err));
@@ -245,9 +242,7 @@ const app = {
                 
                 ['warehouse', 'department'].forEach(type => {
                     const el = document.getElementById(`${prefix}-filter-${type}`);
-                    if(el) {
-                        appState.choices[`${prefix}_${type}`] = new Choices(el, { searchEnabled: true, removeItemButton: false, itemSelectText: 'Chọn' });
-                    }
+                    if(el) new Choices(el, { searchEnabled: true, removeItemButton: false, itemSelectText: 'Chọn' });
                 });
 
                 ['nhanhang', 'nhomhang', 'employee'].forEach(type => {
@@ -262,14 +257,13 @@ const app = {
                 searchEnabled: true, 
                 removeItemButton: false, 
                 itemSelectText: 'Chọn', 
-                placeholder: true,
-                placeholderValue: 'Chọn nhân viên để xem chi tiết',
                 searchPlaceholderValue: 'Tìm kiếm...' 
             };
             const singleSelects = {
                 'sknv-employee-filter': 'sknv_employee_detail',
                 'thidua-employee-filter': 'thidua_employee_detail',
-                'realtime-employee-detail-filter': 'realtime_employee_detail'
+                'realtime-employee-detail-filter': 'realtime_employee_detail',
+                'thidua-vung-filter-supermarket': 'thiDuaVung_sieuThi'
             };
             for (const [id, key] of Object.entries(singleSelects)) {
                  const el = document.getElementById(id);
@@ -304,26 +298,37 @@ const app = {
         } catch (error) { console.error("Lỗi khi khởi tạo Flatpickr:", error); }
 
         document.querySelectorAll('a.nav-link').forEach(link => link.addEventListener('click', (e) => { e.preventDefault(); this.switchTab(link.getAttribute('href').substring(1)); }));
-        document.querySelectorAll('.sub-tab-btn').forEach(btn => btn.addEventListener('click', (e) => ui.handleSubTabClick(e.currentTarget)));
+        document.querySelectorAll('.sub-tab-btn').forEach(btn => btn.addEventListener('click', (e) => {
+            ui.handleSubTabClick(e.currentTarget);
+            luykeTab.render(); // Re-render tab lũy kế khi sub-tab thay đổi
+        }));
         document.querySelectorAll('.toggle-filters-btn').forEach(button => button.addEventListener('click', () => ui.toggleFilterSection(button.dataset.target)));
-        document.querySelectorAll('.file-input').forEach(input => input.addEventListener('change', (e) => this.handleFileInputChange(e)));
+        
+        document.querySelectorAll('.file-input').forEach(input => {
+            if (input.id !== 'file-thidua-vung') {
+                input.addEventListener('change', (e) => this.handleFileInputChange(e));
+            }
+        });
         
         document.getElementById('paste-luyke')?.addEventListener('input', (e) => { 
             localStorage.setItem('daily_paste_luyke', e.target.value);
             ui.updatePasteStatus('status-luyke'); 
             this.processAndRenderAllReports(); 
         });
+        
         document.getElementById('paste-thiduanv')?.addEventListener('input', (e) => {
             localStorage.setItem('daily_paste_thiduanv', e.target.value);
-            sknvTab.render();
-            ui.updatePasteStatus('status-thiduanv', `✓ Đã xử lý ${appState.thiDuaReportData.length} nhân viên.`);
-            ui.displayPastedDebugInfo('thiduanv-pasted');
+            ui.displayCompetitionReport();
+            ui.updatePasteStatus('status-thiduanv', '✓ Đã nhận dữ liệu, đang hiển thị bảng.');
         });
+
         document.getElementById('paste-thuongerp')?.addEventListener('input', () => this.handleErpPaste());
         document.getElementById('paste-thuongerp-thangtruoc')?.addEventListener('input', (e) => this.handleErpThangTruocPaste(e));
         document.getElementById('realtime-file-input')?.addEventListener('change', (e) => this.handleRealtimeFileInput(e));
         document.getElementById('download-danhsachnv-template-btn')?.addEventListener('click', () => this.handleTemplateDownload());
-
+        
+        document.getElementById('file-thidua-vung')?.addEventListener('change', (e) => this.handleThiDuaVungFileInput(e));
+        document.getElementById('thidua-vung-filter-supermarket')?.addEventListener('change', () => this.handleThiDuaVungFilterChange());
 
         ['luyke', 'sknv', 'realtime'].forEach(prefix => {
             document.getElementById(`${prefix}-filter-warehouse`)?.addEventListener('change', () => this.handleFilterChange(prefix));
@@ -361,20 +366,10 @@ const app = {
 
         document.querySelectorAll('.kpi-color-input').forEach(picker => picker.addEventListener('input', () => utils.saveInterfaceSettings()));
         document.getElementById('save-declaration-btn')?.addEventListener('click', () => this.saveDeclarations());
-        
         document.getElementById('rt-goal-warehouse-select')?.addEventListener('change', () => utils.loadAndApplyRealtimeGoalSettings());
-        document.querySelectorAll('.rt-goal-input, .rt-setting-input').forEach(input => input.addEventListener('change', () => {
-            utils.saveRealtimeGoalSettings();
-            realtimeTab.render();
-        }));
-        
+        document.querySelectorAll('.rt-goal-input, .rt-setting-input').forEach(input => input.addEventListener('input', () => utils.saveRealtimeGoalSettings()));
         document.getElementById('luyke-goal-warehouse-select')?.addEventListener('change', () => utils.loadAndApplyLuykeGoalSettings());
-        document.querySelectorAll('.luyke-goal-input').forEach(input => input.addEventListener('change', () => {
-            utils.saveLuykeGoalSettings();
-            luykeTab.render();
-            sknvTab.render();
-        }));
-
+        document.querySelectorAll('.luyke-goal-input').forEach(input => input.addEventListener('input', () => utils.saveLuykeGoalSettings()));
         document.getElementById('toggle-debug-btn')?.addEventListener('click', (e) => ui.toggleDebugTool(e.currentTarget));
         document.body.addEventListener('click', (e) => {
             const helpTrigger = e.target.closest('.page-header__help-btn');
@@ -413,24 +408,30 @@ const app = {
         ['luyke', 'sknv', 'realtime'].forEach(prefix => {
             const captureBtn = document.getElementById(`capture-${prefix}-btn`);
             if (!captureBtn) return;
-            captureBtn.addEventListener('click', (event) => {
-                event.preventDefault();
-                const navId = prefix === 'sknv' ? 'employee-subtabs-nav' : `${prefix}-subtabs-nav`;
-                const contentContainerId = prefix === 'sknv' ? 'employee-subtabs-content' : `${prefix}-subtabs-content`;
+            captureBtn.addEventListener('click', () => {
+                const navId = prefix === 'luyke' ? 'luyke-subtabs-nav' : (prefix === 'sknv' ? 'employee-subtabs-nav' : 'realtime-subtabs-nav');
+                const contentContainerId = prefix === 'luyke' ? 'luyke-subtabs-content' : (prefix === 'sknv' ? 'employee-subtabs-content' : 'realtime-subtabs-content');
 
                 const activeTabButton = document.querySelector(`#${navId} .sub-tab-btn.active`);
                 if (!activeTabButton) { ui.showNotification('Không tìm thấy tab đang hoạt động.', 'error'); return; }
                 
                 const title = activeTabButton.dataset.title || 'BaoCao';
-                const activeTabContent = document.querySelector(`#${contentContainerId} .sub-tab-content:not(.hidden)`);
-                if (!activeTabContent) { ui.showNotification('Không tìm thấy nội dung để chụp.', 'error'); return; }
+                let elementToCapture;
 
-                utils.captureDashboardInParts(activeTabContent, title);
+                // --- LOGIC CHỤP MÀN HÌNH CÓ ĐIỀU KIỆN ---
+                if (prefix === 'luyke' && activeTabButton.dataset.target === 'subtab-luyke-thidua-vung') {
+                    elementToCapture = document.getElementById('thidua-vung-infographic-container');
+                } else {
+                    elementToCapture = document.querySelector(`#${contentContainerId} .sub-tab-content:not(.hidden)`);
+                }
+
+                if (!elementToCapture || elementToCapture.children.length === 0) { ui.showNotification('Không có nội dung để chụp.', 'error'); return; }
+
+                utils.captureDashboardInParts(elementToCapture, title);
             });
 
-            document.getElementById(`export-${prefix}-btn`)?.addEventListener('click', (event) => {
-                event.preventDefault();
-                const navId = prefix === 'sknv' ? 'employee-subtabs-nav' : `${prefix}-subtabs-nav`;
+            document.getElementById(`export-${prefix}-btn`)?.addEventListener('click', () => {
+                const navId = prefix === 'sknv' ? 'sknv-subtabs-nav' : `${prefix}-subtabs-nav`;
                 const contentContainerId = prefix === 'sknv' ? 'employee-subtabs-content' : `${prefix}-subtabs-content`;
                 
                 const activeTabButton = document.querySelector(`#${navId} .sub-tab-btn.active`);
@@ -459,7 +460,8 @@ const app = {
         ui.showProgressBar(fileType);
 
         try {
-            const rawData = await this.handleFileRead(file);
+            const workbook = await this.handleFileRead(file);
+            const rawData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
             const normalizeType = fileType.includes('thangtruoc') ? fileType.replace('-thangtruoc', '') : fileType;
             const { normalizedData, success, missingColumns } = services.normalizeData(rawData, normalizeType);
             ui.displayDebugInfo(fileType);
@@ -513,7 +515,8 @@ const app = {
         appState.realtimeYCXData = []; 
         e.target.value = '';
         try {
-            const rawData = await this.handleFileRead(file);
+            const workbook = await this.handleFileRead(file);
+            const rawData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
             const { normalizedData, success, missingColumns } = services.normalizeData(rawData, 'ycx'); 
             ui.displayDebugInfo('ycx-realtime');
             if (success) {
@@ -740,6 +743,68 @@ const app = {
             const view = button.dataset.view;
             document.getElementById('thidua-employee-selector-container').classList.toggle('hidden', view !== 'employee');
             ui.displayCompetitionReport(view);
+        }
+    },
+    
+    // --- HÀM MỚI CHO THI ĐUA VÙNG ---
+    async handleThiDuaVungFileInput(e) {
+        const fileInput = e.target;
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        ui.updateFileStatus('thidua-vung', file.name, 'Đang xử lý...', 'default');
+        
+        try {
+            const workbook = await this.handleFileRead(file);
+            const { chiTietData, tongData } = services.processThiDuaVungFile(workbook);
+
+            if (!tongData || tongData.length === 0) {
+                throw new Error('Không tìm thấy dữ liệu hợp lệ trong sheet "TONG".');
+            }
+
+            appState.thiDuaVungChiTiet = chiTietData;
+            appState.thiDuaVungTong = tongData;
+
+            // Debug
+            appState.debugInfo.thiDuaVungChiTietRaw = chiTietData.slice(0, 10);
+            appState.debugInfo.thiDuaVungTongRaw = tongData.slice(0, 10);
+            ui.displayThiDuaVungDebugInfo();
+
+            const supermarketKey = Object.keys(tongData[0]).find(k => k.trim().toLowerCase().includes('siêu thị'));
+            const supermarketNames = [...new Set(tongData.map(row => row[supermarketKey]).filter(Boolean))].sort();
+            
+            const choicesInstance = appState.choices.thiDuaVung_sieuThi;
+            if (choicesInstance) {
+                choicesInstance.clearStore();
+                choicesInstance.setChoices(
+                    supermarketNames.map(name => ({ value: name, label: name })),
+                    'value',
+                    'label',
+                    true
+                );
+            }
+            
+            ui.updateFileStatus('thidua-vung', file.name, `✓ Đã xử lý ${supermarketNames.length} siêu thị.`, 'success');
+            ui.showNotification('Tải file Thi đua vùng thành công!', 'success');
+        } catch (error) {
+            console.error('Lỗi xử lý file Thi đua vùng:', error);
+            ui.updateFileStatus('thidua-vung', file.name, `Lỗi: ${error.message}`, 'error');
+            ui.showNotification(`Lỗi khi xử lý file Thi đua vùng: ${error.message}`, 'error');
+        }
+    },
+
+    handleThiDuaVungFilterChange() {
+        const choicesInstance = appState.choices.thiDuaVung_sieuThi;
+        if (!choicesInstance) return;
+
+        const selectedValue = choicesInstance.getValue(true);
+        if (selectedValue) {
+            const reportData = services.generateThiDuaVungReport(selectedValue);
+            ui.renderThiDuaVungInfographic(reportData);
+        } else {
+            // Clear the infographic if no supermarket is selected
+            const container = document.getElementById('thidua-vung-infographic-container');
+            if(container) container.innerHTML = `<div class="placeholder-message">Vui lòng chọn một siêu thị để xem báo cáo.</div>`;
         }
     }
 };

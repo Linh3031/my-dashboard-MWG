@@ -1,4 +1,4 @@
-// Version 1.7 - Fetch update history dynamically from changelog.json
+// Version 1.8 - Add Thi Đua Vùng debug display function
 // MODULE: UI COMPONENTS
 // Chứa các hàm UI chung, tái sử dụng được trên toàn bộ ứng dụng.
 
@@ -389,6 +389,57 @@ export const uiComponents = {
         container.innerHTML = content;
     },
     
+    displayThiDuaVungDebugInfo() {
+        const resultsContainer = document.getElementById('debug-results-container');
+        if (!resultsContainer) return;
+    
+        const renderDebugTable = (title, data) => {
+            if (!data || data.length === 0) {
+                return `<div class="p-2 border rounded-md bg-white mb-4">
+                    <h4 class="font-bold text-gray-800 mb-2">${title}</h4>
+                    <p class="text-gray-500">Không có dữ liệu để hiển thị.</p>
+                </div>`;
+            }
+    
+            const headers = Object.keys(data[0]);
+            let tableHTML = `<div class="p-2 border rounded-md bg-white mb-4">
+                <h4 class="font-bold text-gray-800 mb-2">${title}</h4>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-xs">
+                        <thead class="bg-gray-100">
+                            <tr>${headers.map(h => `<th class="px-2 py-1 text-left font-semibold text-gray-600 whitespace-nowrap">${h}</th>`).join('')}</tr>
+                        </thead>
+                        <tbody>`;
+            
+            data.forEach(row => {
+                tableHTML += `<tr class="border-t">`;
+                headers.forEach(header => {
+                    tableHTML += `<td class="px-2 py-1 font-mono">${row[header] !== undefined ? row[header] : ''}</td>`;
+                });
+                tableHTML += `</tr>`;
+            });
+    
+            tableHTML += `</tbody></table></div></div>`;
+            return tableHTML;
+        };
+    
+        const tongRaw = appState.debugInfo.thiDuaVungTongRaw;
+        const chiTietRaw = appState.debugInfo.thiDuaVungChiTietRaw;
+    
+        let finalHTML = renderDebugTable('Thi Đua Vùng - Sheet TONG (10 dòng đầu)', tongRaw);
+        finalHTML += renderDebugTable('Thi Đua Vùng - Sheet CHITIET (10 dòng đầu)', chiTietRaw);
+        
+        const existingEl = document.getElementById('debug-table-thidua-vung');
+        if (existingEl) {
+            existingEl.innerHTML = finalHTML;
+        } else {
+            const wrapper = document.createElement('div');
+            wrapper.id = `debug-table-thidua-vung`;
+            wrapper.innerHTML = finalHTML;
+            resultsContainer.appendChild(wrapper);
+        }
+    },
+
     populateAllFilters: () => {
         const { danhSachNhanVien } = appState;
         if (danhSachNhanVien.length === 0) return;

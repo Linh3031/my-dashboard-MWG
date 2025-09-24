@@ -1,4 +1,4 @@
-// Version 2.0 - Bug Fixes & Stability Improvements
+// Version 2.2 - Add state for Thi Đua Vùng feature
 // MODULE 2: TỦ TRẠNG THÁI (APPSTATE)
 // File này chứa đối tượng trạng thái chung của ứng dụng, hoạt động như một "bộ nhớ".
 
@@ -27,7 +27,9 @@ const appState = {
     rawGioCongData: [],
     thuongNongData: [],
     thuongERPData: [],
-    thiDuaNhanVienData: [], // Dữ liệu thi đua nhân viên
+    thiDuaNhanVienData: [],
+    thiDuaVungChiTiet: [], // Dữ liệu chi tiết thi đua vùng
+    thiDuaVungTong: [],   // Dữ liệu tổng hợp thi đua vùng
 
     thiDuaReportData: [],
 
@@ -58,6 +60,7 @@ const appState = {
         luyke_employee: null, luyke_date_picker: null, luyke_highlight_nhanhang: null, luyke_highlight_nhomhang: null, luyke_highlight_employee: null,
         sknv_employee: null, sknv_date_picker: null, sknv_highlight_nhanhang: null, sknv_highlight_nhomhang: null, sknv_highlight_employee: null,
         realtime_employee: null, realtime_highlight_nhanhang: null, realtime_highlight_nhomhang: null, realtime_highlight_employee: null,
+        thiDuaVung_sieuThi: null, // Bộ lọc cho tab Thi đua vùng
     },
     sortState: {
         luyke_chuaxuat: { key: 'doanhThuQuyDoi', direction: 'desc' },
@@ -95,4 +98,3 @@ const appState = {
 
 // Xuất khẩu appState để các module khác có thể sử dụng
 export { appState };
-
