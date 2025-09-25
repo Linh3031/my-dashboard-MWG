@@ -1,4 +1,4 @@
-// Version 3.4 - Refine Thi Đua Vùng classification logic
+// Version 3.8 - Refactor chua xuat function name for clarity
 // MODULE 3: KỆ "DỊCH VỤ" (SERVICES)
 // File này chứa tất cả các hàm xử lý logic, tính toán, và chuyển đổi dữ liệu.
 
@@ -149,7 +149,7 @@ const services = {
 
     parseLuyKePastedData: (text) => {
         const mainKpis = {};
-        const comparisonData = { value: 0, percentage: 'N/A' };
+        let comparisonData = { value: 0, percentage: 'N/A' };
         if (!text) return { mainKpis, comparisonData };
 
         const allLines = text.split('\n').map(line => line.trim());
@@ -174,11 +174,12 @@ const services = {
             const valueLine = allLines[dtckIndex + 1];
             const values = valueLine.split(/\s+/);
             if (values.length >= 2) {
-                comparisonData.value = parseFloat(values[0].replace(/,/g, '')) || 0;
-                comparisonData.percentage = values[1] || 'N/A';
+                comparisonData = {
+                    value: parseFloat(values[0].replace(/,/g, '')) || 0,
+                    percentage: values[1] || 'N/A'
+                };
             }
         }
-
         return { mainKpis, comparisonData };
     },
 
@@ -322,7 +323,6 @@ const services = {
         return finalReport;
     },
 
-    // --- HÀM MỚI ---
     parsePastedThiDuaTableData(rawText) {
         if (!rawText || !rawText.trim()) {
             return { success: false, error: 'Dữ liệu đầu vào rỗng.' };
@@ -594,60 +594,7 @@ const services = {
     },
 
     // --- REPORT GENERATION ---
-    calculateComparisonData(currentData, previousData, numDays) {
-        if (!previousData || previousData.length === 0 || !currentData || currentData.length === 0 || numDays <= 0) {
-            return { value: 0, percentage: 'N/A' };
-        }
-    
-        const hinhThucXuatTinhDoanhThu = services.getHinhThucXuatTinhDoanhThu();
-    
-        const sumRevenue = (data) => {
-            return data.reduce((sum, row) => {
-                const isDoanhThuHTX = hinhThucXuatTinhDoanhThu.has(row.hinhThucXuat);
-                const isBaseValid = (row.trangThaiThuTien || "").trim() === 'Đã thu' &&
-                                    (row.trangThaiHuy || "").trim() === 'Chưa hủy' &&
-                                    (row.tinhTrangTra || "").trim() === 'Chưa trả' &&
-                                    (row.trangThaiXuat || "").trim() === 'Đã xuất';
-                if (isBaseValid && isDoanhThuHTX) {
-                    const thanhTien = parseFloat(String(row.thanhTien || "0").replace(/,/g, '')) || 0;
-                    return sum + thanhTien;
-                }
-                return sum;
-            }, 0);
-        };
-    
-        const currentTotal = sumRevenue(currentData);
-    
-        const firstDayOfPreviousMonth = previousData.reduce((earliest, row) => {
-            const rowDate = new Date(row.ngayTao);
-            return rowDate < earliest ? rowDate : earliest;
-        }, new Date());
-        
-        const previousMonthStartDate = new Date(firstDayOfPreviousMonth.getFullYear(), firstDayOfPreviousMonth.getMonth(), 1);
-        const previousMonthEndDate = new Date(previousMonthStartDate);
-        previousMonthEndDate.setDate(previousMonthStartDate.getDate() + numDays - 1);
-    
-        const previousFilteredData = previousData.filter(row => {
-            const rowDate = new Date(row.ngayTao);
-            return rowDate >= previousMonthStartDate && rowDate <= previousMonthEndDate;
-        });
-        
-        const previousTotal = sumRevenue(previousFilteredData);
-        
-        if (previousTotal === 0) {
-            return { value: currentTotal, percentage: 'N/A' };
-        }
-        
-        const difference = currentTotal - previousTotal;
-        const percentage = (difference / previousTotal);
-    
-        return {
-            value: difference,
-            percentage: ui.formatPercentage(percentage)
-        };
-    },
-    
-    generateChuaXuatReport(sourceYcxData) {
+    generateLuyKeChuaXuatReport(sourceYcxData) {
         if (!sourceYcxData || sourceYcxData.length === 0) return [];
 
         const hinhThucXuatTinhDoanhThu = services.getHinhThucXuatTinhDoanhThu();
@@ -876,23 +823,15 @@ const services = {
     },
 
     // --- UTILITIES FOR COMPOSER ---
-    calculateTimeProgress(openTimeStr, closeTimeStr) {
-        if (!openTimeStr || !closeTimeStr) return 0;
-        const now = new Date();
-        const [openH, openM] = openTimeStr.split(':').map(Number);
-        const [closeH, closeM] = closeTimeStr.split(':').map(Number);
-        const openDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), openH, openM);
-        const closeDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), closeH, closeM);
-        if (now < openDate) return 0;
-        if (now > closeDate) return 1;
-        const totalDuration = closeDate - openDate;
-        const elapsedDuration = now - openDate;
-        return totalDuration > 0 ? elapsedDuration / totalDuration : 0;
-    },
-
-    getEmployeeRanking(reportData, key, direction = 'desc', count = 3) {
+    getEmployeeRanking(reportData, key, direction = 'desc', count = 3, department = 'ALL') {
         if (!reportData || reportData.length === 0) return [];
-        return [...reportData]
+        
+        let filteredData = reportData;
+        if (department !== 'ALL') {
+            filteredData = reportData.filter(e => e.boPhan === department);
+        }
+
+        return [...filteredData]
             .filter(e => e[key] > 0)
             .sort((a, b) => direction === 'desc' ? (b[key] || 0) - (a[key] || 0) : (a[key] || 0) - (b[key] || 0))
             .slice(0, count);
@@ -912,71 +851,105 @@ const services = {
         }).join("\n");
     },
     
-    processComposerTemplate(template, supermarketReport, goals, rankingReportData) {
-        if (!supermarketReport || !goals || !rankingReportData) {
+    processComposerTemplate(template, supermarketReport, goals, rankingReportData, competitionData) {
+        if (!supermarketReport || !goals) {
             return "Lỗi: Dữ liệu không đủ để tạo nhận xét.";
         }
+    
+        const tagMapping = {
+            'DTQD': { key: 'doanhThuQuyDoi', format: 'currency' },
+            'THUNHAP': { key: 'tongThuNhap', format: 'currency' },
+            'TLQD': { key: 'hieuQuaQuyDoi', format: 'percent' },
+        };
         
-        const processedText = template.replace(/\[(.*?)\]/g, (match, tag) => {
+        return template.replace(/\[(.*?)\]/g, (match, tag) => {
             const now = new Date();
-            switch(tag) {
-                case 'NGAY':
-                    return now.toLocaleDateString('vi-VN');
-                case 'GIO':
-                    return now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-                case 'DT_THUC':
-                    return ui.formatNumber((supermarketReport.doanhThu || 0) / 1000000, 0) + " tr";
-                case 'DTQD':
-                    return ui.formatNumber((supermarketReport.doanhThuQuyDoi || 0) / 1000000, 0) + " tr";
-                case '%HT_DTT': {
-                    const target = parseFloat(goals.doanhThuThuc) || 0;
-                    const percent = target > 0 ? ((supermarketReport.doanhThu || 0) / 1000000) / target : 0;
-                    return ui.formatPercentage(percent);
-                }
-                case '%HT_DTQD': {
-                    if (supermarketReport.pastedHTQD) {
-                        return supermarketReport.pastedHTQD;
-                    }
-                    const target = parseFloat(goals.doanhThuQD) || 0;
-                    const percent = target > 0 ? ((supermarketReport.doanhThuQuyDoi || 0) / 1000000) / target : 0;
-                    return ui.formatPercentage(percent);
-                }
-                case 'TOP3_DTQD':
-                    return services.formatEmployeeList(services.getEmployeeRanking(rankingReportData, 'doanhThuQuyDoi', 'desc', 3), 'doanhThuQuyDoi', 'currency');
-                case 'TOP5_DTQD':
-                    return services.formatEmployeeList(services.getEmployeeRanking(rankingReportData, 'doanhThuQuyDoi', 'desc', 5), 'doanhThuQuyDoi', 'currency');
-                case 'BOT3_DTQD':
-                    return services.formatEmployeeList(services.getEmployeeRanking(rankingReportData, 'doanhThuQuyDoi', 'asc', 3), 'doanhThuQuyDoi', 'currency');
-                case 'BOT5_DTQD':
-                    return services.formatEmployeeList(services.getEmployeeRanking(rankingReportData, 'doanhThuQuyDoi', 'asc', 5), 'doanhThuQuyDoi', 'currency');
-                case 'TOP3_THUNHAP':
-                     return services.formatEmployeeList(services.getEmployeeRanking(rankingReportData, 'tongThuNhap', 'desc', 3), 'tongThuNhap', 'currency');
-                case 'TOP5_THUNHAP':
-                    return services.formatEmployeeList(services.getEmployeeRanking(rankingReportData, 'tongThuNhap', 'desc', 5), 'tongThuNhap', 'currency');
-                case 'BOT3_THUNHAP':
-                    return services.formatEmployeeList(services.getEmployeeRanking(rankingReportData, 'tongThuNhap', 'asc', 3), 'tongThuNhap', 'currency');
-                case 'BOT5_THUNHAP':
-                    return services.formatEmployeeList(services.getEmployeeRanking(rankingReportData, 'tongThuNhap', 'asc', 5), 'tongThuNhap', 'currency');
-                case 'TOP3_TLQD':
-                    return services.formatEmployeeList(services.getEmployeeRanking(rankingReportData, 'hieuQuaQuyDoi', 'desc', 3), 'hieuQuaQuyDoi', 'percent');
-                case 'TOP5_TLQD':
-                    return services.formatEmployeeList(services.getEmployeeRanking(rankingReportData, 'hieuQuaQuyDoi', 'desc', 5), 'hieuQuaQuyDoi', 'percent');
-                case 'BOT3_TLQD':
-                    return services.formatEmployeeList(services.getEmployeeRanking(rankingReportData, 'hieuQuaQuyDoi', 'asc', 3), 'hieuQuaQuyDoi', 'percent');
-                case 'BOT5_TLQD':
-                    return services.formatEmployeeList(services.getEmployeeRanking(rankingReportData, 'hieuQuaQuyDoi', 'asc', 5), 'hieuQuaQuyDoi', 'percent');
-                default:
-                    return match;
-            }
-        });
+            const currentDay = now.getDate() || 1;
 
-        return processedText;
+            // Simple Static Tags
+            if (tag === 'NGAY') return now.toLocaleDateString('vi-VN');
+            if (tag === 'GIO') return now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+
+            // Supermarket KPI Tags
+            if (tag === 'DT_THUC') return ui.formatNumber((supermarketReport.doanhThu || 0) / 1000000, 0) + " tr";
+            if (tag === 'DTQD') return ui.formatNumber((supermarketReport.doanhThuQuyDoi || 0) / 1000000, 0) + " tr";
+            if (tag === '%HT_DTT') {
+                const target = parseFloat(goals.doanhThuThuc) || 0;
+                const percent = target > 0 ? ((supermarketReport.doanhThu || 0) / 1000000) / target : 0;
+                return ui.formatPercentage(percent);
+            }
+            if (tag === '%HT_DTQD') {
+                if (supermarketReport.pastedHTQD) return supermarketReport.pastedHTQD;
+                const target = parseFloat(goals.doanhThuQD) || 0;
+                const percent = target > 0 ? ((supermarketReport.doanhThuQuyDoi || 0) / 1000000) / target : 0;
+                return ui.formatPercentage(percent);
+            }
+            if (tag === 'TLQD') return ui.formatPercentage(supermarketReport.hieuQuaQuyDoi || 0);
+            if (tag === 'DT_CHUAXUAT') return ui.formatRevenue(supermarketReport.doanhThuQuyDoiChuaXuat || 0) + " tr";
+            if (tag === 'SS_CUNGKY') return supermarketReport.comparisonData?.percentage || 'N/A';
+
+            // Competition Tags
+            if (tag.startsWith('TD_')) {
+                const total = competitionData?.length || 0;
+                const dat = (competitionData || []).filter(d => parseFloat(String(d.hoanThanh).replace('%','')) >= 100).length;
+                if (tag === 'TD_TONG_CT') return total;
+                if (tag === 'TD_CT_DAT') return dat;
+                if (tag === 'TD_CT_CHUADAT') return total - dat;
+                if (tag === 'TD_TYLE_DAT') return total > 0 ? ui.formatPercentage(dat / total) : '0%';
+            }
+
+            // Detailed List Tags
+            if (tag === 'TOP_QDC_INFO') {
+                if (!supermarketReport.qdc) return " (không có)";
+                const qdcArray = Object.values(supermarketReport.qdc).filter(item => item.sl > 0);
+                const sortedQDC = qdcArray.sort((a,b) => b.dtqd - a.dtqd);
+                return "\n" + sortedQDC.map(item => `  • ${item.name}: SL ${ui.formatNumber(item.sl)}, TB ${ui.formatNumber(item.sl / currentDay, 1)}/ngày`).join("\n");
+            }
+            if (tag === 'TOP_NGANHHANG_SL') {
+                if (!supermarketReport.nganhHangChiTiet) return " (không có)";
+                const nganhHangArray = Object.values(supermarketReport.nganhHangChiTiet).filter(item => item.quantity > 0);
+                const topNganhHang = nganhHangArray.sort((a,b) => b.quantity - a.quantity).slice(0, 10);
+                return "\n" + topNganhHang.map(item => `  • ${utils.cleanCategoryName(item.name)}: ${ui.formatNumber(item.quantity)}`).join("\n");
+            }
+    
+            // Dynamic Ranking Tags
+            const rankingRegex = /^(TOP|BOT)(\d)_(\w+)_([\s\S]+)$/;
+            const rankingMatch = tag.match(rankingRegex);
+            if (rankingMatch && rankingReportData) {
+                const [_, type, count, metric, department] = rankingMatch;
+                const direction = type === 'TOP' ? 'desc' : 'asc';
+                const metricInfo = tagMapping[metric];
+                if (metricInfo) {
+                    const ranking = services.getEmployeeRanking(rankingReportData, metricInfo.key, direction, parseInt(count), department);
+                    return services.formatEmployeeList(ranking, metricInfo.key, metricInfo.format);
+                }
+            }
+
+            // Dynamic Individual Info Tags
+            const qdcInfoRegex = /^QDC_INFO_(.+)$/;
+            const qdcMatch = tag.match(qdcInfoRegex);
+            if(qdcMatch && supermarketReport.qdc){
+                const itemName = qdcMatch[1];
+                const itemData = Object.values(supermarketReport.qdc).find(i => i.name === itemName);
+                return itemData ? `SL ${ui.formatNumber(itemData.sl)}, TB ${ui.formatNumber(itemData.sl / currentDay, 1)}/ngày` : '(N/A)';
+            }
+            
+            const nhInfoRegex = /^NH_INFO_(.+)$/;
+            const nhMatch = tag.match(nhInfoRegex);
+            if(nhMatch && supermarketReport.nganhHangChiTiet){
+                const itemName = nhMatch[1];
+                 const itemData = Object.values(supermarketReport.nganhHangChiTiet).find(i => utils.cleanCategoryName(i.name) === itemName);
+                return itemData ? `SL ${ui.formatNumber(itemData.quantity)}, TB ${ui.formatNumber(itemData.quantity / currentDay, 1)}/ngày` : '(N/A)';
+            }
+
+            return match; // Return original tag if not found
+        });
     },
     
     aggregateReport(reportData, selectedWarehouse = null) {
         if (!reportData || reportData.length === 0) {
-            const emptyShell = { doanhThu: 0, doanhThuQuyDoi: 0, dtCE: 0, dtICT: 0, qdc: {}, nganhHangChiTiet: {} };
-            const numericKeys = ['doanhThuTraGop', 'dtGiaDung', 'dtMLN', 'dtPhuKien', 'slSmartphone', 'slSimOnline', 'slUDDD', 'slBaoHiemDenominator', 'slBaoHiemVAS'];
+            const emptyShell = { doanhThu: 0, doanhThuQuyDoi: 0, dtCE: 0, dtICT: 0, qdc: {}, nganhHangChiTiet: {}, comparisonData: { value: 0, percentage: 'N/A' } };
+            const numericKeys = ['doanhThuTraGop', 'doanhThuChuaXuat','doanhThuQuyDoiChuaXuat', 'dtGiaDung', 'dtMLN', 'dtPhuKien', 'slSmartphone', 'slSimOnline', 'slUDDD', 'slBaoHiemDenominator', 'slBaoHiemVAS'];
             numericKeys.forEach(key => emptyShell[key] = 0);
             return emptyShell;
         }
@@ -1001,12 +974,14 @@ const services = {
 
         const aggregatedNganhHang = {};
         reportData.forEach(employee => {
-            Object.entries(employee.doanhThuTheoNganhHang).forEach(([name, values]) => {
-                if (!aggregatedNganhHang[name]) aggregatedNganhHang[name] = { quantity: 0, revenue: 0, revenueQuyDoi: 0, donGia: 0 };
-                aggregatedNganhHang[name].quantity += values.quantity;
-                aggregatedNganhHang[name].revenue += values.revenue;
-                aggregatedNganhHang[name].revenueQuyDoi += values.revenueQuyDoi;
-            });
+            if (employee.doanhThuTheoNganhHang) {
+                Object.entries(employee.doanhThuTheoNganhHang).forEach(([name, values]) => {
+                    if (!aggregatedNganhHang[name]) aggregatedNganhHang[name] = { name: name, quantity: 0, revenue: 0, revenueQuyDoi: 0, donGia: 0 };
+                    aggregatedNganhHang[name].quantity += values.quantity;
+                    aggregatedNganhHang[name].revenue += values.revenue;
+                    aggregatedNganhHang[name].revenueQuyDoi += values.revenueQuyDoi;
+                });
+            }
         });
         for (const name in aggregatedNganhHang) {
             const item = aggregatedNganhHang[name];
@@ -1023,6 +998,9 @@ const services = {
         supermarketReport.pctVAS = supermarketReport.slSmartphone > 0 ? supermarketReport.slUDDD / supermarketReport.slSmartphone : 0;
         supermarketReport.pctBaoHiem = supermarketReport.slBaoHiemDenominator > 0 ? supermarketReport.slBaoHiemVAS / supermarketReport.slBaoHiemDenominator : 0;
         
+        const pastedLuyKeData = services.parseLuyKePastedData(document.getElementById('paste-luyke')?.value || '');
+        supermarketReport.comparisonData = pastedLuyKeData.comparisonData;
+
         if (supermarketReport.qdc) {
             for (const key in supermarketReport.qdc) {
                 const group = supermarketReport.qdc[key];
@@ -1038,7 +1016,8 @@ const services = {
         return {
             doanhThu: cleanValue(pastedData.mainKpis['Thực hiện DT thực']) * 1000000,
             doanhThuQuyDoi: cleanValue(pastedData.mainKpis['Thực hiện DTQĐ']) * 1000000,
-            pastedHTQD: pastedData.mainKpis['% HT Target Dự Kiến (QĐ)'] || 'N/A'
+            pastedHTQD: pastedData.mainKpis['% HT Target Dự Kiến (QĐ)'] || 'N/A',
+            comparisonData: pastedData.comparisonData,
         };
     },
     
@@ -1051,7 +1030,6 @@ const services = {
         });
     },
     
-    // --- THI ĐUA VÙNG - HÀM MỚI ---
     _findHeaderAndProcess(sheet, requiredKeywords) {
         if (!sheet) return [];
         const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null });
@@ -1083,7 +1061,7 @@ const services = {
         const jsonData = dataRows.map(row => {
             const obj = {};
             foundHeaders.forEach((header, index) => {
-                if (header) { // Chỉ thêm vào object nếu header có tên
+                if (header) { 
                     const value = row[index];
                     const upperKey = header.toUpperCase();
                     if (upperKey.includes('KÊNH') || upperKey.includes('SIÊU THỊ') || upperKey.includes('NGÀNH HÀNG') || upperKey.includes('TỈNH') || upperKey.includes('BOSS')) {
@@ -1100,7 +1078,7 @@ const services = {
             return obj;
         }).filter(obj => {
             const supermarketKey = Object.keys(obj).find(k => k.toLowerCase().includes('siêu thị'));
-            return supermarketKey && obj[supermarketKey]; // Chỉ giữ lại những dòng có dữ liệu ở cột siêu thị
+            return supermarketKey && obj[supermarketKey];
         });
     
         return jsonData;

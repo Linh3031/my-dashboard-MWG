@@ -1,4 +1,4 @@
-/* Version 3.0 - Major UI overhaul for Thi Đua Vùng infographic */
+/* Version 3.2 - Fix modal z-index stacking issue */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -55,7 +55,7 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #
 .content-card { background-color: white; border-radius: 0.75rem; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); padding: 1rem 1.5rem; margin-bottom: 2rem; border: 1px solid #e5e7eb; }
 .content-card__header { font-size: 1.125rem; font-weight: 600; color: #374151; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e5e7eb; }
 
-#notification { position: fixed; bottom: 20px; right: 20px; padding: 1rem 1.5rem; border-radius: 0.5rem; color: white; z-index: 1050; opacity: 0; transition: opacity 0.5s, transform 0.5s; transform: translateY(100px); }
+#notification { position: fixed; bottom: 20px; right: 20px; padding: 1rem 1.5rem; border-radius: 0.5rem; color: white; z-index: 1200; opacity: 0; transition: opacity 0.5s, transform 0.5s; transform: translateY(100px); }
 #notification.show { opacity: 1; transform: translateY(0); }
 .notification-success { background-color: #28a745; }
 .notification-error { background-color: #dc3545; }
@@ -184,11 +184,13 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #
 .page-header__help-btn { background-color: #fee2e2; color: #991b1b; border-radius: 9999px; width: 2rem; height: 2rem; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s ease-in-out; border: none; }
 .page-header__help-btn:hover { background-color: #fecaca; transform: scale(1.1); }
 
-.modal { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease; }
-.modal.is-visible { opacity: 1; visibility: visible; }
+/* --- Z-INDEX FIX FOR MODAL --- */
+.modal { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; }
+.modal.hidden { display: none; }
 .modal__overlay { position: absolute; inset: 0; background-color: rgba(17, 24, 39, 0.6); backdrop-filter: blur(4px); cursor: pointer; }
-.modal__container { background-color: white; border-radius: 0.75rem; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); width: 90%; max-width: 600px; max-height: 90vh; display: flex; flex-direction: column; transform: scale(0.95); transition: transform 0.3s ease; }
-.modal.is-visible .modal__container { transform: scale(1); }
+.modal__container { position: relative; z-index: 1001; background-color: white; border-radius: 0.75rem; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); width: 90%; max-width: 600px; max-height: 90vh; display: flex; flex-direction: column; }
+/* --- END Z-INDEX FIX --- */
+
 .modal__container--large { max-width: 900px; }
 .modal__header { padding: 1rem 1.5rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
 .modal__title { font-size: 1.25rem; font-weight: 600; color: #1f2937; }
@@ -201,17 +203,41 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #
 .modal__content ul > * + * { margin-top: 0.5rem; }
 .modal__footer { padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb; background-color: #f9fafb; display: flex; justify-content: flex-end; gap: 0.75rem; flex-shrink: 0; }
 
+/* --- NEW COMPOSER STYLES --- */
 .composer { display: flex; flex-direction: column; gap: 1.5rem; }
+.composer__editor { flex-grow: 1; }
+.composer__tags { width: 100%; }
+
 .composer__label { display: block; font-weight: 500; color: #374151; margin-bottom: 0.5rem; }
 .composer__textarea { width: 100%; border: 1px solid #d1d5db; border-radius: 0.5rem; padding: 0.75rem; font-size: 0.875em; resize: vertical; }
 .composer__textarea:focus { border-color: #3b82f6; box-shadow: 0 0 0 1px #3b82f6; outline: none; }
-.composer__tags { border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; background-color: #f9fafb; }
+
+.composer__nav { display: flex; border-bottom: 1px solid #e5e7eb; margin-bottom: 1rem; }
+.composer__tab-btn { padding: 0.5rem 1rem; border: none; background-color: transparent; cursor: pointer; font-weight: 500; color: #6b7280; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.2s ease-in-out; font-size: 0.875em; }
+.composer__tab-btn:hover { background-color: #f9fafb; color: #1f2937; }
+.composer__tab-btn.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+
+.composer__tab-pane { display: none; }
+.composer__tab-pane.active { display: block; }
+
 .composer__tag-group { margin-bottom: 1rem; }
 .composer__tag-group:last-child { margin-bottom: 0; }
 .composer__tag-group-title { font-weight: 600; font-size: 0.875em; color: #4b5563; margin-bottom: 0.75rem; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.5rem; }
 .composer__tag-btn { background-color: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; border-radius: 9999px; padding: 0.25rem 0.75rem; font-size: 0.8rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease-in-out; margin: 0.25rem; }
 .composer__tag-btn:hover { background-color: #c7d2fe; transform: translateY(-1px); }
-@media (min-width: 768px) { .composer { flex-direction: row; } .composer__editor { flex-grow: 1; } .composer__tags { width: 320px; flex-shrink: 0; } }
+
+.composer__icon-btn { background-color: #f3f4f6; color: #1f2937; border: 1px solid #d1d5db; border-radius: 9999px; padding: 0.25rem 0.75rem; font-size: 1.1rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease-in-out; margin: 0.25rem; line-height: 1; }
+.composer__icon-btn:hover { background-color: #e5e7eb; transform: translateY(-1px); }
+
+.composer__filter-group { margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #e5e7eb; }
+.composer__select { width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; background-color: white; }
+
+@media (min-width: 768px) { 
+    .composer { flex-direction: row; } 
+    .composer__tags { width: 350px; flex-shrink: 0; border-left: 1px solid #e5e7eb; padding-left: 1.5rem; } 
+}
+
+/* --- END NEW COMPOSER STYLES --- */
 
 .view-switcher { display: flex; align-items: center; padding: 0.25rem; background-color: #e5e7eb; border-radius: 0.5rem; }
 .view-switcher__btn { padding: 0.5rem 1rem; border: none; background-color: transparent; border-radius: 0.375rem; font-weight: 500; color: #4b5563; cursor: pointer; transition: all 0.2s ease-in-out; }

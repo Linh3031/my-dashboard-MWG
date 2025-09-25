@@ -1,4 +1,4 @@
-// Version 2.1 - Add render logic for Thi Đua Vùng sub-tab
+// Version 2.2 - Update function call to generateLuyKeChuaXuatReport
 // MODULE: Chịu trách nhiệm cho Tab Sức khỏe Siêu thị (Lũy kế)
 
 import { appState } from './state.js';
@@ -17,14 +17,10 @@ const luykeTab = {
         const activeSubTabBtn = document.querySelector('#luyke-subtabs-nav .sub-tab-btn.active');
         const activeSubTabId = activeSubTabBtn ? activeSubTabBtn.dataset.target : 'subtab-luyke-sieu-thi';
 
-        // Tab "Thi đua vùng" có luồng dữ liệu riêng và không phụ thuộc vào YCX Lũy kế.
-        // Logic của nó sẽ được xử lý bằng các event listener riêng.
-        // Vì vậy, chúng ta chỉ cần thoát sớm để không chạy logic của các tab khác.
         if (activeSubTabId === 'subtab-luyke-thidua-vung') {
             return;
         }
 
-        // --- Logic chung cho các tab còn lại (dựa trên YCX Lũy kế) ---
         const selectedWarehouse = document.getElementById('luyke-filter-warehouse').value;
         const selectedDept = document.getElementById('luyke-filter-department').value;
         const selectedNames = appState.choices.luyke_employee ? appState.choices.luyke_employee.getValue(true) : [];
@@ -45,7 +41,6 @@ const luykeTab = {
         if (selectedDept) filteredReport = filteredReport.filter(nv => nv.boPhan === selectedDept);
         if (selectedNames && selectedNames.length > 0) filteredReport = filteredReport.filter(nv => selectedNames.includes(String(nv.maNV)));
 
-        // --- Render giao diện dựa trên sub-tab đang hoạt động ---
         if (activeSubTabId === 'subtab-luyke-sieu-thi') {
             const supermarketReport = services.aggregateReport(filteredReport, selectedWarehouse);
             const numDays = selectedDates.length > 0 ? selectedDates.length : new Set(appState.ycxData.map(row => new Date(row.ngayTao).toDateString())).size || 1;
@@ -55,7 +50,7 @@ const luykeTab = {
             ui.renderLuykeCategoryDetailsTable(supermarketReport, numDays);
             ui.renderLuykeQdcTable(supermarketReport, numDays);
             
-            const chuaXuatReport = services.generateChuaXuatReport(filteredYCXData);
+            const chuaXuatReport = services.generateLuyKeChuaXuatReport(filteredYCXData);
             ui.renderChuaXuatTable(chuaXuatReport);
 
             const pastedData = services.parseLuyKePastedData(document.getElementById('paste-luyke').value);

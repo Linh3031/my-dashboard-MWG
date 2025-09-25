@@ -1,4 +1,4 @@
-// Version 20.2 - Add selective screenshot logic for Thi Đua Vùng
+// Version 21.3 - Restore sorting, fix goal settings, and repair advanced filters
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -66,20 +66,36 @@ const idbHelper = {
 
 
 const app = {
-    currentVersion: '2.4',
+    currentVersion: '2.6',
 
     async init() {
         try {
             await firebase.init();
-            await idbHelper.openDB(); // Mở kết nối với IndexedDB
-            await this.loadDataFromStorage(); // Tải cả dữ liệu cố định và dữ liệu hàng ngày
+            await idbHelper.openDB();
+            
+            // Tải dữ liệu chính trước
+            await this.loadDataFromStorage();
+            
+            // Cài đặt giao diện và các trình lắng nghe sự kiện
             utils.loadInterfaceSettings();
             this.setupEventListeners();
             utils.applyContrastSetting();
             utils.loadHighlightSettings();
+            
+            // Đổ dữ liệu vào bộ lọc (Phải chạy sau khi DSNV đã được tải)
             ui.populateAllFilters();
+            
+            // FIX (BUG 3 & 4): Gọi hàm load mục tiêu sau khi bộ lọc đã được đổ dữ liệu
+            // Điều này đảm bảo các dropdown kho đã tồn tại và có giá trị để hàm load hoạt động đúng
+            utils.loadAndApplyLuykeGoalSettings();
+            utils.loadAndApplyRealtimeGoalSettings();
+
+            // Tải dữ liệu từ Local Storage cho các vùng paste
+            this.loadPastedData();
+            
             this.switchTab('home-section');
 
+            // Bắt đầu kiểm tra cập nhật
             this.checkForUpdates();
             setInterval(() => this.checkForUpdates(), 15 * 60 * 1000); 
         } catch (error) {
@@ -102,7 +118,6 @@ const app = {
     },
 
     async loadDataFromStorage() {
-        // --- Dữ liệu khai báo (vẫn dùng localStorage vì nhỏ) ---
         document.getElementById('declaration-ycx').value = localStorage.getItem('declaration_ycx') || config.DEFAULT_DATA.HINH_THUC_XUAT_TINH_DOANH_THU.join('\n');
         document.getElementById('declaration-ycx-gop').value = localStorage.getItem('declaration_ycx_gop') || config.DEFAULT_DATA.HINH_THUC_XUAT_TRA_GOP.join('\n');
         document.getElementById('declaration-heso').value = localStorage.getItem('declaration_heso') || Object.entries(config.DEFAULT_DATA.HE_SO_QUY_DOI).map(([k, v]) => `${k},${v}`).join('\n');
@@ -123,21 +138,12 @@ const app = {
             } catch (e) { console.error(`Lỗi đọc ${uiName} từ IndexedDB:`, e); }
         };
 
-        // --- Tải dữ liệu cố định từ IndexedDB ---
         await loadSavedFile('saved_danhsachnv', 'danhSachNhanVien', 'danhsachnv', 'danhsachnv', 'DSNV');
         await loadSavedFile('saved_ycx_thangtruoc', 'ycxDataThangTruoc', 'ycx', 'ycx-thangtruoc', 'YCXL Tháng Trước');
         await loadSavedFile('saved_thuongnong_thangtruoc', 'thuongNongDataThangTruoc', 'thuongnong', 'thuongnong-thangtruoc', 'Thưởng Nóng Tháng Trước');
-        await loadSavedFile('saved_ycx', 'ycxData', 'ycx', 'ycx', 'Yêu cầu xuất lũy kế'); // THÊM MỚI
+        await loadSavedFile('saved_ycx', 'ycxData', 'ycx', 'ycx', 'Yêu cầu xuất lũy kế');
 
-        const pasteThuongERPThangTruoc = localStorage.getItem('saved_thuongerp_thangtruoc');
-        if (pasteThuongERPThangTruoc) {
-            const el = document.getElementById('paste-thuongerp-thangtruoc');
-            if(el) {
-                el.value = pasteThuongERPThangTruoc;
-                this.handleErpThangTruocPaste({ target: el });
-            }
-        }
-        
+        // FIX (BUG 3): Tải cài đặt mục tiêu vào state nhưng chưa áp dụng vào UI vội
         try {
             const savedLuykeGoals = localStorage.getItem('luykeGoalSettings');
             if(savedLuykeGoals) appState.luykeGoalSettings = JSON.parse(savedLuykeGoals);
@@ -146,31 +152,30 @@ const app = {
             const savedTemplates = localStorage.getItem('composerTemplates');
             if (savedTemplates) appState.composerTemplates = JSON.parse(savedTemplates);
         } catch (e) { console.error("Lỗi đọc cài đặt từ localStorage:", e); }
-        
-        utils.loadAndApplyLuykeGoalSettings();
-
-        // --- Dữ liệu hàng ngày (vẫn dùng localStorage) ---
-        const loadDailyData = (key, stateKey, fileType, uiName) => {
-            const savedData = localStorage.getItem(key);
-            if (!savedData) return;
-            try {
-                const rawData = JSON.parse(savedData);
-                const { normalizedData, success } = services.normalizeData(rawData, fileType);
-                if (success) {
-                    appState[stateKey] = normalizedData;
-                    ui.updateFileStatus(fileType, 'Tải từ bộ nhớ đệm', `✓ Đã tải ${normalizedData.length} dòng.`, 'success');
-                }
-            } catch(e) { console.error(`Lỗi đọc ${uiName} từ localStorage:`, e); localStorage.removeItem(key); }
-        };
-        
-        loadDailyData('daily_giocong_data_raw', 'rawGioCongData', 'giocong', 'Giờ công');
-        loadDailyData('daily_thuongnong_data_raw', 'thuongNongData', 'thuongnong', 'Thưởng nóng');
+    },
+    
+    // Tách riêng hàm load dữ liệu paste để gọi sau khi mọi thứ đã sẵn sàng
+    loadPastedData() {
+        const pasteThuongERPThangTruoc = localStorage.getItem('saved_thuongerp_thangtruoc');
+        if (pasteThuongERPThangTruoc) {
+            const el = document.getElementById('paste-thuongerp-thangtruoc');
+            if(el) {
+                el.value = pasteThuongERPThangTruoc;
+                this.handleErpThangTruocPaste({ target: el });
+            }
+        }
 
         const pasteLuyke = localStorage.getItem('daily_paste_luyke');
-        if (pasteLuyke) document.getElementById('paste-luyke').value = pasteLuyke;
+        if (pasteLuyke) {
+            document.getElementById('paste-luyke').value = pasteLuyke;
+            this.handleLuykePaste();
+        }
 
         const pasteThiduaNV = localStorage.getItem('daily_paste_thiduanv');
-        if (pasteThiduaNV) document.getElementById('paste-thiduanv').value = pasteThiduaNV;
+        if (pasteThiduaNV) {
+            document.getElementById('paste-thiduanv').value = pasteThiduaNV;
+            this.handleThiduaNVPaste();
+        }
 
         const pasteThuongERP = localStorage.getItem('daily_paste_thuongerp');
         if (pasteThuongERP) {
@@ -180,10 +185,7 @@ const app = {
                 this.handleErpPaste();
             }
         }
-
-        if (appState.ycxData.length > 0 || pasteLuyke) {
-            this.processAndRenderAllReports();
-        }
+        this.processAndRenderAllReports();
     },
 
     handleFileRead(file) {
@@ -194,7 +196,7 @@ const app = {
                 try {
                     const data = new Uint8Array(event.target.result);
                     const workbook = XLSX.read(data, { type: 'array', cellDates: true });
-                    resolve(workbook); // Trả về toàn bộ workbook
+                    resolve(workbook);
                 } catch (err) { reject(err); }
             };
             reader.onerror = (err) => reject(new Error("Could not read the file: " + err));
@@ -239,9 +241,12 @@ const app = {
                     appState.choices[`${prefix}_employee`] = new Choices(employeeEl, multiSelectConfig);
                 }
                 
+                // FIX (BUG 4): Gán các instance của Choices.js vào appState
                 ['warehouse', 'department'].forEach(type => {
                     const el = document.getElementById(`${prefix}-filter-${type}`);
-                    if(el) new Choices(el, { searchEnabled: true, removeItemButton: false, itemSelectText: 'Chọn' });
+                    if(el) {
+                         appState.choices[`${prefix}_${type}`] = new Choices(el, { searchEnabled: true, removeItemButton: false, itemSelectText: 'Chọn' });
+                    }
                 });
 
                 ['nhanhang', 'nhomhang', 'employee'].forEach(type => {
@@ -299,7 +304,7 @@ const app = {
         document.querySelectorAll('a.nav-link').forEach(link => link.addEventListener('click', (e) => { e.preventDefault(); this.switchTab(link.getAttribute('href').substring(1)); }));
         document.querySelectorAll('.sub-tab-btn').forEach(btn => btn.addEventListener('click', (e) => {
             ui.handleSubTabClick(e.currentTarget);
-            luykeTab.render(); // Re-render tab lũy kế khi sub-tab thay đổi
+            luykeTab.render();
         }));
         document.querySelectorAll('.toggle-filters-btn').forEach(button => button.addEventListener('click', () => ui.toggleFilterSection(button.dataset.target)));
         
@@ -309,18 +314,8 @@ const app = {
             }
         });
         
-        document.getElementById('paste-luyke')?.addEventListener('input', (e) => { 
-            localStorage.setItem('daily_paste_luyke', e.target.value);
-            ui.updatePasteStatus('status-luyke'); 
-            this.processAndRenderAllReports(); 
-        });
-        
-        document.getElementById('paste-thiduanv')?.addEventListener('input', (e) => {
-            localStorage.setItem('daily_paste_thiduanv', e.target.value);
-            ui.displayCompetitionReport();
-            ui.updatePasteStatus('status-thiduanv', '✓ Đã nhận dữ liệu, đang hiển thị bảng.');
-        });
-
+        document.getElementById('paste-luyke')?.addEventListener('input', () => this.handleLuykePaste());
+        document.getElementById('paste-thiduanv')?.addEventListener('input', () => this.handleThiduaNVPaste());
         document.getElementById('paste-thuongerp')?.addEventListener('input', () => this.handleErpPaste());
         document.getElementById('paste-thuongerp-thangtruoc')?.addEventListener('input', (e) => this.handleErpThangTruocPaste(e));
         document.getElementById('realtime-file-input')?.addEventListener('change', (e) => this.handleRealtimeFileInput(e));
@@ -349,6 +344,36 @@ const app = {
         this.setupHighlightingEventListeners();
         this.setupActionButtons();
         this.setupCollaborationEventListeners();
+        this.setupSortingEventListeners(); // FIX (BUG 1): Gọi hàm cài đặt sắp xếp
+    },
+    
+    // FIX (BUG 1): Hàm mới để xử lý sắp xếp chung
+    setupSortingEventListeners() {
+        document.body.addEventListener('click', (e) => {
+            const header = e.target.closest('.sortable');
+            if (!header) return;
+
+            const table = header.closest('table');
+            const tableType = table?.dataset.tableType;
+            const sortKey = header.dataset.sort;
+
+            if (!tableType || !sortKey) return;
+
+            const currentState = appState.sortState[tableType] || { key: sortKey, direction: 'desc' };
+            
+            let newDirection;
+            if (currentState.key === sortKey) {
+                newDirection = currentState.direction === 'desc' ? 'asc' : 'desc';
+            } else {
+                newDirection = 'desc';
+            }
+            appState.sortState[tableType] = { key: sortKey, direction: newDirection };
+
+            // Trigger re-render of the correct tab
+            if (tableType.startsWith('luyke')) luykeTab.render();
+            else if (tableType.startsWith('sknv') || tableType.startsWith('doanhthu_lk') || tableType.startsWith('thunhap') || tableType.startsWith('hieu_qua')) sknvTab.render();
+            else if (tableType.startsWith('realtime')) realtimeTab.render();
+        });
     },
 
     setupSettingsAndModals() {
@@ -365,10 +390,21 @@ const app = {
 
         document.querySelectorAll('.kpi-color-input').forEach(picker => picker.addEventListener('input', () => utils.saveInterfaceSettings()));
         document.getElementById('save-declaration-btn')?.addEventListener('click', () => this.saveDeclarations());
+        
         document.getElementById('rt-goal-warehouse-select')?.addEventListener('change', () => utils.loadAndApplyRealtimeGoalSettings());
-        document.querySelectorAll('.rt-goal-input, .rt-setting-input').forEach(input => input.addEventListener('input', () => utils.saveRealtimeGoalSettings()));
         document.getElementById('luyke-goal-warehouse-select')?.addEventListener('change', () => utils.loadAndApplyLuykeGoalSettings());
-        document.querySelectorAll('.luyke-goal-input').forEach(input => input.addEventListener('input', () => utils.saveLuykeGoalSettings()));
+        
+        // FIX (BUG 3): Thêm render() vào trình lắng nghe sự kiện của mục tiêu
+        document.querySelectorAll('.rt-goal-input, .rt-setting-input').forEach(input => input.addEventListener('input', () => {
+            utils.saveRealtimeGoalSettings();
+            realtimeTab.render(); // Cập nhật giao diện ngay lập tức
+        }));
+        document.querySelectorAll('.luyke-goal-input').forEach(input => input.addEventListener('input', () => {
+            utils.saveLuykeGoalSettings();
+            sknvTab.render(); // Cập nhật cả 2 tab dùng chung mục tiêu luyke
+            luykeTab.render();
+        }));
+
         document.getElementById('toggle-debug-btn')?.addEventListener('click', (e) => ui.toggleDebugTool(e.currentTarget));
         document.body.addEventListener('click', (e) => {
             const helpTrigger = e.target.closest('.page-header__help-btn');
@@ -394,10 +430,16 @@ const app = {
             if (target.id === 'submit-feedback-btn') this.handleSubmitFeedback();
             const feedbackItem = target.closest('.feedback-item');
             if (feedbackItem) this.handleFeedbackReplyActions(e, feedbackItem);
+            
             const composerTrigger = target.closest('.action-btn--composer');
-            if (composerTrigger) ui.showComposerModal(composerTrigger.id.split('-')[1]);
+            if (composerTrigger) {
+                const sectionId = composerTrigger.id.split('-')[1];
+                this.prepareAndShowComposer(sectionId);
+            }
+
             const composerModal = target.closest('#composer-modal');
             if (composerModal) this.handleComposerActions(e, composerModal);
+
             if (target.id === 'copy-from-preview-btn') ui.copyFromPreview();
             if (target.id === 'save-help-content-btn') this.saveHelpContent();
         });
@@ -417,7 +459,6 @@ const app = {
                 const title = activeTabButton.dataset.title || 'BaoCao';
                 let elementToCapture;
 
-                // --- LOGIC CHỤP MÀN HÌNH CÓ ĐIỀU KIỆN ---
                 if (prefix === 'luyke' && activeTabButton.dataset.target === 'subtab-luyke-thidua-vung') {
                     elementToCapture = document.getElementById('thidua-vung-infographic-container');
                 } else {
@@ -470,6 +511,10 @@ const app = {
                 if (stateKey === 'danhSachNhanVien') {
                     services.updateEmployeeMaps();
                     ui.populateAllFilters();
+                    
+                    // Sau khi DSNV được cập nhật và bộ lọc được điền, tải lại cài đặt mục tiêu
+                    utils.loadAndApplyLuykeGoalSettings();
+                    utils.loadAndApplyRealtimeGoalSettings();
                 }
                 ui.updateFileStatus(fileType, file.name, `✓ Đã tải ${normalizedData.length} dòng.`, 'success');
                 ui.showNotification(`Tải thành công file "${dataName}"!`, 'success');
@@ -585,6 +630,20 @@ const app = {
         document.documentElement.dataset.contrast = level;
     },
 
+    handleLuykePaste() {
+        const pastedText = document.getElementById('paste-luyke')?.value || '';
+        localStorage.setItem('daily_paste_luyke', pastedText);
+        ui.updatePasteStatus('status-luyke');
+        this.processAndRenderAllReports();
+    },
+
+    handleThiduaNVPaste() {
+        const pastedText = document.getElementById('paste-thiduanv')?.value || '';
+        localStorage.setItem('daily_paste_thiduanv', pastedText);
+        sknvTab.render();
+        ui.updatePasteStatus('status-thiduanv', '✓ Đã xử lý và hiển thị báo cáo.');
+    },
+
     handleErpPaste() {
         const pastedText = document.getElementById('paste-thuongerp')?.value || '';
         localStorage.setItem('daily_paste_thuongerp', pastedText);
@@ -658,12 +717,96 @@ const app = {
         }
     },
     
-    handleComposerActions(e, modal) {
-        const sectionId = modal.dataset.sectionId;
-        const textarea = document.getElementById('composer-textarea');
-        if (e.target.matches('.composer__tag-btn')) {
-            ui.insertComposerTag(textarea, e.target.dataset.tag);
+    _getFilteredReportData(sectionId) {
+        const masterData = appState.masterReportData[sectionId] || [];
+        if (masterData.length === 0) return [];
+
+        const selectedWarehouse = document.getElementById(`${sectionId}-filter-warehouse`).value;
+        const selectedDept = document.getElementById(`${sectionId}-filter-department`).value;
+        const selectedNames = appState.choices[`${sectionId}_employee`] ? appState.choices[`${sectionId}_employee`].getValue(true) : [];
+        
+        let filteredReport = masterData;
+        if (selectedWarehouse) filteredReport = filteredReport.filter(nv => nv.maKho == selectedWarehouse);
+        if (selectedDept) filteredReport = filteredReport.filter(nv => nv.boPhan === selectedDept);
+        if (selectedNames && selectedNames.length > 0) filteredReport = filteredReport.filter(nv => selectedNames.includes(String(nv.maNV)));
+
+        return filteredReport;
+    },
+
+    prepareAndShowComposer(sectionId) {
+        const deptFilter = document.getElementById('composer-dept-filter');
+        if (deptFilter) {
+            const uniqueDepartments = [...new Set(appState.danhSachNhanVien.map(nv => nv.boPhan).filter(Boolean))].sort();
+            deptFilter.innerHTML = '<option value="ALL">Toàn siêu thị</option>' + uniqueDepartments.map(dept => `<option value="${dept}">${dept}</option>`).join('');
         }
+        
+        const filteredReportData = this._getFilteredReportData(sectionId);
+        if (filteredReportData.length === 0) {
+            ui.showNotification("Không có dữ liệu đã lọc để tạo thẻ nhận xét.", "error");
+        }
+        const supermarketReport = services.aggregateReport(filteredReportData);
+
+        const qdcContainer = document.getElementById('composer-qdc-tags-container');
+        if (qdcContainer) {
+            qdcContainer.innerHTML = '<h5 class="composer__tag-group-title">Chọn Nhóm Hàng QĐC</h5>';
+            if (supermarketReport.qdc) {
+                Object.values(supermarketReport.qdc).sort((a,b) => b.dtqd - a.dtqd).forEach(item => {
+                    const btn = document.createElement('button');
+                    btn.className = 'composer__tag-btn';
+                    btn.dataset.tagTemplate = `[QDC_INFO_${item.name}]`;
+                    btn.textContent = item.name;
+                    qdcContainer.appendChild(btn);
+                });
+            }
+        }
+        
+        const nganhHangContainer = document.getElementById('composer-nganhhang-tags-container');
+        if (nganhHangContainer) {
+            nganhHangContainer.innerHTML = '<h5 class="composer__tag-group-title">Chọn Ngành Hàng Chi Tiết</h5>';
+            if (supermarketReport.nganhHangChiTiet) {
+                 Object.values(supermarketReport.nganhHangChiTiet).sort((a,b) => b.revenue - a.revenue).forEach(item => {
+                    const btn = document.createElement('button');
+                    btn.className = 'composer__tag-btn';
+                    btn.dataset.tagTemplate = `[NH_INFO_${item.name}]`;
+                    btn.textContent = utils.cleanCategoryName(item.name);
+                    nganhHangContainer.appendChild(btn);
+                });
+            }
+        }
+        
+        ui.showComposerModal(sectionId);
+    },
+
+    handleComposerActions(e, modal) {
+        const textarea = document.getElementById('composer-textarea');
+        
+        if (e.target.matches('.composer__tab-btn, .composer__sub-tab-btn')) {
+            const nav = e.target.closest('.composer__nav, .composer__sub-nav');
+            const content = nav.nextElementSibling;
+            nav.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
+            content.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
+            e.target.classList.add('active');
+            const targetId = e.target.dataset.tab || e.target.dataset.subTab;
+            content.querySelector(`#${targetId}`).classList.add('active');
+            return;
+        }
+
+        if (e.target.matches('.composer__icon-btn')) {
+            ui.insertComposerTag(textarea, e.target.textContent);
+            return;
+        }
+        
+        if (e.target.matches('.composer__tag-btn')) {
+            let tagToInsert = e.target.dataset.tag;
+            if (e.target.dataset.tagTemplate) {
+                const dept = document.getElementById('composer-dept-filter').value;
+                tagToInsert = e.target.dataset.tagTemplate.replace('{dept}', dept);
+            }
+            ui.insertComposerTag(textarea, tagToInsert);
+            return;
+        }
+
+        const sectionId = modal.dataset.sectionId;
         if (e.target.id === 'save-composer-template-btn') {
             appState.composerTemplates[sectionId] = textarea.value;
             localStorage.setItem('composerTemplates', JSON.stringify(appState.composerTemplates));
@@ -671,25 +814,21 @@ const app = {
         }
         if (e.target.id === 'copy-composed-notification-btn') {
             const template = textarea.value;
-            let supermarketReport, goals;
-            const rankingReportData = appState.masterReportData.sknv;
-
-            if (sectionId === 'luyke') {
-                const pastedData = services.parseLuyKePastedData(document.getElementById('paste-luyke').value);
-                supermarketReport = services.getSupermarketReportFromPastedData(pastedData);
-                const selectedWarehouse = document.getElementById('luyke-filter-warehouse').value;
-                goals = utils.getLuykeGoalSettings(selectedWarehouse).goals;
-            } else { 
-                const reportData = appState.masterReportData[sectionId];
-                if (!reportData || reportData.length === 0) {
-                    ui.showNotification("Lỗi: Không có dữ liệu để tạo nhận xét.", "error"); return;
-                }
-                supermarketReport = services.aggregateReport(reportData);
-                const selectedWarehouse = document.getElementById(`${sectionId}-filter-warehouse`).value;
-                goals = sectionId === 'realtime' ? utils.getRealtimeGoalSettings(selectedWarehouse).goals : utils.getLuykeGoalSettings(selectedWarehouse).goals;
+            const filteredReportData = this._getFilteredReportData(sectionId);
+            if (filteredReportData.length === 0 && sectionId !== 'luyke') {
+                ui.showNotification("Lỗi: Không có dữ liệu đã lọc để tạo nhận xét.", "error"); return;
             }
 
-            const processedText = services.processComposerTemplate(template, supermarketReport, goals, rankingReportData);
+            const supermarketReport = services.aggregateReport(filteredReportData);
+            const selectedWarehouse = document.getElementById(`${sectionId}-filter-warehouse`).value;
+            const goals = sectionId === 'realtime' ? utils.getRealtimeGoalSettings(selectedWarehouse).goals : utils.getLuykeGoalSettings(selectedWarehouse).goals;
+            
+            if (sectionId === 'luyke') {
+                const pastedData = services.parseLuyKePastedData(document.getElementById('paste-luyke').value);
+                supermarketReport.comparisonData = pastedData.comparisonData;
+            }
+
+            const processedText = services.processComposerTemplate(template, supermarketReport, goals, filteredReportData, appState.competitionData);
             ui.showPreviewAndCopy(processedText);
         }
     },
@@ -745,7 +884,6 @@ const app = {
         }
     },
     
-    // --- HÀM MỚI CHO THI ĐUA VÙNG ---
     async handleThiDuaVungFileInput(e) {
         const fileInput = e.target;
         const file = fileInput.files[0];
@@ -764,7 +902,6 @@ const app = {
             appState.thiDuaVungChiTiet = chiTietData;
             appState.thiDuaVungTong = tongData;
 
-            // Debug
             appState.debugInfo.thiDuaVungChiTietRaw = chiTietData.slice(0, 10);
             appState.debugInfo.thiDuaVungTongRaw = tongData.slice(0, 10);
             ui.displayThiDuaVungDebugInfo();
@@ -801,7 +938,6 @@ const app = {
             const reportData = services.generateThiDuaVungReport(selectedValue);
             ui.renderThiDuaVungInfographic(reportData);
         } else {
-            // Clear the infographic if no supermarket is selected
             const container = document.getElementById('thidua-vung-infographic-container');
             if(container) container.innerHTML = `<div class="placeholder-message">Vui lòng chọn một siêu thị để xem báo cáo.</div>`;
         }
