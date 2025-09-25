@@ -1,5 +1,23 @@
 [
+{
+    "version": "2.6",
+    "date": "25/09/2025",
+    "notes": [
+      "Sửa lỗi tính năng sắp xếp trên tất cả các bảng.",
+      "Phục hồi báo cáo 'Thi đua NV' và 'Hiệu quả khai thác LK'.",
+      "Sửa lỗi 'Thiết lập mục tiêu' cập nhật không tức thời.",
+      "Sửa lỗi bộ lọc nâng cao không hiển thị dữ liệu."
+    ]
+  },
   {
+    "version": "2.5",
+    "date": "24/09/2025",
+    "notes": [
+      "Thêm tính năng xử lý file thi đua theo vùng trong 'Sức khỏe siêu thị.",
+      "Nâng cấp tính năng 'Nhận xét' : thêm icon, thêm các thẻ tùy chọn"
+    ]
+  },
+    {
     "version": "2.2",
     "date": "23/09/2025",
     "notes": [

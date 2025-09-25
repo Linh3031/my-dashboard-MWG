@@ -1,4 +1,4 @@
-// Version 2.2 - Add raw pasted data renderer for Thi Đua NV
+// Version 2.3 - Restore competition report processing logic
 // MODULE: UI SKNV
 // Chứa các hàm render giao diện cho tab "Sức khỏe nhân viên".
 
@@ -710,23 +710,40 @@ export const uiSknv = {
             </tbody></table></div></div>`;
     },
 
-    // --- HÀM ĐƯỢC CẬP NHẬT ---
+    // --- HÀM ĐƯỢC CẬP NHẬT (FIX BUG 2) ---
     displayCompetitionReport() {
         const container = document.getElementById('employee-competition-container');
         if (!container) return;
     
-        const rawText = document.getElementById('paste-thiduanv')?.value || '';
+        const data = appState.thiDuaReportData;
+        const activeViewBtn = document.querySelector('#thidua-view-selector .view-switcher__btn.active');
+        const viewType = activeViewBtn ? activeViewBtn.dataset.view : 'summary';
     
-        if (!rawText.trim()) {
-            container.innerHTML = `<p class="text-gray-500">Vui lòng dán dữ liệu vào ô "Thi đua nhân viên" ở tab Cập nhật dữ liệu để xem báo cáo.</p>`;
+        // Hiển thị thông tin chẩn đoán trước
+        uiComponents.displayPastedDebugInfo('thiduanv-pasted');
+    
+        // Kiểm tra xem có dữ liệu đã xử lý để hiển thị không
+        if (!data || data.length === 0) {
+            container.innerHTML = `<p class="text-gray-500">Không có dữ liệu thi đua để hiển thị. Vui lòng dán "Data lũy kế" và "Thi đua nhân viên" ở tab Cập nhật dữ liệu để xử lý báo cáo.</p>`;
             return;
         }
     
-        const parsedData = services.parsePastedThiDuaTableData(rawText);
-        container.innerHTML = this.renderPastedThiDuaTable(parsedData);
+        // Dựa vào viewType để render nội dung phù hợp
+        let htmlContent = '';
+        if (viewType === 'summary') {
+            htmlContent = this.renderCompetitionSummary(data);
+        } else if (viewType === 'category') {
+            htmlContent = this.renderCompetitionByCategory(data);
+        } else if (viewType === 'employee') {
+            const selectedMaNV = document.getElementById('thidua-employee-filter')?.value;
+            const employeeData = data.find(e => String(e.maNV) === String(selectedMaNV));
+            htmlContent = this.renderCompetitionByEmployee(employeeData);
+        }
+        
+        container.innerHTML = htmlContent;
     },
 
-    // --- HÀM MỚI ---
+    // --- HÀM NÀY GIỮ LẠI ĐỂ DỰ PHÒNG, NHƯNG KHÔNG CÒN ĐƯỢC SỬ DỤNG TRỰC TIẾP
     renderPastedThiDuaTable(data) {
         if (!data || !data.success) {
             return `<div class="p-4 bg-red-100 text-red-700 rounded-lg">

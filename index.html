@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Công cụ phân tích số cho QLST MWG 2.5</title>
+    <title>Công cụ phân tích số cho QLST MWG 3.2</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -466,7 +466,6 @@
                         </div>
                     </div>
                 </section>
-                
                 <section id="health-section" class="page-section hidden">
                     <div id="health-section-placeholder" class="placeholder-message hidden">Vui lòng cập nhật danh sách nhân viên để xem kết quả.</div>
                     <div id="health-section-content">
@@ -738,7 +737,7 @@
                                     </div>
                                     <div id="income-report-container"></div>
                                 </div>
-                                <div id="subtab-hieu-qua-khai-thac" class="sub-tab-content hidden space-y-6" data-capture-preset="landscape-table">
+                                <div id="subtab-hieu-qua-khai-thac-luy-ke" class="sub-tab-content hidden space-y-6" data-capture-preset="landscape-table">
                                      <div id="efficiency-report-container"></div>
                                 </div>
                                 <div id="subtab-doanhthu-nganhhang" class="sub-tab-content hidden space-y-6" data-capture-preset="mobile-portrait">
@@ -1047,41 +1046,102 @@
                 <div class="composer">
                     <div class="composer__editor">
                         <label for="composer-textarea" class="composer__label">Nội dung mẫu</label>
-                        <textarea id="composer-textarea" class="composer__textarea" rows="10" placeholder="Soạn thảo nội dung và nhấn vào các thẻ bên dưới để chèn dữ liệu động..."></textarea>
+                        <textarea id="composer-textarea" class="composer__textarea" rows="15" placeholder="Soạn thảo nội dung và chọn các thẻ bên dưới..."></textarea>
                     </div>
                     <div class="composer__tags">
-                        <div class="composer__tag-group">
-                            <h5 class="composer__tag-group-title">Chung</h5>
-                            <button class="composer__tag-btn" data-tag="[NGAY]">Ngày</button>
-                            <button class="composer__tag-btn" data-tag="[GIO]">Giờ</button>
+                        <div class="composer__nav">
+                            <button class="composer__tab-btn active" data-tab="tab-general">Chung & Icons</button>
+                            <button class="composer__tab-btn" data-tab="tab-kpi">KPIs Siêu Thị</button>
+                            <button class="composer__tab-btn" data-tab="tab-ranking">Xếp Hạng NV</button>
+                            <button class="composer__tab-btn" data-tab="tab-details">Thi Đua & Chi Tiết</button>
                         </div>
-                        <div class="composer__tag-group">
-                            <h5 class="composer__tag-group-title">Lũy kế / Realtime</h5>
-                            <button class="composer__tag-btn" data-tag="[DT_THUC]">DT Thực</button>
-                            <button class="composer__tag-btn" data-tag="[DTQD]">DT Quy đổi</button>
-                            <button class="composer__tag-btn" data-tag="[%HT_DTT]">%HT DT Thực</button>
-                            <button class="composer__tag-btn" data-tag="[%HT_DTQD]">%HT DT QĐ</button>
-                        </div>
-                        <div class="composer__tag-group">
-                            <h5 class="composer__tag-group-title">Xếp hạng DT Quy Đổi</h5>
-                            <button class="composer__tag-btn" data-tag="[TOP3_DTQD]">Top 3 NV</button>
-                            <button class="composer__tag-btn" data-tag="[TOP5_DTQD]">Top 5 NV</button>
-                            <button class="composer__tag-btn" data-tag="[BOT3_DTQD]">Bot 3 NV</button>
-                            <button class="composer__tag-btn" data-tag="[BOT5_DTQD]">Bot 5 NV</button>
-                        </div>
-                         <div class="composer__tag-group">
-                            <h5 class="composer__tag-group-title">Xếp hạng Thu Nhập</h5>
-                            <button class="composer__tag-btn" data-tag="[TOP3_THUNHAP]">Top 3 NV</button>
-                            <button class="composer__tag-btn" data-tag="[TOP5_THUNHAP]">Top 5 NV</button>
-                            <button class="composer__tag-btn" data-tag="[BOT3_THUNHAP]">Bot 3 NV</button>
-                            <button class="composer__tag-btn" data-tag="[BOT5_THUNHAP]">Bot 5 NV</button>
-                        </div>
-                        <div class="composer__tag-group">
-                            <h5 class="composer__tag-group-title">Xếp hạng Tỷ lệ Quy đổi</h5>
-                            <button class="composer__tag-btn" data-tag="[TOP3_TLQD]">Top 3 NV</button>
-                            <button class="composer__tag-btn" data-tag="[TOP5_TLQD]">Top 5 NV</button>
-                            <button class="composer__tag-btn" data-tag="[BOT3_TLQD]">Bot 3 NV</button>
-                            <button class="composer__tag-btn" data-tag="[BOT5_TLQD]">Bot 5 NV</button>
+
+                        <div class="composer__content">
+                            <div class="composer__tab-pane active" id="tab-general">
+                                <div class="composer__tag-group">
+                                    <h5 class="composer__tag-group-title">Chung</h5>
+                                    <button class="composer__tag-btn" data-tag="[NGAY]">Ngày</button>
+                                    <button class="composer__tag-btn" data-tag="[GIO]">Giờ</button>
+                                </div>
+                                <div class="composer__tag-group">
+                                    <h5 class="composer__tag-group-title">Biểu tượng (Icons)</h5>
+                                    <button class="composer__icon-btn">📊</button>
+                                    <button class="composer__icon-btn">💰</button>
+                                    <button class="composer__icon-btn">💥</button>
+                                    <button class="composer__icon-btn">🎯</button>
+                                    <button class="composer__icon-btn">📈</button>
+                                    <button class="composer__icon-btn">📦</button>
+                                    <button class="composer__icon-btn">⚠️</button>
+                                    <button class="composer__icon-btn">🔥</button>
+                                    <button class="composer__icon-btn">✅</button>
+                                </div>
+                            </div>
+
+                            <div class="composer__tab-pane" id="tab-kpi">
+                                <div class="composer__tag-group">
+                                    <h5 class="composer__tag-group-title">KPIs Chính</h5>
+                                    <button class="composer__tag-btn" data-tag="[DT_THUC]">DT Thực</button>
+                                    <button class="composer__tag-btn" data-tag="[DTQD]">DT Quy đổi</button>
+                                    <button class="composer__tag-btn" data-tag="[%HT_DTT]">%HT DT Thực</button>
+                                    <button class="composer__tag-btn" data-tag="[%HT_DTQD]">%HT DT QĐ</button>
+                                    <button class="composer__tag-btn" data-tag="[TLQD]">Tỷ lệ Quy đổi</button>
+                                    <button class="composer__tag-btn" data-tag="[DT_CHUAXUAT]">DTQĐ Chưa Xuất</button>
+                                    <button class="composer__tag-btn" data-tag="[SS_CUNGKY]">Tăng/giảm Cùng kỳ</button>
+                                </div>
+                            </div>
+
+                            <div class="composer__tab-pane" id="tab-ranking">
+                                <div class="composer__filter-group">
+                                    <label for="composer-dept-filter" class="composer__label">Lọc theo bộ phận:</label>
+                                    <select id="composer-dept-filter" class="composer__select">
+                                        <option value="ALL">Toàn siêu thị</option>
+                                    </select>
+                                </div>
+                                <div class="composer__tag-group">
+                                    <h5 class="composer__tag-group-title">Xếp hạng DT Quy Đổi</h5>
+                                    <button class="composer__tag-btn" data-tag-template="[TOP3_DTQD_{dept}]">Top 3</button>
+                                    <button class="composer__tag-btn" data-tag-template="[BOT3_DTQD_{dept}]">Bot 3</button>
+                                </div>
+                                <div class="composer__tag-group">
+                                    <h5 class="composer__tag-group-title">Xếp hạng Thu Nhập</h5>
+                                    <button class="composer__tag-btn" data-tag-template="[TOP3_THUNHAP_{dept}]">Top 3</button>
+                                    <button class="composer__tag-btn" data-tag-template="[BOT3_THUNHAP_{dept}]">Bot 3</button>
+                                </div>
+                                 <div class="composer__tag-group">
+                                    <h5 class="composer__tag-group-title">Xếp hạng Tỷ lệ Quy đổi</h5>
+                                    <button class="composer__tag-btn" data-tag-template="[TOP3_TLQD_{dept}]">Top 3</button>
+                                    <button class="composer__tag-btn" data-tag-template="[BOT3_TLQD_{dept}]">Bot 3</button>
+                                </div>
+                            </div>
+                            
+                            <div class="composer__tab-pane" id="tab-details">
+                                <div class="composer__sub-nav">
+                                    <button class="composer__sub-tab-btn active" data-sub-tab="sub-tab-thidua">Thi Đua</button>
+                                    <button class="composer__sub-tab-btn" data-sub-tab="sub-tab-qdc">Nhóm QĐC</button>
+                                    <button class="composer__sub-tab-btn" data-sub-tab="sub-tab-nganhhang">Ngành Hàng</button>
+                                </div>
+                                <div class="composer__sub-content">
+                                    <div class="composer__sub-tab-pane active" id="sub-tab-thidua">
+                                        <div class="composer__tag-group">
+                                            <h5 class="composer__tag-group-title">Thi Đua Ngành Hàng</h5>
+                                            <button class="composer__tag-btn" data-tag="[TD_TONG_CT]">Tổng CT</button>
+                                            <button class="composer__tag-btn" data-tag="[TD_CT_DAT]">>100%</button>
+                                            <button class="composer__tag-btn" data-tag="[TD_CT_CHUADAT]"><100%</button>
+                                            <button class="composer__tag-btn" data-tag="[TD_TYLE_DAT]">% Đạt</button>
+                                        </div>
+                                    </div>
+                                    <div class="composer__sub-tab-pane" id="sub-tab-qdc">
+                                        <div id="composer-qdc-tags-container" class="composer__tag-group">
+                                            <h5 class="composer__tag-group-title">Chọn Nhóm Hàng QĐC</h5>
+                                        </div>
+                                    </div>
+                                    <div class="composer__sub-tab-pane" id="sub-tab-nganhhang">
+                                        <div id="composer-nganhhang-tags-container" class="composer__tag-group">
+                                            <h5 class="composer__tag-group-title">Chọn Ngành Hàng Chi Tiết</h5>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1118,7 +1178,7 @@
             }
         });
     </script>
-    <script type="module" src="./main.js"></script>
+    <script type="module" src="./main.js?v=3.2"></script>
 
 </body>
 </html>
