@@ -1,4 +1,4 @@
-// Version 21.3 - Restore sorting, fix goal settings, and repair advanced filters
+// Version 21.4 - Implement mandatory update modal
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -66,36 +66,29 @@ const idbHelper = {
 
 
 const app = {
-    currentVersion: '2.6',
+    currentVersion: '2.7',
 
     async init() {
         try {
             await firebase.init();
             await idbHelper.openDB();
             
-            // Tải dữ liệu chính trước
             await this.loadDataFromStorage();
             
-            // Cài đặt giao diện và các trình lắng nghe sự kiện
             utils.loadInterfaceSettings();
             this.setupEventListeners();
             utils.applyContrastSetting();
             utils.loadHighlightSettings();
             
-            // Đổ dữ liệu vào bộ lọc (Phải chạy sau khi DSNV đã được tải)
             ui.populateAllFilters();
             
-            // FIX (BUG 3 & 4): Gọi hàm load mục tiêu sau khi bộ lọc đã được đổ dữ liệu
-            // Điều này đảm bảo các dropdown kho đã tồn tại và có giá trị để hàm load hoạt động đúng
             utils.loadAndApplyLuykeGoalSettings();
             utils.loadAndApplyRealtimeGoalSettings();
 
-            // Tải dữ liệu từ Local Storage cho các vùng paste
             this.loadPastedData();
             
             this.switchTab('home-section');
 
-            // Bắt đầu kiểm tra cập nhật
             this.checkForUpdates();
             setInterval(() => this.checkForUpdates(), 15 * 60 * 1000); 
         } catch (error) {
@@ -110,8 +103,12 @@ const app = {
             const serverConfig = await response.json();
             if (serverConfig.version && serverConfig.version !== this.currentVersion) {
                 console.log(`Phiên bản mới ${serverConfig.version} đã sẵn sàng!`);
-                this.currentVersion = serverConfig.version; // Cập nhật phiên bản hiện tại
-                ui.showUpdateNotification();
+                // === START: THAY ĐỔI LOGIC CẬP NHẬT ===
+                // Thay vì hiển thị thanh thông báo nhỏ, giờ đây sẽ hiển thị popup modal
+                ui.toggleModal('force-update-modal', true);
+                // Dòng dưới đây bị vô hiệu hóa
+                // ui.showUpdateNotification(); 
+                // === END: THAY ĐỔI LOGIC CẬP NHẬT ===
             }
         } catch (error) {
             console.error('Không thể kiểm tra phiên bản mới:', error);
@@ -144,7 +141,6 @@ const app = {
         await loadSavedFile('saved_thuongnong_thangtruoc', 'thuongNongDataThangTruoc', 'thuongnong', 'thuongnong-thangtruoc', 'Thưởng Nóng Tháng Trước');
         await loadSavedFile('saved_ycx', 'ycxData', 'ycx', 'ycx', 'Yêu cầu xuất lũy kế');
 
-        // FIX (BUG 3): Tải cài đặt mục tiêu vào state nhưng chưa áp dụng vào UI vội
         try {
             const savedLuykeGoals = localStorage.getItem('luykeGoalSettings');
             if(savedLuykeGoals) appState.luykeGoalSettings = JSON.parse(savedLuykeGoals);
@@ -155,7 +151,6 @@ const app = {
         } catch (e) { console.error("Lỗi đọc cài đặt từ localStorage:", e); }
     },
     
-    // Tách riêng hàm load dữ liệu paste để gọi sau khi mọi thứ đã sẵn sàng
     loadPastedData() {
         const pasteThuongERPThangTruoc = localStorage.getItem('saved_thuongerp_thangtruoc');
         if (pasteThuongERPThangTruoc) {
@@ -242,7 +237,6 @@ const app = {
                     appState.choices[`${prefix}_employee`] = new Choices(employeeEl, multiSelectConfig);
                 }
                 
-                // FIX (BUG 4): Gán các instance của Choices.js vào appState
                 ['warehouse', 'department'].forEach(type => {
                     const el = document.getElementById(`${prefix}-filter-${type}`);
                     if(el) {
@@ -302,6 +296,10 @@ const app = {
             initDatePicker('sknv', sknvTab.render);
         } catch (error) { console.error("Lỗi khi khởi tạo Flatpickr:", error); }
 
+        // === START: THÊM EVENT LISTENER CHO NÚT CẬP NHẬT ===
+        document.getElementById('force-reload-btn')?.addEventListener('click', () => window.location.reload());
+        // === END: THÊM EVENT LISTENER CHO NÚT CẬP NHẬT ===
+
         document.querySelectorAll('a.nav-link').forEach(link => link.addEventListener('click', (e) => { e.preventDefault(); this.switchTab(link.getAttribute('href').substring(1)); }));
         document.querySelectorAll('.sub-tab-btn').forEach(btn => btn.addEventListener('click', (e) => {
             ui.handleSubTabClick(e.currentTarget);
@@ -345,10 +343,9 @@ const app = {
         this.setupHighlightingEventListeners();
         this.setupActionButtons();
         this.setupCollaborationEventListeners();
-        this.setupSortingEventListeners(); // FIX (BUG 1): Gọi hàm cài đặt sắp xếp
+        this.setupSortingEventListeners();
     },
     
-    // FIX (BUG 1): Hàm mới để xử lý sắp xếp chung
     setupSortingEventListeners() {
         document.body.addEventListener('click', (e) => {
             const header = e.target.closest('.sortable');
@@ -370,7 +367,6 @@ const app = {
             }
             appState.sortState[tableType] = { key: sortKey, direction: newDirection };
 
-            // Trigger re-render of the correct tab
             if (tableType.startsWith('luyke')) luykeTab.render();
             else if (tableType.startsWith('sknv') || tableType.startsWith('doanhthu_lk') || tableType.startsWith('thunhap') || tableType.startsWith('hieu_qua')) sknvTab.render();
             else if (tableType.startsWith('realtime')) realtimeTab.render();
@@ -395,14 +391,13 @@ const app = {
         document.getElementById('rt-goal-warehouse-select')?.addEventListener('change', () => utils.loadAndApplyRealtimeGoalSettings());
         document.getElementById('luyke-goal-warehouse-select')?.addEventListener('change', () => utils.loadAndApplyLuykeGoalSettings());
         
-        // FIX (BUG 3): Thêm render() vào trình lắng nghe sự kiện của mục tiêu
         document.querySelectorAll('.rt-goal-input, .rt-setting-input').forEach(input => input.addEventListener('input', () => {
             utils.saveRealtimeGoalSettings();
-            realtimeTab.render(); // Cập nhật giao diện ngay lập tức
+            realtimeTab.render();
         }));
         document.querySelectorAll('.luyke-goal-input').forEach(input => input.addEventListener('input', () => {
             utils.saveLuykeGoalSettings();
-            sknvTab.render(); // Cập nhật cả 2 tab dùng chung mục tiêu luyke
+            sknvTab.render();
             luykeTab.render();
         }));
 
@@ -513,7 +508,6 @@ const app = {
                     services.updateEmployeeMaps();
                     ui.populateAllFilters();
                     
-                    // Sau khi DSNV được cập nhật và bộ lọc được điền, tải lại cài đặt mục tiêu
                     utils.loadAndApplyLuykeGoalSettings();
                     utils.loadAndApplyRealtimeGoalSettings();
                 }
