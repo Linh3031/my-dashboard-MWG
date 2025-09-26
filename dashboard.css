@@ -1,4 +1,4 @@
-/* Version 3.3 - Add styles for non-dismissible modal */
+/* Version 3.4 - Add styles for new homepage layout */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -337,3 +337,17 @@ details[open] > summary .arrow { transform: rotate(180deg); }
 .tdv-effort-subgroup__title--major { color: #6c757d; }
 .tdv-effort-list { display: flex; flex-wrap: wrap; gap: 8px; }
 .tdv-effort-item { background-color: #f1f3f5; color: #495057; padding: 5px 10px; border-radius: 15px; font-size: 0.9em; }
+
+/* === START: NEW HOMEPAGE LAYOUT STYLES === */
+#video-container iframe {
+    aspect-ratio: 16 / 9;
+    width: 100%;
+    height: auto;
+    border-radius: 0.5rem; /* bo góc nhẹ cho đẹp */
+}
+
+#feedback-list-container {
+    max-height: 600px; /* Chiều cao tối đa trước khi thanh cuộn xuất hiện */
+    overflow-y: auto; /* Thêm thanh cuộn dọc khi nội dung vượt quá */
+}
+/* === END: NEW HOMEPAGE LAYOUT STYLES === */

@@ -1,8 +1,9 @@
-// Version 2.5 - Add new screenshot preset for Thi Đua Vùng
+// Version 2.6 - Add counter trigger for screenshot action
 // MODULE: UTILITIES
 // Chứa các hàm tiện ích chung không thuộc về logic hay giao diện cụ thể.
 import { appState } from './state.js';
 import { ui } from './ui.js';
+import { firebase } from './firebase.js'; // Thêm import firebase
 
 // --- HELPER for Screenshot CSS Injection ---
 const _injectCaptureStyles = () => {
@@ -178,7 +179,6 @@ const utils = {
         ui.showNotification(`Đã lưu cài đặt Realtime cho kho ${warehouse}!`, 'success');
     },
 
-    // FIX: Sửa logic để hàm này chỉ chịu trách nhiệm điền dữ liệu vào UI
     loadAndApplyRealtimeGoalSettings() {
         const warehouseSelect = document.getElementById('rt-goal-warehouse-select');
         if (!warehouseSelect) return;
@@ -203,7 +203,6 @@ const utils = {
         ui.showNotification(`Đã lưu cài đặt mục tiêu Lũy kế cho kho ${warehouse}!`, 'success');
     },
 
-    // FIX: Sửa logic để hàm này chỉ chịu trách nhiệm điền dữ liệu vào UI
     loadAndApplyLuykeGoalSettings() {
         const warehouseSelect = document.getElementById('luyke-goal-warehouse-select');
         if (!warehouseSelect) return;
@@ -395,6 +394,11 @@ const utils = {
             ui.showNotification('Không tìm thấy vùng nội dung để chụp.', 'error');
             return;
         }
+
+        // === START: GỌI HÀM ĐẾM LƯỢT SỬ DỤNG ===
+        firebase.incrementCounter('actionsTaken');
+        // === END: GỌI HÀM ĐẾM LƯỢT SỬ DỤNG ===
+        
         ui.showNotification(`Bắt đầu chụp báo cáo ${baseTitle}...`, 'success');
     
         const captureGroups = new Map();

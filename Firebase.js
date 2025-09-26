@@ -1,8 +1,8 @@
-// Version 1.1 - Sửa lỗi logic kiểm tra cấu hình
+// Version 1.1 - Add visitor and usage counter functionality
 // MODULE: FIREBASE
 // Chịu trách nhiệm kết nối, thiết lập listener với Firebase.
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, arrayUnion, serverTimestamp, query, orderBy, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, arrayUnion, serverTimestamp, query, orderBy, setDoc, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 // Thêm import cho Firebase Storage
 import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 import { appState } from './state.js';
@@ -11,15 +11,15 @@ import { ui } from './ui.js';
 const firebase = {
     async init() {
        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyAQ3TWcpa4AnTN-32igGseYDlXrCf1BVew",
-  authDomain: "qlst-9e6bd.firebaseapp.com",
-  projectId: "qlst-9e6bd",
-  storageBucket: "qlst-9e6bd.firebasestorage.app",
-  messagingSenderId: "2316705291",
-  appId: "1:2316705291:web:ebec2963816aea7585b10e",
-  measurementId: "G-M0SM0XHCEK"
-};
+        const firebaseConfig = {
+          apiKey: "AIzaSyAQ3TWcpa4AnTN-32igGseYDlXrCf1BVew",
+          authDomain: "qlst-9e6bd.firebaseapp.com",
+          projectId: "qlst-9e6bd",
+          storageBucket: "qlst-9e6bd.firebasestorage.app",
+          messagingSenderId: "2316705291",
+          appId: "1:2316705291:web:ebec2963816aea7585b10e",
+          measurementId: "G-M0SM0XHCEK"
+        };
 
         try {
             // SỬA LỖI: So sánh với giá trị mẫu "YOUR_API_KEY" thay vì key thật.
@@ -76,6 +76,34 @@ const firebaseConfig = {
             console.error("Error listening to help_content collection: ", error);
             ui.showNotification("Lỗi khi tải nội dung hướng dẫn.", "error");
         });
+
+        // --- LISTENER MỚI CHO BỘ ĐẾM ---
+        const statsRef = doc(appState.db, "analytics", "site_stats");
+        onSnapshot(statsRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const statsData = docSnap.data();
+                // Gọi hàm UI để cập nhật giao diện (sẽ được tạo ở bước sau)
+                ui.updateUsageCounter(statsData);
+            } else {
+                console.log("Không tìm thấy document thống kê.");
+            }
+        });
+    },
+
+    // --- HÀM MỚI ĐỂ TĂNG BỘ ĐẾM ---
+    async incrementCounter(fieldName) {
+        if (!appState.db || !fieldName) return;
+        
+        const statsRef = doc(appState.db, "analytics", "site_stats");
+
+        try {
+            // Sử dụng { merge: true } để tạo document nếu nó chưa tồn tại
+            await setDoc(statsRef, {
+                [fieldName]: increment(1)
+            }, { merge: true });
+        } catch (error) {
+            console.error(`Lỗi khi tăng bộ đếm cho '${fieldName}':`, error);
+        }
     },
 
     async submitFeedback(content) {
@@ -131,34 +159,21 @@ const firebaseConfig = {
         }
     },
 
-    // --- HÀM MỚI ĐỂ TẢI FILE MẪU ---
     async getTemplateDownloadURL() {
         if (!appState.storage) {
             throw new Error("Firebase Storage chưa được khởi tạo.");
         }
-        // Đường dẫn tới file mẫu trên Firebase Storage. Bạn cần tải file lên đúng đường dẫn này.
         const filePath = 'templates/danh_sach_nhan_vien_mau.xlsx';
         const storageRef = ref(appState.storage, filePath);
-        
-        // Ghi chú quan trọng: Để hàm này hoạt động, bạn cần cài đặt Security Rules cho Firebase Storage
-        // để cho phép đọc công khai (public read) đối với đường dẫn 'templates/'. Ví dụ:
-        // rules_version = '2';
-        // service firebase.storage {
-        //   match /b/{bucket}/o {
-        //     match /templates/{allPaths=**} {
-        //       allow read;
-        //     }
-        //   }
-        // }
         
         try {
             const url = await getDownloadURL(storageRef);
             return url;
         } catch (error) {
             console.error("Lỗi khi lấy URL tải file mẫu: ", error);
-            throw error; // Ném lỗi ra để hàm gọi có thể bắt được
+            throw error;
         }
     }
 };
 
-export { firebase };
+export { firebase };    
