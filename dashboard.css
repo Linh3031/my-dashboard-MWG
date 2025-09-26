@@ -1,4 +1,4 @@
-/* Version 3.2 - Fix modal z-index stacking issue */
+/* Version 3.3 - Add styles for non-dismissible modal */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -184,12 +184,16 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #
 .page-header__help-btn { background-color: #fee2e2; color: #991b1b; border-radius: 9999px; width: 2rem; height: 2rem; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s ease-in-out; border: none; }
 .page-header__help-btn:hover { background-color: #fecaca; transform: scale(1.1); }
 
-/* --- Z-INDEX FIX FOR MODAL --- */
 .modal { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; }
 .modal.hidden { display: none; }
 .modal__overlay { position: absolute; inset: 0; background-color: rgba(17, 24, 39, 0.6); backdrop-filter: blur(4px); cursor: pointer; }
 .modal__container { position: relative; z-index: 1001; background-color: white; border-radius: 0.75rem; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); width: 90%; max-width: 600px; max-height: 90vh; display: flex; flex-direction: column; }
-/* --- END Z-INDEX FIX --- */
+
+/* === START: CSS CHO POPUP BẮT BUỘC CẬP NHẬT === */
+#force-update-modal .modal__overlay {
+    cursor: not-allowed; /* Cho người dùng biết không thể bấm vào nền để đóng */
+}
+/* === END: CSS CHO POPUP BẮT BUỘC CẬP NHẬT === */
 
 .modal__container--large { max-width: 900px; }
 .modal__header { padding: 1rem 1.5rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }

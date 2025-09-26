@@ -641,7 +641,6 @@
                         </div>
                     </div>
                 </section>
-                
                 <section id="health-employee-section" class="page-section hidden">
                     <div id="health-employee-section-placeholder" class="placeholder-message hidden">Vui lòng cập nhật danh sách nhân viên để xem kết quả.</div>
                     <div id="health-employee-section-content">
@@ -743,7 +742,7 @@
                                 <div id="subtab-doanhthu-nganhhang" class="sub-tab-content hidden space-y-6" data-capture-preset="mobile-portrait">
                                     <div id="category-revenue-report-container"></div>
                                 </div>
-                                <div id="subtab-thidua" class="sub-tab-content hidden space-y-6">
+                                <div id="subtab-thiduaNV" class="sub-tab-content hidden space-y-6">
                                     <div class="content-card">
                                         <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
                                             <h3 class="text-xl font-bold text-gray-700 uppercase">Thi đua nhân viên</h3>
@@ -993,6 +992,21 @@
 
             </div>
         </main>
+    </div>
+
+    <div id="force-update-modal" class="modal hidden">
+        <div class="modal__overlay" style="cursor: not-allowed;"></div>
+        <div class="modal__container" style="max-width: 450px;">
+            <div class="modal__header">
+                <h3 class="modal__title">📢 Đã có phiên bản mới!</h3>
+            </div>
+            <div class="modal__content text-center">
+                <p class="text-gray-600 mb-4">Một phiên bản mới với các bản sửa lỗi và cải tiến đã sẵn sàng. Vui lòng tải lại trang để tiếp tục.</p>
+                <button id="force-reload-btn" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition text-lg">
+                    Cập nhật ngay
+                </button>
+            </div>
+        </div>
     </div>
 
     <div id="notification"></div>
