@@ -1,4 +1,4 @@
-// Version 21.4 - Implement mandatory update modal
+// Version 21.5 - Add counter triggers for page load and file upload
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -72,6 +72,10 @@ const app = {
         try {
             await firebase.init();
             await idbHelper.openDB();
+
+            // === START: GỌI HÀM ĐẾM LƯỢT TRUY CẬP ===
+            firebase.incrementCounter('pageLoads');
+            // === END: GỌI HÀM ĐẾM LƯỢT TRUY CẬP ===
             
             await this.loadDataFromStorage();
             
@@ -103,12 +107,7 @@ const app = {
             const serverConfig = await response.json();
             if (serverConfig.version && serverConfig.version !== this.currentVersion) {
                 console.log(`Phiên bản mới ${serverConfig.version} đã sẵn sàng!`);
-                // === START: THAY ĐỔI LOGIC CẬP NHẬT ===
-                // Thay vì hiển thị thanh thông báo nhỏ, giờ đây sẽ hiển thị popup modal
                 ui.toggleModal('force-update-modal', true);
-                // Dòng dưới đây bị vô hiệu hóa
-                // ui.showUpdateNotification(); 
-                // === END: THAY ĐỔI LOGIC CẬP NHẬT ===
             }
         } catch (error) {
             console.error('Không thể kiểm tra phiên bản mới:', error);
@@ -296,9 +295,7 @@ const app = {
             initDatePicker('sknv', sknvTab.render);
         } catch (error) { console.error("Lỗi khi khởi tạo Flatpickr:", error); }
 
-        // === START: THÊM EVENT LISTENER CHO NÚT CẬP NHẬT ===
         document.getElementById('force-reload-btn')?.addEventListener('click', () => window.location.reload());
-        // === END: THÊM EVENT LISTENER CHO NÚT CẬP NHẬT ===
 
         document.querySelectorAll('a.nav-link').forEach(link => link.addEventListener('click', (e) => { e.preventDefault(); this.switchTab(link.getAttribute('href').substring(1)); }));
         document.querySelectorAll('.sub-tab-btn').forEach(btn => btn.addEventListener('click', (e) => {
@@ -503,6 +500,10 @@ const app = {
             ui.displayDebugInfo(fileType);
 
             if (success) {
+                // === START: GỌI HÀM ĐẾM LƯỢT SỬ DỤNG ===
+                firebase.incrementCounter('actionsTaken');
+                // === END: GỌI HÀM ĐẾM LƯỢT SỬ DỤNG ===
+                
                 appState[stateKey] = normalizedData;
                 if (stateKey === 'danhSachNhanVien') {
                     services.updateEmployeeMaps();

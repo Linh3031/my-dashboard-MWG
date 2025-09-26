@@ -1,4 +1,4 @@
-// Version 1.8 - Add Thi Đua Vùng debug display function
+// Version 1.9 - Add usage counter display function
 // MODULE: UI COMPONENTS
 // Chứa các hàm UI chung, tái sử dụng được trên toàn bộ ứng dụng.
 
@@ -24,6 +24,19 @@ export const uiComponents = {
         if (notification) {
             notification.classList.add('show');
             notification.querySelector('button').onclick = () => window.location.reload();
+        }
+    },
+    
+    // --- HÀM MỚI ĐỂ HIỂN THỊ BỘ ĐẾM ---
+    updateUsageCounter: (statsData) => {
+        const visitorCountEl = document.getElementById('visitor-count');
+        const actionCountEl = document.getElementById('action-count');
+
+        if (visitorCountEl) {
+            visitorCountEl.textContent = statsData.pageLoads ? uiComponents.formatNumber(statsData.pageLoads) : '0';
+        }
+        if (actionCountEl) {
+            actionCountEl.textContent = statsData.actionsTaken ? uiComponents.formatNumber(statsData.actionsTaken) : '0';
         }
     },
 
