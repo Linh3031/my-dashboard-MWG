@@ -67,7 +67,7 @@ const idbHelper = {
 
 
 const app = {
-    currentVersion: '2.8',
+    currentVersion: '2.9',
 
     async init() {
         try {
