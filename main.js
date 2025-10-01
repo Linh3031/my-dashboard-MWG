@@ -1,4 +1,4 @@
-// Version 26.0 - Add logic to dynamically load bookmark download URL
+// Version 27.0 - Centralize declaration data on Firestore
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -67,7 +67,7 @@ const idbHelper = {
 
 
 const app = {
-    currentVersion: '2.9',
+    currentVersion: '2.9.1',
 
     async init() {
         try {
@@ -76,13 +76,20 @@ const app = {
             await firebase.init();
             auth.init();
             
-            // === START: THÊM DÒNG GỌI HÀM MỚI ===
             this.loadAndApplyBookmarkLink();
-            // === END: THÊM DÒNG GỌI HÀM MỚI ===
             
             await idbHelper.openDB();
             firebase.incrementCounter('pageLoads');
             
+            // --- START: THAY ĐỔI LOGIC TẢI DỮ LIỆU ---
+            // Tải dữ liệu khai báo dùng chung từ Firestore cho TẤT CẢ người dùng
+            console.log("Loading category data from Firestore...");
+            const { categories, brands } = await firebase.loadCategoryDataFromFirestore();
+            appState.categoryStructure = categories;
+            appState.brandList = brands;
+            console.log(`Successfully populated ${appState.categoryStructure.length} categories and ${appState.brandList.length} brands from Firestore.`);
+            // --- END: THAY ĐỔI LOGIC TẢI DỮ LIỆU ---
+
             this.setupEventListeners();
             
             await this.loadDataFromStorage();
@@ -128,29 +135,19 @@ const app = {
         document.getElementById('declaration-heso').value = localStorage.getItem('declaration_heso') || Object.entries(config.DEFAULT_DATA.HE_SO_QUY_DOI).map(([k, v]) => `${k},${v}`).join('\n');
 
         const loadSavedFile = async (saveKey, stateKey, fileType, uiId, uiName) => {
-            const savedData = await idbHelper.getItem(saveKey);
-            if (!savedData) return;
-
+            // --- START: THAY ĐỔI LOGIC LƯU TRỮ ---
+            // Không xử lý file category-structure ở đây nữa vì đã lấy từ Firestore
             if (saveKey === 'saved_category_structure') {
-                 try {
-                    if (savedData && savedData.categories) {
-                        const categoryResult = services.normalizeCategoryStructureData(savedData.categories);
-                        if (categoryResult.success) appState.categoryStructure = categoryResult.normalizedData;
-                        
-                        const brandResult = services.normalizeBrandData(savedData.brands);
-                        if (brandResult.success) appState.brandList = brandResult.normalizedData;
-
-                        ui.updateFileStatus('category-structure', 'Tải từ bộ nhớ đệm', `✓ Đã tải ${appState.categoryStructure.length} nhóm & ${appState.brandList.length} hãng.`, 'success');
-                    } else { 
-                        const { normalizedData, success } = services.normalizeCategoryStructureData(savedData);
-                        if (success) {
-                            appState.categoryStructure = normalizedData;
-                            ui.updateFileStatus(uiId, 'Tải từ bộ nhớ đệm', `✓ Đã tải ${normalizedData.length} dòng.`, 'success');
-                        }
-                    }
-                } catch (e) { console.error(`Lỗi đọc ${uiName} từ IndexedDB:`, e); }
+                // Hiển thị trạng thái đã tải từ Firestore
+                if (appState.categoryStructure.length > 0 || appState.brandList.length > 0) {
+                     ui.updateFileStatus('category-structure', 'Tải từ Cloud', `✓ Đã tải ${appState.categoryStructure.length} nhóm & ${appState.brandList.length} hãng.`, 'success');
+                }
                 return;
             }
+            // --- END: THAY ĐỔI LOGIC LƯU TRỮ ---
+            
+            const savedData = await idbHelper.getItem(saveKey);
+            if (!savedData) return;
             
             try {
                 const { normalizedData, success } = services.normalizeData(savedData, fileType);
@@ -169,7 +166,7 @@ const app = {
         if (appState.danhSachNhanVien.length > 0) {
             services.updateEmployeeMaps();
         }
-        await loadSavedFile('saved_category_structure', null, 'categorystructure', 'category-structure', 'Cấu trúc ngành hàng');
+        await loadSavedFile('saved_category_structure', null, null, null, null); // Gọi để hiển thị status
         await loadSavedFile('saved_ycx_thangtruoc', 'ycxDataThangTruoc', 'ycx', 'ycx-thangtruoc', 'YCXL Tháng Trước');
         await loadSavedFile('saved_thuongnong_thangtruoc', 'thuongNongDataThangTruoc', 'thuongnong', 'thuongnong-thangtruoc', 'Thưởng Nóng Tháng Trước');
         await loadSavedFile('saved_ycx', 'ycxData', 'ycx', 'ycx', 'Yêu cầu xuất lũy kế');
@@ -275,7 +272,6 @@ const app = {
         else if (targetId === 'declaration-section' && appState.isAdmin) ui.renderAdminHelpEditors();
     },
 
-    // === START: HÀM MỚI ĐỂ TẢI VÀ ÁP DỤNG LINK BOOKMARK ===
     async loadAndApplyBookmarkLink() {
         try {
             const bookmarkUrl = await firebase.getBookmarkDownloadURL();
@@ -291,7 +287,6 @@ const app = {
             }
         }
     },
-    // === END: HÀM MỚI ĐỂ TẢI VÀ ÁP DỤNG LINK BOOKMARK ===
 
     setupEventListeners() {
         try {
@@ -671,39 +666,35 @@ const app = {
             const categoryRawData = XLSX.utils.sheet_to_json(categorySheet);
             const categoryResult = services.normalizeCategoryStructureData(categoryRawData);
 
-            if (categoryResult.success) {
-                appState.categoryStructure = categoryResult.normalizedData;
-                ui.populateCompetitionFilters();
-                ui.showNotification('Tải thành công danh mục Nhóm hàng!', 'success');
-            } else {
-                ui.showNotification(`Lỗi xử lý Nhóm hàng: ${categoryResult.error}`, 'error');
-            }
-
+            let brandResult = { success: true, normalizedData: [] };
             const brandSheetName = workbook.SheetNames.find(name => name.toLowerCase().trim() === 'hãng');
-            let brandRawData = [];
             if (brandSheetName) {
                 const brandSheet = workbook.Sheets[brandSheetName];
-                brandRawData = XLSX.utils.sheet_to_json(brandSheet);
-                const brandResult = services.normalizeBrandData(brandRawData);
-                
-                if (brandResult.success) {
-                    appState.brandList = brandResult.normalizedData;
-                    ui.populateCompetitionBrandFilter();
-                    ui.showNotification('Tải thành công danh sách Hãng!', 'success');
-                } else {
-                     ui.showNotification(`Lỗi xử lý Hãng: ${brandResult.error}`, 'error');
-                }
+                const brandRawData = XLSX.utils.sheet_to_json(brandSheet);
+                brandResult = services.normalizeBrandData(brandRawData);
             } else {
-                 ui.showNotification('Không tìm thấy sheet "Hãng" trong file. Bộ lọc hãng sẽ không được cập nhật.', 'error');
+                 ui.showNotification('Không tìm thấy sheet "Hãng" trong file, danh sách hãng sẽ trống.', 'error');
             }
+            
+            if(categoryResult.success) {
+                appState.categoryStructure = categoryResult.normalizedData;
+                appState.brandList = brandResult.normalizedData;
 
-            const rawDataToSave = {
-                categories: categoryRawData,
-                brands: brandRawData
-            };
-            await idbHelper.setItem('saved_category_structure', rawDataToSave);
-            ui.updateFileStatus(fileType, file.name, `✓ Đã xử lý ${categoryResult.normalizedData.length} nhóm và ${appState.brandList.length} hãng.`, 'success');
-            document.getElementById('category-structure-saved-status').textContent = `Đã lưu.`;
+                ui.populateCompetitionFilters();
+                ui.populateCompetitionBrandFilter();
+                
+                // --- START: THAY ĐỔI LOGIC LƯU TRỮ ---
+                // Lưu dữ liệu đã xử lý lên Firestore cho mọi người dùng
+                await firebase.saveCategoryDataToFirestore({
+                    categories: categoryResult.normalizedData,
+                    brands: brandResult.normalizedData
+                });
+                // --- END: THAY ĐỔI LOGIC LƯU TRỮ ---
+
+                ui.updateFileStatus(fileType, file.name, `✓ Đã xử lý và đồng bộ ${categoryResult.normalizedData.length} nhóm & ${brandResult.normalizedData.length} hãng.`, 'success');
+            } else {
+                ui.showNotification(`Lỗi xử lý file khai báo: ${categoryResult.error}`, 'error');
+            }
 
         } catch (error) {
             console.error('Lỗi xử lý file Khai báo:', error);

@@ -1,9 +1,9 @@
-// Version 1.4 - Update bookmark path to ZIP file
+// Version 1.5 - Add Firestore functions for category management
 // MODULE: FIREBASE
 // Chịu trách nhiệm kết nối, thiết lập listener với Firebase.
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, arrayUnion, serverTimestamp, query, orderBy, setDoc, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, arrayUnion, serverTimestamp, query, orderBy, setDoc, increment, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 import { appState } from './state.js';
 import { ui } from './ui.js';
@@ -22,7 +22,6 @@ const firebase = {
         };
 
         try {
-            // SỬA LỖI: So sánh với giá trị mẫu "YOUR_API_KEY" thay vì key thật.
             if (firebaseConfig.apiKey === "YOUR_API_KEY") {
                 throw new Error("Thông tin cấu hình Firebase chưa được cập nhật.");
             }
@@ -49,7 +48,6 @@ const firebase = {
                 const data = doc.data();
                 appState.feedbackList.push({ id: doc.id, ...data, timestamp: data.timestamp?.toDate() });
             });
-            // Chỉ render lại nếu tab hiện tại là trang chủ
             if (document.getElementById('home-section')?.classList.contains('hidden') === false) {
                 ui.renderFeedbackSection();
             }
@@ -67,7 +65,6 @@ const firebase = {
                     contentUpdated = true;
                 }
             });
-            // Chỉ render lại editor nếu đang ở tab khai báo
             if (contentUpdated && appState.isAdmin && document.getElementById('declaration-section')?.classList.contains('hidden') === false) {
                 ui.renderAdminHelpEditors();
             }
@@ -155,6 +152,60 @@ const firebase = {
             ui.showNotification('Lỗi khi lưu nội dung.', 'error');
         }
     },
+    
+    // --- START: CÁC HÀM MỚI ĐỂ QUẢN LÝ DỮ LIỆU KHAI BÁO ---
+    /**
+     * Ghi/cập nhật dữ liệu khai báo (nhóm hàng, hãng) lên Firestore.
+     * Chỉ có Admin mới thực hiện được hành động này.
+     * @param {Object} data - Đối tượng chứa { categories: Array, brands: Array }.
+     */
+    async saveCategoryDataToFirestore(data) {
+        if (!appState.db || !appState.isAdmin) return;
+        ui.showNotification('Đang đồng bộ dữ liệu khai báo lên cloud...', 'success');
+        try {
+            const categoryRef = doc(appState.db, "declarations", "categoryStructure");
+            await setDoc(categoryRef, { data: data.categories || [] });
+
+            const brandRef = doc(appState.db, "declarations", "brandList");
+            await setDoc(brandRef, { data: data.brands || [] });
+            
+            ui.showNotification('Đồng bộ dữ liệu khai báo thành công!', 'success');
+        } catch (error) {
+            console.error("Lỗi khi lưu dữ liệu khai báo lên Firestore:", error);
+            ui.showNotification('Lỗi khi đồng bộ dữ liệu lên cloud.', 'error');
+        }
+    },
+
+    /**
+     * Tải dữ liệu khai báo từ Firestore khi ứng dụng khởi động.
+     * Mọi người dùng đều thực hiện hành động này.
+     */
+    async loadCategoryDataFromFirestore() {
+        if (!appState.db) return { categories: [], brands: [] };
+        try {
+            const declarationsCollection = collection(appState.db, "declarations");
+            const querySnapshot = await getDocs(declarationsCollection);
+            
+            let categories = [];
+            let brands = [];
+
+            querySnapshot.forEach((doc) => {
+                if (doc.id === "categoryStructure") {
+                    categories = doc.data().data || [];
+                } else if (doc.id === "brandList") {
+                    brands = doc.data().data || [];
+                }
+            });
+            
+            console.log(`Loaded ${categories.length} categories and ${brands.length} brands from Firestore.`);
+            return { categories, brands };
+        } catch (error) {
+            console.error("Lỗi khi tải dữ liệu khai báo từ Firestore:", error);
+            ui.showNotification('Không thể tải dữ liệu ngành hàng từ cloud.', 'error');
+            return { categories: [], brands: [] };
+        }
+    },
+    // --- END: CÁC HÀM MỚI ---
 
     async getTemplateDownloadURL() {
         if (!appState.storage) {
@@ -175,9 +226,7 @@ const firebase = {
         if (!appState.storage) {
             throw new Error("Firebase Storage chưa được khởi tạo.");
         }
-        // === START: THAY ĐỔI ĐƯỜNG DẪN ===
         const filePath = 'templates/Share_QLST.zip';
-        // === END: THAY ĐỔI ĐƯỜNG DẪN ===
         const storageRef = ref(appState.storage, filePath);
 
         try {
