@@ -1,4 +1,4 @@
-// Version 2.5 - Restore correct goal data flow by passing goals to the service
+// Version 2.7 - Adapt to unified competition config structure
 // MODULE: Chịu trách nhiệm cho Tab Doanh thu Realtime
 
 import { appState } from './state.js';
@@ -17,7 +17,11 @@ const realtimeTab = {
         const selectedWarehouse = document.getElementById('realtime-filter-warehouse').value;
         ui.updateRealtimeSupermarketTitle(selectedWarehouse, new Date());
         
+        const activeSubTabBtn = document.querySelector('#realtime-subtabs-nav .sub-tab-btn.active');
+        const activeSubTabId = activeSubTabBtn ? activeSubTabBtn.dataset.target : 'subtab-realtime-sieu-thi';
+
         if (appState.realtimeYCXData.length === 0) {
+            // Nếu không có data realtime, xóa nội dung tất cả các tab và báo lỗi
              ui.renderRealtimeKpiCards({}, { goals: {}, timing: {} });
              document.getElementById('realtime-category-details-content').innerHTML = '<p class="text-gray-500 font-bold">Vui lòng tải file realtime để xem chi tiết.</p>';
              document.getElementById('realtime-efficiency-content').innerHTML = '<p class="text-gray-500 font-bold">Vui lòng tải file realtime để xem chi tiết.</p>';
@@ -26,6 +30,7 @@ const realtimeTab = {
              document.getElementById('realtime-revenue-report-container').innerHTML = '';
              document.getElementById('realtime-employee-detail-container').innerHTML = '';
              document.getElementById('realtime-brand-report-container').innerHTML = '<p class="text-gray-500">Vui lòng tải file realtime và chọn bộ lọc để xem dữ liệu.</p>';
+             document.getElementById('competition-report-container-rt').innerHTML = '<p class="text-gray-500">Vui lòng tải file realtime để xem chi tiết.</p>';
              return;
         };
 
@@ -34,7 +39,6 @@ const realtimeTab = {
         
         const settings = utils.getRealtimeGoalSettings(selectedWarehouse);
         
-        // FIX: Lấy mục tiêu và truyền nó vào hàm tính toán để đảm bảo luồng dữ liệu chính xác
         appState.masterReportData.realtime = services.generateMasterReportData(appState.realtimeYCXData, settings.goals, true);
         
         let filteredReport = appState.masterReportData.realtime;
@@ -48,34 +52,49 @@ const realtimeTab = {
             return msnvMatch && visibleEmployees.has(msnvMatch[1].trim());
         });
         
-        const supermarketReport = services.aggregateReport(filteredReport, selectedWarehouse);
-        
-        ui.renderRealtimeKpiCards(supermarketReport, settings);
-        ui.renderRealtimeCategoryDetailsTable(supermarketReport);
-        ui.renderRealtimeEfficiencyTable(supermarketReport, settings.goals);
-        ui.renderRealtimeQdcTable(supermarketReport);
-        
-        const realtimeChuaXuatReport = services.generateRealtimeChuaXuatReport(filteredRealtimeYCX);
-        ui.renderRealtimeChuaXuatTable(realtimeChuaXuatReport);
+        if (activeSubTabId === 'subtab-hieu-qua-thi-dua-realtime') {
+            // === START: THAY ĐỔI LOGIC - LỌC CẤU HÌNH THI ĐUA ===
+            const rtConfigs = appState.competitionConfigs.filter(c => c.applyTo && c.applyTo.includes('rt'));
+            const competitionReportData = services.calculateCompetitionFocusReport(
+                appState.realtimeYCXData,
+                rtConfigs // Sử dụng danh sách đã lọc
+            );
+            // === END: THAY ĐỔI LOGIC ===
 
-        const activeDtnvViewBtn = document.querySelector('#dtnv-realtime-view-selector .view-switcher__btn.active');
-        const dtnvViewType = activeDtnvViewBtn ? activeDtnvViewBtn.dataset.view : 'summary';
-        
-        const employeeSelectorContainer = document.getElementById('dtnv-realtime-employee-selector-container');
-        employeeSelectorContainer.classList.toggle('hidden', dtnvViewType !== 'infographic');
+            ui.renderCompetitionUI(
+                'competition-report-container-rt',
+                competitionReportData
+            );
+        } else { 
+            const supermarketReport = services.aggregateReport(filteredReport, selectedWarehouse);
+            
+            ui.renderRealtimeKpiCards(supermarketReport, settings);
+            ui.renderRealtimeCategoryDetailsTable(supermarketReport);
+            ui.renderRealtimeEfficiencyTable(supermarketReport, settings.goals);
+            ui.renderRealtimeQdcTable(supermarketReport);
+            
+            const realtimeChuaXuatReport = services.generateRealtimeChuaXuatReport(filteredRealtimeYCX);
+            ui.renderRealtimeChuaXuatTable(realtimeChuaXuatReport);
 
-        if (dtnvViewType === 'infographic') {
-            this.handleEmployeeDetailChange();
-        } else {
-            document.getElementById('realtime-revenue-report-container').classList.remove('hidden');
-            document.getElementById('realtime-employee-detail-container').classList.add('hidden');
-            ui.displayRealtimeEmployeeRevenueReport(filteredReport, 'realtime-revenue-report-container', 'realtime_dt_nhanvien');
+            const activeDtnvViewBtn = document.querySelector('#dtnv-realtime-view-selector .view-switcher__btn.active');
+            const dtnvViewType = activeDtnvViewBtn ? activeDtnvViewBtn.dataset.view : 'summary';
+            
+            const employeeSelectorContainer = document.getElementById('dtnv-realtime-employee-selector-container');
+            employeeSelectorContainer.classList.toggle('hidden', dtnvViewType !== 'infographic');
+
+            if (dtnvViewType === 'infographic') {
+                this.handleEmployeeDetailChange();
+            } else {
+                document.getElementById('realtime-revenue-report-container').classList.remove('hidden');
+                document.getElementById('realtime-employee-detail-container').classList.add('hidden');
+                ui.displayRealtimeEmployeeRevenueReport(filteredReport, 'realtime-revenue-report-container', 'realtime_dt_nhanvien');
+            }
+
+            ui.displayEmployeeEfficiencyReport(filteredReport, 'realtime-efficiency-report-container', 'realtime_hieuqua_nhanvien');
+            ui.displayCategoryRevenueReport(filteredReport, 'realtime-category-revenue-report-container', 'realtime');
+            
+            this.handleBrandFilterChange();
         }
-
-        ui.displayEmployeeEfficiencyReport(filteredReport, 'realtime-efficiency-report-container', 'realtime_hieuqua_nhanvien');
-        ui.displayCategoryRevenueReport(filteredReport, 'realtime-category-revenue-report-container', 'realtime');
-        
-        this.handleBrandFilterChange();
         
         utils.populateHighlightFilters('realtime', filteredRealtimeYCX, filteredReport);
         utils.applyHighlights('realtime');

@@ -1,4 +1,4 @@
-// Version 1.2 - Fix progress bar width and add total soon prize
+// Version 1.5 - Display 'Lay Top' data and finalize UI
 // MODULE: UI THI ĐUA VÙNG
 // Chứa các hàm render giao diện cho tab "Thi đua vùng".
 
@@ -35,6 +35,7 @@ export const uiThiDuaVung = {
             hangVuotTroi: findKey(firstItem, 'hạng vượt trội'),
             hangTarget: findKey(firstItem, 'hạng % target'),
             tongThuong: findKey(firstItem, 'tổng thưởng'),
+            hangCoGiaiKenh: 'hangCoGiaiKenh' // Sử dụng key đã được chuẩn hóa trong services.js
         };
 
         const renderCoGiaiItem = (item) => `
@@ -46,7 +47,7 @@ export const uiThiDuaVung = {
                 </div>
                 <div class="tdv-item-card__details">
                     <span>Vượt: <strong>${uiComponents.formatNumber(item[keyMap.duKienVuot])}</strong></span>
-                    <span>Hạng ĐT/SL: <strong>${item[keyMap.hangVuotTroi]}</strong></span>
+                    <span>Hạng DT/SL: <strong>${item[keyMap.hangVuotTroi]}</strong></span>
                     <span>Hạng %: <strong>${item[keyMap.hangTarget]}</strong></span>
                     <span class="tdv-item-card__prize">Thưởng: <strong>${uiComponents.formatNumber(item[keyMap.tongThuong])}</strong></span>
                 </div>
@@ -62,15 +63,17 @@ export const uiThiDuaVung = {
                 </div>
                 <div class="tdv-item-card__details">
                     <span>Cách giải: <strong>${item.khoangCach} hạng</strong></span>
-                    <span>Hạng ĐT/SL: <strong>${item[keyMap.hangVuotTroi]}</strong></span>
+                    <span>Hạng DT/SL: <strong>${item[keyMap.hangVuotTroi]}</strong></span>
                     <span>Hạng %: <strong>${item[keyMap.hangTarget]}</strong></span>
                     <span class="tdv-item-card__prize">Thưởng DK: <strong>${uiComponents.formatNumber(item.thuongTiemNang)}</strong></span>
                 </div>
             </div>
         `;
 
-        const renderNeedsEffortColumn = (potentialItems, majorItems) => {
-            let html = `<h3 class="tdv-column-title tdv-column-title--effort">Cần cố gắng thêm (${potentialItems.length + majorItems.length})</h3><div class="tdv-column-body">`;
+        const renderNeedsEffortRow = (potentialItems, majorItems) => {
+            let html = `<div class="tdv-row">
+                <h3 class="tdv-row-title tdv-row-title--effort">Nhóm còn lại (${potentialItems.length + majorItems.length})</h3>
+                <div class="tdv-row-body tdv-row-body--effort">`;
             
             if (potentialItems.length > 0) {
                 html += `<div class="tdv-effort-subgroup">
@@ -90,7 +93,7 @@ export const uiThiDuaVung = {
                 html += '<p class="text-xs text-gray-500">Không có.</p>';
             }
 
-            html += `</div>`;
+            html += `</div></div>`;
             return html;
         };
         
@@ -124,20 +127,24 @@ export const uiThiDuaVung = {
                         <span class="tdv-summary-value">${uiComponents.formatNumber(summary[keyMap.slCoGiai])}</span>
                         <span class="tdv-summary-label">Ngành dự kiến có giải</span>
                     </div>
+                    <div class="tdv-summary-item">
+                        <span class="tdv-summary-value">${uiComponents.formatNumber(summary[keyMap.hangCoGiaiKenh])}</span>
+                        <span class="tdv-summary-label">Hạng có giải (Kênh)</span>
+                    </div>
                 </div>
 
-                <div class="tdv-columns-container">
-                    <div class="tdv-column">
-                        <h3 class="tdv-column-title tdv-column-title--prize">Ngành hàng có giải (${coGiai.length})</h3>
-                        <div class="tdv-column-body">${coGiai.map(renderCoGiaiItem).join('') || '<p class="text-xs text-gray-500">Không có.</p>'}</div>
+                <div class="tdv-rows-container">
+                    <div class="tdv-row">
+                        <h3 class="tdv-row-title tdv-row-title--prize">Ngành hàng có giải (${coGiai.length})</h3>
+                        <div class="tdv-row-body">${coGiai.map(renderCoGiaiItem).join('') || '<p class="text-xs text-gray-500">Không có.</p>'}</div>
                     </div>
-                    <div class="tdv-column">
-                        <h3 class="tdv-column-title tdv-column-title--soon-prize">Sắp có giải (${sapCoGiai.length})<span class="tdv-column-subtitle">${soonPrizeTitleText}</span></h3>
-                        <div class="tdv-column-body">${sapCoGiai.map(renderSapCoGiaiItem).join('') || '<p class="text-xs text-gray-500">Không có.</p>'}</div>
+                    
+                    <div class="tdv-row">
+                        <h3 class="tdv-row-title tdv-row-title--soon-prize">Sắp có giải (${sapCoGiai.length})<span class="tdv-row-subtitle">${soonPrizeTitleText}</span></h3>
+                        <div class="tdv-row-body">${sapCoGiai.map(renderSapCoGiaiItem).join('') || '<p class="text-xs text-gray-500">Không có.</p>'}</div>
                     </div>
-                    <div class="tdv-column">
-                        ${renderNeedsEffortColumn(tiemNang, canCoGangNhieu)}
-                    </div>
+                    
+                    ${renderNeedsEffortRow(tiemNang, canCoGangNhieu)}
                 </div>
             </div>
         `;

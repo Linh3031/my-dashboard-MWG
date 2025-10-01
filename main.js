@@ -1,4 +1,4 @@
-// Version 21.5 - Add counter triggers for page load and file upload
+// Version 26.0 - Add logic to dynamically load bookmark download URL
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -6,7 +6,12 @@ import { config } from './config.js';
 import { appState } from './state.js';
 import { services } from './services.js';
 import { ui } from './ui.js';
+<<<<<<< HEAD
 import { firebase } from './firebase.js'; // KÍCH HOẠT: Nhập module firebase
+=======
+import { firebase } from './firebase.js';
+import { auth } from './auth.js';
+>>>>>>> version-2.0
 import { luykeTab } from './tab-luyke.js';
 import { sknvTab } from './tab-sknv.js';
 import { realtimeTab } from './tab-realtime.js';
@@ -66,33 +71,40 @@ const idbHelper = {
 
 
 const app = {
-    currentVersion: '2.7',
+    currentVersion: '2.8',
 
     async init() {
         try {
+            appState.competitionConfigs = [];
+            
             await firebase.init();
+            auth.init();
+            
+            // === START: THÊM DÒNG GỌI HÀM MỚI ===
+            this.loadAndApplyBookmarkLink();
+            // === END: THÊM DÒNG GỌI HÀM MỚI ===
+            
             await idbHelper.openDB();
-
-            // === START: GỌI HÀM ĐẾM LƯỢT TRUY CẬP ===
             firebase.incrementCounter('pageLoads');
-            // === END: GỌI HÀM ĐẾM LƯỢT TRUY CẬP ===
+            
+            this.setupEventListeners();
             
             await this.loadDataFromStorage();
             
             utils.loadInterfaceSettings();
-            this.setupEventListeners();
             utils.applyContrastSetting();
             utils.loadHighlightSettings();
             
             ui.populateAllFilters();
+            ui.populateCompetitionFilters();
+            ui.populateCompetitionBrandFilter();
             
             utils.loadAndApplyLuykeGoalSettings();
             utils.loadAndApplyRealtimeGoalSettings();
 
-            this.loadPastedData();
+            this.loadPastedDataFromStorage();
             
-            this.switchTab('home-section');
-
+            this.switchTab('data-section');
             this.checkForUpdates();
             setInterval(() => this.checkForUpdates(), 15 * 60 * 1000); 
         } catch (error) {
@@ -122,13 +134,35 @@ const app = {
         const loadSavedFile = async (saveKey, stateKey, fileType, uiId, uiName) => {
             const savedData = await idbHelper.getItem(saveKey);
             if (!savedData) return;
+
+            if (saveKey === 'saved_category_structure') {
+                 try {
+                    if (savedData && savedData.categories) {
+                        const categoryResult = services.normalizeCategoryStructureData(savedData.categories);
+                        if (categoryResult.success) appState.categoryStructure = categoryResult.normalizedData;
+                        
+                        const brandResult = services.normalizeBrandData(savedData.brands);
+                        if (brandResult.success) appState.brandList = brandResult.normalizedData;
+
+                        ui.updateFileStatus('category-structure', 'Tải từ bộ nhớ đệm', `✓ Đã tải ${appState.categoryStructure.length} nhóm & ${appState.brandList.length} hãng.`, 'success');
+                    } else { 
+                        const { normalizedData, success } = services.normalizeCategoryStructureData(savedData);
+                        if (success) {
+                            appState.categoryStructure = normalizedData;
+                            ui.updateFileStatus(uiId, 'Tải từ bộ nhớ đệm', `✓ Đã tải ${normalizedData.length} dòng.`, 'success');
+                        }
+                    }
+                } catch (e) { console.error(`Lỗi đọc ${uiName} từ IndexedDB:`, e); }
+                return;
+            }
+            
             try {
                 const { normalizedData, success } = services.normalizeData(savedData, fileType);
                 if (success) {
                     appState[stateKey] = normalizedData;
-                    if (stateKey === 'danhSachNhanVien') {
-                         services.updateEmployeeMaps();
-                         document.getElementById('danhsachnv-saved-status').textContent = `Đã lưu ${appState.danhSachNhanVien.length} nhân viên.`;
+                    const savedStatusSpan = document.getElementById(`${uiId}-saved-status`);
+                    if (savedStatusSpan) {
+                        savedStatusSpan.textContent = `Đã lưu ${normalizedData.length} dòng.`;
                     }
                     ui.updateFileStatus(uiId, 'Tải từ bộ nhớ đệm', `✓ Đã tải ${normalizedData.length} dòng.`, 'success');
                 }
@@ -136,21 +170,33 @@ const app = {
         };
 
         await loadSavedFile('saved_danhsachnv', 'danhSachNhanVien', 'danhsachnv', 'danhsachnv', 'DSNV');
+        if (appState.danhSachNhanVien.length > 0) {
+            services.updateEmployeeMaps();
+        }
+        await loadSavedFile('saved_category_structure', null, 'categorystructure', 'category-structure', 'Cấu trúc ngành hàng');
         await loadSavedFile('saved_ycx_thangtruoc', 'ycxDataThangTruoc', 'ycx', 'ycx-thangtruoc', 'YCXL Tháng Trước');
         await loadSavedFile('saved_thuongnong_thangtruoc', 'thuongNongDataThangTruoc', 'thuongnong', 'thuongnong-thangtruoc', 'Thưởng Nóng Tháng Trước');
         await loadSavedFile('saved_ycx', 'ycxData', 'ycx', 'ycx', 'Yêu cầu xuất lũy kế');
-
+        await loadSavedFile('saved_giocong', 'rawGioCongData', 'giocong', 'giocong', 'Giờ công');
+        await loadSavedFile('saved_thuongnong', 'thuongNongData', 'thuongnong', 'thuongnong', 'Thưởng nóng');
+        
         try {
             const savedLuykeGoals = localStorage.getItem('luykeGoalSettings');
             if(savedLuykeGoals) appState.luykeGoalSettings = JSON.parse(savedLuykeGoals);
+            
             const savedRealtimeGoals = localStorage.getItem('realtimeGoalSettings');
             if (savedRealtimeGoals) appState.realtimeGoalSettings = JSON.parse(savedRealtimeGoals);
+            
             const savedTemplates = localStorage.getItem('composerTemplates');
             if (savedTemplates) appState.composerTemplates = JSON.parse(savedTemplates);
+
+            const savedCompetition = localStorage.getItem('competitionConfigs');
+            if (savedCompetition) appState.competitionConfigs = JSON.parse(savedCompetition);
+
         } catch (e) { console.error("Lỗi đọc cài đặt từ localStorage:", e); }
     },
     
-    loadPastedData() {
+    loadPastedDataFromStorage() {
         const pasteThuongERPThangTruoc = localStorage.getItem('saved_thuongerp_thangtruoc');
         if (pasteThuongERPThangTruoc) {
             const el = document.getElementById('paste-thuongerp-thangtruoc');
@@ -159,7 +205,6 @@ const app = {
                 this.handleErpThangTruocPaste({ target: el });
             }
         }
-
         const pasteLuyke = localStorage.getItem('daily_paste_luyke');
         if (pasteLuyke) {
             document.getElementById('paste-luyke').value = pasteLuyke;
@@ -180,7 +225,6 @@ const app = {
                 this.handleErpPaste();
             }
         }
-        this.processAndRenderAllReports();
     },
 
     handleFileRead(file) {
@@ -199,11 +243,25 @@ const app = {
         });
     },
 
-    processAndRenderAllReports() {
+    updateAndRenderCurrentTab() {
         if (appState.danhSachNhanVien.length === 0) return;
-        luykeTab.render();
-        sknvTab.render();
-        realtimeTab.render();
+        
+        ui.renderCompetitionConfigUI();
+    
+        const activeTab = document.querySelector('.page-section:not(.hidden)');
+        if (!activeTab) return;
+    
+        switch (activeTab.id) {
+            case 'health-section':
+                luykeTab.render();
+                break;
+            case 'health-employee-section':
+                sknvTab.render();
+                break;
+            case 'realtime-section':
+                realtimeTab.render();
+                break;
+        }
     },
 
     switchTab(targetId) {
@@ -221,6 +279,24 @@ const app = {
         else if (targetId === 'declaration-section' && appState.isAdmin) ui.renderAdminHelpEditors();
     },
 
+    // === START: HÀM MỚI ĐỂ TẢI VÀ ÁP DỤNG LINK BOOKMARK ===
+    async loadAndApplyBookmarkLink() {
+        try {
+            const bookmarkUrl = await firebase.getBookmarkDownloadURL();
+            const linkElement = document.getElementById('download-bookmark-link');
+            if (linkElement) {
+                linkElement.href = bookmarkUrl;
+            }
+        } catch (error) {
+            console.error("Không thể tải link bookmark:", error);
+            const linkElement = document.getElementById('download-bookmark-link');
+            if (linkElement) {
+                linkElement.style.display = 'none';
+            }
+        }
+    },
+    // === END: HÀM MỚI ĐỂ TẢI VÀ ÁP DỤNG LINK BOOKMARK ===
+
     setupEventListeners() {
         try {
             const multiSelectConfig = { 
@@ -229,27 +305,29 @@ const app = {
                 placeholderValue: 'Chọn hoặc gõ để tìm...', 
                 searchPlaceholderValue: 'Tìm kiếm...' 
             };
-
             ['luyke', 'sknv', 'realtime'].forEach(prefix => {
                 const employeeEl = document.getElementById(`${prefix}-filter-name`);
                 if (employeeEl) {
                     appState.choices[`${prefix}_employee`] = new Choices(employeeEl, multiSelectConfig);
                 }
-                
                 ['warehouse', 'department'].forEach(type => {
                     const el = document.getElementById(`${prefix}-filter-${type}`);
-                    if(el) {
-                         appState.choices[`${prefix}_${type}`] = new Choices(el, { searchEnabled: true, removeItemButton: false, itemSelectText: 'Chọn' });
-                    }
+                    if(el) appState.choices[`${prefix}_${type}`] = new Choices(el, { searchEnabled: true, removeItemButton: false, itemSelectText: 'Chọn' });
                 });
-
                 ['nhanhang', 'nhomhang', 'employee'].forEach(type => {
                     const highlightEl = document.getElementById(`${prefix}-highlight-${type}`);
-                    if (highlightEl) {
-                        appState.choices[`${prefix}_highlight_${type}`] = new Choices(highlightEl, multiSelectConfig);
-                    }
+                    if (highlightEl) appState.choices[`${prefix}_highlight_${type}`] = new Choices(highlightEl, multiSelectConfig);
                 });
             });
+
+            const competitionGroup = document.getElementById('competition-group');
+            if (competitionGroup) {
+                appState.choices['competition_group'] = new Choices(competitionGroup, multiSelectConfig);
+            }
+            const competitionBrand = document.getElementById('competition-brand');
+            if(competitionBrand) {
+                appState.choices['competition_brand'] = new Choices(competitionBrand, multiSelectConfig);
+            }
 
             const singleSelectConfig = { 
                 searchEnabled: true, 
@@ -261,7 +339,7 @@ const app = {
                 'sknv-employee-filter': 'sknv_employee_detail',
                 'thidua-employee-filter': 'thidua_employee_detail',
                 'realtime-employee-detail-filter': 'realtime_employee_detail',
-                'thidua-vung-filter-supermarket': 'thiDuaVung_sieuThi'
+                'thidua-vung-filter-supermarket': 'thiDuaVung_sieuThi',
             };
             for (const [id, key] of Object.entries(singleSelects)) {
                  const el = document.getElementById(id);
@@ -269,7 +347,6 @@ const app = {
                     appState.choices[key] = new Choices(el, singleSelectConfig);
                  }
             }
-
         } catch (error) { console.error("Lỗi khi khởi tạo Choices.js:", error); }
 
         try {
@@ -296,19 +373,25 @@ const app = {
         } catch (error) { console.error("Lỗi khi khởi tạo Flatpickr:", error); }
 
         document.getElementById('force-reload-btn')?.addEventListener('click', () => window.location.reload());
-
         document.querySelectorAll('a.nav-link').forEach(link => link.addEventListener('click', (e) => { e.preventDefault(); this.switchTab(link.getAttribute('href').substring(1)); }));
+        
         document.querySelectorAll('.sub-tab-btn').forEach(btn => btn.addEventListener('click', (e) => {
             ui.handleSubTabClick(e.currentTarget);
-            luykeTab.render();
+            const mainTabId = e.currentTarget.closest('.page-section')?.id || e.currentTarget.closest('.settings-drawer')?.id;
+            
+            if (mainTabId === 'health-section') luykeTab.render();
+            else if (mainTabId === 'health-employee-section') sknvTab.render();
+            else if (mainTabId === 'realtime-section') realtimeTab.render();
         }));
+
         document.querySelectorAll('.toggle-filters-btn').forEach(button => button.addEventListener('click', () => ui.toggleFilterSection(button.dataset.target)));
         
         document.querySelectorAll('.file-input').forEach(input => {
-            if (input.id !== 'file-thidua-vung') {
+            if (input.id !== 'file-thidua-vung' && input.id !== 'file-category-structure') {
                 input.addEventListener('change', (e) => this.handleFileInputChange(e));
             }
         });
+        document.getElementById('file-category-structure')?.addEventListener('change', (e) => this.handleCategoryFile(e));
         
         document.getElementById('paste-luyke')?.addEventListener('input', () => this.handleLuykePaste());
         document.getElementById('paste-thiduanv')?.addEventListener('input', () => this.handleThiduaNVPaste());
@@ -325,6 +408,7 @@ const app = {
             document.getElementById(`${prefix}-filter-department`)?.addEventListener('change', () => this.handleFilterChange(prefix));
             document.getElementById(`${prefix}-filter-name`)?.addEventListener('change', () => this.handleFilterChange(prefix));
         });
+        
         document.getElementById('sknv-view-selector')?.addEventListener('click', (e) => this.handleSknvViewChange(e));
         document.getElementById('sknv-employee-filter')?.addEventListener('change', () => sknvTab.render());
         document.getElementById('luyke-thidua-view-selector')?.addEventListener('click', (e) => this.handleLuykeThiDuaViewChange(e));
@@ -341,6 +425,7 @@ const app = {
         this.setupActionButtons();
         this.setupCollaborationEventListeners();
         this.setupSortingEventListeners();
+        this.setupCompetitionEventListeners();
     },
     
     setupSortingEventListeners() {
@@ -364,9 +449,7 @@ const app = {
             }
             appState.sortState[tableType] = { key: sortKey, direction: newDirection };
 
-            if (tableType.startsWith('luyke')) luykeTab.render();
-            else if (tableType.startsWith('sknv') || tableType.startsWith('doanhthu_lk') || tableType.startsWith('thunhap') || tableType.startsWith('hieu_qua')) sknvTab.render();
-            else if (tableType.startsWith('realtime')) realtimeTab.render();
+            this.updateAndRenderCurrentTab();
         });
     },
 
@@ -390,12 +473,11 @@ const app = {
         
         document.querySelectorAll('.rt-goal-input, .rt-setting-input').forEach(input => input.addEventListener('input', () => {
             utils.saveRealtimeGoalSettings();
-            realtimeTab.render();
+            this.updateAndRenderCurrentTab();
         }));
         document.querySelectorAll('.luyke-goal-input').forEach(input => input.addEventListener('input', () => {
             utils.saveLuykeGoalSettings();
-            sknvTab.render();
-            luykeTab.render();
+            this.updateAndRenderCurrentTab();
         }));
 
         document.getElementById('toggle-debug-btn')?.addEventListener('click', (e) => ui.toggleDebugTool(e.currentTarget));
@@ -416,7 +498,50 @@ const app = {
             document.getElementById(`${prefix}-clear-highlight`)?.addEventListener('click', () => this.handleClearHighlight(prefix));
         });
     },
+    
+    setupCompetitionEventListeners() {
+        const goalDrawer = document.getElementById('goal-drawer');
+        if (!goalDrawer) return;
 
+        goalDrawer.addEventListener('click', (e) => {
+            const addBtn = e.target.closest('#add-competition-btn');
+            const cancelBtn = e.target.closest('#cancel-competition-btn');
+            const editBtn = e.target.closest('.edit-competition-btn');
+            const deleteBtn = e.target.closest('.delete-competition-btn');
+
+            if (addBtn) this._handleCompetitionFormShow(true);
+            if (cancelBtn) this._handleCompetitionFormShow(false);
+            if (editBtn) {
+                const index = parseInt(editBtn.dataset.index, 10);
+                this._handleCompetitionFormEdit(index);
+            }
+            if (deleteBtn) {
+                const index = parseInt(deleteBtn.dataset.index, 10);
+                if (confirm('Bạn có chắc chắn muốn xóa chương trình này?')) {
+                    this._handleCompetitionDelete(index);
+                }
+            }
+        });
+
+        const form = document.getElementById('competition-form');
+        form?.addEventListener('submit', (e) => this._handleCompetitionFormSubmit(e));
+        
+        document.getElementById('competition-type')?.addEventListener('change', (e) => {
+            document.getElementById('price-segment').classList.toggle('hidden', e.target.value !== 'soluong');
+        });
+
+        document.body.addEventListener('change', (e) => {
+            if (e.target.classList.contains('competition-target-input')) {
+                const competitionId = e.target.dataset.competitionId;
+                const config = appState.competitionConfigs.find(c => c.id === competitionId);
+                if (config) {
+                    config.target = e.target.value; 
+                }
+                this.updateAndRenderCurrentTab(); 
+            }
+        });
+    },
+    
     setupCollaborationEventListeners() {
         document.body.addEventListener('click', async (e) => {
             const target = e.target;
@@ -500,17 +625,11 @@ const app = {
             ui.displayDebugInfo(fileType);
 
             if (success) {
-                // === START: GỌI HÀM ĐẾM LƯỢT SỬ DỤNG ===
                 firebase.incrementCounter('actionsTaken');
-                // === END: GỌI HÀM ĐẾM LƯỢT SỬ DỤNG ===
-                
                 appState[stateKey] = normalizedData;
                 if (stateKey === 'danhSachNhanVien') {
                     services.updateEmployeeMaps();
                     ui.populateAllFilters();
-                    
-                    utils.loadAndApplyLuykeGoalSettings();
-                    utils.loadAndApplyRealtimeGoalSettings();
                 }
                 ui.updateFileStatus(fileType, file.name, `✓ Đã tải ${normalizedData.length} dòng.`, 'success');
                 ui.showNotification(`Tải thành công file "${dataName}"!`, 'success');
@@ -520,17 +639,8 @@ const app = {
                     const savedStatusSpan = document.getElementById(`${fileType}-saved-status`);
                     if (savedStatusSpan) savedStatusSpan.textContent = `Đã lưu ${normalizedData.length} dòng.`;
                     ui.showNotification(`Đã lưu "${dataName}" vào bộ nhớ đệm của trình duyệt.`, 'success');
-                } else {
-                    const dailySaveKeys = {
-                        'giocong': 'daily_giocong_data_raw',
-                        'thuongnong': 'daily_thuongnong_data_raw'
-                    };
-                    if (dailySaveKeys[fileType]) {
-                        localStorage.setItem(dailySaveKeys[fileType], JSON.stringify(rawData));
-                    }
                 }
-
-                this.processAndRenderAllReports();
+                this.updateAndRenderCurrentTab();
             } else { 
                 const errorMessage = `Lỗi file "${dataName}": Thiếu cột: ${missingColumns.join(', ')}.`;
                 ui.updateFileStatus(fileType, file.name, `Lỗi: Thiếu cột dữ liệu.`, 'error');
@@ -545,6 +655,67 @@ const app = {
             ui.showNotification(`Lỗi khi xử lý file "${dataName}".`, 'error');
         } finally {
             ui.hideProgressBar(fileType);
+        }
+    },
+    
+    async handleCategoryFile(e) {
+        const fileInput = e.target;
+        const file = fileInput.files[0];
+        const fileType = fileInput.id.replace('file-', '');
+        
+        if (!file) return;
+
+        ui.updateFileStatus(fileType, file.name, 'Đang xử lý...', 'default');
+        ui.showProgressBar(fileType);
+
+        try {
+            const workbook = await this.handleFileRead(file);
+
+            const categorySheet = workbook.Sheets[workbook.SheetNames[0]];
+            const categoryRawData = XLSX.utils.sheet_to_json(categorySheet);
+            const categoryResult = services.normalizeCategoryStructureData(categoryRawData);
+
+            if (categoryResult.success) {
+                appState.categoryStructure = categoryResult.normalizedData;
+                ui.populateCompetitionFilters();
+                ui.showNotification('Tải thành công danh mục Nhóm hàng!', 'success');
+            } else {
+                ui.showNotification(`Lỗi xử lý Nhóm hàng: ${categoryResult.error}`, 'error');
+            }
+
+            const brandSheetName = workbook.SheetNames.find(name => name.toLowerCase().trim() === 'hãng');
+            let brandRawData = [];
+            if (brandSheetName) {
+                const brandSheet = workbook.Sheets[brandSheetName];
+                brandRawData = XLSX.utils.sheet_to_json(brandSheet);
+                const brandResult = services.normalizeBrandData(brandRawData);
+                
+                if (brandResult.success) {
+                    appState.brandList = brandResult.normalizedData;
+                    ui.populateCompetitionBrandFilter();
+                    ui.showNotification('Tải thành công danh sách Hãng!', 'success');
+                } else {
+                     ui.showNotification(`Lỗi xử lý Hãng: ${brandResult.error}`, 'error');
+                }
+            } else {
+                 ui.showNotification('Không tìm thấy sheet "Hãng" trong file. Bộ lọc hãng sẽ không được cập nhật.', 'error');
+            }
+
+            const rawDataToSave = {
+                categories: categoryRawData,
+                brands: brandRawData
+            };
+            await idbHelper.setItem('saved_category_structure', rawDataToSave);
+            ui.updateFileStatus(fileType, file.name, `✓ Đã xử lý ${categoryResult.normalizedData.length} nhóm và ${appState.brandList.length} hãng.`, 'success');
+            document.getElementById('category-structure-saved-status').textContent = `Đã lưu.`;
+
+        } catch (error) {
+            console.error('Lỗi xử lý file Khai báo:', error);
+            ui.updateFileStatus(fileType, file.name, `Lỗi: ${error.message}`, 'error');
+            ui.showNotification('Lỗi khi xử lý file Khai báo.', 'error');
+        } finally {
+            ui.hideProgressBar(fileType);
+            fileInput.value = '';
         }
     },
     
@@ -563,7 +734,7 @@ const app = {
                 appState.realtimeYCXData = normalizedData;
                 ui.populateRealtimeBrandCategoryFilter();
                 ui.showNotification(`Tải thành công ${normalizedData.length} dòng realtime!`, 'success');
-                realtimeTab.render();
+                this.updateAndRenderCurrentTab();
             } else {
                  ui.showNotification(`File realtime lỗi: Thiếu cột ${missingColumns.join(', ')}.`, 'error');
                  if (document.getElementById('debug-tool-container')?.classList.contains('hidden')) {
@@ -591,9 +762,7 @@ const app = {
 
     handleFilterChange(prefix) {
         ui.updateEmployeeFilter(prefix);
-        if (prefix === 'luyke') luykeTab.render();
-        else if (prefix === 'sknv') sknvTab.render();
-        else if (prefix === 'realtime') realtimeTab.render();
+        this.updateAndRenderCurrentTab();
     },
 
     handleHighlightFilterChange(prefix, type) {
@@ -630,7 +799,7 @@ const app = {
         const pastedText = document.getElementById('paste-luyke')?.value || '';
         localStorage.setItem('daily_paste_luyke', pastedText);
         ui.updatePasteStatus('status-luyke');
-        this.processAndRenderAllReports();
+        this.updateAndRenderCurrentTab();
     },
 
     handleThiduaNVPaste() {
@@ -645,7 +814,7 @@ const app = {
         localStorage.setItem('daily_paste_thuongerp', pastedText);
         appState.thuongERPData = services.processThuongERP(pastedText);
         ui.updatePasteStatus('status-thuongerp', `✓ Đã xử lý ${appState.thuongERPData.length} nhân viên.`);
-        this.processAndRenderAllReports();
+        this.updateAndRenderCurrentTab();
     },
 
     handleErpThangTruocPaste(e) {
@@ -675,7 +844,7 @@ const app = {
         localStorage.setItem('declaration_ycx_gop', document.getElementById('declaration-ycx-gop').value);
         localStorage.setItem('declaration_heso', document.getElementById('declaration-heso').value);
         ui.showNotification('Đã lưu khai báo!', 'success');
-        this.processAndRenderAllReports();
+        this.updateAndRenderCurrentTab();
     },
     
     saveHelpContent() {
@@ -937,6 +1106,120 @@ const app = {
             const container = document.getElementById('thidua-vung-infographic-container');
             if(container) container.innerHTML = `<div class="placeholder-message">Vui lòng chọn một siêu thị để xem báo cáo.</div>`;
         }
+    },
+    
+    _saveCompetitionConfigs() {
+        localStorage.setItem('competitionConfigs', JSON.stringify(appState.competitionConfigs));
+    },
+
+    _handleCompetitionFormShow(show = true, isEdit = false) {
+        const form = document.getElementById('competition-form');
+        const addBtn = document.getElementById('add-competition-btn');
+        if (!form || !addBtn) return;
+
+        form.classList.toggle('hidden', !show);
+        addBtn.classList.toggle('hidden', show);
+
+        if (show && !isEdit) {
+            form.reset();
+            document.getElementById('competition-id').value = '';
+            appState.choices['competition_group']?.removeActiveItems();
+            appState.choices['competition_brand']?.removeActiveItems();
+            document.getElementById('price-segment').classList.add('hidden');
+        }
+    },
+
+    _handleCompetitionFormEdit(index) {
+        const config = appState.competitionConfigs[index];
+        if (!config) return;
+
+        this._handleCompetitionFormShow(true, true);
+        
+        document.getElementById('competition-id').value = index;
+        document.getElementById('competition-name').value = config.name;
+        
+        const brandChoices = appState.choices['competition_brand'];
+        if(brandChoices) {
+            brandChoices.removeActiveItems();
+            brandChoices.setChoiceByValue(config.brands || []);
+        }
+
+        document.getElementById('competition-type').value = config.type;
+        document.getElementById('competition-exclude-apple').checked = config.excludeApple;
+        
+        const priceSegment = document.getElementById('price-segment');
+        priceSegment.classList.toggle('hidden', config.type !== 'soluong');
+
+        document.getElementById('competition-min-price').value = config.minPrice ? config.minPrice / 1000000 : '';
+        document.getElementById('competition-max-price').value = config.maxPrice ? config.maxPrice / 1000000 : '';
+
+        document.getElementById('competition-apply-lk').checked = (config.applyTo || []).includes('lk');
+        document.getElementById('competition-apply-rt').checked = (config.applyTo || []).includes('rt');
+
+        const groupChoices = appState.choices['competition_group'];
+        if (groupChoices) {
+            groupChoices.removeActiveItems();
+            groupChoices.setChoiceByValue(config.groups);
+        }
+    },
+
+    _handleCompetitionDelete(index) {
+        appState.competitionConfigs.splice(index, 1);
+        this._saveCompetitionConfigs();
+        this.updateAndRenderCurrentTab();
+        ui.showNotification('Đã xóa chương trình thi đua.', 'success');
+    },
+
+    _handleCompetitionFormSubmit(e) {
+        e.preventDefault();
+        const id = document.getElementById('competition-id').value;
+        const name = document.getElementById('competition-name').value.trim();
+        if (!name) {
+            ui.showNotification('Tên chương trình không được để trống.', 'error');
+            return;
+        }
+
+        const groupChoices = appState.choices['competition_group'];
+        const groups = groupChoices ? groupChoices.getValue(true) : [];
+
+        const brandChoices = appState.choices['competition_brand'];
+        const brands = brandChoices ? brandChoices.getValue(true) : [];
+        if (brands.length === 0) {
+            ui.showNotification('Lỗi: Vui lòng chọn ít nhất một hãng sản xuất.', 'error');
+            return;
+        }
+
+        const applyTo = [];
+        if (document.getElementById('competition-apply-lk').checked) applyTo.push('lk');
+        if (document.getElementById('competition-apply-rt').checked) applyTo.push('rt');
+
+        if (applyTo.length === 0) {
+            ui.showNotification('Lỗi: Vui lòng chọn ít nhất một báo cáo để áp dụng (Lũy kế hoặc Realtime).', 'error');
+            return;
+        }
+
+        const newConfig = {
+            id: `comp_${new Date().getTime()}`,
+            name: name,
+            brands: brands,
+            groups: groups,
+            type: document.getElementById('competition-type').value,
+            minPrice: (parseFloat(document.getElementById('competition-min-price').value) || 0) * 1000000,
+            maxPrice: (parseFloat(document.getElementById('competition-max-price').value) || 0) * 1000000,
+            excludeApple: document.getElementById('competition-exclude-apple').checked,
+            applyTo: applyTo
+        };
+
+        if (id !== '') {
+            appState.competitionConfigs[parseInt(id, 10)] = newConfig;
+        } else {
+            appState.competitionConfigs.push(newConfig);
+        }
+
+        this._saveCompetitionConfigs();
+        this._handleCompetitionFormShow(false);
+        this.updateAndRenderCurrentTab();
+        ui.showNotification('Đã lưu chương trình thi đua thành công!', 'success');
     }
 };
 
