@@ -1,4 +1,4 @@
-// Version 2.2 - Update function call to generateLuyKeChuaXuatReport
+// Version 2.4 - Remove faulty return statement to allow sub-tab rendering
 // MODULE: Chịu trách nhiệm cho Tab Sức khỏe Siêu thị (Lũy kế)
 
 import { appState } from './state.js';
@@ -17,9 +17,9 @@ const luykeTab = {
         const activeSubTabBtn = document.querySelector('#luyke-subtabs-nav .sub-tab-btn.active');
         const activeSubTabId = activeSubTabBtn ? activeSubTabBtn.dataset.target : 'subtab-luyke-sieu-thi';
 
-        if (activeSubTabId === 'subtab-luyke-thidua-vung') {
-            return;
-        }
+        // === START: SỬA LỖI LOGIC ===
+        // Xóa bỏ câu lệnh if/return gây lỗi, cho phép hàm tiếp tục chạy để áp dụng bộ lọc màu và các logic khác
+        // === END: SỬA LỖI LOGIC ===
 
         const selectedWarehouse = document.getElementById('luyke-filter-warehouse').value;
         const selectedDept = document.getElementById('luyke-filter-department').value;

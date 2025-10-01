@@ -1,4 +1,4 @@
-// Version 3.8 - Refactor chua xuat function name for clarity
+// Version 4.4 - Add 'Lay Top' data to Thi Dua Vung report summary
 // MODULE 3: KỆ "DỊCH VỤ" (SERVICES)
 // File này chứa tất cả các hàm xử lý logic, tính toán, và chuyển đổi dữ liệu.
 
@@ -8,6 +8,146 @@ import { ui } from './ui.js';
 import { utils } from './utils.js';
 
 const services = {
+    // === HÀM MỚI ĐỂ XỬ LÝ FILE KHAI BÁO NGÀNH HÀNG - NHÓM HÀNG ===
+    normalizeCategoryStructureData(rawData) {
+        if (!rawData || rawData.length === 0) {
+            return { success: false, error: 'File rỗng.', normalizedData: [] };
+        }
+        const header = Object.keys(rawData[0] || {});
+        
+        const nganhHangCol = this.findColumnName(header, ['ngành hàng', 'nganh hang']);
+        const nhomHangCol = this.findColumnName(header, ['nhóm hàng', 'nhom hang']);
+
+        if (!nganhHangCol || !nhomHangCol) {
+            return { success: false, error: 'File phải có cột "Ngành hàng" và "Nhóm hàng".', normalizedData: [] };
+        }
+
+        const normalizedData = rawData
+            .map(row => ({
+                nganhHang: String(row[nganhHangCol] || '').trim(),
+                nhomHang: String(row[nhomHangCol] || '').trim(),
+            }))
+            .filter(item => item.nganhHang && item.nhomHang);
+            
+        return { success: true, normalizedData };
+    },
+    
+    // === HÀM MỚI ĐỂ XỬ LÝ SHEET "HÃNG" TỪ FILE KHAI BÁO ===
+    normalizeBrandData(rawData) {
+        if (!rawData || rawData.length === 0) {
+            return { success: false, error: 'Sheet "Hãng" rỗng.', normalizedData: [] };
+        }
+        const header = Object.keys(rawData[0] || {});
+        // Tìm cột chứa tên hãng, cho phép các biến thể như "Hãng", "Tên Hãng", "Nhà sản xuất"
+        const brandCol = this.findColumnName(header, ['hãng', 'tên hãng', 'nhà sản xuất']);
+        if (!brandCol) {
+            return { success: false, error: 'Sheet "Hãng" phải có cột "Hãng" hoặc "Tên Hãng".', normalizedData: [] };
+        }
+
+        // Lấy danh sách hãng, làm sạch, và loại bỏ các giá trị trùng lặp
+        const normalizedData = rawData
+            .map(row => String(row[brandCol] || '').trim())
+            .filter(brand => brand); // Lọc ra các dòng rỗng
+            
+        return { success: true, normalizedData: [...new Set(normalizedData)].sort() }; // Trả về danh sách duy nhất và đã sắp xếp
+    },
+
+
+    // === HÀM TÍNH TOÁN THI ĐUA ĐƯỢC NÂNG CẤP HOÀN TOÀN (LOGIC MỚI) ===
+    /**
+     * Tính toán báo cáo hiệu quả thi đua, luôn trả về cả SL và DT.
+     * @param {Array} sourceYcxData - Dữ liệu YCX gốc (lũy kế hoặc realtime).
+     * @param {Array} competitionConfigs - Mảng các đối tượng cấu hình thi đua.
+     * @returns {Array} - Mảng kết quả cho từng chương trình thi đua.
+     */
+    calculateCompetitionFocusReport(sourceYcxData, competitionConfigs) {
+        if (!sourceYcxData || sourceYcxData.length === 0 || !competitionConfigs || competitionConfigs.length === 0) {
+            return [];
+        }
+
+        const hinhThucXuatTinhDoanhThu = this.getHinhThucXuatTinhDoanhThu();
+
+        const validSalesData = sourceYcxData.filter(row => {
+            const isDoanhThuHTX = hinhThucXuatTinhDoanhThu.has(row.hinhThucXuat);
+            const isBaseValid = (row.trangThaiThuTien || "").trim() === 'Đã thu' &&
+                                (row.trangThaiHuy || "").trim() === 'Chưa hủy' &&
+                                (row.tinhTrangTra || "").trim() === 'Chưa trả' &&
+                                (row.trangThaiXuat || "").trim() === 'Đã xuất';
+            return isBaseValid && isDoanhThuHTX;
+        });
+
+        const report = competitionConfigs.map(config => {
+            // *** BẢN SỬA LỖI LOGIC CỐT LÕI BẮT ĐẦU TẠI ĐÂY ***
+            // 1. Tạo một Set các nhóm hàng đã được làm sạch từ cấu hình để so sánh hiệu quả.
+            const cleanedConfigGroups = new Set((config.groups || []).map(g => utils.cleanCategoryName(g)));
+
+            let baseSalesData = validSalesData.filter(row => {
+                const cleanNhomHangFromYCX = utils.cleanCategoryName(row.nhomHang);
+                
+                // 2. So sánh nhóm hàng đã được làm sạch từ YCX với Set các nhóm hàng đã làm sạch từ cấu hình.
+                const isInGroup = cleanedConfigGroups.has(cleanNhomHangFromYCX);
+                if (!isInGroup) return false;
+                // *** KẾT THÚC BẢN SỬA LỖI ***
+
+                // Lọc theo khoảng giá nếu được cấu hình (chỉ áp dụng cho loại thi đua số lượng)
+                if (config.type === 'soluong' && (config.minPrice > 0 || config.maxPrice > 0)) {
+                    const price = (parseFloat(String(row.thanhTien || "0").replace(/,/g, '')) || 0) / (parseInt(String(row.soLuong || "1"), 10) || 1);
+                    const minPrice = config.minPrice || 0;
+                    const maxPrice = config.maxPrice || Infinity;
+                    if (price < minPrice || price > maxPrice) return false;
+                }
+                return true;
+            });
+
+            if (config.excludeApple) {
+                baseSalesData = baseSalesData.filter(row => row.nhaSanXuat !== 'Apple');
+            }
+            
+            const employeeResults = appState.danhSachNhanVien.map(employee => {
+                let targetBrandsRevenue = 0;
+                let targetBrandsQuantity = 0;
+                let baseCategoryRevenue = 0;
+                let baseCategoryQuantity = 0;
+                
+                baseSalesData.forEach(row => {
+                    const msnvMatch = String(row.nguoiTao || '').match(/^(\d+)/);
+                    if (msnvMatch && msnvMatch[1].trim() === employee.maNV) {
+                        const revenueValue = (parseFloat(String(row.thanhTien || "0").replace(/,/g, '')) || 0);
+                        const quantityValue = (parseInt(String(row.soLuong || "0"), 10) || 0);
+
+                        baseCategoryRevenue += revenueValue;
+                        baseCategoryQuantity += quantityValue;
+
+                        const brand = row.nhaSanXuat;
+                        if ((config.brands || []).includes(brand)) {
+                            targetBrandsRevenue += revenueValue;
+                            targetBrandsQuantity += quantityValue;
+                        }
+                    }
+                });
+                
+                return {
+                    maNV: employee.maNV,
+                    hoTen: employee.hoTen,
+                    boPhan: employee.boPhan,
+                    targetBrandsRevenue,
+                    targetBrandsQuantity,
+                    baseCategoryRevenue,
+                    baseCategoryQuantity,
+                    tyLeDT: baseCategoryRevenue > 0 ? (targetBrandsRevenue / baseCategoryRevenue) : 0,
+                    tyLeSL: baseCategoryQuantity > 0 ? (targetBrandsQuantity / baseCategoryQuantity) : 0,
+                };
+            }).filter(e => e.baseCategoryRevenue > 0 || e.baseCategoryQuantity > 0);
+
+            return {
+                competition: config,
+                employeeData: employeeResults,
+            };
+        }).filter(r => r.employeeData.length > 0);
+
+        return report;
+    },
+
     // --- DATA DECLARATION GETTERS ---
     getHinhThucXuatTinhDoanhThu: () => {
         const savedData = localStorage.getItem('declaration_ycx');
@@ -1124,7 +1264,17 @@ const services = {
 
         const summary = appState.thiDuaVungTong.find(row => row[supermarketKeyTong] === selectedSupermarket);
         if (!summary) return null;
+        
+        // === START: THÊM LOGIC LẤY DỮ LIỆU "LẤY TOP" ===
         const chiTiet = appState.thiDuaVungChiTiet.filter(row => row[supermarketKeyChiTiet] === selectedSupermarket);
+        
+        // Tìm giá trị "Lấy top" đầu tiên cho siêu thị này và gán vào summary
+        if (chiTiet.length > 0 && layTopKey) {
+            summary.hangCoGiaiKenh = chiTiet[0][layTopKey]; 
+        } else {
+            summary.hangCoGiaiKenh = 'N/A';
+        }
+        // === END: THÊM LOGIC LẤY DỮ LIỆU "LẤY TOP" ===
 
         const report = { summary, coGiai: [], sapCoGiai: [], tiemNang: [], canCoGangNhieu: [] };
         

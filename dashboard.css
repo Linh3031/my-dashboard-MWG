@@ -1,4 +1,4 @@
-/* Version 3.4 - Add styles for new homepage layout */
+/* Version 3.6 - Improve progress bar text centering for html2canvas */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -287,7 +287,8 @@ details[open] > summary .arrow { transform: rotate(180deg); }
 .rt-customer-details table { font-size: 0.8rem; }
 .preview-content { background-color: #f3f4f6; padding: 1rem; border-radius: 0.5rem; white-space: pre-wrap; word-wrap: break-word; font-size: 0.875em; line-height: 1.6; color: #1f2937; font-family: 'Inter', sans-serif; }
 
-/* --- Thi Đua Vùng Infographic Styles --- */
+
+/* === START: THAY ĐỔI TDV LAYOUT TỪ CỘT SANG HÀNG === */
 .tdv-infographic-card { 
     background-color: transparent; 
     border: none;
@@ -302,29 +303,49 @@ details[open] > summary .arrow { transform: rotate(180deg); }
 .tdv-total-prize-value { color: #d90429; margin-left: 0.5rem; }
 
 .tdv-summary-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 1.5rem; margin-bottom: 2rem; }
-@media (min-width: 768px) { .tdv-summary-grid { grid-template-columns: repeat(4, 1fr); } }
+@media (min-width: 768px) { .tdv-summary-grid { grid-template-columns: repeat(5, 1fr); } } /* Sửa thành 5 cột */
 .tdv-summary-item { background-color: #ffffff; border-radius: 8px; padding: 1rem; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e5e7eb; }
 .tdv-summary-value { display: block; font-size: 1.75em; font-weight: 700; color: #0a9396; }
 .tdv-summary-label { display: block; font-size: 0.9em; color: #4a5568; margin-top: 0.25rem; }
 
-.tdv-columns-container { display: grid; grid-template-columns: repeat(1, 1fr); gap: 1.5rem; align-items: start; }
-@media (min-width: 1024px) { .tdv-columns-container { grid-template-columns: repeat(3, 1fr); } }
-.tdv-column { background-color: #fdfdfd; border-radius: 8px; padding: 1rem; border: 1px solid #dee2e6; }
-.tdv-column-body { display: flex; flex-direction: column; gap: 1rem; }
-.tdv-column-title { font-size: 1.2em; font-weight: bold; padding-bottom: 0.75rem; margin-bottom: 1rem; border-bottom: 2px solid; line-height: 1.3; }
-.tdv-column-title--prize { border-color: #0d6efd; color: #0d6efd; } 
-.tdv-column-title--soon-prize { border-color: #e9c46a; color: #e9c46a; }
-.tdv-column-title--effort { border-color: #6c757d; color: #6c757d; }
-.tdv-column-subtitle { font-size: 0.8em; font-weight: normal; color: #d90429; }
+.tdv-rows-container { display: flex; flex-direction: column; gap: 1.5rem; }
+.tdv-row { background-color: #fdfdfd; border-radius: 8px; padding: 1rem; border: 1px solid #dee2e6; }
+.tdv-row-title { font-size: 1.2em; font-weight: bold; padding-bottom: 0.75rem; margin-bottom: 1rem; border-bottom: 2px solid; line-height: 1.3; }
+.tdv-row-title--prize { border-color: #0d6efd; color: #0d6efd; } 
+.tdv-row-title--soon-prize { border-color: #e9c46a; color: #e9c46a; }
+.tdv-row-title--effort { border-color: #6c757d; color: #6c757d; }
+.tdv-row-subtitle { font-size: 0.8em; font-weight: normal; color: #d90429; }
+
+.tdv-row-body { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
+.tdv-row-body--effort { display: block; } /* Bố cục đặc biệt cho hàng "Cần cố gắng" */
 
 .tdv-item-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; }
 .tdv-item-card:hover { transform: translateY(-3px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
 .tdv-item-card__title { font-weight: bold; margin: 0 0 10px 0; color: #333; }
-.tdv-progress-bar-container { width: 100%; background-color: #e9ecef; border-radius: 20px; height: 28px; position: relative; font-size: 0.85em; font-weight: bold; overflow: hidden; }
+/* SỬA: Thay đổi cách canh giữa chữ trong thanh tiến trình */
+.tdv-progress-bar-container { 
+    width: 100%; 
+    background-color: #e9ecef; 
+    border-radius: 20px; 
+    height: 28px; 
+    position: relative; 
+    font-size: 0.85em; 
+    font-weight: bold; 
+    overflow: hidden;
+    display: flex; /* Thêm flex */
+    align-items: center; /* Canh giữa theo chiều dọc */
+    justify-content: center; /* Canh giữa theo chiều ngang */
+}
 .tdv-progress-bar { height: 100%; transition: width 0.5s ease; position: absolute; top: 0; left: 0; }
 .tdv-progress-bar--blue { background-color: #0d6efd; }
 .tdv-progress-bar--yellow { background-color: #e9c46a; }
-.tdv-progress-bar__text { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 1; text-shadow: 1px 1px 2px rgba(0,0,0,0.4); color: white;}
+.tdv-progress-bar__text { 
+    position: relative; /* Đổi từ absolute sang relative */
+    z-index: 1; 
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.4); 
+    color: white;
+    /* Bỏ các thuộc tính top, left, transform */
+}
 .tdv-item-card__details { font-size: 0.85em; color: #555; margin-top: 8px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
 .tdv-item-card__details span { display: block; }
 .tdv-item-card__details strong { color: #000; }
@@ -337,6 +358,8 @@ details[open] > summary .arrow { transform: rotate(180deg); }
 .tdv-effort-subgroup__title--major { color: #6c757d; }
 .tdv-effort-list { display: flex; flex-wrap: wrap; gap: 8px; }
 .tdv-effort-item { background-color: #f1f3f5; color: #495057; padding: 5px 10px; border-radius: 15px; font-size: 0.9em; }
+/* === END: THAY ĐỔI TDV LAYOUT === */
+
 
 /* === START: NEW HOMEPAGE LAYOUT STYLES === */
 #video-container iframe {
@@ -351,3 +374,14 @@ details[open] > summary .arrow { transform: rotate(180deg); }
     overflow-y: auto; /* Thêm thanh cuộn dọc khi nội dung vượt quá */
 }
 /* === END: NEW HOMEPAGE LAYOUT STYLES === */
+/* === FIX CHO BỘ LỌC NHÓM HÀNG TRONG DRAWER === */
+#goal-drawer .choices__inner {
+    min-width: 250px; /* Đặt chiều rộng tối thiểu */
+}
+
+#goal-drawer .choices__list--dropdown,
+#goal-drawer .choices__list[aria-expanded] {
+    min-width: 100%;
+    width: auto; /* Cho phép dropdown rộng hơn ô input nếu cần */
+    word-break: normal;
+}

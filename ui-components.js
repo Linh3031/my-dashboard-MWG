@@ -1,4 +1,4 @@
-// Version 1.9 - Add usage counter display function
+// Version 2.7 - Display totalUsers in the usage counter
 // MODULE: UI COMPONENTS
 // Chứa các hàm UI chung, tái sử dụng được trên toàn bộ ứng dụng.
 
@@ -7,6 +7,48 @@ import { services } from './services.js';
 import { utils } from './utils.js';
 
 export const uiComponents = {
+    renderCompetitionConfigUI() {
+        const container = document.getElementById(`competition-list-container`);
+        if (!container) return;
+
+        const configs = appState.competitionConfigs || [];
+
+        if (configs.length === 0) {
+            container.innerHTML = '<p class="text-xs text-center text-gray-500 italic">Chưa có chương trình nào được tạo.</p>';
+            return;
+        }
+
+        container.innerHTML = configs.map((config, index) => {
+            const applyToBadges = (config.applyTo || []).map(item => {
+                const bgColor = item === 'lk' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800';
+                return `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${bgColor}">${item.toUpperCase()}</span>`;
+            }).join(' ');
+
+            return `
+                <div class="p-3 border rounded-lg bg-white flex justify-between items-center shadow-sm">
+                    <div>
+                        <div class="flex items-center gap-x-2">
+                            <p class="font-bold text-gray-800">${config.name}</p>
+                            ${applyToBadges}
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1 space-y-1">
+                            <p><strong>Hãng:</strong> <span class="font-semibold text-blue-600">${(config.brands || []).join(', ')}</span></p>
+                            <p><strong>Nhóm hàng:</strong> <span class="font-semibold">${(config.groups || []).length} nhóm</span></p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-x-2 flex-shrink-0">
+                        <button class="edit-competition-btn p-2 rounded-md hover:bg-gray-200 text-gray-600" data-index="${index}" title="Sửa chương trình">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        </button>
+                        <button class="delete-competition-btn p-2 rounded-md hover:bg-red-100 text-red-600" data-index="${index}" title="Xóa chương trình">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    },
+
     // --- GENERAL UI HELPERS ---
     showProgressBar: (elementId) => document.getElementById(`progress-${elementId}`)?.classList.remove('hidden'),
     hideProgressBar: (elementId) => document.getElementById(`progress-${elementId}`)?.classList.add('hidden'),
@@ -27,10 +69,12 @@ export const uiComponents = {
         }
     },
     
-    // --- HÀM MỚI ĐỂ HIỂN THỊ BỘ ĐẾM ---
     updateUsageCounter: (statsData) => {
         const visitorCountEl = document.getElementById('visitor-count');
         const actionCountEl = document.getElementById('action-count');
+        // === START: THÊM DÒNG MỚI ===
+        const userCountEl = document.getElementById('user-count');
+        // === END: THÊM DÒNG MỚI ===
 
         if (visitorCountEl) {
             visitorCountEl.textContent = statsData.pageLoads ? uiComponents.formatNumber(statsData.pageLoads) : '0';
@@ -38,6 +82,11 @@ export const uiComponents = {
         if (actionCountEl) {
             actionCountEl.textContent = statsData.actionsTaken ? uiComponents.formatNumber(statsData.actionsTaken) : '0';
         }
+        // === START: THÊM LOGIC MỚI ===
+        if (userCountEl) {
+            userCountEl.textContent = statsData.totalUsers ? uiComponents.formatNumber(statsData.totalUsers) : '0';
+        }
+        // === END: LOGIC MỚI ===
     },
 
     updateFileStatus(fileType, fileName, statusText, statusType = 'default') {
@@ -301,34 +350,46 @@ export const uiComponents = {
             return;
         }
 
-        listContainer.innerHTML = appState.feedbackList.map(item => `
-            <div class="feedback-item bg-white rounded-xl shadow-md p-5 border border-gray-200" data-id="${item.id}">
-                <p class="text-gray-800">${item.content}</p>
-                <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">
-                    <span>${item.user} - ${this.formatTimeAgo(item.timestamp)}</span>
-                    ${appState.isAdmin ? `<button class="reply-btn text-blue-600 hover:underline">Trả lời</button>` : ''}
-                </div>
-                
-                <div class="ml-6 mt-4 space-y-3">
-                    ${(item.replies || []).map(reply => `
-                        <div class="bg-gray-100 rounded-lg p-3">
-                            <p class="text-gray-700 text-sm">${reply.content}</p>
-                            <div class="text-xs text-gray-500 mt-2">
-                                <strong>Admin</strong> - ${this.formatTimeAgo(reply.timestamp instanceof Date ? reply.timestamp : reply.timestamp?.toDate())}
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
+        listContainer.innerHTML = appState.feedbackList.map(item => {
+            let userNameDisplay = 'Người dùng cũ'; 
+            if (typeof item.user === 'object' && item.user !== null && item.user.uid) {
+                if (item.user.isAnonymous) {
+                    userNameDisplay = `Người dùng Khách #${item.user.uid.slice(-6)}`;
+                } 
+            } else if (typeof item.user === 'string') {
+                userNameDisplay = item.user;
+            }
 
-                <div class="reply-form-container hidden ml-6 mt-4">
-                    <textarea class="w-full p-2 border rounded-lg text-sm" rows="2" placeholder="Viết câu trả lời..."></textarea>
-                    <div class="flex justify-end gap-2 mt-2">
-                        <button class="cancel-reply-btn text-sm text-gray-600 px-3 py-1 rounded-md hover:bg-gray-100">Hủy</button>
-                        <button class="submit-reply-btn text-sm bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700">Gửi</button>
+            return `
+                <div class="feedback-item bg-white rounded-xl shadow-md p-5 border border-gray-200" data-id="${item.id}">
+                    <p class="text-gray-800">${item.content}</p>
+                    <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">
+                        <span class="font-semibold">${userNameDisplay}</span>
+                        <span>${this.formatTimeAgo(item.timestamp)}</span>
+                        ${appState.isAdmin ? `<button class="reply-btn text-blue-600 hover:underline">Trả lời</button>` : ''}
+                    </div>
+                    
+                    <div class="ml-6 mt-4 space-y-3">
+                        ${(item.replies || []).map(reply => `
+                            <div class="bg-gray-100 rounded-lg p-3">
+                                <p class="text-gray-700 text-sm">${reply.content}</p>
+                                <div class="text-xs text-gray-500 mt-2">
+                                    <strong>Admin</strong> - ${this.formatTimeAgo(reply.timestamp instanceof Date ? reply.timestamp : reply.timestamp?.toDate())}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+    
+                    <div class="reply-form-container hidden ml-6 mt-4">
+                        <textarea class="w-full p-2 border rounded-lg text-sm" rows="2" placeholder="Viết câu trả lời..."></textarea>
+                        <div class="flex justify-end gap-2 mt-2">
+                            <button class="cancel-reply-btn text-sm text-gray-600 px-3 py-1 rounded-md hover:bg-gray-100">Hủy</button>
+                            <button class="submit-reply-btn text-sm bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700">Gửi</button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
     },
 
     // --- SETTINGS & FILTERS UI ---
@@ -497,6 +558,38 @@ export const uiComponents = {
         
         const rtGoalEl = document.getElementById('rt-goal-warehouse-select');
         if (rtGoalEl) rtGoalEl.innerHTML = createOptionsHTML(uniqueWarehouses);
+    },
+
+    populateCompetitionFilters() {
+        if (!appState.categoryStructure || appState.categoryStructure.length === 0) return;
+
+        const uniqueNhomHang = [...new Set(appState.categoryStructure.map(item => item.nhomHang))].sort();
+        const choicesOptions = uniqueNhomHang.map(item => ({ value: item, label: item, selected: false }));
+
+        const groupInstance = appState.choices['competition_group'];
+        if (groupInstance) {
+            const currentValues = groupInstance.getValue(true);
+            groupInstance.clearStore();
+            groupInstance.setChoices(choicesOptions, 'value', 'label', false);
+            if (currentValues) groupInstance.setValue(currentValues);
+        }
+    },
+    
+    populateCompetitionBrandFilter() {
+        if (!appState.brandList || appState.brandList.length === 0) return;
+
+        const choicesOptions = appState.brandList.map(brand => ({ value: brand, label: brand, selected: false }));
+        
+        const instance = appState.choices['competition_brand'];
+        if (instance) {
+            const currentValues = instance.getValue(true);
+            instance.clearStore();
+            instance.setChoices(choicesOptions, 'value', 'label', false);
+            if (currentValues && currentValues.length > 0) {
+                const validValues = currentValues.filter(val => appState.brandList.includes(val));
+                instance.setValue(validValues);
+            }
+        }
     },
 
     populateRealtimeBrandCategoryFilter: () => {

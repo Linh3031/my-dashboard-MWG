@@ -1,4 +1,11 @@
 [
+     {
+    "version": "2.8",
+    "date": "01/10/2025",
+    "notes": [
+      "Thêm tính năng tạo chương trình thi đua và theo dõi hiệu quả thi đua."
+    ]
+  },
     {
     "version": "2.7",
     "date": "26/09/2025",

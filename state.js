@@ -1,19 +1,19 @@
-// Version 2.2 - Add state for Thi Đua Vùng feature
+// Version 2.4 - Unify competition configs structure
 // MODULE 2: TỦ TRẠNG THÁI (APPSTATE)
 // File này chứa đối tượng trạng thái chung của ứng dụng, hoạt động như một "bộ nhớ".
 
 const appState = {
     // --- Collaboration & Dynamic Content ---
-    db: null, 
-    isAdmin: false, 
-    feedbackList: [], 
-    helpContent: { 
+    db: null,
+    isAdmin: false,
+    feedbackList: [],
+    helpContent: {
         data: 'Đang tải hướng dẫn...',
         luyke: 'Đang tải hướng dẫn...',
         sknv: 'Đang tải hướng dẫn...',
         realtime: 'Đang tải hướng dẫn...'
     },
-    composerTemplates: { 
+    composerTemplates: {
         luyke: '',
         sknv: '',
         realtime: ''
@@ -21,32 +21,40 @@ const appState = {
 
     // --- Dữ liệu & Trạng thái ---
     danhSachNhanVien: [],
-    
+    categoryStructure: [],
+    brandList: [], // Master list of all brands
+
     // Dữ liệu cập nhật hàng ngày
     ycxData: [],
     rawGioCongData: [],
     thuongNongData: [],
     thuongERPData: [],
     thiDuaNhanVienData: [],
-    thiDuaVungChiTiet: [], // Dữ liệu chi tiết thi đua vùng
-    thiDuaVungTong: [],   // Dữ liệu tổng hợp thi đua vùng
+    thiDuaVungChiTiet: [],
+    thiDuaVungTong: [],
 
     thiDuaReportData: [],
 
     // Dữ liệu cập nhật tháng trước
-    ycxDataThangTruoc: [], 
+    ycxDataThangTruoc: [],
     thuongNongDataThangTruoc: [],
     thuongERPDataThangTruoc: [],
 
     masterReportData: {
-        luyke: [], 
+        luyke: [],
         sknv: [],
-        realtime: [] 
+        realtime: []
     },
-    competitionData: [],
+    
+    // === START: THAY ĐỔI CẤU TRÚC LƯU TRỮ THI ĐUA ===
+    // Hợp nhất lk và rt thành một danh sách duy nhất.
+    // Mỗi chương trình sẽ có thuộc tính 'applyTo' là một mảng, ví dụ: ['lk', 'rt']
+    competitionConfigs: [],
+    // === END: THAY ĐỔI CẤU TRÚC LƯU TRỮ THI ĐUA ===
+
     realtimeYCXData: [],
     luykeGoalSettings: {},
-    realtimeGoalSettings: {}, 
+    realtimeGoalSettings: {},
     highlightSettings: {
         luyke: {},
         sknv: {},
@@ -60,7 +68,10 @@ const appState = {
         luyke_employee: null, luyke_date_picker: null, luyke_highlight_nhanhang: null, luyke_highlight_nhomhang: null, luyke_highlight_employee: null,
         sknv_employee: null, sknv_date_picker: null, sknv_highlight_nhanhang: null, sknv_highlight_nhomhang: null, sknv_highlight_employee: null,
         realtime_employee: null, realtime_highlight_nhanhang: null, realtime_highlight_nhomhang: null, realtime_highlight_employee: null,
-        thiDuaVung_sieuThi: null, // Bộ lọc cho tab Thi đua vùng
+        thiDuaVung_sieuThi: null,
+        // Cấu hình Choices cho drawer mục tiêu hợp nhất
+        competition_group: null,
+        competition_brand: null,
     },
     sortState: {
         luyke_chuaxuat: { key: 'doanhThuQuyDoi', direction: 'desc' },

@@ -1,12 +1,13 @@
-// Version 2.6 - Add counter trigger for screenshot action
+// Version 2.8 - Fix case-sensitive bug in cleanCategoryName
 // MODULE: UTILITIES
 // Chứa các hàm tiện ích chung không thuộc về logic hay giao diện cụ thể.
 import { appState } from './state.js';
 import { ui } from './ui.js';
-import { firebase } from './firebase.js'; // Thêm import firebase
+import { firebase } from './firebase.js';
 
 // --- HELPER for Screenshot CSS Injection ---
 const _injectCaptureStyles = () => {
+    // ... (Nội dung hàm này không thay đổi)
     const styleId = 'dynamic-capture-styles';
     document.getElementById(styleId)?.remove();
 
@@ -73,7 +74,6 @@ const _injectCaptureStyles = () => {
             font-size: 22px !important;
             vertical-align: middle;
         }
-        /* --- PRESET MỚI CHO THI ĐUA VÙNG --- */
         .preset-infographic-wide {
             width: 1100px !important;
         }
@@ -88,12 +88,34 @@ const _injectCaptureStyles = () => {
 
 
 const utils = {
-    cleanCategoryName(name) {
-        if (!name || typeof name !== 'string') return '';
-        return name.replace(/^\d+\s*-\s*/, '').trim();
+    getRandomBrightColor() {
+        const colors = [
+            '#ef4444', // red-500
+            '#f97316', // orange-500
+            '#eab308', // yellow-500
+            '#84cc16', // lime-500
+            '#22c55e', // green-500
+            '#10b981', // emerald-500
+            '#14b8a6', // teal-500
+            '#06b6d4', // cyan-500
+            '#3b82f6', // blue-500
+            '#8b5cf6', // violet-500
+            '#d946ef', // fuchsia-500
+            '#ec4899', // pink-500
+        ];
+        return colors[Math.floor(Math.random() * colors.length)];
     },
 
+    // === START: SỬA LỖI SO SÁNH CHỮ HOA/THƯỜNG ===
+    cleanCategoryName(name) {
+        if (!name || typeof name !== 'string') return '';
+        // Thêm .toLowerCase() để chuẩn hóa dữ liệu, đảm bảo so sánh chính xác
+        return name.replace(/^\d+\s*-\s*/, '').trim().toLowerCase();
+    },
+    // === END: SỬA LỖI SO SÁNH CHỮ HOA/THƯỜNG ===
+
     loadInterfaceSettings() {
+        // ... (Nội dung các hàm còn lại không thay đổi)
         try {
             const savedSettings = JSON.parse(localStorage.getItem('interfaceSettings')) || {};
             const defaultSettings = {
@@ -395,9 +417,7 @@ const utils = {
             return;
         }
 
-        // === START: GỌI HÀM ĐẾM LƯỢT SỬ DỤNG ===
         firebase.incrementCounter('actionsTaken');
-        // === END: GỌI HÀM ĐẾM LƯỢT SỬ DỤNG ===
         
         ui.showNotification(`Bắt đầu chụp báo cáo ${baseTitle}...`, 'success');
     

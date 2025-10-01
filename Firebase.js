@@ -1,9 +1,9 @@
-// Version 1.1 - Add visitor and usage counter functionality
+// Version 1.4 - Update bookmark path to ZIP file
 // MODULE: FIREBASE
 // Chịu trách nhiệm kết nối, thiết lập listener với Firebase.
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, arrayUnion, serverTimestamp, query, orderBy, setDoc, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-// Thêm import cho Firebase Storage
 import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 import { appState } from './state.js';
 import { ui } from './ui.js';
@@ -23,9 +23,10 @@ const firebase = {
 
         try {
             const firebaseApp = initializeApp(firebaseConfig);
+            appState.auth = getAuth(firebaseApp);
             appState.db = getFirestore(firebaseApp);
-            // Khởi tạo Storage
             appState.storage = getStorage(firebaseApp); 
+            
             console.log("Firebase connected successfully!");
             this.setupListeners();
         } catch (error) {
@@ -37,7 +38,6 @@ const firebase = {
     setupListeners() {
         if (!appState.db) return;
 
-        // Listener for feedback
         const feedbackQuery = query(collection(appState.db, "feedback"), orderBy("timestamp", "desc"));
         onSnapshot(feedbackQuery, (querySnapshot) => {
             appState.feedbackList = [];
@@ -48,7 +48,6 @@ const firebase = {
             ui.renderFeedbackSection();
         });
 
-        // Listener for help content
         const helpContentRef = collection(appState.db, "help_content");
         onSnapshot(helpContentRef, (querySnapshot) => {
             querySnapshot.forEach((doc) => {
@@ -61,12 +60,10 @@ const firebase = {
             }
         });
 
-        // --- LISTENER MỚI CHO BỘ ĐẾM ---
         const statsRef = doc(appState.db, "analytics", "site_stats");
         onSnapshot(statsRef, (docSnap) => {
             if (docSnap.exists()) {
                 const statsData = docSnap.data();
-                // Gọi hàm UI để cập nhật giao diện (sẽ được tạo ở bước sau)
                 ui.updateUsageCounter(statsData);
             } else {
                 console.log("Không tìm thấy document thống kê.");
@@ -74,27 +71,27 @@ const firebase = {
         });
     },
 
-    // --- HÀM MỚI ĐỂ TĂNG BỘ ĐẾM ---
     async incrementCounter(fieldName) {
         if (!appState.db || !fieldName) return;
-        
         const statsRef = doc(appState.db, "analytics", "site_stats");
-
         try {
-            // Sử dụng { merge: true } để tạo document nếu nó chưa tồn tại
-            await setDoc(statsRef, {
-                [fieldName]: increment(1)
-            }, { merge: true });
+            await setDoc(statsRef, { [fieldName]: increment(1) }, { merge: true });
         } catch (error) {
             console.error(`Lỗi khi tăng bộ đếm cho '${fieldName}':`, error);
         }
     },
 
     async submitFeedback(content) {
-        if (!content || !appState.db) return;
+        if (!content || !appState.db || !appState.currentUser) {
+             ui.showNotification("Không thể gửi góp ý: Người dùng chưa được xác thực.", "error");
+            return;
+        }
         try {
             await addDoc(collection(appState.db, "feedback"), {
-                user: "Người dùng ẩn danh",
+                user: {
+                    uid: appState.currentUser.uid,
+                    isAnonymous: appState.currentUser.isAnonymous,
+                },
                 content: content,
                 timestamp: serverTimestamp(),
                 replies: []
@@ -147,7 +144,6 @@ const firebase = {
         }
         const filePath = 'templates/danh_sach_nhan_vien_mau.xlsx';
         const storageRef = ref(appState.storage, filePath);
-        
         try {
             const url = await getDownloadURL(storageRef);
             return url;
@@ -155,7 +151,25 @@ const firebase = {
             console.error("Lỗi khi lấy URL tải file mẫu: ", error);
             throw error;
         }
+    },
+
+    async getBookmarkDownloadURL() {
+        if (!appState.storage) {
+            throw new Error("Firebase Storage chưa được khởi tạo.");
+        }
+        // === START: THAY ĐỔI ĐƯỜNG DẪN ===
+        const filePath = 'templates/Share_QLST.zip';
+        // === END: THAY ĐỔI ĐƯỜNG DẪN ===
+        const storageRef = ref(appState.storage, filePath);
+
+        try {
+            const url = await getDownloadURL(storageRef);
+            return url;
+        } catch (error) {
+            console.error("Lỗi khi lấy URL tải file bookmark: ", error);
+            throw error;
+        }
     }
 };
 
-export { firebase };    
+export { firebase };
