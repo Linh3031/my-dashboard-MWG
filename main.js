@@ -6,12 +6,8 @@ import { config } from './config.js';
 import { appState } from './state.js';
 import { services } from './services.js';
 import { ui } from './ui.js';
-<<<<<<< HEAD
-import { firebase } from './firebase.js'; // KÍCH HOẠT: Nhập module firebase
-=======
 import { firebase } from './firebase.js';
 import { auth } from './auth.js';
->>>>>>> version-2.0
 import { luykeTab } from './tab-luyke.js';
 import { sknvTab } from './tab-sknv.js';
 import { realtimeTab } from './tab-realtime.js';
