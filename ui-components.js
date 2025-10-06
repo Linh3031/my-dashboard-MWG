@@ -1,4 +1,4 @@
-// Version 2.7 - Display totalUsers in the usage counter
+// Version 1.5 - Add diagnostic display function and robust UI helpers
 // MODULE: UI COMPONENTS
 // Chứa các hàm UI chung, tái sử dụng được trên toàn bộ ứng dụng.
 
@@ -7,48 +7,6 @@ import { services } from './services.js';
 import { utils } from './utils.js';
 
 export const uiComponents = {
-    renderCompetitionConfigUI() {
-        const container = document.getElementById(`competition-list-container`);
-        if (!container) return;
-
-        const configs = appState.competitionConfigs || [];
-
-        if (configs.length === 0) {
-            container.innerHTML = '<p class="text-xs text-center text-gray-500 italic">Chưa có chương trình nào được tạo.</p>';
-            return;
-        }
-
-        container.innerHTML = configs.map((config, index) => {
-            const applyToBadges = (config.applyTo || []).map(item => {
-                const bgColor = item === 'lk' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800';
-                return `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${bgColor}">${item.toUpperCase()}</span>`;
-            }).join(' ');
-
-            return `
-                <div class="p-3 border rounded-lg bg-white flex justify-between items-center shadow-sm">
-                    <div>
-                        <div class="flex items-center gap-x-2">
-                            <p class="font-bold text-gray-800">${config.name}</p>
-                            ${applyToBadges}
-                        </div>
-                        <div class="text-xs text-gray-500 mt-1 space-y-1">
-                            <p><strong>Hãng:</strong> <span class="font-semibold text-blue-600">${(config.brands || []).join(', ')}</span></p>
-                            <p><strong>Nhóm hàng:</strong> <span class="font-semibold">${(config.groups || []).length} nhóm</span></p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-x-2 flex-shrink-0">
-                        <button class="edit-competition-btn p-2 rounded-md hover:bg-gray-200 text-gray-600" data-index="${index}" title="Sửa chương trình">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                        </button>
-                        <button class="delete-competition-btn p-2 rounded-md hover:bg-red-100 text-red-600" data-index="${index}" title="Xóa chương trình">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                        </button>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    },
-
     // --- GENERAL UI HELPERS ---
     showProgressBar: (elementId) => document.getElementById(`progress-${elementId}`)?.classList.remove('hidden'),
     hideProgressBar: (elementId) => document.getElementById(`progress-${elementId}`)?.classList.add('hidden'),
@@ -65,28 +23,11 @@ export const uiComponents = {
         const notification = document.getElementById('update-notification');
         if (notification) {
             notification.classList.add('show');
-            notification.querySelector('button').onclick = () => window.location.reload();
+            const reloadBtn = notification.querySelector('.update-notification__reload-btn');
+            if(reloadBtn) reloadBtn.onclick = () => window.location.reload();
+            const closeBtn = notification.querySelector('.update-notification__close-btn');
+            if(closeBtn) closeBtn.onclick = () => notification.classList.remove('show');
         }
-    },
-    
-    updateUsageCounter: (statsData) => {
-        const visitorCountEl = document.getElementById('visitor-count');
-        const actionCountEl = document.getElementById('action-count');
-        // === START: THÊM DÒNG MỚI ===
-        const userCountEl = document.getElementById('user-count');
-        // === END: THÊM DÒNG MỚI ===
-
-        if (visitorCountEl) {
-            visitorCountEl.textContent = statsData.pageLoads ? uiComponents.formatNumber(statsData.pageLoads) : '0';
-        }
-        if (actionCountEl) {
-            actionCountEl.textContent = statsData.actionsTaken ? uiComponents.formatNumber(statsData.actionsTaken) : '0';
-        }
-        // === START: THÊM LOGIC MỚI ===
-        if (userCountEl) {
-            userCountEl.textContent = statsData.totalUsers ? uiComponents.formatNumber(statsData.totalUsers) : '0';
-        }
-        // === END: LOGIC MỚI ===
     },
 
     updateFileStatus(fileType, fileName, statusText, statusType = 'default') {
@@ -115,6 +56,46 @@ export const uiComponents = {
             content.classList.toggle('hidden', show);
         }
     },
+
+    // --- START: HÀM MỚI ĐỂ HIỂN THỊ KẾT QUẢ CHẨN ĐOÁN ---
+    displayDiagnosticResults(results) {
+        const modalId = 'diagnostic-modal';
+        let modal = document.getElementById(modalId);
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = modalId;
+            modal.className = 'modal hidden';
+            document.getElementById('modal-and-drawer-container')?.appendChild(modal);
+        }
+
+        const resultsHTML = results.map(res => `
+            <li class="flex items-center text-sm p-2 rounded-md ${res.success ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}">
+                <span class="mr-3 text-lg">${res.success ? '✅' : '❌'}</span>
+                <span class="font-medium">${res.description}:</span>
+                <span class="ml-2 font-bold">${res.success ? 'Thành công' : 'Thất bại'}</span>
+            </li>
+        `).join('');
+
+        modal.innerHTML = `
+            <div class="modal__overlay" data-close-modal></div>
+            <div class="modal__container" style="max-width: 500px;">
+                <div class="modal__header">
+                    <h3 class="modal__title">Báo Cáo Chẩn Đoán Tự Động</h3>
+                    <button class="modal__close-btn" data-close-modal>&times;</button>
+                </div>
+                <div class="modal__content">
+                    <ul class="space-y-2">${resultsHTML}</ul>
+                    <p class="text-xs text-gray-500 mt-4">Vui lòng chụp ảnh màn hình của bảng này và gửi lại nếu có lỗi 'Thất bại'.</p>
+                </div>
+            </div>
+        `;
+        
+        // Tự động hiển thị modal nếu có lỗi
+        if (results.some(res => !res.success)) {
+            this.toggleModal(modalId, true);
+        }
+    },
+    // --- END: HÀM MỚI ---
 
     // --- FORMATTERS ---
     formatNumber: (value, decimals = 0) => {
@@ -308,30 +289,24 @@ export const uiComponents = {
         this.renderFeedbackSection();
     },
 
-    async renderUpdateHistory() {
+    renderUpdateHistory() {
         const container = document.getElementById('update-history-list');
         if (!container) return;
-        
-        try {
-            const response = await fetch(`./changelog.json?v=${new Date().getTime()}`);
-            if (!response.ok) {
-                throw new Error('Không thể tải lịch sử cập nhật.');
-            }
-            const updateHistory = await response.json();
-            
-            container.innerHTML = updateHistory.map(item => `
-                <div class="bg-white rounded-xl shadow-md p-5 border border-gray-200">
-                    <h4 class="font-bold text-blue-600 mb-2">Phiên bản ${item.version} (${item.date})</h4>
-                    <ul class="list-disc list-inside text-gray-700 space-y-1 text-sm">
-                        ${item.notes.map(note => `<li>${note}</li>`).join('')}
-                    </ul>
-                </div>
-            `).join('');
+        const updateHistory = [
+            { version: "1.3", date: "16/09/2025", notes: ["Sửa lỗi KPI so sánh cùng kỳ.", "Sửa lỗi nghiêm trọng bộ lọc nhân viên chi tiết (SKNV & Realtime)."] },
+            { version: "1.2", date: "15/09/2025", notes: ["Sửa lỗi bố cục chụp ảnh thẻ KPI.", "Nâng cấp cài đặt cỡ chữ thành thanh trượt.", "Sửa lỗi định dạng doanh thu ở các bảng chi tiết.", "Sửa lỗi bộ lọc nhân viên ở tab Realtime."] },
+            { version: "1.1", date: "14/09/2025", notes: ["Thêm tính năng tự động thông báo phiên bản mới.", "Nâng cấp toàn bộ bộ lọc có tính năng tìm kiếm.", "Làm sạch tên ngành hàng/nhóm hàng trên toàn hệ thống."] },
+            { version: "1.0", date: "14/09/2025", notes: ["Thêm tùy chọn cỡ chữ.", "Nâng cấp độ tương phản.", "Gộp ô nhập liệu Thưởng ERP.", "Thêm bộ chuyển đổi chế độ xem cho nhiều tab.", "Sửa nhiều lỗi logic nghiêm trọng."] },
+        ];
 
-        } catch (error) {
-            console.error("Lỗi khi render lịch sử cập nhật:", error);
-            container.innerHTML = '<p class="text-red-500">Không thể tải lịch sử cập nhật.</p>';
-        }
+        container.innerHTML = updateHistory.map(item => `
+            <div class="bg-white rounded-xl shadow-md p-5 border border-gray-200">
+                <h4 class="font-bold text-blue-600 mb-2">Phiên bản ${item.version} (${item.date})</h4>
+                <ul class="list-disc list-inside text-gray-700 space-y-1 text-sm">
+                    ${item.notes.map(note => `<li>${note}</li>`).join('')}
+                </ul>
+            </div>
+        `).join('');
     },
     
     renderFeedbackSection() {
@@ -350,46 +325,34 @@ export const uiComponents = {
             return;
         }
 
-        listContainer.innerHTML = appState.feedbackList.map(item => {
-            let userNameDisplay = 'Người dùng cũ'; 
-            if (typeof item.user === 'object' && item.user !== null && item.user.uid) {
-                if (item.user.isAnonymous) {
-                    userNameDisplay = `Người dùng Khách #${item.user.uid.slice(-6)}`;
-                } 
-            } else if (typeof item.user === 'string') {
-                userNameDisplay = item.user;
-            }
-
-            return `
-                <div class="feedback-item bg-white rounded-xl shadow-md p-5 border border-gray-200" data-id="${item.id}">
-                    <p class="text-gray-800">${item.content}</p>
-                    <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">
-                        <span class="font-semibold">${userNameDisplay}</span>
-                        <span>${this.formatTimeAgo(item.timestamp)}</span>
-                        ${appState.isAdmin ? `<button class="reply-btn text-blue-600 hover:underline">Trả lời</button>` : ''}
-                    </div>
-                    
-                    <div class="ml-6 mt-4 space-y-3">
-                        ${(item.replies || []).map(reply => `
-                            <div class="bg-gray-100 rounded-lg p-3">
-                                <p class="text-gray-700 text-sm">${reply.content}</p>
-                                <div class="text-xs text-gray-500 mt-2">
-                                    <strong>Admin</strong> - ${this.formatTimeAgo(reply.timestamp instanceof Date ? reply.timestamp : reply.timestamp?.toDate())}
-                                </div>
+        listContainer.innerHTML = appState.feedbackList.map(item => `
+            <div class="feedback-item bg-white rounded-xl shadow-md p-5 border border-gray-200" data-id="${item.id}">
+                <p class="text-gray-800">${item.content}</p>
+                <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">
+                    <span>${item.user} - ${this.formatTimeAgo(item.timestamp)}</span>
+                    ${appState.isAdmin ? `<button class="reply-btn text-blue-600 hover:underline">Trả lời</button>` : ''}
+                </div>
+                
+                <div class="ml-6 mt-4 space-y-3">
+                    ${(item.replies || []).map(reply => `
+                        <div class="bg-gray-100 rounded-lg p-3">
+                            <p class="text-gray-700 text-sm">${reply.content}</p>
+                            <div class="text-xs text-gray-500 mt-2">
+                                <strong>Admin</strong> - ${this.formatTimeAgo(reply.timestamp instanceof Date ? reply.timestamp : reply.timestamp?.toDate())}
                             </div>
-                        `).join('')}
-                    </div>
-    
-                    <div class="reply-form-container hidden ml-6 mt-4">
-                        <textarea class="w-full p-2 border rounded-lg text-sm" rows="2" placeholder="Viết câu trả lời..."></textarea>
-                        <div class="flex justify-end gap-2 mt-2">
-                            <button class="cancel-reply-btn text-sm text-gray-600 px-3 py-1 rounded-md hover:bg-gray-100">Hủy</button>
-                            <button class="submit-reply-btn text-sm bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700">Gửi</button>
                         </div>
+                    `).join('')}
+                </div>
+
+                <div class="reply-form-container hidden ml-6 mt-4">
+                    <textarea class="w-full p-2 border rounded-lg text-sm" rows="2" placeholder="Viết câu trả lời..."></textarea>
+                    <div class="flex justify-end gap-2 mt-2">
+                        <button class="cancel-reply-btn text-sm text-gray-600 px-3 py-1 rounded-md hover:bg-gray-100">Hủy</button>
+                        <button class="submit-reply-btn text-sm bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700">Gửi</button>
                     </div>
                 </div>
-            `;
-        }).join('');
+            </div>
+        `).join('');
     },
 
     // --- SETTINGS & FILTERS UI ---
@@ -463,57 +426,6 @@ export const uiComponents = {
         container.innerHTML = content;
     },
     
-    displayThiDuaVungDebugInfo() {
-        const resultsContainer = document.getElementById('debug-results-container');
-        if (!resultsContainer) return;
-    
-        const renderDebugTable = (title, data) => {
-            if (!data || data.length === 0) {
-                return `<div class="p-2 border rounded-md bg-white mb-4">
-                    <h4 class="font-bold text-gray-800 mb-2">${title}</h4>
-                    <p class="text-gray-500">Không có dữ liệu để hiển thị.</p>
-                </div>`;
-            }
-    
-            const headers = Object.keys(data[0]);
-            let tableHTML = `<div class="p-2 border rounded-md bg-white mb-4">
-                <h4 class="font-bold text-gray-800 mb-2">${title}</h4>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full text-xs">
-                        <thead class="bg-gray-100">
-                            <tr>${headers.map(h => `<th class="px-2 py-1 text-left font-semibold text-gray-600 whitespace-nowrap">${h}</th>`).join('')}</tr>
-                        </thead>
-                        <tbody>`;
-            
-            data.forEach(row => {
-                tableHTML += `<tr class="border-t">`;
-                headers.forEach(header => {
-                    tableHTML += `<td class="px-2 py-1 font-mono">${row[header] !== undefined ? row[header] : ''}</td>`;
-                });
-                tableHTML += `</tr>`;
-            });
-    
-            tableHTML += `</tbody></table></div></div>`;
-            return tableHTML;
-        };
-    
-        const tongRaw = appState.debugInfo.thiDuaVungTongRaw;
-        const chiTietRaw = appState.debugInfo.thiDuaVungChiTietRaw;
-    
-        let finalHTML = renderDebugTable('Thi Đua Vùng - Sheet TONG (10 dòng đầu)', tongRaw);
-        finalHTML += renderDebugTable('Thi Đua Vùng - Sheet CHITIET (10 dòng đầu)', chiTietRaw);
-        
-        const existingEl = document.getElementById('debug-table-thidua-vung');
-        if (existingEl) {
-            existingEl.innerHTML = finalHTML;
-        } else {
-            const wrapper = document.createElement('div');
-            wrapper.id = `debug-table-thidua-vung`;
-            wrapper.innerHTML = finalHTML;
-            resultsContainer.appendChild(wrapper);
-        }
-    },
-
     populateAllFilters: () => {
         const { danhSachNhanVien } = appState;
         if (danhSachNhanVien.length === 0) return;
@@ -521,75 +433,30 @@ export const uiComponents = {
         const uniqueWarehouses = [...new Set(danhSachNhanVien.map(nv => nv.maKho).filter(Boolean))].sort();
         const uniqueDepartments = [...new Set(danhSachNhanVien.map(nv => nv.boPhan).filter(Boolean))].sort();
 
-        const createChoicesOptions = (items, includeAllOption = true) => {
-            const options = items.map(item => ({ value: String(item), label: String(item) }));
-            if (includeAllOption) {
-                options.unshift({ value: '', label: 'Tất cả' });
-            }
-            return options;
+        const createOptionsHTML = (items, includeAllOption = true) => {
+            let html = includeAllOption ? '<option value="">Tất cả</option>' : '';
+            html += items.map(item => `<option value="${item}">${item}</option>`).join('');
+            return html;
         };
 
-        const warehouseChoicesOptions = createChoicesOptions(uniqueWarehouses);
-        const departmentChoicesOptions = createChoicesOptions(uniqueDepartments);
+        const warehouseOptions = createOptionsHTML(uniqueWarehouses);
+        const departmentOptions = createOptionsHTML(uniqueDepartments);
 
         ['luyke', 'sknv', 'realtime'].forEach(prefix => {
-            const warehouseInstance = appState.choices[`${prefix}_warehouse`];
-            if (warehouseInstance) {
-                warehouseInstance.clearStore();
-                warehouseInstance.setChoices(warehouseChoicesOptions, 'value', 'label', true);
-            }
+            const warehouseEl = document.getElementById(`${prefix}-filter-warehouse`);
+            if (warehouseEl) warehouseEl.innerHTML = warehouseOptions;
             
-            const departmentInstance = appState.choices[`${prefix}_department`];
-            if (departmentInstance) {
-                departmentInstance.clearStore();
-                departmentInstance.setChoices(departmentChoicesOptions, 'value', 'label', true);
-            }
-            
+            const departmentEl = document.getElementById(`${prefix}-filter-department`);
+            if (departmentEl) departmentEl.innerHTML = departmentOptions;
+
             uiComponents.updateEmployeeFilter(prefix);
         });
         
-        const createOptionsHTML = (items, includeAllOption = false) => {
-             let html = includeAllOption ? '<option value="">Tất cả</option>' : '';
-             html += items.map(item => `<option value="${item}">${item}</option>`).join('');
-             return html;
-        };
         const luykeGoalEl = document.getElementById('luyke-goal-warehouse-select');
-        if (luykeGoalEl) luykeGoalEl.innerHTML = createOptionsHTML(uniqueWarehouses);
+        if (luykeGoalEl) luykeGoalEl.innerHTML = createOptionsHTML(uniqueWarehouses, false);
         
         const rtGoalEl = document.getElementById('rt-goal-warehouse-select');
-        if (rtGoalEl) rtGoalEl.innerHTML = createOptionsHTML(uniqueWarehouses);
-    },
-
-    populateCompetitionFilters() {
-        if (!appState.categoryStructure || appState.categoryStructure.length === 0) return;
-
-        const uniqueNhomHang = [...new Set(appState.categoryStructure.map(item => item.nhomHang))].sort();
-        const choicesOptions = uniqueNhomHang.map(item => ({ value: item, label: item, selected: false }));
-
-        const groupInstance = appState.choices['competition_group'];
-        if (groupInstance) {
-            const currentValues = groupInstance.getValue(true);
-            groupInstance.clearStore();
-            groupInstance.setChoices(choicesOptions, 'value', 'label', false);
-            if (currentValues) groupInstance.setValue(currentValues);
-        }
-    },
-    
-    populateCompetitionBrandFilter() {
-        if (!appState.brandList || appState.brandList.length === 0) return;
-
-        const choicesOptions = appState.brandList.map(brand => ({ value: brand, label: brand, selected: false }));
-        
-        const instance = appState.choices['competition_brand'];
-        if (instance) {
-            const currentValues = instance.getValue(true);
-            instance.clearStore();
-            instance.setChoices(choicesOptions, 'value', 'label', false);
-            if (currentValues && currentValues.length > 0) {
-                const validValues = currentValues.filter(val => appState.brandList.includes(val));
-                instance.setValue(validValues);
-            }
-        }
+        if (rtGoalEl) rtGoalEl.innerHTML = createOptionsHTML(uniqueWarehouses, false);
     },
 
     populateRealtimeBrandCategoryFilter: () => {
@@ -609,11 +476,11 @@ export const uiComponents = {
 
     updateEmployeeFilter: (prefix) => {
         const multiSelectInstance = appState.choices[`${prefix}_employee`];
-        const selectedWarehouse = appState.choices[`${prefix}_warehouse`]?.getValue(true) || '';
-        const selectedDept = appState.choices[`${prefix}_department`]?.getValue(true) || '';
+        const selectedWarehouse = document.getElementById(`${prefix}-filter-warehouse`)?.value;
+        const selectedDept = document.getElementById(`${prefix}-filter-department`)?.value;
 
         const filteredEmployees = appState.danhSachNhanVien.filter(nv => 
-            (!selectedWarehouse || String(nv.maKho) == selectedWarehouse) &&
+            (!selectedWarehouse || nv.maKho == selectedWarehouse) &&
             (!selectedDept || nv.boPhan === selectedDept)
         );
 
@@ -628,6 +495,7 @@ export const uiComponents = {
             multiSelectInstance.setChoices(multiSelectOptions, 'value', 'label', false);
         }
 
+        // FIX: Update all corresponding single-select (detail) filters robustly
         const singleSelectOptions = filteredEmployees.map(nv => ({
             value: nv.maNV,
             label: uiComponents.getShortEmployeeName(nv.hoTen, nv.maNV)
@@ -638,10 +506,18 @@ export const uiComponents = {
             if (instance) {
                 const currentValue = instance.getValue(true);
                 instance.clearStore();
-                instance.setChoices(singleSelectOptions, 'value', 'label', false);
-                
-                if (currentValue && filteredEmployees.some(e => String(e.maNV) == currentValue)) {
+                instance.setChoices(
+                    [
+                        { value: '', label: '-- Chọn nhân viên --', selected: !currentValue, disabled: false },
+                        ...singleSelectOptions
+                    ],
+                    'value', 'label', false
+                );
+                // Re-select previous value if it still exists in the new list
+                if (currentValue && filteredEmployees.some(e => e.maNV == currentValue)) {
                     instance.setValue([currentValue]);
+                } else {
+                    instance.setValue(['']); // Reset to placeholder
                 }
             }
         };
