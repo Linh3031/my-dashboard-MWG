@@ -1,5 +1,6 @@
-// Version 28.1 - Update loader logic for the new static layout shell
+// Version 27.0 - Centralize declaration data on Firestore
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
+// File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
 import { config } from './config.js';
 import { appState } from './state.js';
@@ -11,13 +12,13 @@ import { luykeTab } from './tab-luyke.js';
 import { sknvTab } from './tab-sknv.js';
 import { realtimeTab } from './tab-realtime.js';
 import { utils } from './utils.js';
-import { loadHTMLComponents } from './html-loader.js';
 
-// --- IndexedDB Helper --- (Giữ nguyên không thay đổi)
+// --- IndexedDB Helper ---
 const idbHelper = {
     db: null,
     dbName: 'AppStorageDB',
     storeName: 'fileStore',
+
     openDB() {
         return new Promise((resolve, reject) => {
             if (this.db) return resolve(this.db);
@@ -38,6 +39,7 @@ const idbHelper = {
             };
         });
     },
+
     async setItem(id, value) {
         const db = await this.openDB();
         return new Promise((resolve, reject) => {
@@ -48,6 +50,7 @@ const idbHelper = {
             request.onerror = (event) => reject(event.target.error);
         });
     },
+
     async getItem(id) {
         const db = await this.openDB();
         return new Promise((resolve, reject) => {
@@ -62,32 +65,12 @@ const idbHelper = {
     }
 };
 
+
 const app = {
     currentVersion: '2.9.1',
 
     async init() {
         try {
-            // BƯỚC 2: Cập nhật lại danh sách tải để chèn component vào đúng các khung chứa mới.
-            const componentsToLoad = [
-                // Tải sidebar vào khung của nó
-                { file: './components/sidebar.html', targetId: 'sidebar-container' },
-                
-                // Tải tất cả các section vào khung của chúng
-                { file: './components/home-section.html', targetId: 'page-section-container' },
-                { file: './components/data-section.html', targetId: 'page-section-container' },
-                { file: './components/health-section.html', targetId: 'page-section-container' },
-                { file: './components/health-employee-section.html', targetId: 'page-section-container' },
-                { file: './components/realtime-section.html', targetId: 'page-section-container' },
-                { file: './components/declaration-section.html', targetId: 'page-section-container' },
-
-                // Tải modals và drawers vào container riêng
-                { file: './components/modals.html', targetId: 'modal-and-drawer-container' },
-                { file: './components/drawers.html', targetId: 'modal-and-drawer-container' },
-            ];
-
-            await loadHTMLComponents(componentsToLoad);
-            
-            // Các bước khởi tạo còn lại giữ nguyên
             appState.competitionConfigs = [];
             
             await firebase.init();
@@ -98,11 +81,14 @@ const app = {
             await idbHelper.openDB();
             firebase.incrementCounter('pageLoads');
             
+            // --- START: THAY ĐỔI LOGIC TẢI DỮ LIỆU ---
+            // Tải dữ liệu khai báo dùng chung từ Firestore cho TẤT CẢ người dùng
             console.log("Loading category data from Firestore...");
             const { categories, brands } = await firebase.loadCategoryDataFromFirestore();
             appState.categoryStructure = categories;
             appState.brandList = brands;
             console.log(`Successfully populated ${appState.categoryStructure.length} categories and ${appState.brandList.length} brands from Firestore.`);
+            // --- END: THAY ĐỔI LOGIC TẢI DỮ LIỆU ---
 
             this.setupEventListeners();
             
@@ -121,56 +107,12 @@ const app = {
 
             this.loadPastedDataFromStorage();
             
-            this.switchTab('home-section');
+            this.switchTab('data-section');
             this.checkForUpdates();
             setInterval(() => this.checkForUpdates(), 15 * 60 * 1000); 
-
-            this.runDiagnostics();
-
         } catch (error) {
             console.error("Lỗi nghiêm trọng trong quá trình khởi tạo ứng dụng:", error);
         }
-    },
-    
-    // (Tất cả các hàm còn lại từ runDiagnostics() trở đi đều được giữ nguyên y hệt file trước)
-    // ...
-    // ...
-    // =======================================================================
-    // TẤT CẢ CÁC HÀM CÒN LẠI TỪ FILE main.js GỐC CỦA BẠN ĐƯỢC GIỮ NGUYÊN
-    // TÔI SẼ SAO CHÉP CHÚNG VÀO ĐÂY MÀ KHÔNG THAY ĐỔI GÌ.
-    // =======================================================================
-
-    runDiagnostics() {
-        console.log("--- Bắt đầu Chẩn đoán Tự động ---");
-        const results = [];
-        const check = (description, testFn) => {
-            try {
-                const result = testFn();
-                results.push({ description, success: !!result, element: result });
-            } catch (e) {
-                results.push({ description, success: false, error: e.message });
-            }
-        };
-
-        // DOM Structure Checks
-        check("Kiểm tra thẻ Sidebar (#sidebar)", () => document.getElementById('sidebar'));
-        check("Kiểm tra các nút menu chính (.nav-link)", () => document.querySelectorAll('.nav-link').length > 4);
-
-        // Sidebar Content Checks
-        check("Kiểm tra nút 'Thiết lập mục tiêu' (#goal-settings-btn)", () => document.getElementById('goal-settings-btn'));
-        check("Kiểm tra text menu của 'Sức khỏe nhân viên'", () => {
-            const link = Array.from(document.querySelectorAll('.nav-link')).find(el => el.href.includes('health-employee-section'));
-            return link && link.querySelector('.menu-text') && link.querySelector('.menu-text').textContent.includes('Sức khỏe nhân viên');
-        });
-
-        // Tab Content Checks
-        check("Kiểm tra các nút tab phụ (.sub-tab-btn)", () => document.querySelectorAll('.sub-tab-btn').length > 10);
-        check("Kiểm tra container nội dung tab phụ (#luyke-subtabs-content)", () => document.getElementById('luyke-subtabs-content'));
-        check("Kiểm tra container cho bảng 'Hiệu quả khai thác'", () => document.getElementById('luyke-efficiency-content'));
-
-        // Display results
-        ui.displayDiagnosticResults(results);
-        console.log("--- Kết thúc Chẩn đoán ---");
     },
 
     async checkForUpdates() {
@@ -193,12 +135,16 @@ const app = {
         document.getElementById('declaration-heso').value = localStorage.getItem('declaration_heso') || Object.entries(config.DEFAULT_DATA.HE_SO_QUY_DOI).map(([k, v]) => `${k},${v}`).join('\n');
 
         const loadSavedFile = async (saveKey, stateKey, fileType, uiId, uiName) => {
+            // --- START: THAY ĐỔI LOGIC LƯU TRỮ ---
+            // Không xử lý file category-structure ở đây nữa vì đã lấy từ Firestore
             if (saveKey === 'saved_category_structure') {
+                // Hiển thị trạng thái đã tải từ Firestore
                 if (appState.categoryStructure.length > 0 || appState.brandList.length > 0) {
                      ui.updateFileStatus('category-structure', 'Tải từ Cloud', `✓ Đã tải ${appState.categoryStructure.length} nhóm & ${appState.brandList.length} hãng.`, 'success');
                 }
                 return;
             }
+            // --- END: THAY ĐỔI LOGIC LƯU TRỮ ---
             
             const savedData = await idbHelper.getItem(saveKey);
             if (!savedData) return;
@@ -220,7 +166,7 @@ const app = {
         if (appState.danhSachNhanVien.length > 0) {
             services.updateEmployeeMaps();
         }
-        await loadSavedFile('saved_category_structure', null, null, null, null);
+        await loadSavedFile('saved_category_structure', null, null, null, null); // Gọi để hiển thị status
         await loadSavedFile('saved_ycx_thangtruoc', 'ycxDataThangTruoc', 'ycx', 'ycx-thangtruoc', 'YCXL Tháng Trước');
         await loadSavedFile('saved_thuongnong_thangtruoc', 'thuongNongDataThangTruoc', 'thuongnong', 'thuongnong-thangtruoc', 'Thưởng Nóng Tháng Trước');
         await loadSavedFile('saved_ycx', 'ycxData', 'ycx', 'ycx', 'Yêu cầu xuất lũy kế');
@@ -737,10 +683,13 @@ const app = {
                 ui.populateCompetitionFilters();
                 ui.populateCompetitionBrandFilter();
                 
+                // --- START: THAY ĐỔI LOGIC LƯU TRỮ ---
+                // Lưu dữ liệu đã xử lý lên Firestore cho mọi người dùng
                 await firebase.saveCategoryDataToFirestore({
                     categories: categoryResult.normalizedData,
                     brands: brandResult.normalizedData
                 });
+                // --- END: THAY ĐỔI LOGIC LƯU TRỮ ---
 
                 ui.updateFileStatus(fileType, file.name, `✓ Đã xử lý và đồng bộ ${categoryResult.normalizedData.length} nhóm & ${brandResult.normalizedData.length} hãng.`, 'success');
             } else {

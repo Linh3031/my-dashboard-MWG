@@ -1,20 +1,84 @@
-// Version 21.4 - Remove obsolete loadComponent function
+// Version 2.8 - Fix case-sensitive bug in cleanCategoryName
 // MODULE: UTILITIES
 // Chứa các hàm tiện ích chung không thuộc về logic hay giao diện cụ thể.
 import { appState } from './state.js';
 import { ui } from './ui.js';
+import { firebase } from './firebase.js';
 
+// --- HELPER for Screenshot CSS Injection ---
 const _injectCaptureStyles = () => {
+    // ... (Nội dung hàm này không thay đổi)
     const styleId = 'dynamic-capture-styles';
     document.getElementById(styleId)?.remove();
+
     const styles = `
-        .capture-container { padding: 24px; background-color: #f3f4f6; box-sizing: border-box; width: fit-content; max-width: 1440px; position: absolute; left: -9999px; top: 0; }
-        .capture-layout-container { display: flex; flex-direction: column; gap: 24px; }
-        .capture-title { font-size: 28px; font-weight: 700; text-align: center; color: #1f2937; margin-bottom: 24px; padding: 12px; background-color: #ffffff; border-radius: 0.75rem; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); }
-        .prepare-for-kpi-capture { display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 24px !important; width: 900px !important; padding: 24px !important; background-color: #f3f4f6 !important; }
-        .prepare-for-kpi-capture .kpi-card p[id$="-main"] { text-shadow: 0 0 1px rgba(0,0,0,0.1); }
-        .preset-mobile-portrait { width: 650px !important; margin: 0 auto !important; }
+        .capture-container { 
+            padding: 24px; 
+            background-color: #f3f4f6; 
+            box-sizing: border-box; 
+            width: fit-content; 
+            position: absolute;
+            left: -9999px;
+            top: 0;
+            z-index: -1;
+        }
+        .capture-layout-container { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 24px; 
+        }
+        .capture-title { 
+            font-size: 28px; 
+            font-weight: 700; 
+            text-align: center; 
+            color: #1f2937; 
+            margin-bottom: 24px; 
+            padding: 12px; 
+            background-color: #ffffff; 
+            border-radius: 0.75rem; 
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); 
+        }
+        /* --- VIRTUAL STAGES / PRESETS --- */
+        .prepare-for-kpi-capture {
+            display: grid !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 24px !important;
+            width: 900px !important;
+        }
+        .preset-mobile-portrait {
+            width: 750px !important;
+        }
+        .preset-landscape-table {
+            width: fit-content !important;
+        }
+        .preset-landscape-table table {
+            table-layout: fixed !important;
+        }
+        .preset-landscape-table th, 
+        .preset-landscape-table td {
+            width: 95px !important;
+            word-wrap: break-word;
+        }
+        .preset-landscape-table th:first-child,
+        .preset-landscape-table td:first-child {
+            width: 180px !important;
+        }
+        .preset-large-font-report {
+            width: 800px !important;
+        }
+        .preset-large-font-report table th {
+            white-space: normal !important;
+            vertical-align: middle;
+        }
+        .preset-large-font-report table td {
+            font-size: 22px !important;
+            vertical-align: middle;
+        }
+        .preset-infographic-wide {
+            width: 1100px !important;
+        }
     `;
+
     const styleElement = document.createElement('style');
     styleElement.id = styleId;
     styleElement.innerHTML = styles;
@@ -24,13 +88,34 @@ const _injectCaptureStyles = () => {
 
 
 const utils = {
-    cleanCategoryName(name) {
-        if (!name || typeof name !== 'string') return '';
-        return name.replace(/^\d+\s*-\s*/, '').trim().toLowerCase();
+    getRandomBrightColor() {
+        const colors = [
+            '#ef4444', // red-500
+            '#f97316', // orange-500
+            '#eab308', // yellow-500
+            '#84cc16', // lime-500
+            '#22c55e', // green-500
+            '#10b981', // emerald-500
+            '#14b8a6', // teal-500
+            '#06b6d4', // cyan-500
+            '#3b82f6', // blue-500
+            '#8b5cf6', // violet-500
+            '#d946ef', // fuchsia-500
+            '#ec4899', // pink-500
+        ];
+        return colors[Math.floor(Math.random() * colors.length)];
     },
 
-    // ... (Toàn bộ các hàm còn lại giữ nguyên)
+    // === START: SỬA LỖI SO SÁNH CHỮ HOA/THƯỜNG ===
+    cleanCategoryName(name) {
+        if (!name || typeof name !== 'string') return '';
+        // Thêm .toLowerCase() để chuẩn hóa dữ liệu, đảm bảo so sánh chính xác
+        return name.replace(/^\d+\s*-\s*/, '').trim().toLowerCase();
+    },
+    // === END: SỬA LỖI SO SÁNH CHỮ HOA/THƯỜNG ===
+
     loadInterfaceSettings() {
+        // ... (Nội dung các hàm còn lại không thay đổi)
         try {
             const savedSettings = JSON.parse(localStorage.getItem('interfaceSettings')) || {};
             const defaultSettings = {
@@ -109,6 +194,7 @@ const utils = {
         const settings = { goals: {}, timing: {} };
         document.querySelectorAll('.rt-goal-input').forEach(input => settings.goals[input.dataset.goal] = input.value);
         document.querySelectorAll('.rt-setting-input').forEach(input => settings.timing[input.id] = input.value);
+        
         if (!appState.realtimeGoalSettings) appState.realtimeGoalSettings = {};
         appState.realtimeGoalSettings[warehouse] = settings;
         localStorage.setItem('realtimeGoalSettings', JSON.stringify(appState.realtimeGoalSettings));
@@ -116,14 +202,15 @@ const utils = {
     },
 
     loadAndApplyRealtimeGoalSettings() {
-        const warehouse = document.getElementById('rt-goal-warehouse-select').value;
-        const settings = appState.realtimeGoalSettings ? appState.realtimeGoalSettings[warehouse] : null;
-        if (settings) {
-            document.querySelectorAll('.rt-goal-input').forEach(input => input.value = settings.goals?.[input.dataset.goal] || '');
-            document.querySelectorAll('.rt-setting-input').forEach(input => input.value = settings.timing?.[input.id] || '');
-        } else {
-            document.querySelectorAll('.rt-goal-input, .rt-setting-input').forEach(input => input.value = '');
-        }
+        const warehouseSelect = document.getElementById('rt-goal-warehouse-select');
+        if (!warehouseSelect) return;
+        const warehouse = warehouseSelect.value;
+        const settings = (warehouse && appState.realtimeGoalSettings && appState.realtimeGoalSettings[warehouse]) 
+            ? appState.realtimeGoalSettings[warehouse] 
+            : { goals: {}, timing: {} };
+
+        document.querySelectorAll('.rt-goal-input').forEach(input => input.value = settings.goals?.[input.dataset.goal] || '');
+        document.querySelectorAll('.rt-setting-input').forEach(input => input.value = settings.timing?.[input.id] || '');
     },
 
     saveLuykeGoalSettings() {
@@ -131,6 +218,7 @@ const utils = {
         if (!warehouse) return;
         const settings = {};
         document.querySelectorAll('.luyke-goal-input').forEach(input => settings[input.dataset.goal] = input.value);
+
         if(!appState.luykeGoalSettings) appState.luykeGoalSettings = {};
         appState.luykeGoalSettings[warehouse] = settings;
         localStorage.setItem('luykeGoalSettings', JSON.stringify(appState.luykeGoalSettings));
@@ -138,9 +226,13 @@ const utils = {
     },
 
     loadAndApplyLuykeGoalSettings() {
-        const warehouse = document.getElementById('luyke-goal-warehouse-select').value;
-        const settings = (appState.luykeGoalSettings && appState.luykeGoalSettings[warehouse]) ? appState.luykeGoalSettings[warehouse] : {};
-         document.querySelectorAll('.luyke-goal-input').forEach(input => input.value = settings[input.dataset.goal] || '');
+        const warehouseSelect = document.getElementById('luyke-goal-warehouse-select');
+        if (!warehouseSelect) return;
+        const warehouse = warehouseSelect.value;
+        const settings = (warehouse && appState.luykeGoalSettings && appState.luykeGoalSettings[warehouse]) 
+            ? appState.luykeGoalSettings[warehouse] 
+            : {};
+        document.querySelectorAll('.luyke-goal-input').forEach(input => input.value = settings[input.dataset.goal] || '');
     },
 
     getLuykeGoalSettings(selectedWarehouse = null) {
@@ -275,7 +367,7 @@ const utils = {
         }
     },
 
-    async captureAndDownload(elementToCapture, title) {
+    async captureAndDownload(elementToCapture, title, presetClass = '') {
         const date = new Date();
         const timeString = date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
         const dateString = date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
@@ -288,8 +380,13 @@ const utils = {
         titleEl.className = 'capture-title';
         titleEl.textContent = finalTitle;
         captureWrapper.appendChild(titleEl);
-    
-        captureWrapper.appendChild(elementToCapture.cloneNode(true));
+        
+        const contentClone = elementToCapture.cloneNode(true);
+        if (presetClass) {
+            contentClone.classList.add(presetClass);
+        }
+        captureWrapper.appendChild(contentClone);
+
         document.body.appendChild(captureWrapper);
     
         try {
@@ -319,33 +416,35 @@ const utils = {
             ui.showNotification('Không tìm thấy vùng nội dung để chụp.', 'error');
             return;
         }
+
+        firebase.incrementCounter('actionsTaken');
+        
         ui.showNotification(`Bắt đầu chụp báo cáo ${baseTitle}...`, 'success');
     
         const captureGroups = new Map();
         contentContainer.querySelectorAll('[data-capture-group]').forEach(el => {
-            const group = el.dataset.captureGroup;
-            if (!captureGroups.has(group)) {
-                captureGroups.set(group, []);
+            if (el.offsetParent !== null) {
+                const group = el.dataset.captureGroup;
+                if (!captureGroups.has(group)) {
+                    captureGroups.set(group, []);
+                }
+                captureGroups.get(group).push(el);
             }
-            captureGroups.get(group).push(el);
         });
-    
-        if (captureGroups.size === 0) {
-            const preset = contentContainer.dataset.capturePreset;
-            const styleElement = _injectCaptureStyles();
-            if (preset) contentContainer.classList.add(`preset-${preset}`);
-            
-            try {
-                await utils.captureAndDownload(contentContainer, baseTitle);
-            } finally {
-                if (preset) contentContainer.classList.remove(`preset-${preset}`);
-                styleElement.remove();
-            }
-            return;
-        }
         
         const styleElement = _injectCaptureStyles();
         try {
+            if (captureGroups.size === 0) {
+                if (contentContainer.offsetParent !== null) {
+                    const preset = contentContainer.dataset.capturePreset;
+                    const presetClass = preset ? `preset-${preset}` : '';
+                    await utils.captureAndDownload(contentContainer, baseTitle, presetClass);
+                } else {
+                     ui.showNotification('Không tìm thấy đối tượng hiển thị để chụp.', 'error');
+                }
+                return;
+            }
+
             for (const [group, elements] of captureGroups.entries()) {
                 const captureTitle = captureGroups.size > 1 ? `${baseTitle}_Nhom_${group}` : baseTitle;
                 
@@ -353,28 +452,26 @@ const utils = {
                 const preset = targetElement.dataset.capturePreset;
                 const isKpiGroup = group === 'kpi';
                 
-                if (isKpiGroup) targetElement.classList.add('prepare-for-kpi-capture');
-                if (preset) targetElement.classList.add(`preset-${preset}`);
+                let elementToCapture;
+                let presetClass = '';
 
-                try {
-                    await new Promise(resolve => setTimeout(resolve, 150));
-        
-                    let elementToCapture;
-                    if (elements.length > 1 && !isKpiGroup) {
-                        const tempContainer = document.createElement('div');
-                        tempContainer.className = 'capture-layout-container';
-                        if (preset) tempContainer.classList.add(`preset-${preset}`);
-                        elements.forEach(el => tempContainer.appendChild(el.cloneNode(true)));
-                        elementToCapture = tempContainer;
-                    } else {
-                        elementToCapture = targetElement;
-                    }
-        
-                    await utils.captureAndDownload(elementToCapture, captureTitle);
-                } finally {
-                    if (isKpiGroup) targetElement.classList.remove('prepare-for-kpi-capture');
-                    if (preset) targetElement.classList.remove(`preset-${preset}`);
+                if (isKpiGroup) {
+                    presetClass = 'prepare-for-kpi-capture';
+                } else if (preset) {
+                    presetClass = `preset-${preset}`;
                 }
+
+                if (elements.length > 1 && !isKpiGroup) {
+                    const tempContainer = document.createElement('div');
+                    tempContainer.className = 'capture-layout-container';
+                    elements.forEach(el => tempContainer.appendChild(el.cloneNode(true)));
+                    elementToCapture = tempContainer;
+                } else {
+                    elementToCapture = targetElement;
+                }
+    
+                await utils.captureAndDownload(elementToCapture, captureTitle, presetClass);
+                await new Promise(resolve => setTimeout(resolve, 150));
             }
         } finally {
             styleElement.remove();
