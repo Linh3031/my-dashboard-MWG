@@ -1,4 +1,4 @@
-// Version 2.8 - Fix case-sensitive bug in cleanCategoryName
+// Version 2.9 - Improve category name cleaning logic
 // MODULE: UTILITIES
 // Chứa các hàm tiện ích chung không thuộc về logic hay giao diện cụ thể.
 import { appState } from './state.js';
@@ -106,13 +106,13 @@ const utils = {
         return colors[Math.floor(Math.random() * colors.length)];
     },
 
-    // === START: SỬA LỖI SO SÁNH CHỮ HOA/THƯỜNG ===
+    // === START: SỬA LỖI - CHUẨN HÓA KHOẢNG TRẮNG VÀ CHỮ HOA/THƯỜNG ===
     cleanCategoryName(name) {
         if (!name || typeof name !== 'string') return '';
-        // Thêm .toLowerCase() để chuẩn hóa dữ liệu, đảm bảo so sánh chính xác
-        return name.replace(/^\d+\s*-\s*/, '').trim().toLowerCase();
+        // Chuẩn hóa: 1. Bỏ mã số đầu, 2. Bỏ khoảng trắng thừa đầu/cuối, 3. Thay thế nhiều khoảng trắng bên trong bằng 1, 4. Chuyển thành chữ thường.
+        return name.replace(/^\d+\s*-\s*/, '').trim().replace(/\s+/g, ' ').toLowerCase();
     },
-    // === END: SỬA LỖI SO SÁNH CHỮ HOA/THƯỜNG ===
+    // === END: SỬA LỖI ===
 
     loadInterfaceSettings() {
         // ... (Nội dung các hàm còn lại không thay đổi)

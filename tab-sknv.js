@@ -1,4 +1,4 @@
-// Version 2.3 - Adapt to unified competition config structure
+// Version 2.4 - Remove competition config filtering
 // MODULE: TAB SKNV
 // Chịu trách nhiệm render và xử lý logic cho tab "Sức khỏe nhân viên"
 import { appState } from './state.js';
@@ -38,13 +38,11 @@ export const sknvTab = {
         const activeSubTabId = activeSubTabBtn ? activeSubTabBtn.dataset.target : 'subtab-sknv';
 
         if (activeSubTabId === 'subtab-hieu-qua-thi-dua-lk') {
-            // === START: THAY ĐỔI LOGIC - LỌC CẤU HÌNH THI ĐUA ===
-            const lkConfigs = appState.competitionConfigs.filter(c => c.applyTo && c.applyTo.includes('lk'));
+            // Logic đã được đơn giản hóa: không cần lọc `competitionConfigs` nữa
             const competitionReportData = services.calculateCompetitionFocusReport(
                 filteredYCXData,
-                lkConfigs // Sử dụng danh sách đã lọc
+                appState.competitionConfigs // Sử dụng toàn bộ danh sách cấu hình
             );
-            // === END: THAY ĐỔI LOGIC ===
             
             ui.renderCompetitionUI(
                 'competition-report-container-lk',

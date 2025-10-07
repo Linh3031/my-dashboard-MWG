@@ -1,4 +1,4 @@
-/* Version 3.6 - Improve progress bar text centering for html2canvas */
+/* Version 3.7 - Sync with multi-brand competition feature update */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -189,11 +189,9 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #
 .modal__overlay { position: absolute; inset: 0; background-color: rgba(17, 24, 39, 0.6); backdrop-filter: blur(4px); cursor: pointer; }
 .modal__container { position: relative; z-index: 1001; background-color: white; border-radius: 0.75rem; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); width: 90%; max-width: 600px; max-height: 90vh; display: flex; flex-direction: column; }
 
-/* === START: CSS CHO POPUP BẮT BUỘC CẬP NHẬT === */
 #force-update-modal .modal__overlay {
-    cursor: not-allowed; /* Cho người dùng biết không thể bấm vào nền để đóng */
+    cursor: not-allowed;
 }
-/* === END: CSS CHO POPUP BẮT BUỘC CẬP NHẬT === */
 
 .modal__container--large { max-width: 900px; }
 .modal__header { padding: 1rem 1.5rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
@@ -287,8 +285,6 @@ details[open] > summary .arrow { transform: rotate(180deg); }
 .rt-customer-details table { font-size: 0.8rem; }
 .preview-content { background-color: #f3f4f6; padding: 1rem; border-radius: 0.5rem; white-space: pre-wrap; word-wrap: break-word; font-size: 0.875em; line-height: 1.6; color: #1f2937; font-family: 'Inter', sans-serif; }
 
-
-/* === START: THAY ĐỔI TDV LAYOUT TỪ CỘT SANG HÀNG === */
 .tdv-infographic-card { 
     background-color: transparent; 
     border: none;
@@ -303,7 +299,7 @@ details[open] > summary .arrow { transform: rotate(180deg); }
 .tdv-total-prize-value { color: #d90429; margin-left: 0.5rem; }
 
 .tdv-summary-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 1.5rem; margin-bottom: 2rem; }
-@media (min-width: 768px) { .tdv-summary-grid { grid-template-columns: repeat(5, 1fr); } } /* Sửa thành 5 cột */
+@media (min-width: 768px) { .tdv-summary-grid { grid-template-columns: repeat(5, 1fr); } }
 .tdv-summary-item { background-color: #ffffff; border-radius: 8px; padding: 1rem; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e5e7eb; }
 .tdv-summary-value { display: block; font-size: 1.75em; font-weight: 700; color: #0a9396; }
 .tdv-summary-label { display: block; font-size: 0.9em; color: #4a5568; margin-top: 0.25rem; }
@@ -317,12 +313,11 @@ details[open] > summary .arrow { transform: rotate(180deg); }
 .tdv-row-subtitle { font-size: 0.8em; font-weight: normal; color: #d90429; }
 
 .tdv-row-body { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
-.tdv-row-body--effort { display: block; } /* Bố cục đặc biệt cho hàng "Cần cố gắng" */
+.tdv-row-body--effort { display: block; }
 
 .tdv-item-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; }
 .tdv-item-card:hover { transform: translateY(-3px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
 .tdv-item-card__title { font-weight: bold; margin: 0 0 10px 0; color: #333; }
-/* SỬA: Thay đổi cách canh giữa chữ trong thanh tiến trình */
 .tdv-progress-bar-container { 
     width: 100%; 
     background-color: #e9ecef; 
@@ -332,19 +327,18 @@ details[open] > summary .arrow { transform: rotate(180deg); }
     font-size: 0.85em; 
     font-weight: bold; 
     overflow: hidden;
-    display: flex; /* Thêm flex */
-    align-items: center; /* Canh giữa theo chiều dọc */
-    justify-content: center; /* Canh giữa theo chiều ngang */
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 .tdv-progress-bar { height: 100%; transition: width 0.5s ease; position: absolute; top: 0; left: 0; }
 .tdv-progress-bar--blue { background-color: #0d6efd; }
 .tdv-progress-bar--yellow { background-color: #e9c46a; }
 .tdv-progress-bar__text { 
-    position: relative; /* Đổi từ absolute sang relative */
+    position: relative;
     z-index: 1; 
     text-shadow: 1px 1px 2px rgba(0,0,0,0.4); 
     color: white;
-    /* Bỏ các thuộc tính top, left, transform */
 }
 .tdv-item-card__details { font-size: 0.85em; color: #555; margin-top: 8px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
 .tdv-item-card__details span { display: block; }
@@ -358,30 +352,25 @@ details[open] > summary .arrow { transform: rotate(180deg); }
 .tdv-effort-subgroup__title--major { color: #6c757d; }
 .tdv-effort-list { display: flex; flex-wrap: wrap; gap: 8px; }
 .tdv-effort-item { background-color: #f1f3f5; color: #495057; padding: 5px 10px; border-radius: 15px; font-size: 0.9em; }
-/* === END: THAY ĐỔI TDV LAYOUT === */
 
-
-/* === START: NEW HOMEPAGE LAYOUT STYLES === */
 #video-container iframe {
     aspect-ratio: 16 / 9;
     width: 100%;
     height: auto;
-    border-radius: 0.5rem; /* bo góc nhẹ cho đẹp */
+    border-radius: 0.5rem;
 }
 
 #feedback-list-container {
-    max-height: 600px; /* Chiều cao tối đa trước khi thanh cuộn xuất hiện */
-    overflow-y: auto; /* Thêm thanh cuộn dọc khi nội dung vượt quá */
+    max-height: 600px;
+    overflow-y: auto;
 }
-/* === END: NEW HOMEPAGE LAYOUT STYLES === */
-/* === FIX CHO BỘ LỌC NHÓM HÀNG TRONG DRAWER === */
 #goal-drawer .choices__inner {
-    min-width: 250px; /* Đặt chiều rộng tối thiểu */
+    min-width: 250px;
 }
 
 #goal-drawer .choices__list--dropdown,
 #goal-drawer .choices__list[aria-expanded] {
     min-width: 100%;
-    width: auto; /* Cho phép dropdown rộng hơn ô input nếu cần */
+    width: auto;
     word-break: normal;
 }

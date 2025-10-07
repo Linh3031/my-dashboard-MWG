@@ -1,4 +1,4 @@
-// Version 1.4 - Add target comparison for efficiency table
+// Version 1.5 - Add 'Completed' and 'Not Completed' counters to competition titles
 // MODULE: UI LUY KE
 // Chứa các hàm render giao diện cho tab "Sức khỏe Siêu thị (Lũy kế)".
 
@@ -101,7 +101,14 @@ export const uiLuyke = {
 
             const headerColorClass = type === 'doanhthu' ? 'competition-header-doanhthu' : 'competition-header-soluong';
 
-            return `<div class="flex flex-col"><h4 class="text-lg font-bold text-gray-800 p-2 border-b-2 ${headerColorClass}">${title} <span class="text-sm font-normal text-gray-500">(${items.length} chương trình)</span></h4>
+            // --- START: LOGIC MỚI - TÍNH TOÁN BỘ ĐẾM ---
+            const total = items.length;
+            const dat = items.filter(item => (parseFloat(String(item.hoanThanh).replace('%','')) || 0) >= 100).length;
+            const chuaDat = total - dat;
+            const summaryText = `(Tổng: ${total}, Đạt: ${dat}, Chưa đạt: ${chuaDat})`;
+            // --- END: LOGIC MỚI ---
+
+            return `<div class="flex flex-col"><h4 class="text-lg font-bold text-gray-800 p-2 border-b-2 ${headerColorClass}">${title} <span class="text-sm font-normal text-gray-500">${summaryText}</span></h4>
                 <div class="overflow-x-auto"><table class="min-w-full text-sm table-bordered table-striped" data-table-type="luyke_competition_${type}">
                     <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                         <tr>
@@ -154,7 +161,7 @@ export const uiLuyke = {
         const { key, direction } = sortState;
         const sortedData = [...reportData].sort((a, b) => {
             const valA = a[key] || 0; const valB = b[key] || 0;
-            return direction === 'asc' ? valA - valB : valB - valA;
+            return direction === 'asc' ? valA - valB : valB - a[key];
         });
 
         const totals = reportData.reduce((acc, item) => {

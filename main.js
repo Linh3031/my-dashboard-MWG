@@ -1,4 +1,4 @@
-// Version 27.0 - Centralize declaration data on Firestore
+// Version 32.8 - Refine on-the-fly SKNV data generation for composer
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -67,7 +67,7 @@ const idbHelper = {
 
 
 const app = {
-    currentVersion: '2.9.1',
+    currentVersion: '3.0',
 
     async init() {
         try {
@@ -81,14 +81,11 @@ const app = {
             await idbHelper.openDB();
             firebase.incrementCounter('pageLoads');
             
-            // --- START: THAY ĐỔI LOGIC TẢI DỮ LIỆU ---
-            // Tải dữ liệu khai báo dùng chung từ Firestore cho TẤT CẢ người dùng
             console.log("Loading category data from Firestore...");
             const { categories, brands } = await firebase.loadCategoryDataFromFirestore();
             appState.categoryStructure = categories;
             appState.brandList = brands;
             console.log(`Successfully populated ${appState.categoryStructure.length} categories and ${appState.brandList.length} brands from Firestore.`);
-            // --- END: THAY ĐỔI LOGIC TẢI DỮ LIỆU ---
 
             this.setupEventListeners();
             
@@ -99,9 +96,8 @@ const app = {
             utils.loadHighlightSettings();
             
             ui.populateAllFilters();
-            ui.populateCompetitionFilters();
-            ui.populateCompetitionBrandFilter();
-            
+            // --- NOTE: competition filters are now populated when the form is shown ---
+
             utils.loadAndApplyLuykeGoalSettings();
             utils.loadAndApplyRealtimeGoalSettings();
 
@@ -135,16 +131,12 @@ const app = {
         document.getElementById('declaration-heso').value = localStorage.getItem('declaration_heso') || Object.entries(config.DEFAULT_DATA.HE_SO_QUY_DOI).map(([k, v]) => `${k},${v}`).join('\n');
 
         const loadSavedFile = async (saveKey, stateKey, fileType, uiId, uiName) => {
-            // --- START: THAY ĐỔI LOGIC LƯU TRỮ ---
-            // Không xử lý file category-structure ở đây nữa vì đã lấy từ Firestore
             if (saveKey === 'saved_category_structure') {
-                // Hiển thị trạng thái đã tải từ Firestore
                 if (appState.categoryStructure.length > 0 || appState.brandList.length > 0) {
                      ui.updateFileStatus('category-structure', 'Tải từ Cloud', `✓ Đã tải ${appState.categoryStructure.length} nhóm & ${appState.brandList.length} hãng.`, 'success');
                 }
                 return;
             }
-            // --- END: THAY ĐỔI LOGIC LƯU TRỮ ---
             
             const savedData = await idbHelper.getItem(saveKey);
             if (!savedData) return;
@@ -166,7 +158,7 @@ const app = {
         if (appState.danhSachNhanVien.length > 0) {
             services.updateEmployeeMaps();
         }
-        await loadSavedFile('saved_category_structure', null, null, null, null); // Gọi để hiển thị status
+        await loadSavedFile('saved_category_structure', null, null, null, null);
         await loadSavedFile('saved_ycx_thangtruoc', 'ycxDataThangTruoc', 'ycx', 'ycx-thangtruoc', 'YCXL Tháng Trước');
         await loadSavedFile('saved_thuongnong_thangtruoc', 'thuongNongDataThangTruoc', 'thuongnong', 'thuongnong-thangtruoc', 'Thưởng Nóng Tháng Trước');
         await loadSavedFile('saved_ycx', 'ycxData', 'ycx', 'ycx', 'Yêu cầu xuất lũy kế');
@@ -181,7 +173,22 @@ const app = {
             if (savedRealtimeGoals) appState.realtimeGoalSettings = JSON.parse(savedRealtimeGoals);
             
             const savedTemplates = localStorage.getItem('composerTemplates');
-            if (savedTemplates) appState.composerTemplates = JSON.parse(savedTemplates);
+            if (savedTemplates) {
+                let parsedTemplates = JSON.parse(savedTemplates);
+                for (const key in parsedTemplates) {
+                    if (typeof parsedTemplates[key] === 'string') {
+                        console.warn(`Đang chuyển đổi cấu trúc template cũ cho section '${key}'.`);
+                        const oldString = parsedTemplates[key];
+                        parsedTemplates[key] = {}; 
+                        if (key === 'luyke') parsedTemplates[key]['subtab-luyke-sieu-thi'] = oldString;
+                        else if (key === 'sknv') parsedTemplates[key]['subtab-sknv'] = oldString;
+                        else if (key === 'realtime') parsedTemplates[key]['subtab-realtime-sieu-thi'] = oldString;
+                    }
+                }
+                appState.composerTemplates = parsedTemplates;
+            } else {
+                appState.composerTemplates = { luyke: {}, sknv: {}, realtime: {} };
+            }
 
             const savedCompetition = localStorage.getItem('competitionConfigs');
             if (savedCompetition) appState.competitionConfigs = JSON.parse(savedCompetition);
@@ -311,14 +318,7 @@ const app = {
                 });
             });
 
-            const competitionGroup = document.getElementById('competition-group');
-            if (competitionGroup) {
-                appState.choices['competition_group'] = new Choices(competitionGroup, multiSelectConfig);
-            }
-            const competitionBrand = document.getElementById('competition-brand');
-            if(competitionBrand) {
-                appState.choices['competition_brand'] = new Choices(competitionBrand, multiSelectConfig);
-            }
+            // --- NOTE: Competition filter initialization is moved to _handleCompetitionFormShow ---
 
             const singleSelectConfig = { 
                 searchEnabled: true, 
@@ -393,6 +393,8 @@ const app = {
         
         document.getElementById('file-thidua-vung')?.addEventListener('change', (e) => this.handleThiDuaVungFileInput(e));
         document.getElementById('thidua-vung-filter-supermarket')?.addEventListener('change', () => this.handleThiDuaVungFilterChange());
+        
+        document.getElementById('debug-competition-file-input')?.addEventListener('change', (e) => this.handleCompetitionDebugFile(e));
 
         ['luyke', 'sknv', 'realtime'].forEach(prefix => {
             document.getElementById(`${prefix}-filter-warehouse`)?.addEventListener('change', () => this.handleFilterChange(prefix));
@@ -683,13 +685,10 @@ const app = {
                 ui.populateCompetitionFilters();
                 ui.populateCompetitionBrandFilter();
                 
-                // --- START: THAY ĐỔI LOGIC LƯU TRỮ ---
-                // Lưu dữ liệu đã xử lý lên Firestore cho mọi người dùng
                 await firebase.saveCategoryDataToFirestore({
                     categories: categoryResult.normalizedData,
                     brands: brandResult.normalizedData
                 });
-                // --- END: THAY ĐỔI LOGIC LƯU TRỮ ---
 
                 ui.updateFileStatus(fileType, file.name, `✓ Đã xử lý và đồng bộ ${categoryResult.normalizedData.length} nhóm & ${brandResult.normalizedData.length} hãng.`, 'success');
             } else {
@@ -886,101 +885,132 @@ const app = {
     },
 
     prepareAndShowComposer(sectionId) {
+        const modal = document.getElementById('composer-modal');
+        if (!modal) return;
+        modal.dataset.sectionId = sectionId;
+
         const deptFilter = document.getElementById('composer-dept-filter');
         if (deptFilter) {
             const uniqueDepartments = [...new Set(appState.danhSachNhanVien.map(nv => nv.boPhan).filter(Boolean))].sort();
             deptFilter.innerHTML = '<option value="ALL">Toàn siêu thị</option>' + uniqueDepartments.map(dept => `<option value="${dept}">${dept}</option>`).join('');
         }
         
-        const filteredReportData = this._getFilteredReportData(sectionId);
-        if (filteredReportData.length === 0) {
-            ui.showNotification("Không có dữ liệu đã lọc để tạo thẻ nhận xét.", "error");
-        }
-        const supermarketReport = services.aggregateReport(filteredReportData);
+        const navIdMap = { luyke: 'luyke-subtabs-nav', sknv: 'employee-subtabs-nav', realtime: 'realtime-subtabs-nav' };
+        const mainViewNav = document.getElementById(navIdMap[sectionId]);
+        const contextTabsContainer = document.getElementById('composer-context-tabs');
+        const contextContentContainer = document.getElementById('composer-context-content');
+        
+        contextTabsContainer.innerHTML = '';
+        contextContentContainer.innerHTML = '';
 
-        const qdcContainer = document.getElementById('composer-qdc-tags-container');
-        if (qdcContainer) {
-            qdcContainer.innerHTML = '<h5 class="composer__tag-group-title">Chọn Nhóm Hàng QĐC</h5>';
-            if (supermarketReport.qdc) {
-                Object.values(supermarketReport.qdc).sort((a,b) => b.dtqd - a.dtqd).forEach(item => {
-                    const btn = document.createElement('button');
-                    btn.className = 'composer__tag-btn';
-                    btn.dataset.tagTemplate = `[QDC_INFO_${item.name}]`;
-                    btn.textContent = item.name;
-                    qdcContainer.appendChild(btn);
+        if (mainViewNav) {
+            const subTabButtons = mainViewNav.querySelectorAll('.sub-tab-btn');
+            subTabButtons.forEach(btn => {
+                const subTabId = btn.dataset.target;
+                const isActive = btn.classList.contains('active');
+
+                const newTabBtn = document.createElement('button');
+                newTabBtn.className = `composer__tab-btn ${isActive ? 'active' : ''}`;
+                newTabBtn.dataset.target = `context-pane-${subTabId}`;
+                newTabBtn.textContent = btn.textContent.trim();
+                newTabBtn.addEventListener('click', () => {
+                    contextTabsContainer.querySelectorAll('.composer__tab-btn').forEach(t => t.classList.remove('active'));
+                    contextContentContainer.querySelectorAll('.composer__context-pane').forEach(c => c.classList.add('hidden'));
+                    newTabBtn.classList.add('active');
+                    document.getElementById(`context-pane-${subTabId}`).classList.remove('hidden');
                 });
-            }
+                contextTabsContainer.appendChild(newTabBtn);
+
+                const newContentPane = document.createElement('div');
+                newContentPane.id = `context-pane-${subTabId}`;
+                newContentPane.className = `composer__context-pane ${!isActive ? 'hidden' : ''}`;
+                
+                const textarea = document.createElement('textarea');
+                textarea.className = 'composer__textarea';
+                textarea.rows = 15;
+                textarea.placeholder = `Soạn thảo nhận xét cho tab ${btn.textContent.trim()}...`;
+                
+                if (!appState.composerTemplates[sectionId]) {
+                    appState.composerTemplates[sectionId] = {};
+                }
+                textarea.value = appState.composerTemplates[sectionId][subTabId] || '';
+                
+                newContentPane.appendChild(textarea);
+                contextContentContainer.appendChild(newContentPane);
+            });
         }
         
-        const nganhHangContainer = document.getElementById('composer-nganhhang-tags-container');
-        if (nganhHangContainer) {
-            nganhHangContainer.innerHTML = '<h5 class="composer__tag-group-title">Chọn Ngành Hàng Chi Tiết</h5>';
-            if (supermarketReport.nganhHangChiTiet) {
-                 Object.values(supermarketReport.nganhHangChiTiet).sort((a,b) => b.revenue - a.revenue).forEach(item => {
-                    const btn = document.createElement('button');
-                    btn.className = 'composer__tag-btn';
-                    btn.dataset.tagTemplate = `[NH_INFO_${item.name}]`;
-                    btn.textContent = utils.cleanCategoryName(item.name);
-                    nganhHangContainer.appendChild(btn);
-                });
-            }
-        }
-        
+        contextTabsContainer.classList.toggle('hidden', contextTabsContainer.children.length === 0);
+
+        const filteredReportData = this._getFilteredReportData(sectionId);
+        const supermarketReport = services.aggregateReport(filteredReportData);
+        ui.populateComposerDetailTags(supermarketReport);
+
         ui.showComposerModal(sectionId);
     },
 
     handleComposerActions(e, modal) {
-        const textarea = document.getElementById('composer-textarea');
+        const sectionId = modal.dataset.sectionId;
+        const activeContextPane = modal.querySelector('.composer__context-pane:not(.hidden)');
+        const activeTextarea = activeContextPane ? activeContextPane.querySelector('textarea') : null;
         
-        if (e.target.matches('.composer__tab-btn, .composer__sub-tab-btn')) {
-            const nav = e.target.closest('.composer__nav, .composer__sub-nav');
+        if (e.target.matches('.composer__tab-btn:not([data-context-tab])')) {
+             const nav = e.target.closest('.composer__nav');
             const content = nav.nextElementSibling;
             nav.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
             content.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
             e.target.classList.add('active');
-            const targetId = e.target.dataset.tab || e.target.dataset.subTab;
+            const targetId = e.target.dataset.tab;
             content.querySelector(`#${targetId}`).classList.add('active');
             return;
         }
 
-        if (e.target.matches('.composer__icon-btn')) {
-            ui.insertComposerTag(textarea, e.target.textContent);
-            return;
-        }
-        
-        if (e.target.matches('.composer__tag-btn')) {
+        if (e.target.matches('.composer__icon-btn, .composer__tag-btn')) {
+             if (!activeTextarea) {
+                ui.showNotification("Vui lòng chọn một tab nội dung để chèn thẻ.", "error");
+                return;
+            }
             let tagToInsert = e.target.dataset.tag;
             if (e.target.dataset.tagTemplate) {
                 const dept = document.getElementById('composer-dept-filter').value;
                 tagToInsert = e.target.dataset.tagTemplate.replace('{dept}', dept);
             }
-            ui.insertComposerTag(textarea, tagToInsert);
+            ui.insertComposerTag(activeTextarea, tagToInsert || e.target.textContent);
             return;
         }
 
-        const sectionId = modal.dataset.sectionId;
         if (e.target.id === 'save-composer-template-btn') {
-            appState.composerTemplates[sectionId] = textarea.value;
-            localStorage.setItem('composerTemplates', JSON.stringify(appState.composerTemplates));
-            ui.showNotification(`Đã lưu mẫu cho tab ${sectionId.toUpperCase()}!`, 'success');
+            if (!activeTextarea) return;
+            const activeContextTab = modal.querySelector('#composer-context-tabs .composer__tab-btn.active');
+            const subTabId = activeContextTab?.dataset.target.replace('context-pane-', '');
+            if (subTabId) {
+                if (!appState.composerTemplates[sectionId]) appState.composerTemplates[sectionId] = {};
+                appState.composerTemplates[sectionId][subTabId] = activeTextarea.value;
+                localStorage.setItem('composerTemplates', JSON.stringify(appState.composerTemplates));
+                ui.showNotification(`Đã lưu mẫu cho tab con!`, 'success');
+            } else {
+                ui.showNotification(`Không tìm thấy tab con để lưu.`, 'error');
+            }
         }
+        
         if (e.target.id === 'copy-composed-notification-btn') {
-            const template = textarea.value;
-            const filteredReportData = this._getFilteredReportData(sectionId);
-            if (filteredReportData.length === 0 && sectionId !== 'luyke') {
-                ui.showNotification("Lỗi: Không có dữ liệu đã lọc để tạo nhận xét.", "error"); return;
+            if (!activeTextarea) {
+                 ui.showNotification("Lỗi: Không tìm thấy ô nội dung đang hoạt động.", "error"); 
+                return;
             }
 
+            const template = activeTextarea.value;
+            
+            const filteredReportData = this._getFilteredReportData(sectionId);
             const supermarketReport = services.aggregateReport(filteredReportData);
+            
             const selectedWarehouse = document.getElementById(`${sectionId}-filter-warehouse`).value;
             const goals = sectionId === 'realtime' ? utils.getRealtimeGoalSettings(selectedWarehouse).goals : utils.getLuykeGoalSettings(selectedWarehouse).goals;
             
-            if (sectionId === 'luyke') {
-                const pastedData = services.parseLuyKePastedData(document.getElementById('paste-luyke').value);
-                supermarketReport.comparisonData = pastedData.comparisonData;
-            }
+            const competitionDataForComposer = services.parseCompetitionDataFromLuyKe(document.getElementById('paste-luyke')?.value || '');
+            
+            const processedText = services.processComposerTemplate(template, supermarketReport, goals, filteredReportData, competitionDataForComposer, sectionId);
 
-            const processedText = services.processComposerTemplate(template, supermarketReport, goals, filteredReportData, appState.competitionData);
             ui.showPreviewAndCopy(processedText);
         }
     },
@@ -1140,9 +1170,6 @@ const app = {
         document.getElementById('competition-min-price').value = config.minPrice ? config.minPrice / 1000000 : '';
         document.getElementById('competition-max-price').value = config.maxPrice ? config.maxPrice / 1000000 : '';
 
-        document.getElementById('competition-apply-lk').checked = (config.applyTo || []).includes('lk');
-        document.getElementById('competition-apply-rt').checked = (config.applyTo || []).includes('rt');
-
         const groupChoices = appState.choices['competition_group'];
         if (groupChoices) {
             groupChoices.removeActiveItems();
@@ -1175,15 +1202,8 @@ const app = {
             ui.showNotification('Lỗi: Vui lòng chọn ít nhất một hãng sản xuất.', 'error');
             return;
         }
-
-        const applyTo = [];
-        if (document.getElementById('competition-apply-lk').checked) applyTo.push('lk');
-        if (document.getElementById('competition-apply-rt').checked) applyTo.push('rt');
-
-        if (applyTo.length === 0) {
-            ui.showNotification('Lỗi: Vui lòng chọn ít nhất một báo cáo để áp dụng (Lũy kế hoặc Realtime).', 'error');
-            return;
-        }
+        
+        const applyTo = ['lk', 'rt'];
 
         const newConfig = {
             id: `comp_${new Date().getTime()}`,

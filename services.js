@@ -1,4 +1,4 @@
-// Version 4.4 - Add 'Lay Top' data to Thi Dua Vung report summary
+// Version 32.10 - Final fix for composer ranking and syntax purity
 // MODULE 3: KỆ "DỊCH VỤ" (SERVICES)
 // File này chứa tất cả các hàm xử lý logic, tính toán, và chuyển đổi dữ liệu.
 
@@ -8,6 +8,49 @@ import { ui } from './ui.js';
 import { utils } from './utils.js';
 
 const services = {
+    // === START: THÊM HÀM GỠ LỖI THI ĐUA MỚI ===
+    /**
+     * Phân tích một tập dữ liệu YCX thô để gỡ lỗi các điều kiện lọc thi đua.
+     * @param {Array} rawTestData - Dữ liệu YCX thô từ file người dùng tải lên.
+     * @returns {Array} - Một mảng các đối tượng, mỗi đối tượng chứa dữ liệu hàng và kết quả của từng bước kiểm tra.
+     */
+    debugCompetitionFiltering(rawTestData) {
+        if (!rawTestData || rawData.length === 0) {
+            return [];
+        }
+
+        // 1. Chuẩn hóa dữ liệu đầu vào giống như quy trình thật
+        const { normalizedData } = this.normalizeData(rawTestData, 'ycx');
+        if (normalizedData.length === 0) {
+            return [];
+        }
+
+        // 2. Lấy các điều kiện lọc
+        const hinhThucXuatTinhDoanhThu = this.getHinhThucXuatTinhDoanhThu();
+
+        // 3. Xử lý từng dòng và ghi lại kết quả của mỗi lần kiểm tra
+        const debugResults = normalizedData.map(row => {
+            const checks = {
+                isDoanhThuHTX: hinhThucXuatTinhDoanhThu.has(row.hinhThucXuat),
+                isThuTien: (row.trangThaiThuTien || "").trim() === 'Đã thu',
+                isChuaHuy: (row.trangThaiHuy || "").trim() === 'Chưa hủy',
+                isChuaTra: (row.tinhTrangTra || "").trim() === 'Chưa trả',
+                isDaXuat: (row.trangThaiXuat || "").trim() === 'Đã xuất'
+            };
+
+            const isOverallValid = checks.isDoanhThuHTX && checks.isThuTien && checks.isChuaHuy && checks.isChuaTra && checks.isDaXuat;
+
+            return {
+                rowData: row,
+                checks: checks,
+                isOverallValid: isOverallValid
+            };
+        });
+
+        return debugResults;
+    },
+    // === END: THÊM HÀM GỠ LỖI THI ĐUA MỚI ===
+
     // === HÀM MỚI ĐỂ XỬ LÝ FILE KHAI BÁO NGÀNH HÀNG - NHÓM HÀNG ===
     normalizeCategoryStructureData(rawData) {
         if (!rawData || rawData.length === 0) {
@@ -38,28 +81,20 @@ const services = {
             return { success: false, error: 'Sheet "Hãng" rỗng.', normalizedData: [] };
         }
         const header = Object.keys(rawData[0] || {});
-        // Tìm cột chứa tên hãng, cho phép các biến thể như "Hãng", "Tên Hãng", "Nhà sản xuất"
         const brandCol = this.findColumnName(header, ['hãng', 'tên hãng', 'nhà sản xuất']);
         if (!brandCol) {
             return { success: false, error: 'Sheet "Hãng" phải có cột "Hãng" hoặc "Tên Hãng".', normalizedData: [] };
         }
 
-        // Lấy danh sách hãng, làm sạch, và loại bỏ các giá trị trùng lặp
         const normalizedData = rawData
             .map(row => String(row[brandCol] || '').trim())
-            .filter(brand => brand); // Lọc ra các dòng rỗng
+            .filter(brand => brand);
             
-        return { success: true, normalizedData: [...new Set(normalizedData)].sort() }; // Trả về danh sách duy nhất và đã sắp xếp
+        return { success: true, normalizedData: [...new Set(normalizedData)].sort() };
     },
 
 
-    // === HÀM TÍNH TOÁN THI ĐUA ĐƯỢC NÂNG CẤP HOÀN TOÀN (LOGIC MỚI) ===
-    /**
-     * Tính toán báo cáo hiệu quả thi đua, luôn trả về cả SL và DT.
-     * @param {Array} sourceYcxData - Dữ liệu YCX gốc (lũy kế hoặc realtime).
-     * @param {Array} competitionConfigs - Mảng các đối tượng cấu hình thi đua.
-     * @returns {Array} - Mảng kết quả cho từng chương trình thi đua.
-     */
+    // === START: REFACTOR - CẬP NHẬT LOGIC TÍNH TOÁN CHO THI ĐUA ĐA HÃNG ===
     calculateCompetitionFocusReport(sourceYcxData, competitionConfigs) {
         if (!sourceYcxData || sourceYcxData.length === 0 || !competitionConfigs || competitionConfigs.length === 0) {
             return [];
@@ -77,19 +112,14 @@ const services = {
         });
 
         const report = competitionConfigs.map(config => {
-            // *** BẢN SỬA LỖI LOGIC CỐT LÕI BẮT ĐẦU TẠI ĐÂY ***
-            // 1. Tạo một Set các nhóm hàng đã được làm sạch từ cấu hình để so sánh hiệu quả.
             const cleanedConfigGroups = new Set((config.groups || []).map(g => utils.cleanCategoryName(g)));
 
             let baseSalesData = validSalesData.filter(row => {
                 const cleanNhomHangFromYCX = utils.cleanCategoryName(row.nhomHang);
                 
-                // 2. So sánh nhóm hàng đã được làm sạch từ YCX với Set các nhóm hàng đã làm sạch từ cấu hình.
                 const isInGroup = cleanedConfigGroups.has(cleanNhomHangFromYCX);
                 if (!isInGroup) return false;
-                // *** KẾT THÚC BẢN SỬA LỖI ***
 
-                // Lọc theo khoảng giá nếu được cấu hình (chỉ áp dụng cho loại thi đua số lượng)
                 if (config.type === 'soluong' && (config.minPrice > 0 || config.maxPrice > 0)) {
                     const price = (parseFloat(String(row.thanhTien || "0").replace(/,/g, '')) || 0) / (parseInt(String(row.soLuong || "1"), 10) || 1);
                     const minPrice = config.minPrice || 0;
@@ -104,8 +134,9 @@ const services = {
             }
             
             const employeeResults = appState.danhSachNhanVien.map(employee => {
-                let targetBrandsRevenue = 0;
-                let targetBrandsQuantity = 0;
+                let performanceByBrand = {};
+                let totalTargetRevenue = 0;
+                let totalTargetQuantity = 0;
                 let baseCategoryRevenue = 0;
                 let baseCategoryQuantity = 0;
                 
@@ -120,8 +151,14 @@ const services = {
 
                         const brand = row.nhaSanXuat;
                         if ((config.brands || []).includes(brand)) {
-                            targetBrandsRevenue += revenueValue;
-                            targetBrandsQuantity += quantityValue;
+                            if (!performanceByBrand[brand]) {
+                                performanceByBrand[brand] = { revenue: 0, quantity: 0 };
+                            }
+                            performanceByBrand[brand].revenue += revenueValue;
+                            performanceByBrand[brand].quantity += quantityValue;
+
+                            totalTargetRevenue += revenueValue;
+                            totalTargetQuantity += quantityValue;
                         }
                     }
                 });
@@ -130,12 +167,13 @@ const services = {
                     maNV: employee.maNV,
                     hoTen: employee.hoTen,
                     boPhan: employee.boPhan,
-                    targetBrandsRevenue,
-                    targetBrandsQuantity,
+                    performanceByBrand,
+                    targetBrandsRevenue: totalTargetRevenue,
+                    targetBrandsQuantity: totalTargetQuantity,
                     baseCategoryRevenue,
                     baseCategoryQuantity,
-                    tyLeDT: baseCategoryRevenue > 0 ? (targetBrandsRevenue / baseCategoryRevenue) : 0,
-                    tyLeSL: baseCategoryQuantity > 0 ? (targetBrandsQuantity / baseCategoryQuantity) : 0,
+                    tyLeDT: baseCategoryRevenue > 0 ? (totalTargetRevenue / baseCategoryRevenue) : 0,
+                    tyLeSL: baseCategoryQuantity > 0 ? (totalTargetQuantity / baseCategoryQuantity) : 0,
                 };
             }).filter(e => e.baseCategoryRevenue > 0 || e.baseCategoryQuantity > 0);
 
@@ -147,6 +185,8 @@ const services = {
 
         return report;
     },
+    // === END: REFACTOR ===
+
 
     // --- DATA DECLARATION GETTERS ---
     getHinhThucXuatTinhDoanhThu: () => {
@@ -976,9 +1016,26 @@ const services = {
             .sort((a, b) => direction === 'desc' ? (b[key] || 0) - (a[key] || 0) : (a[key] || 0) - (b[key] || 0))
             .slice(0, count);
     },
+    
+    getEmployeesBelowTarget(reportData, dataKey, goalKey, department = 'ALL') {
+        if (!reportData || reportData.length === 0) return [];
+
+        let filteredData = reportData;
+        if (department !== 'ALL') {
+            filteredData = reportData.filter(e => e.boPhan === department);
+        }
+
+        return filteredData.filter(employee => {
+            const value = employee[dataKey] || 0;
+            const target = (employee.mucTieu?.[goalKey] || 0) / 100;
+            return target > 0 && value < target;
+        }).sort((a, b) => (b[dataKey] || 0) - (a[dataKey] || 0));
+    },
 
     formatEmployeeList(employeeArray, valueKey, valueType = 'number') {
-        if (!employeeArray || employeeArray.length === 0) return " (không có)";
+        if (!Array.isArray(employeeArray) || employeeArray.length === 0) {
+            return " (không có)";
+        }
         return "\n" + employeeArray.map((e, index) => {
             const value = e[valueKey];
             let formattedValue = '';
@@ -986,13 +1043,15 @@ const services = {
                 formattedValue = ui.formatPercentage(value);
             } else if (valueType === 'currency') {
                 formattedValue = ui.formatRevenue(value) + " tr";
+            } else {
+                 formattedValue = ui.formatNumberOrDash(value);
             }
             return `${index + 1}. ${ui.getShortEmployeeName(e.hoTen, e.maNV)}: ${formattedValue} @${e.maNV}`;
         }).join("\n");
     },
     
-    processComposerTemplate(template, supermarketReport, goals, rankingReportData, competitionData) {
-        if (!supermarketReport || !goals) {
+    processComposerTemplate(template, supermarketReport, goals, rankingReportData, competitionData, sectionId) {
+        if (!template || !supermarketReport || !goals) {
             return "Lỗi: Dữ liệu không đủ để tạo nhận xét.";
         }
     
@@ -1001,34 +1060,68 @@ const services = {
             'THUNHAP': { key: 'tongThuNhap', format: 'currency' },
             'TLQD': { key: 'hieuQuaQuyDoi', format: 'percent' },
         };
+
+        const botTargetMapping = {
+            'TLQD': { dataKey: 'hieuQuaQuyDoi', goalKey: 'phanTramQD', format: 'percent' },
+            'TLTC': { dataKey: 'tyLeTraCham', goalKey: 'phanTramTC', format: 'percent' },
+            'PK': { dataKey: 'pctPhuKien', goalKey: 'phanTramPhuKien', format: 'percent' },
+            'GD': { dataKey: 'pctGiaDung', goalKey: 'phanTramGiaDung', format: 'percent' },
+            'MLN': { dataKey: 'pctMLN', goalKey: 'phanTramMLN', format: 'percent' },
+            'SIM': { dataKey: 'pctSim', goalKey: 'phanTramSim', format: 'percent' },
+            'VAS': { dataKey: 'pctVAS', goalKey: 'phanTramVAS', format: 'percent' },
+            'BH': { dataKey: 'pctBaoHiem', goalKey: 'phanTramBaoHiem', format: 'percent' },
+        };
         
         return template.replace(/\[(.*?)\]/g, (match, tag) => {
             const now = new Date();
             const currentDay = now.getDate() || 1;
 
-            // Simple Static Tags
+            let dtThuc = supermarketReport.doanhThu || 0;
+            let dtQd = supermarketReport.doanhThuQuyDoi || 0;
+            let phanTramHTQD = goals.doanhThuQD > 0 ? (dtQd / 1000000) / goals.doanhThuQD : 0;
+            
+            if (sectionId === 'luyke') {
+                const pastedLuyKeData = services.parseLuyKePastedData(document.getElementById('paste-luyke')?.value || '');
+                if (pastedLuyKeData.mainKpis['Thực hiện DT thực']) {
+                    dtThuc = parseFloat(pastedLuyKeData.mainKpis['Thực hiện DT thực'].replace(/,/g, '')) * 1000000;
+                }
+                if (pastedLuyKeData.mainKpis['Thực hiện DTQĐ']) {
+                    dtQd = parseFloat(pastedLuyKeData.mainKpis['Thực hiện DTQĐ'].replace(/,/g, '')) * 1000000;
+                }
+                if (pastedLuyKeData.mainKpis['% HT Target Dự Kiến (QĐ)']) {
+                    phanTramHTQD = (parseFloat(pastedLuyKeData.mainKpis['% HT Target Dự Kiến (QĐ)'].replace('%', '')) || 0) / 100;
+                }
+            }
+
             if (tag === 'NGAY') return now.toLocaleDateString('vi-VN');
             if (tag === 'GIO') return now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
 
-            // Supermarket KPI Tags
-            if (tag === 'DT_THUC') return ui.formatNumber((supermarketReport.doanhThu || 0) / 1000000, 0) + " tr";
-            if (tag === 'DTQD') return ui.formatNumber((supermarketReport.doanhThuQuyDoi || 0) / 1000000, 0) + " tr";
+            if (tag === 'DT_THUC') return ui.formatNumber(dtThuc / 1000000, 0) + " tr";
+            if (tag === 'DTQD') return ui.formatNumber(dtQd / 1000000, 0) + " tr";
+            if (tag === '%HT_DTQD') return ui.formatPercentage(phanTramHTQD);
+            
+            if (tag === 'TLQD') {
+                if (sectionId === 'luyke') {
+                    const pastedLuyKeData = services.parseLuyKePastedData(document.getElementById('paste-luyke')?.value || '');
+                    if (pastedLuyKeData.mainKpis['Thực hiện DT thực'] && pastedLuyKeData.mainKpis['Thực hiện DTQĐ']) {
+                        const dtThucPasted = parseFloat(String(pastedLuyKeData.mainKpis['Thực hiện DT thực']).replace(/,/g, ''));
+                        const dtQdPasted = parseFloat(String(pastedLuyKeData.mainKpis['Thực hiện DTQĐ']).replace(/,/g, ''));
+                        if (dtThucPasted > 0) {
+                            return ui.formatPercentage((dtQdPasted / dtThucPasted) - 1);
+                        }
+                    }
+                }
+                return ui.formatPercentage(supermarketReport.hieuQuaQuyDoi || 0);
+            }
+
             if (tag === '%HT_DTT') {
                 const target = parseFloat(goals.doanhThuThuc) || 0;
-                const percent = target > 0 ? ((supermarketReport.doanhThu || 0) / 1000000) / target : 0;
+                const percent = target > 0 ? (dtThuc / 1000000) / target : 0;
                 return ui.formatPercentage(percent);
             }
-            if (tag === '%HT_DTQD') {
-                if (supermarketReport.pastedHTQD) return supermarketReport.pastedHTQD;
-                const target = parseFloat(goals.doanhThuQD) || 0;
-                const percent = target > 0 ? ((supermarketReport.doanhThuQuyDoi || 0) / 1000000) / target : 0;
-                return ui.formatPercentage(percent);
-            }
-            if (tag === 'TLQD') return ui.formatPercentage(supermarketReport.hieuQuaQuyDoi || 0);
             if (tag === 'DT_CHUAXUAT') return ui.formatRevenue(supermarketReport.doanhThuQuyDoiChuaXuat || 0) + " tr";
             if (tag === 'SS_CUNGKY') return supermarketReport.comparisonData?.percentage || 'N/A';
 
-            // Competition Tags
             if (tag.startsWith('TD_')) {
                 const total = competitionData?.length || 0;
                 const dat = (competitionData || []).filter(d => parseFloat(String(d.hoanThanh).replace('%','')) >= 100).length;
@@ -1038,7 +1131,6 @@ const services = {
                 if (tag === 'TD_TYLE_DAT') return total > 0 ? ui.formatPercentage(dat / total) : '0%';
             }
 
-            // Detailed List Tags
             if (tag === 'TOP_QDC_INFO') {
                 if (!supermarketReport.qdc) return " (không có)";
                 const qdcArray = Object.values(supermarketReport.qdc).filter(item => item.sl > 0);
@@ -1052,20 +1144,43 @@ const services = {
                 return "\n" + topNganhHang.map(item => `  • ${utils.cleanCategoryName(item.name)}: ${ui.formatNumber(item.quantity)}`).join("\n");
             }
     
-            // Dynamic Ranking Tags
             const rankingRegex = /^(TOP|BOT)(\d)_(\w+)_([\s\S]+)$/;
             const rankingMatch = tag.match(rankingRegex);
             if (rankingMatch && rankingReportData) {
                 const [_, type, count, metric, department] = rankingMatch;
+                
+                // === START: BẢN SỬA LỖI CUỐI CÙNG ===
+                // Làm sạch tên bộ phận để loại bỏ đuôi @msnv không mong muốn.
+                const cleanDepartment = department.replace(/@msnv$/, '').trim();
+                // === END: BẢN SỬA LỖI CUỐI CÙNG ===
+
                 const direction = type === 'TOP' ? 'desc' : 'asc';
                 const metricInfo = tagMapping[metric];
                 if (metricInfo) {
-                    const ranking = services.getEmployeeRanking(rankingReportData, metricInfo.key, direction, parseInt(count), department);
+                    let dataForRanking = rankingReportData;
+                    if (metric === 'THUNHAP' && appState.masterReportData.sknv.length > 0) {
+                        dataForRanking = appState.masterReportData.sknv;
+                    }
+                    
+                    const ranking = services.getEmployeeRanking(dataForRanking, metricInfo.key, direction, parseInt(count), cleanDepartment);
+                    
                     return services.formatEmployeeList(ranking, metricInfo.key, metricInfo.format);
                 }
             }
+            
+            const botTargetRegex = /^BOT_TARGET_(\w+)_([\s\S]+)$/;
+            const botTargetMatch = tag.match(botTargetRegex);
+            if(botTargetMatch && rankingReportData) {
+                let [_, metric, department] = botTargetMatch;
+                department = department.replace(/@msnv$/, '').trim();
 
-            // Dynamic Individual Info Tags
+                const metricInfo = botTargetMapping[metric];
+                if (metricInfo) {
+                    const employeeList = services.getEmployeesBelowTarget(rankingReportData, metricInfo.dataKey, metricInfo.goalKey, department);
+                    return services.formatEmployeeList(employeeList, metricInfo.dataKey, metricInfo.format);
+                }
+            }
+
             const qdcInfoRegex = /^QDC_INFO_(.+)$/;
             const qdcMatch = tag.match(qdcInfoRegex);
             if(qdcMatch && supermarketReport.qdc){
@@ -1082,7 +1197,7 @@ const services = {
                 return itemData ? `SL ${ui.formatNumber(itemData.quantity)}, TB ${ui.formatNumber(itemData.quantity / currentDay, 1)}/ngày` : '(N/A)';
             }
 
-            return match; // Return original tag if not found
+            return match;
         });
     },
     
@@ -1140,7 +1255,7 @@ const services = {
         
         const pastedLuyKeData = services.parseLuyKePastedData(document.getElementById('paste-luyke')?.value || '');
         supermarketReport.comparisonData = pastedLuyKeData.comparisonData;
-
+        
         if (supermarketReport.qdc) {
             for (const key in supermarketReport.qdc) {
                 const group = supermarketReport.qdc[key];
@@ -1265,16 +1380,13 @@ const services = {
         const summary = appState.thiDuaVungTong.find(row => row[supermarketKeyTong] === selectedSupermarket);
         if (!summary) return null;
         
-        // === START: THÊM LOGIC LẤY DỮ LIỆU "LẤY TOP" ===
         const chiTiet = appState.thiDuaVungChiTiet.filter(row => row[supermarketKeyChiTiet] === selectedSupermarket);
         
-        // Tìm giá trị "Lấy top" đầu tiên cho siêu thị này và gán vào summary
         if (chiTiet.length > 0 && layTopKey) {
             summary.hangCoGiaiKenh = chiTiet[0][layTopKey]; 
         } else {
             summary.hangCoGiaiKenh = 'N/A';
         }
-        // === END: THÊM LOGIC LẤY DỮ LIỆU "LẤY TOP" ===
 
         const report = { summary, coGiai: [], sapCoGiai: [], tiemNang: [], canCoGangNhieu: [] };
         

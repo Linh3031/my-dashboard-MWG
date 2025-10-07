@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Công cụ phân tích số cho QLST MWG 3.9</title>
+    <title>Công cụ phân tích số cho QLST MWG 4.2</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -28,7 +28,7 @@
 <body class="overflow-x-hidden">
 
     <div id="update-notification" class="hidden fixed bottom-5 right-5 bg-blue-600 text-white py-3 px-5 rounded-lg shadow-lg z-[1001] flex items-center gap-4">
-        <p class="font-semibold">Đã có phiên bản mới!</p>
+        <p class="font-semibold">Đã có phiên bản mới! Xem chi tiết nội dung cập nhật ở tab "Hướng Dẫn & Góp Ý"</p>
         <button onclick="window.location.reload()" class="bg-white text-blue-600 font-bold py-1 px-3 rounded-md hover:bg-blue-100 transition">Tải lại trang</button>
     </div>
 
@@ -265,19 +265,6 @@
                     <div class="flex items-center">
                         <input id="competition-exclude-apple" type="checkbox" class="h-4 w-4 rounded border-gray-300">
                         <label for="competition-exclude-apple" class="ml-2 block text-sm text-gray-900">Trừ hãng Apple khỏi dữ liệu so sánh</label>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Áp dụng cho báo cáo</label>
-                        <div class="mt-2 flex items-center gap-x-6">
-                            <div class="flex items-center gap-x-2">
-                                <input id="competition-apply-lk" type="checkbox" class="h-4 w-4 rounded border-gray-300">
-                                <label for="competition-apply-lk" class="text-sm text-gray-900">Lũy kế</label>
-                            </div>
-                            <div class="flex items-center gap-x-2">
-                                <input id="competition-apply-rt" type="checkbox" class="h-4 w-4 rounded border-gray-300">
-                                <label for="competition-apply-rt" class="text-sm text-gray-900">Realtime</label>
-                            </div>
-                        </div>
                     </div>
                     <div class="flex justify-end gap-2">
                         <button type="button" id="cancel-competition-btn" class="px-4 py-2 text-sm rounded-md bg-gray-200 hover:bg-gray-300">Hủy</button>
@@ -669,15 +656,23 @@
                              <div id="subtab-luyke-thi-dua" class="sub-tab-content hidden space-y-4">
                                 <div class="flex flex-wrap items-center gap-4">
                                     <h3 class="text-xl font-bold text-gray-800 uppercase">Thi đua lũy kế <span id="luyke-competition-summary" class="text-sm font-normal"></span></h3>
-                                    <div id="luyke-thidua-view-selector" class="view-switcher">
-                                        <button data-view="summary" class="view-switcher__btn active">Tổng hợp</button>
-                                    </div>
                                 </div>
                                 <div id="luyke-competition-content"></div>
                             </div>
                             <div id="subtab-luyke-thidua-vung" class="sub-tab-content hidden">
                                 <div class="content-card">
-                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+                                        <div class="data-input-group">
+                                            <div class="flex flex-col sm:flex-row sm:items-center sm:gap-4">
+                                                <label class="data-input-group__label !mb-2 sm:!mb-0 flex-shrink-0">File Thi Đua Vùng:</label>
+                                                <div class="flex items-center gap-2">
+                                                    <label for="file-thidua-vung" class="data-input-group__file-trigger">Thêm file</label>
+                                                    <span id="file-name-thidua-vung" class="data-input-group__file-name">Chưa thêm file</span>
+                                                </div>
+                                            </div>
+                                            <input type="file" id="file-thidua-vung" class="hidden file-input" data-name="Thi đua vùng" accept=".xlsx, .xls, .csv">
+                                            <div class="data-input-group__status-wrapper mt-2"><span id="file-status-thidua-vung" class="data-input-group__status-text"></span></div>
+                                        </div>
                                         <div>
                                             <label for="thidua-vung-filter-supermarket" class="block text-sm font-medium text-gray-600 mb-1">Chọn Siêu thị</label>
                                             <select id="thidua-vung-filter-supermarket"></select>
@@ -1063,7 +1058,7 @@
                 <h3 class="modal__title">📢 Đã có phiên bản mới!</h3>
             </div>
             <div class="modal__content text-center">
-                <p class="text-gray-600 mb-4">Một phiên bản mới với các bản sửa lỗi và cải tiến đã sẵn sàng. Vui lòng tải lại trang để tiếp tục.</p>
+                <p class="text-gray-600 mb-4">Một phiên bản mới với các bản sửa lỗi và cải tiến đã sẵn sàng. Vui lòng tải lại trang để tiếp tục.(Xem chi tiết nội dung cập nhật ở tab "Hướng Dẫn & Góp Ý")</p>
                 <button id="force-reload-btn" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition text-lg">
                     Cập nhật ngay
                 </button>
@@ -1121,8 +1116,10 @@
             <div id="composer-modal-content" class="modal__content">
                 <div class="composer">
                     <div class="composer__editor">
-                        <label for="composer-textarea" class="composer__label">Nội dung mẫu</label>
-                        <textarea id="composer-textarea" class="composer__textarea" rows="15" placeholder="Soạn thảo nội dung và chọn các thẻ bên dưới..."></textarea>
+                        <label class="composer__label">Nội dung nhận xét</label>
+                        <nav id="composer-context-tabs" class="composer__nav mb-2"></nav>
+                        <div id="composer-context-content">
+                            </div>
                     </div>
                     <div class="composer__tags">
                         <div class="composer__nav">
@@ -1175,20 +1172,31 @@
                                 </div>
                                 <div class="composer__tag-group">
                                     <h5 class="composer__tag-group-title">Xếp hạng DT Quy Đổi</h5>
-                                    <button class="composer__tag-btn" data-tag-template="[TOP3_DTQD_{dept}]">Top 3</button>
-                                    <button class="composer__tag-btn" data-tag-template="[BOT3_DTQD_{dept}]">Bot 3</button>
+                                    <button class="composer__tag-btn" data-tag-template="[TOP3_DTQD_{dept}@msnv]">Top 3</button>
+                                    <button class="composer__tag-btn" data-tag-template="[BOT3_DTQD_{dept}@msnv]">Bot 3</button>
                                 </div>
                                 <div class="composer__tag-group">
                                     <h5 class="composer__tag-group-title">Xếp hạng Thu Nhập</h5>
-                                    <button class="composer__tag-btn" data-tag-template="[TOP3_THUNHAP_{dept}]">Top 3</button>
-                                    <button class="composer__tag-btn" data-tag-template="[BOT3_THUNHAP_{dept}]">Bot 3</button>
+                                    <button class="composer__tag-btn" data-tag-template="[TOP3_THUNHAP_{dept}@msnv]">Top 3</button>
+                                    <button class="composer__tag-btn" data-tag-template="[BOT3_THUNHAP_{dept}@msnv]">Bot 3</button>
                                 </div>
                                  <div class="composer__tag-group">
                                     <h5 class="composer__tag-group-title">Xếp hạng Tỷ lệ Quy đổi</h5>
-                                    <button class="composer__tag-btn" data-tag-template="[TOP3_TLQD_{dept}]">Top 3</button>
-                                    <button class="composer__tag-btn" data-tag-template="[BOT3_TLQD_{dept}]">Bot 3</button>
+                                    <button class="composer__tag-btn" data-tag-template="[TOP3_TLQD_{dept}@msnv]">Top 3</button>
+                                    <button class="composer__tag-btn" data-tag-template="[BOT3_TLQD_{dept}@msnv]">Bot 3</button>
                                 </div>
-                            </div>
+                                <div class="composer__tag-group">
+                                    <h5 class="composer__tag-group-title">NV Dưới Mục Tiêu Khai Báo</h5>
+                                    <button class="composer__tag-btn" data-tag-template="[BOT_TARGET_TLQD_{dept}@msnv]">% Quy đổi</button>
+                                    <button class="composer__tag-btn" data-tag-template="[BOT_TARGET_TLTC_{dept}@msnv]">% Trả chậm</button>
+                                    <button class="composer__tag-btn" data-tag-template="[BOT_TARGET_PK_{dept}@msnv]">% Phụ kiện</button>
+                                    <button class="composer__tag-btn" data-tag-template="[BOT_TARGET_GD_{dept}@msnv]">% Gia dụng</button>
+                                    <button class="composer__tag-btn" data-tag-template="[BOT_TARGET_MLN_{dept}@msnv]">% MLN</button>
+                                    <button class="composer__tag-btn" data-tag-template="[BOT_TARGET_SIM_{dept}@msnv]">% Sim</button>
+                                    <button class="composer__tag-btn" data-tag-template="[BOT_TARGET_VAS_{dept}@msnv]">% VAS</button>
+                                    <button class="composer__tag-btn" data-tag-template="[BOT_TARGET_BH_{dept}@msnv]">% Bảo hiểm</button>
+                                </div>
+                                </div>
                             
                             <div class="composer__tab-pane" id="tab-details">
                                 <div class="composer__sub-nav">
@@ -1254,7 +1262,7 @@
             }
         });
     </script>
-    <script type="module" src="./main.js?v=2.9.1"></script>
+    <script type="module" src="./main.js?v=3.0"></script>
 
 </body>
 </html>

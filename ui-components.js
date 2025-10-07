@@ -1,4 +1,4 @@
-// Version 2.7 - Display totalUsers in the usage counter
+// Version 3.0 - Add dynamic tag population for Composer
 // MODULE: UI COMPONENTS
 // Chứa các hàm UI chung, tái sử dụng được trên toàn bộ ứng dụng.
 
@@ -19,17 +19,11 @@ export const uiComponents = {
         }
 
         container.innerHTML = configs.map((config, index) => {
-            const applyToBadges = (config.applyTo || []).map(item => {
-                const bgColor = item === 'lk' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800';
-                return `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${bgColor}">${item.toUpperCase()}</span>`;
-            }).join(' ');
-
             return `
                 <div class="p-3 border rounded-lg bg-white flex justify-between items-center shadow-sm">
                     <div>
                         <div class="flex items-center gap-x-2">
                             <p class="font-bold text-gray-800">${config.name}</p>
-                            ${applyToBadges}
                         </div>
                         <div class="text-xs text-gray-500 mt-1 space-y-1">
                             <p><strong>Hãng:</strong> <span class="font-semibold text-blue-600">${(config.brands || []).join(', ')}</span></p>
@@ -48,6 +42,51 @@ export const uiComponents = {
             `;
         }).join('');
     },
+    
+    // === START: NEW FUNCTION FOR COMPOSER (FIX 5) ===
+    populateComposerDetailTags(supermarketReport) {
+        const qdcContainer = document.getElementById('composer-qdc-tags-container');
+        const nganhHangContainer = document.getElementById('composer-nganhhang-tags-container');
+
+        if (!qdcContainer || !nganhHangContainer) return;
+        
+        // Clear previous tags
+        qdcContainer.innerHTML = '<h5 class="composer__tag-group-title">Chọn Nhóm Hàng QĐC</h5>';
+        nganhHangContainer.innerHTML = '<h5 class="composer__tag-group-title">Chọn Ngành Hàng Chi Tiết</h5>';
+
+        const createTagButton = (tag, text) => {
+            const button = document.createElement('button');
+            button.className = 'composer__tag-btn';
+            button.dataset.tag = tag;
+            button.textContent = text;
+            return button;
+        };
+
+        if (supermarketReport && supermarketReport.qdc) {
+            const qdcItems = Object.values(supermarketReport.qdc)
+                .filter(item => item.sl > 0)
+                .sort((a,b) => b.dtqd - a.dtqd);
+            
+            qdcItems.forEach(item => {
+                const tag = `[QDC_INFO_${item.name}]`;
+                qdcContainer.appendChild(createTagButton(tag, item.name));
+            });
+        }
+
+        if (supermarketReport && supermarketReport.nganhHangChiTiet) {
+            const nganhHangItems = Object.values(supermarketReport.nganhHangChiTiet)
+                .filter(item => item.quantity > 0)
+                .sort((a, b) => b.revenue - a.revenue)
+                .slice(0, 15); // Limit to top 15 for brevity
+
+            nganhHangItems.forEach(item => {
+                const cleanName = utils.cleanCategoryName(item.name);
+                const tag = `[NH_INFO_${cleanName}]`;
+                nganhHangContainer.appendChild(createTagButton(tag, cleanName));
+            });
+        }
+    },
+    // === END: NEW FUNCTION FOR COMPOSER ===
 
     // --- GENERAL UI HELPERS ---
     showProgressBar: (elementId) => document.getElementById(`progress-${elementId}`)?.classList.remove('hidden'),
@@ -72,9 +111,7 @@ export const uiComponents = {
     updateUsageCounter: (statsData) => {
         const visitorCountEl = document.getElementById('visitor-count');
         const actionCountEl = document.getElementById('action-count');
-        // === START: THÊM DÒNG MỚI ===
         const userCountEl = document.getElementById('user-count');
-        // === END: THÊM DÒNG MỚI ===
 
         if (visitorCountEl) {
             visitorCountEl.textContent = statsData.pageLoads ? uiComponents.formatNumber(statsData.pageLoads) : '0';
@@ -82,11 +119,9 @@ export const uiComponents = {
         if (actionCountEl) {
             actionCountEl.textContent = statsData.actionsTaken ? uiComponents.formatNumber(statsData.actionsTaken) : '0';
         }
-        // === START: THÊM LOGIC MỚI ===
         if (userCountEl) {
             userCountEl.textContent = statsData.totalUsers ? uiComponents.formatNumber(statsData.totalUsers) : '0';
         }
-        // === END: LOGIC MỚI ===
     },
 
     updateFileStatus(fileType, fileName, statusText, statusType = 'default') {
@@ -255,18 +290,13 @@ export const uiComponents = {
         document.getElementById('help-modal-content').innerHTML = content.replace(/\n/g, '<br>');
         this.toggleModal('help-modal', true);
     },
-
+    
     showComposerModal(sectionId) {
-        const modal = document.getElementById('composer-modal');
-        if (!modal) return;
-        modal.dataset.sectionId = sectionId;
-        const textarea = document.getElementById('composer-textarea');
-        textarea.value = appState.composerTemplates[sectionId] || '';
-        document.getElementById('composer-modal-title').textContent = `Nhận xét cho Tab ${sectionId.toUpperCase()}`;
         this.toggleModal('composer-modal', true);
     },
     
     insertComposerTag(textarea, tag) {
+        if (!textarea) return;
         const start = textarea.selectionStart;
         const end = textarea.selectionEnd;
         textarea.value = `${textarea.value.substring(0, start)}${tag}${textarea.value.substring(end)}`;
@@ -513,6 +543,70 @@ export const uiComponents = {
             resultsContainer.appendChild(wrapper);
         }
     },
+
+    // === START: THÊM HÀM MỚI ĐỂ HIỂN THỊ KẾT QUẢ GỠ LỖI THI ĐUA ===
+    renderCompetitionDebugReport(debugResults) {
+        const container = document.getElementById('debug-competition-results');
+        if (!container) return;
+
+        if (!debugResults || debugResults.length === 0) {
+            container.innerHTML = '<p class="text-gray-600">Không có dữ liệu để phân tích.</p>';
+            return;
+        }
+
+        const validCount = debugResults.filter(r => r.isOverallValid).length;
+        const totalCount = debugResults.length;
+
+        const checkHeaders = ['HTX Hợp lệ', 'Đã thu', 'Chưa hủy', 'Chưa trả', 'Đã xuất'];
+
+        let tableHTML = `
+            <div class="p-4 bg-white border rounded-lg">
+                <h4 class="font-bold text-lg mb-2">Kết quả Phân tích File: <span class="text-green-600">${validCount}</span> / ${totalCount} dòng hợp lệ</h4>
+                <div class="overflow-x-auto max-h-[600px]">
+                    <table class="min-w-full text-xs table-bordered competition-debug-table">
+                        <thead class="bg-gray-100 sticky top-0">
+                            <tr>
+                                <th class="p-2">Người tạo</th>
+                                <th class="p-2">Nhóm hàng</th>
+                                <th class="p-2">HT Xuất</th>
+                                <th class="p-2">TT Thu tiền</th>
+                                <th class="p-2">TT Hủy</th>
+                                <th class="p-2">TT Trả</th>
+                                <th class="p-2">TT Xuất</th>
+                                ${checkHeaders.map(h => `<th class="p-2">${h}</th>`).join('')}
+                                <th class="p-2">Tổng thể</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+
+        const renderCheck = (status) => `<td class="text-center font-bold text-lg">${status ? '<span class="text-green-500">✅</span>' : '<span class="text-red-500">❌</span>'}</td>`;
+
+        debugResults.forEach(result => {
+            const rowClass = result.isOverallValid ? 'bg-green-50' : 'bg-red-50';
+            const { rowData, checks, isOverallValid } = result;
+            tableHTML += `
+                <tr class="${rowClass}">
+                    <td class="p-2">${rowData.nguoiTao || ''}</td>
+                    <td class="p-2">${rowData.nhomHang || ''}</td>
+                    <td class="p-2">${rowData.hinhThucXuat || ''}</td>
+                    <td class="p-2">${rowData.trangThaiThuTien || ''}</td>
+                    <td class="p-2">${rowData.trangThaiHuy || ''}</td>
+                    <td class="p-2">${rowData.tinhTrangTra || ''}</td>
+                    <td class="p-2">${rowData.trangThaiXuat || ''}</td>
+                    ${renderCheck(checks.isDoanhThuHTX)}
+                    ${renderCheck(checks.isThuTien)}
+                    ${renderCheck(checks.isChuaHuy)}
+                    ${renderCheck(checks.isChuaTra)}
+                    ${renderCheck(checks.isDaXuat)}
+                    ${renderCheck(isOverallValid)}
+                </tr>
+            `;
+        });
+        
+        tableHTML += '</tbody></table></div></div>';
+        container.innerHTML = tableHTML;
+    },
+    // === END: THÊM HÀM MỚI ===
 
     populateAllFilters: () => {
         const { danhSachNhanVien } = appState;

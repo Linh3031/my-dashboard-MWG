@@ -1,4 +1,4 @@
-// Version 2.7 - Adapt to unified competition config structure
+// Version 2.8 - Remove competition config filtering
 // MODULE: Chịu trách nhiệm cho Tab Doanh thu Realtime
 
 import { appState } from './state.js';
@@ -53,13 +53,11 @@ const realtimeTab = {
         });
         
         if (activeSubTabId === 'subtab-hieu-qua-thi-dua-realtime') {
-            // === START: THAY ĐỔI LOGIC - LỌC CẤU HÌNH THI ĐUA ===
-            const rtConfigs = appState.competitionConfigs.filter(c => c.applyTo && c.applyTo.includes('rt'));
+            // Logic đã được đơn giản hóa: không cần lọc `competitionConfigs` nữa
             const competitionReportData = services.calculateCompetitionFocusReport(
                 appState.realtimeYCXData,
-                rtConfigs // Sử dụng danh sách đã lọc
+                appState.competitionConfigs // Sử dụng toàn bộ danh sách cấu hình
             );
-            // === END: THAY ĐỔI LOGIC ===
 
             ui.renderCompetitionUI(
                 'competition-report-container-rt',

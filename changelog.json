@@ -1,5 +1,14 @@
 [
-     {
+   {
+    "version": "3.0",
+    "date": "06/10/2025",
+    "notes": [
+      "Nâng cấp tính năng tạo chương trình thi đua và theo dõi hiệu quả thi đua : Có thể theo dõi cùng lúc nhiều hãng trong cùng 1 nhóm hàng.",
+      "Nâng cấp tính năng nhận xét:cho phép tạo nhận xét cho nhiều tab phụ.",
+      "Nâng cấp tính năng nhận xét: Thêm bộ lọc tất cả nhân viên dưới mục tiêu khai báo"
+    ]
+  },  
+  {
     "version": "2.8",
     "date": "01/10/2025",
     "notes": [
