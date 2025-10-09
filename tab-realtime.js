@@ -1,10 +1,11 @@
-// Version 2.8 - Remove competition config filtering
+// Version 2.9 - Fix: Use settingsService instead of utils
 // MODULE: Chịu trách nhiệm cho Tab Doanh thu Realtime
 
 import { appState } from './state.js';
 import { ui } from './ui.js';
 import { services } from './services.js';
-import { utils } from './utils.js';
+import { settingsService } from './modules/settings.service.js'; // <<< THÊM DÒNG NÀY
+import { highlightService } from './modules/highlight.service.js'; // <<< THÊM DÒNG NÀY
 
 const realtimeTab = {
     render() {
@@ -21,7 +22,6 @@ const realtimeTab = {
         const activeSubTabId = activeSubTabBtn ? activeSubTabBtn.dataset.target : 'subtab-realtime-sieu-thi';
 
         if (appState.realtimeYCXData.length === 0) {
-            // Nếu không có data realtime, xóa nội dung tất cả các tab và báo lỗi
              ui.renderRealtimeKpiCards({}, { goals: {}, timing: {} });
              document.getElementById('realtime-category-details-content').innerHTML = '<p class="text-gray-500 font-bold">Vui lòng tải file realtime để xem chi tiết.</p>';
              document.getElementById('realtime-efficiency-content').innerHTML = '<p class="text-gray-500 font-bold">Vui lòng tải file realtime để xem chi tiết.</p>';
@@ -37,7 +37,7 @@ const realtimeTab = {
         const selectedDept = document.getElementById('realtime-filter-department').value;
         const selectedEmployees = appState.choices.realtime_employee ? appState.choices.realtime_employee.getValue(true) : [];
         
-        const settings = utils.getRealtimeGoalSettings(selectedWarehouse);
+        const settings = settingsService.getRealtimeGoalSettings(selectedWarehouse); // <<< CẬP NHẬT DÒNG NÀY
         
         appState.masterReportData.realtime = services.generateMasterReportData(appState.realtimeYCXData, settings.goals, true);
         
@@ -53,10 +53,9 @@ const realtimeTab = {
         });
         
         if (activeSubTabId === 'subtab-hieu-qua-thi-dua-realtime') {
-            // Logic đã được đơn giản hóa: không cần lọc `competitionConfigs` nữa
             const competitionReportData = services.calculateCompetitionFocusReport(
                 appState.realtimeYCXData,
-                appState.competitionConfigs // Sử dụng toàn bộ danh sách cấu hình
+                appState.competitionConfigs
             );
 
             ui.renderCompetitionUI(
@@ -94,8 +93,8 @@ const realtimeTab = {
             this.handleBrandFilterChange();
         }
         
-        utils.populateHighlightFilters('realtime', filteredRealtimeYCX, filteredReport);
-        utils.applyHighlights('realtime');
+        highlightService.populateHighlightFilters('realtime', filteredRealtimeYCX, filteredReport); // Sửa lỗi tiềm tàng
+        highlightService.applyHighlights('realtime'); // Sửa lỗi tiềm tàng
     },
 
     handleEmployeeDetailChange() {

@@ -1,4 +1,4 @@
-// Version 2.8 - Add header coloring for revenue table
+// Version 3.0 - Fix bug calling settingsService and add import
 // MODULE: UI REALTIME
 // Chứa các hàm render giao diện cho tab "Doanh thu Realtime".
 
@@ -6,6 +6,7 @@ import { appState } from './state.js';
 import { services } from './services.js';
 import { utils } from './utils.js';
 import { uiComponents } from './ui-components.js';
+import { settingsService } from './modules/settings.service.js'; // <<< THÊM DÒNG NÀY
 
 export const uiRealtime = {
     displayRealtimeEmployeeRevenueReport: (reportData, containerId, sortStateKey) => {
@@ -21,7 +22,7 @@ export const uiRealtime = {
                 <h3 class="text-xl font-bold uppercase">Doanh thu nhân viên Realtime</h3>
                 <p class="text-sm italic text-gray-600">(đơn vị tính: Triệu đồng)</p>
             </div>`;
-        
+
         const groupedByDept = {};
         reportData.forEach(item => {
             const dept = item.boPhan;
@@ -66,7 +67,7 @@ export const uiRealtime = {
         else if (title.includes('Trang Trí')) titleClass = 'department-header-tt';
 
         const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
-        
+
         let tableHTML = `<div class="department-block">
             <h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4>
             <div class="overflow-x-auto">
@@ -107,27 +108,27 @@ export const uiRealtime = {
                 </tr></tfoot></table></div></div>`;
         return tableHTML;
     },
-    
+
     renderRealtimeKpiCards: (data, settings) => {
         const { doanhThu, doanhThuQuyDoi, doanhThuChuaXuat, doanhThuQuyDoiChuaXuat, doanhThuTraGop, hieuQuaQuyDoi, tyLeTraCham } = data;
         const { goals: rtGoals } = settings;
-        
+
         const targetDTT = parseFloat(rtGoals?.doanhThuThuc) || 0;
         const targetDTQD = parseFloat(rtGoals?.doanhThuQD) || 0;
 
         document.getElementById('rt-kpi-dt-thuc-main').textContent = uiComponents.formatNumber((doanhThu || 0) / 1000000, 1);
-        document.getElementById('rt-kpi-dt-thuc-sub1').innerHTML = `% HT: <span class="kpi-percentage-value">${uiComponents.formatPercentage(targetDTT > 0 ? ((doanhThu || 0) / 1000000) / targetDTT : 0)}</span> / Target ngày: ${uiComponents.formatNumber(targetDTT || 0)}`;
-        document.getElementById('rt-kpi-dt-thuc-sub2').textContent = `DT Chưa xuất: ${uiComponents.formatNumber((doanhThuChuaXuat || 0) / 1000000, 1)}`;
+        document.getElementById('rt-kpi-dt-thuc-sub1').innerHTML = `% HT: <span class="font-bold">${uiComponents.formatPercentage(targetDTT > 0 ? ((doanhThu || 0) / 1000000) / targetDTT : 0)}</span> / Target ngày: <span class="font-bold">${uiComponents.formatNumber(targetDTT || 0)}</span>`;
+        document.getElementById('rt-kpi-dt-thuc-sub2').innerHTML = `DT Chưa xuất: <span class="font-bold">${uiComponents.formatNumber((doanhThuChuaXuat || 0) / 1000000, 1)}</span>`;
 
         document.getElementById('rt-kpi-dt-qd-main').textContent = uiComponents.formatNumber((doanhThuQuyDoi || 0) / 1000000, 1);
-        document.getElementById('rt-kpi-dt-qd-sub1').innerHTML = `% HT: <span class="kpi-percentage-value">${uiComponents.formatPercentage(targetDTQD > 0 ? ((doanhThuQuyDoi || 0) / 1000000) / targetDTQD : 0)}</span> / Target ngày: ${uiComponents.formatNumber(targetDTQD || 0)}`;
-        document.getElementById('rt-kpi-dt-qd-sub2').textContent = `DTQĐ Chưa xuất: ${uiComponents.formatNumber((doanhThuQuyDoiChuaXuat || 0) / 1000000, 1)}`;
-        
+        document.getElementById('rt-kpi-dt-qd-sub1').innerHTML = `% HT: <span class="font-bold">${uiComponents.formatPercentage(targetDTQD > 0 ? ((doanhThuQuyDoi || 0) / 1000000) / targetDTQD : 0)}</span> / Target ngày: <span class="font-bold">${uiComponents.formatNumber(targetDTQD || 0)}</span>`;
+        document.getElementById('rt-kpi-dt-qd-sub2').innerHTML = `DTQĐ Chưa xuất: <span class="font-bold">${uiComponents.formatNumber((doanhThuQuyDoiChuaXuat || 0) / 1000000, 1)}</span>`;
+
         document.getElementById('rt-kpi-tl-qd-main').textContent = uiComponents.formatPercentage(hieuQuaQuyDoi);
-        document.getElementById('rt-kpi-tl-qd-sub').textContent = `Mục tiêu: ${uiComponents.formatNumber(rtGoals?.phanTramQD || 0)}%`;
-        
+        document.getElementById('rt-kpi-tl-qd-sub').innerHTML = `Mục tiêu: <span class="font-bold">${uiComponents.formatNumber(rtGoals?.phanTramQD || 0)}%</span>`;
+
         document.getElementById('rt-kpi-dt-tc-main').textContent = uiComponents.formatNumber((doanhThuTraGop || 0) / 1000000, 1);
-        document.getElementById('rt-kpi-dt-tc-sub').innerHTML = `% thực trả chậm: <span class="kpi-percentage-value">${uiComponents.formatPercentage(tyLeTraCham)}</span>`;
+        document.getElementById('rt-kpi-dt-tc-sub').innerHTML = `% thực trả chậm: <span class="font-bold">${uiComponents.formatPercentage(tyLeTraCham)}</span>`;
     },
 
     renderRealtimeChuaXuatTable: (reportData) => {
@@ -142,7 +143,7 @@ export const uiRealtime = {
         const { key, direction } = sortState;
         const sortedData = [...reportData].sort((a, b) => {
             const valA = a[key] || 0; const valB = b[key] || 0;
-            return direction === 'asc' ? valA - valB : valB - valA;
+            return direction === 'asc' ? valA - valB : valB - a[key];
         });
 
         const totals = reportData.reduce((acc, item) => {
@@ -153,7 +154,7 @@ export const uiRealtime = {
         }, { soLuong: 0, doanhThuThuc: 0, doanhThuQuyDoi: 0 });
 
         const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
-        
+
         container.innerHTML = `<div class="overflow-x-auto"><table class="min-w-full text-sm table-bordered table-striped" data-table-type="realtime_chuaxuat">
             <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold"><tr>
                 <th class="${headerClass('nganhHang')}" data-sort="nganhHang">Ngành hàng</th>
@@ -181,17 +182,17 @@ export const uiRealtime = {
         const container = document.getElementById('realtime-category-details-content');
         const titleElement = document.getElementById('realtime-category-title');
         if (!container || !titleElement ||!data || !data.nganhHangChiTiet) { container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; return; }
-        
+
         titleElement.className = 'text-xl font-bold uppercase mb-4 p-2 rounded-md header-bg-bright-2';
 
         const { nganhHangChiTiet } = data;
         if (Object.keys(nganhHangChiTiet).length === 0) {
             container.innerHTML = '<p class="text-gray-500 font-bold">Không có dữ liệu.</p>'; return;
         }
-        
+
         const sortState = appState.sortState.realtime_nganhhang || { key: 'revenue', direction: 'desc' };
         const { key, direction } = sortState;
-        
+
         const sortedData = Object.entries(nganhHangChiTiet)
             .map(([name, values]) => ({ name, ...values }))
             .sort((a, b) => b.revenue - a.revenue)
@@ -223,7 +224,7 @@ export const uiRealtime = {
         const container = document.getElementById('realtime-efficiency-content');
         if (!container || !data || !goals) { container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; return; }
         const { pctPhuKien, pctGiaDung, pctMLN, pctSim, pctVAS, pctBaoHiem } = data;
-        
+
         const createRow = (label, value, target) => {
             const isBelow = value < ((target || 0) / 100);
             return `<tr class="border-t">
@@ -246,12 +247,12 @@ export const uiRealtime = {
                 ${createRow('% Bảo hiểm', pctBaoHiem, goals.phanTramBaoHiem)}
             </tbody></table></div>`;
     },
-    
+
     renderRealtimeQdcTable: (data) => {
         const container = document.getElementById('realtime-qdc-content');
         const titleElement = document.getElementById('realtime-qdc-title');
         if (!container || !titleElement || !data || !data.qdc) { container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; return; }
-        
+
         titleElement.className = 'text-xl font-bold uppercase mb-4 p-2 rounded-md header-bg-bright-1';
 
         const qdcData = Object.entries(data.qdc).map(([key, value]) => ({ id: key, ...value }));
@@ -260,7 +261,7 @@ export const uiRealtime = {
         const sortedData = [...qdcData].sort((a,b) => direction === 'asc' ? a[key] - b[key] : b[key] - a[key]);
 
         const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
-        
+
         container.innerHTML = `<div class="overflow-x-auto"><table class="min-w-full text-sm table-bordered table-striped" data-table-type="realtime_qdc">
             <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                 <tr><th class="${headerClass('name')}" data-sort="name">Nhóm hàng</th>
@@ -278,7 +279,7 @@ export const uiRealtime = {
                 </tr>`).join('')}
             </tbody></table></div>`;
     },
-    
+
     updateRealtimeSupermarketTitle: (warehouse, dateTime) => {
         const titleEl = document.getElementById('realtime-supermarket-title');
         if(titleEl) titleEl.textContent = `Báo cáo Realtime ${warehouse ? 'kho ' + warehouse : 'toàn bộ'} - ${dateTime.toLocaleTimeString('vi-VN')} ${dateTime.toLocaleDateString('vi-VN')}`;
@@ -291,9 +292,9 @@ export const uiRealtime = {
             container.innerHTML = `<div class="rt-infographic-container"><p class="text-center text-gray-500">Không có dữ liệu doanh thu cho nhân viên ${employeeName} trong file realtime.</p></div>`;
             return;
         }
-        
+
         const selectedWarehouse = document.getElementById('realtime-filter-warehouse').value;
-        const goals = utils.getRealtimeGoalSettings(selectedWarehouse).goals;
+        const { goals } = settingsService.getRealtimeGoalSettings(selectedWarehouse); // <<< SỬA LỖI Ở ĐÂY
         const { summary, byProductGroup, byCustomer } = detailData;
         const totalRevenue = byProductGroup.reduce((sum, g) => sum + g.realRevenue, 0);
 
@@ -318,7 +319,7 @@ export const uiRealtime = {
                     </div>
                 </details>
             </div>`).join('');
-        
+
         const conversionRateTarget = (goals?.phanTramQD || 0) / 100;
         const conversionRateClass = summary.conversionRate >= conversionRateTarget ? 'is-positive' : 'is-negative';
 
@@ -342,7 +343,7 @@ export const uiRealtime = {
                 </div>
             </div>`;
     },
-    
+
     renderRealtimeBrandReport: (data, viewType = 'brand') => {
         const container = document.getElementById('realtime-brand-report-container');
         if (!container) return;
@@ -369,7 +370,7 @@ export const uiRealtime = {
                 </table></div>`;
         };
 
-        const brandTable = renderTable('Thống kê theo hãng', byBrand, 
+        const brandTable = renderTable('Thống kê theo hãng', byBrand,
             [{label: 'Hãng', key: 'name'}, {label: 'Số lượng', key: 'quantity'}, {label: 'Doanh thu', key: 'revenue'}, {label: 'Đơn giá TB', key: 'avgPrice'}],
             item => `<tr class="border-t">
                 <td class="px-4 py-2 font-medium">${item.name}</td>
@@ -379,7 +380,7 @@ export const uiRealtime = {
             </tr>`, 'realtime_brand'
         );
 
-        const employeeTable = renderTable('Thống kê theo nhân viên', byEmployee, 
+        const employeeTable = renderTable('Thống kê theo nhân viên', byEmployee,
             [{label: 'Nhân viên', key: 'name'}, {label: 'Số lượng', key: 'quantity'}, {label: 'Doanh thu', key: 'revenue'}],
             item => `<tr class="border-t">
                 <td class="px-4 py-2 font-medium">${item.name}</td>
@@ -387,7 +388,7 @@ export const uiRealtime = {
                 <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.revenue)}</td>
             </tr>`, 'realtime_brand_employee'
         );
-        
+
         const brandTableHtml = `<div id="realtime-brand-table-container" class="${viewType !== 'brand' ? 'hidden' : ''}">${brandTable}</div>`;
         const employeeTableHtml = `<div id="realtime-employee-table-container" class="${viewType !== 'employee' ? 'hidden' : ''}">${employeeTable}</div>`;
 

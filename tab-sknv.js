@@ -1,10 +1,11 @@
-// Version 2.4 - Remove competition config filtering
+// Version 2.5 - Fix: Use settingsService instead of utils
 // MODULE: TAB SKNV
 // Chịu trách nhiệm render và xử lý logic cho tab "Sức khỏe nhân viên"
 import { appState } from './state.js';
 import { services } from './services.js';
 import { ui } from './ui.js';
-import { utils } from './utils.js';
+import { settingsService } from './modules/settings.service.js'; // <<< THÊM DÒNG NÀY
+import { highlightService } from './modules/highlight.service.js'; // <<< THÊM DÒNG NÀY
 
 export const sknvTab = {
     render() {
@@ -26,7 +27,7 @@ export const sknvTab = {
             filteredYCXData = appState.ycxData.filter(row => row.ngayTao instanceof Date && !isNaN(row.ngayTao) && selectedDateSet.has(startOfDay(row.ngayTao)));
         }
         
-        const goals = utils.getLuykeGoalSettings(selectedWarehouse).goals;
+        const goals = settingsService.getLuykeGoalSettings(selectedWarehouse).goals; // <<< CẬP NHẬT DÒNG NÀY
         appState.masterReportData.sknv = services.generateMasterReportData(filteredYCXData, goals, false);
         
         let filteredReport = appState.masterReportData.sknv;
@@ -38,10 +39,9 @@ export const sknvTab = {
         const activeSubTabId = activeSubTabBtn ? activeSubTabBtn.dataset.target : 'subtab-sknv';
 
         if (activeSubTabId === 'subtab-hieu-qua-thi-dua-lk') {
-            // Logic đã được đơn giản hóa: không cần lọc `competitionConfigs` nữa
             const competitionReportData = services.calculateCompetitionFocusReport(
                 filteredYCXData,
-                appState.competitionConfigs // Sử dụng toàn bộ danh sách cấu hình
+                appState.competitionConfigs
             );
             
             ui.renderCompetitionUI(
@@ -49,7 +49,6 @@ export const sknvTab = {
                 competitionReportData
             );
         } else {
-            // Render các báo cáo cũ cho các tab khác
             ui.displayEmployeeRevenueReport(filteredReport, 'revenue-report-container-lk', 'doanhthu_lk');
             ui.displayEmployeeIncomeReport(filteredReport);
             ui.displayEmployeeEfficiencyReport(filteredReport, 'efficiency-report-container', 'hieu_qua');
@@ -57,7 +56,7 @@ export const sknvTab = {
             ui.displaySknvReport(filteredReport);
         }
 
-        utils.populateHighlightFilters('sknv', filteredYCXData, filteredReport);
-        utils.applyHighlights('sknv');
+        highlightService.populateHighlightFilters('sknv', filteredYCXData, filteredReport); // Sửa lỗi tiềm tàng
+        highlightService.applyHighlights('sknv'); // Sửa lỗi tiềm tàng
     }
 };
