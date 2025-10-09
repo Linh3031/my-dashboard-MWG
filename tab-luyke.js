@@ -1,10 +1,11 @@
-// Version 2.4 - Remove faulty return statement to allow sub-tab rendering
+// Version 2.6 - Fix: Add missing highlightService import
 // MODULE: Chịu trách nhiệm cho Tab Sức khỏe Siêu thị (Lũy kế)
 
 import { appState } from './state.js';
 import { ui } from './ui.js';
 import { services } from './services.js';
-import { utils } from './utils.js';
+import { settingsService } from './modules/settings.service.js';
+import { highlightService } from './modules/highlight.service.js';
 
 const luykeTab = {
     render() {
@@ -14,12 +15,12 @@ const luykeTab = {
         }
         ui.togglePlaceholder('health-section', false);
 
+        // [BUG FIX]: Luôn phân tích dữ liệu thi đua trước để cập nhật appState.
+        // Điều này đảm bảo thẻ KPI "Thi đua" luôn có dữ liệu để hiển thị.
+        services.parseCompetitionDataFromLuyKe(document.getElementById('paste-luyke').value);
+
         const activeSubTabBtn = document.querySelector('#luyke-subtabs-nav .sub-tab-btn.active');
         const activeSubTabId = activeSubTabBtn ? activeSubTabBtn.dataset.target : 'subtab-luyke-sieu-thi';
-
-        // === START: SỬA LỖI LOGIC ===
-        // Xóa bỏ câu lệnh if/return gây lỗi, cho phép hàm tiếp tục chạy để áp dụng bộ lọc màu và các logic khác
-        // === END: SỬA LỖI LOGIC ===
 
         const selectedWarehouse = document.getElementById('luyke-filter-warehouse').value;
         const selectedDept = document.getElementById('luyke-filter-department').value;
@@ -33,7 +34,7 @@ const luykeTab = {
             filteredYCXData = appState.ycxData.filter(row => row.ngayTao instanceof Date && !isNaN(row.ngayTao) && selectedDateSet.has(startOfDay(row.ngayTao)));
         }
         
-        const goals = utils.getLuykeGoalSettings(selectedWarehouse).goals;
+        const goals = settingsService.getLuykeGoalSettings(selectedWarehouse).goals;
         appState.masterReportData.luyke = services.generateMasterReportData(filteredYCXData, goals);
         
         let filteredReport = appState.masterReportData.luyke;
@@ -62,8 +63,8 @@ const luykeTab = {
             ui.displayCompetitionResultsFromLuyKe(document.getElementById('paste-luyke').value, viewType);
         }
         
-        utils.populateHighlightFilters('luyke', filteredYCXData, filteredReport);
-        utils.applyHighlights('luyke');
+        highlightService.populateHighlightFilters('luyke', filteredYCXData, filteredReport);
+        highlightService.applyHighlights('luyke');
     },
 };
 

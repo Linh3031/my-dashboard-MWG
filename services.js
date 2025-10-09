@@ -1,106 +1,20 @@
-// Version 32.10 - Final fix for composer ranking and syntax purity
-// MODULE 3: KỆ "DỊCH VỤ" (SERVICES)
-// File này chứa tất cả các hàm xử lý logic, tính toán, và chuyển đổi dữ liệu.
+// Version 33.0 - Refactor: Extract data processing logic to a separate module
+// MODULE: SERVICES FACADE
+// File này đóng vai trò điều phối, nhập khẩu các module logic con và export chúng ra ngoài.
 
 import { config } from './config.js';
 import { appState } from './state.js';
 import { ui } from './ui.js';
 import { utils } from './utils.js';
+import { dataProcessing } from './services/data-processing.js';
 
-const services = {
-    // === START: THÊM HÀM GỠ LỖI THI ĐUA MỚI ===
-    /**
-     * Phân tích một tập dữ liệu YCX thô để gỡ lỗi các điều kiện lọc thi đua.
-     * @param {Array} rawTestData - Dữ liệu YCX thô từ file người dùng tải lên.
-     * @returns {Array} - Một mảng các đối tượng, mỗi đối tượng chứa dữ liệu hàng và kết quả của từng bước kiểm tra.
-     */
-    debugCompetitionFiltering(rawTestData) {
-        if (!rawTestData || rawData.length === 0) {
-            return [];
-        }
-
-        // 1. Chuẩn hóa dữ liệu đầu vào giống như quy trình thật
-        const { normalizedData } = this.normalizeData(rawTestData, 'ycx');
-        if (normalizedData.length === 0) {
-            return [];
-        }
-
-        // 2. Lấy các điều kiện lọc
-        const hinhThucXuatTinhDoanhThu = this.getHinhThucXuatTinhDoanhThu();
-
-        // 3. Xử lý từng dòng và ghi lại kết quả của mỗi lần kiểm tra
-        const debugResults = normalizedData.map(row => {
-            const checks = {
-                isDoanhThuHTX: hinhThucXuatTinhDoanhThu.has(row.hinhThucXuat),
-                isThuTien: (row.trangThaiThuTien || "").trim() === 'Đã thu',
-                isChuaHuy: (row.trangThaiHuy || "").trim() === 'Chưa hủy',
-                isChuaTra: (row.tinhTrangTra || "").trim() === 'Chưa trả',
-                isDaXuat: (row.trangThaiXuat || "").trim() === 'Đã xuất'
-            };
-
-            const isOverallValid = checks.isDoanhThuHTX && checks.isThuTien && checks.isChuaHuy && checks.isChuaTra && checks.isDaXuat;
-
-            return {
-                rowData: row,
-                checks: checks,
-                isOverallValid: isOverallValid
-            };
-        });
-
-        return debugResults;
-    },
-    // === END: THÊM HÀM GỠ LỖI THI ĐUA MỚI ===
-
-    // === HÀM MỚI ĐỂ XỬ LÝ FILE KHAI BÁO NGÀNH HÀNG - NHÓM HÀNG ===
-    normalizeCategoryStructureData(rawData) {
-        if (!rawData || rawData.length === 0) {
-            return { success: false, error: 'File rỗng.', normalizedData: [] };
-        }
-        const header = Object.keys(rawData[0] || {});
-        
-        const nganhHangCol = this.findColumnName(header, ['ngành hàng', 'nganh hang']);
-        const nhomHangCol = this.findColumnName(header, ['nhóm hàng', 'nhom hang']);
-
-        if (!nganhHangCol || !nhomHangCol) {
-            return { success: false, error: 'File phải có cột "Ngành hàng" và "Nhóm hàng".', normalizedData: [] };
-        }
-
-        const normalizedData = rawData
-            .map(row => ({
-                nganhHang: String(row[nganhHangCol] || '').trim(),
-                nhomHang: String(row[nhomHangCol] || '').trim(),
-            }))
-            .filter(item => item.nganhHang && item.nhomHang);
-            
-        return { success: true, normalizedData };
-    },
-    
-    // === HÀM MỚI ĐỂ XỬ LÝ SHEET "HÃNG" TỪ FILE KHAI BÁO ===
-    normalizeBrandData(rawData) {
-        if (!rawData || rawData.length === 0) {
-            return { success: false, error: 'Sheet "Hãng" rỗng.', normalizedData: [] };
-        }
-        const header = Object.keys(rawData[0] || {});
-        const brandCol = this.findColumnName(header, ['hãng', 'tên hãng', 'nhà sản xuất']);
-        if (!brandCol) {
-            return { success: false, error: 'Sheet "Hãng" phải có cột "Hãng" hoặc "Tên Hãng".', normalizedData: [] };
-        }
-
-        const normalizedData = rawData
-            .map(row => String(row[brandCol] || '').trim())
-            .filter(brand => brand);
-            
-        return { success: true, normalizedData: [...new Set(normalizedData)].sort() };
-    },
-
-
-    // === START: REFACTOR - CẬP NHẬT LOGIC TÍNH TOÁN CHO THI ĐUA ĐA HÃNG ===
+const reportGeneration = {
     calculateCompetitionFocusReport(sourceYcxData, competitionConfigs) {
         if (!sourceYcxData || sourceYcxData.length === 0 || !competitionConfigs || competitionConfigs.length === 0) {
             return [];
         }
 
-        const hinhThucXuatTinhDoanhThu = this.getHinhThucXuatTinhDoanhThu();
+        const hinhThucXuatTinhDoanhThu = dataProcessing.getHinhThucXuatTinhDoanhThu();
 
         const validSalesData = sourceYcxData.filter(row => {
             const isDoanhThuHTX = hinhThucXuatTinhDoanhThu.has(row.hinhThucXuat);
@@ -185,415 +99,15 @@ const services = {
 
         return report;
     },
-    // === END: REFACTOR ===
-
-
-    // --- DATA DECLARATION GETTERS ---
-    getHinhThucXuatTinhDoanhThu: () => {
-        const savedData = localStorage.getItem('declaration_ycx');
-        if (savedData) return new Set(savedData.split('\n').map(l => l.trim()).filter(Boolean));
-        return new Set(config.DEFAULT_DATA.HINH_THUC_XUAT_TINH_DOANH_THU);
-    },
-    getHinhThucXuatTraGop: () => {
-        const savedData = localStorage.getItem('declaration_ycx_gop');
-        if (savedData) return new Set(savedData.split('\n').map(l => l.trim()).filter(Boolean));
-        return new Set(config.DEFAULT_DATA.HINH_THUC_XUAT_TRA_GOP);
-    },
-    getHeSoQuyDoi: () => {
-        const savedData = localStorage.getItem('declaration_heso');
-        const heSoMap = {};
-        if (savedData) {
-            savedData.split('\n').filter(l => l.trim()).forEach(line => {
-                const parts = line.split(',');
-                if (parts.length >= 2) {
-                    const key = parts[0].trim();
-                    const value = parseFloat(parts[1].trim());
-                    if (key && !isNaN(value)) heSoMap[key] = value;
-                }
-            });
-            return Object.keys(heSoMap).length > 0 ? heSoMap : config.DEFAULT_DATA.HE_SO_QUY_DOI;
-        }
-        return config.DEFAULT_DATA.HE_SO_QUY_DOI;
-    },
-
-    // --- DATA NORMALIZATION & PARSING ---
-    findColumnName(header, aliases) {
-        for (const colName of header) {
-            const processedColName = String(colName || '').trim().toLowerCase();
-            if (aliases.includes(processedColName)) {
-                return colName;
-            }
-        }
-        return null;
-    },
-
-    normalizeData(rawData, fileType) {
-        const mapping = config.COLUMN_MAPPINGS[fileType];
-        if (!mapping) {
-            console.error(`No column mapping found for fileType: ${fileType}`);
-            return { normalizedData: [], success: false, missingColumns: ['Unknown mapping'] };
-        }
-
-        if (!rawData || rawData.length === 0) {
-            return { normalizedData: [], success: true, missingColumns: [] };
-        }
-
-        const header = Object.keys(rawData[0] || {});
-        const foundMapping = {};
-        let allRequiredFound = true;
-        const missingColumns = [];
-
-        appState.debugInfo[fileType] = { required: [], found: header, firstFiveMsnv: [] };
-
-        for (const key in mapping) {
-            const { required, displayName, aliases } = mapping[key];
-            const foundName = services.findColumnName(header, aliases);
-            foundMapping[key] = foundName;
-
-            if (required) {
-                const status = !!foundName;
-                appState.debugInfo[fileType].required.push({ displayName, foundName: foundName || 'Không tìm thấy', status: status });
-                if (!status) {
-                    allRequiredFound = false;
-                    missingColumns.push(displayName);
-                }
-            }
-        }
-        
-        if (fileType === 'giocong' || fileType === 'thuongnong') {
-            if (!foundMapping.maNV && !foundMapping.hoTen) {
-                allRequiredFound = false;
-                const missingMsg = 'Mã NV hoặc Tên NV';
-                missingColumns.push(missingMsg);
-                if (!appState.debugInfo[fileType].required.some(r => r.displayName.includes('NV'))) {
-                     appState.debugInfo[fileType].required.push({ displayName: missingMsg, foundName: 'Không tìm thấy', status: false });
-                }
-            }
-        }
-
-        if (!allRequiredFound) {
-            return { normalizedData: [], success: false, missingColumns };
-        }
-
-        const normalizedData = rawData.map(row => {
-            const newRow = {};
-            for (const key in foundMapping) {
-                if (foundMapping[key]) {
-                    if (key === 'maNV' || key === 'hoTen') {
-                        newRow[key] = String(row[foundMapping[key]] || '').trim();
-                    } else if ((key === 'ngayTao' || key === 'ngayHenGiao') && row[foundMapping[key]]) {
-                        const dateValue = row[foundMapping[key]];
-                        if (dateValue instanceof Date) {
-                            newRow[key] = dateValue;
-                        } else if (typeof dateValue === 'number') { 
-                            newRow[key] = new Date(Math.round((dateValue - 25569) * 86400 * 1000));
-                        } else if (typeof dateValue === 'string') {
-                            const parsedDate = new Date(dateValue.replace(/(\d{2})\/(\d{2})\/(\d{4})/, '$2/$1/$3'));
-                            if (!isNaN(parsedDate)) newRow[key] = parsedDate;
-                        }
-                    }
-                    else {
-                        newRow[key] = row[foundMapping[key]];
-                    }
-                }
-            }
-            return newRow;
-        });
-        
-        if (fileType === 'giocong') {
-            appState.rawGioCongData = rawData.map(row => {
-                const newRow = {};
-                for (const key in foundMapping) {
-                     if (foundMapping[key]) newRow[key] = row[foundMapping[key]];
-                }
-                return newRow;
-            });
-        }
-
-        appState.debugInfo[fileType].firstFiveMsnv = normalizedData.slice(0, 5).map(r => r.maNV).filter(Boolean);
-        
-        return { normalizedData, success: true, missingColumns: [] };
-    },
-
-    processThuongERP: (pastedText) => {
-        if (!pastedText || !pastedText.trim()) return [];
-        const lines = pastedText.trim().split('\n');
-        const results = [];
-        const regex = /(ĐML_|TGD|ĐMM|ĐMS).*?(BP .*?)(?:Nhân Viên|Trưởng Ca)(.*?)([\d,]+)$/;
-        lines.forEach(line => {
-            const match = line.replace(/\s+/g, ' ').match(regex);
-            if (match) results.push({ name: match[3].trim(), bonus: match[4].trim() });
-        });
-        return results;
-    },
-
-    parseLuyKePastedData: (text) => {
-        const mainKpis = {};
-        let comparisonData = { value: 0, percentage: 'N/A' };
-        if (!text) return { mainKpis, comparisonData };
-
-        const allLines = text.split('\n').map(line => line.trim());
-        const textContent = allLines.join(' ');
-
-        const patterns = {
-            'Thực hiện DT thực': /DTLK\s+([\d,.]+)/,
-            'Thực hiện DTQĐ': /DTQĐ\s+([\d,.]+)/,
-            '% HT Target Dự Kiến (QĐ)': /% HT Target Dự Kiến \(QĐ\)\s+([\d.]+%?)/,
-            'Tỷ Trọng Trả Góp': /Tỷ Trọng Trả Góp\s+([\d.]+%?)/,
-        };
-
-        for (const [key, regex] of Object.entries(patterns)) {
-            const match = textContent.match(regex);
-            if (match && match[1]) {
-                mainKpis[key] = match[1];
-            }
-        }
-        
-        const dtckIndex = allLines.findIndex(line => line.includes('DTCK Tháng'));
-        if (dtckIndex !== -1 && dtckIndex + 1 < allLines.length) {
-            const valueLine = allLines[dtckIndex + 1];
-            const values = valueLine.split(/\s+/);
-            if (values.length >= 2) {
-                comparisonData = {
-                    value: parseFloat(values[0].replace(/,/g, '')) || 0,
-                    percentage: values[1] || 'N/A'
-                };
-            }
-        }
-        return { mainKpis, comparisonData };
-    },
-
-    parseCompetitionDataFromLuyKe: (text) => {
-        if (!text || !text.trim()) return [];
-        const lines = text.split('\n').map(l => l.trim());
-        const results = [];
-        let currentCompetition = null;
-
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i];
-            if (line.toLowerCase().startsWith('thi đua')) {
-                if (currentCompetition) results.push(currentCompetition);
-                currentCompetition = {
-                    name: line.replace("Thi đua doanh thu", "DT").replace("Thi đua số lượng", "SL"),
-                    type: line.toLowerCase().includes('doanh thu') ? 'doanhThu' : 'soLuong',
-                    luyKe: 0, target: 0, hoanThanh: '0%'
-                };
-            } else if (currentCompetition) {
-                if (line.startsWith('DTLK') || line.startsWith('SLLK') || line.startsWith('DTQĐ')) {
-                    if (i + 1 < lines.length) {
-                        currentCompetition.luyKe = parseFloat(lines[i + 1].replace(/,/g, '')) || 0;
-                    }
-                } else if (line.startsWith('Target')) {
-                    if (i + 1 < lines.length) {
-                        currentCompetition.target = parseFloat(lines[i + 1].replace(/,/g, '')) || 0;
-                    }
-                } else if (line.startsWith('% HT Dự Kiến')) {
-                    if (i + 1 < lines.length) {
-                        currentCompetition.hoanThanh = lines[i + 1] || '0%';
-                    }
-                }
-            }
-        }
-        if (currentCompetition) results.push(currentCompetition);
-
-        appState.competitionData = results;
-        return results;
-    },
-    
-    processThiDuaNhanVienData(pastedText, luykeCompetitionData) {
-        const debugInfo = { required: [], found: [], status: 'Chưa xử lý' };
-        appState.debugInfo['thiduanv-pasted'] = debugInfo;
-
-        if (!pastedText.trim() || !appState.danhSachNhanVien.length || !luykeCompetitionData.length) {
-            debugInfo.status = 'Lỗi: Thiếu dữ liệu đầu vào (dán Thi đua NV, DSNV, hoặc dán Data Lũy kế).';
-            return [];
-        }
-    
-        const lines = pastedText.trim().split('\n').map(l => l.trim());
-        const competitionCategories = [];
-        const employeePastedDataMap = new Map();
-    
-        let isParsingCategories = false;
-        let isParsingEmployees = false;
-    
-        for (const line of lines) {
-            if (line.includes('Phòng ban')) {
-                isParsingCategories = true;
-                continue;
-            }
-            if (line.includes('Tổng')) {
-                isParsingCategories = false;
-                isParsingEmployees = true;
-                continue;
-            }
-            if (isParsingCategories && line) {
-                competitionCategories.push(line);
-            }
-            if (isParsingEmployees && line) {
-                const row = line.split('\t').map(item => item.trim());
-                const msnv = row[0];
-                if (msnv) {
-                    employeePastedDataMap.set(msnv, row.slice(2).map(val => parseFloat(val.replace(/,/g, '')) || 0));
-                }
-            }
-        }
-
-        debugInfo.found.push({
-            name: 'Số cột thi đua đã nhận dạng',
-            value: `${competitionCategories.length} cột`,
-            status: competitionCategories.length > 0
-        });
-        debugInfo.found.push({
-            name: 'Số dòng nhân viên đã nhận dạng',
-            value: `${employeePastedDataMap.size} dòng`,
-            status: employeePastedDataMap.size > 0
-        });
-
-        const cleanCompetitionName = (name) => name.replace(/thi đua doanh thu bán hàng|thi đua doanh thu|thi đua số lượng/gi, "").trim();
-    
-        const competitionTargets = luykeCompetitionData.map(comp => ({
-            originalName: comp.name,
-            cleanedName: cleanCompetitionName(comp.name),
-            target: comp.target
-        }));
-        
-        const totalEmployeesInSupermarket = appState.danhSachNhanVien.length;
-        if (totalEmployeesInSupermarket === 0) {
-            debugInfo.status = 'Lỗi: Danh sách nhân viên trống.';
-            return [];
-        }
-    
-        const finalReport = appState.danhSachNhanVien.map(employee => {
-            const salesData = employeePastedDataMap.get(employee.maNV) || [];
-            
-            const employeeResult = {
-                maNV: employee.maNV,
-                hoTen: employee.hoTen,
-                completedCount: 0,
-                totalCompetitions: competitionCategories.length,
-                competitions: []
-            };
-    
-            competitionCategories.forEach((categoryName, index) => {
-                const cleanedName = cleanCompetitionName(categoryName);
-                const matchedTarget = competitionTargets.find(t => t.cleanedName === cleanedName);
-                const groupTarget = matchedTarget ? matchedTarget.target : 0;
-                const individualTarget = totalEmployeesInSupermarket > 0 ? groupTarget / totalEmployeesInSupermarket : 0;
-                const actualSales = salesData[index] || 0;
-                const percentExpected = individualTarget > 0 ? actualSales / individualTarget : (actualSales > 0 ? Infinity : 0);
-    
-                if (percentExpected >= 1) {
-                    employeeResult.completedCount++;
-                }
-    
-                employeeResult.competitions.push({
-                    tenNganhHang: categoryName,
-                    thucHien: actualSales,
-                    mucTieu: individualTarget,
-                    conLai: actualSales - individualTarget,
-                    percentExpected: percentExpected,
-                });
-            });
-    
-            employeeResult.completionRate = employeeResult.totalCompetitions > 0 ? employeeResult.completedCount / employeeResult.totalCompetitions : 0;
-            return employeeResult;
-        });
-
-        debugInfo.status = `Thành công: Đã xử lý báo cáo cho ${finalReport.length} nhân viên.`;
-        return finalReport;
-    },
-
-    parsePastedThiDuaTableData(rawText) {
-        if (!rawText || !rawText.trim()) {
-            return { success: false, error: 'Dữ liệu đầu vào rỗng.' };
-        }
-
-        const lines = rawText.split('\n').map(line => line.trim()).filter(line => line);
-
-        const mainHeaders = [];
-        let startHeaderIndex = lines.findIndex(line => line.includes('Phòng ban'));
-
-        if (startHeaderIndex === -1) {
-            return { success: false, error: 'Không tìm thấy dòng "Phòng ban".' };
-        }
-
-        for (let i = startHeaderIndex + 1; i < lines.length; i++) {
-            const currentLine = lines[i];
-            if (currentLine.startsWith('SLLK') || currentLine.startsWith('DTQĐ')) {
-                break;
-            }
-            mainHeaders.push(currentLine);
-        }
-
-        let subHeaderLine = lines
-            .filter(line => line.startsWith('SLLK') || line.startsWith('DTQĐ'))
-            .join('\t');
-        const subHeaders = subHeaderLine.split(/\s+/).filter(Boolean);
-
-        const dataRows = [];
-        for (const line of lines) {
-            const parts = line.split(/\s{2,}|\t/);
-            if (parts.length > 1 && /^-?[\d,.]+$/.test(parts[1].trim())) {
-                const name = parts[0];
-                const values = parts.slice(1);
-                dataRows.push({ name, values });
-            }
-        }
-        
-        if (mainHeaders.length === 0 || dataRows.length === 0) {
-            return { success: false, error: 'Không thể xử lý dữ liệu. Định dạng không hợp lệ.' };
-        }
-
-        return { success: true, mainHeaders, subHeaders, dataRows };
-    },
-
-    // --- MAIN DATA PROCESSING ---
-    classifyInsurance: (productName) => {
-        if (!productName || typeof productName !== 'string') return null;
-        const name = productName.trim().toLowerCase();
-        if (name.includes('bảo hành mở rộng')) return 'BHMR';
-        if (name.includes('1 đổi 1')) return 'BH1d1';
-        if (name.includes('khoản vay')) return 'BHKV';
-        if (name.includes('rơi vỡ')) return 'BHRV';
-        if (name.includes('samsung care+')) return 'BHSC';
-        if (name.includes('ô tô') || name.includes('vật chất ô tô')) return 'BHOTO';
-        if (name.includes('xe máy') || name.includes('xe moto')) return 'BHXM';
-        if (name.includes('xã hội') || name.includes('y tế')) return 'BHYT';
-        return null;
-    },
-    
-    processGioCongData: () => {
-        const gioCongByMSNV = {};
-        let currentMaNV = null;
-
-        if (!appState.rawGioCongData || appState.rawGioCongData.length === 0) return gioCongByMSNV;
-
-        for (const row of appState.rawGioCongData) {
-            const maNV = String(row.maNV || '').trim();
-            const hoTen = String(row.hoTen || '').trim().replace(/\s+/g, ' ');
-            let foundMaNV = maNV || appState.employeeNameToMaNVMap.get(hoTen.toLowerCase()) || null;
-            if (foundMaNV) currentMaNV = foundMaNV;
-
-            if (currentMaNV && gioCongByMSNV[currentMaNV] === undefined) {
-                 gioCongByMSNV[currentMaNV] = 0;
-            }
-            
-            const gioCongValue = parseFloat(String(row.tongGioCong || '0').replace(/,/g, '')) || 0;
-            if (currentMaNV && gioCongValue > 0) {
-                gioCongByMSNV[currentMaNV] += gioCongValue;
-            }
-        }
-        return gioCongByMSNV;
-    },
 
     generateMasterReportData: (sourceData, goalSettings, isRealtime = false) => {
         if (appState.danhSachNhanVien.length === 0) return [];
 
-        const hinhThucXuatTinhDoanhThu = services.getHinhThucXuatTinhDoanhThu();
-        const hinhThucXuatTraGop = services.getHinhThucXuatTraGop();
-        const heSoQuyDoi = services.getHeSoQuyDoi();
+        const hinhThucXuatTinhDoanhThu = dataProcessing.getHinhThucXuatTinhDoanhThu();
+        const hinhThucXuatTraGop = dataProcessing.getHinhThucXuatTraGop();
+        const heSoQuyDoi = dataProcessing.getHeSoQuyDoi();
         const PG = config.PRODUCT_GROUPS;
-        const gioCongByMSNV = services.processGioCongData();
+        const gioCongByMSNV = dataProcessing.processGioCongData();
         const thuongNongByMSNV = {};
 
         appState.thuongNongData.forEach(row => {
@@ -702,7 +216,7 @@ const services = {
                             if (PG.MAY_GIAT.includes(nhomHangCode)) { data.dtMayGiat += thanhTien; data.slMayGiat += soLuong; }
                             if (PG.MAY_LANH.includes(nhomHangCode)) { data.dtMayLanh += thanhTien; data.slMayLanh += soLuong; }
 
-                            const loaiBaoHiem = services.classifyInsurance(row.tenSanPham);
+                            const loaiBaoHiem = dataProcessing.classifyInsurance(row.tenSanPham);
                             if (loaiBaoHiem) { 
                                 data.dtBaoHiem += thanhTien; data.slBaoHiem += soLuong; 
                                 if (loaiBaoHiem === 'BH1d1') data.slBH1d1 += soLuong;
@@ -749,7 +263,6 @@ const services = {
             const thuNhapThangTruoc = thuongNongThangTruoc + thuongERPThangTruoc;
             const chenhLechThuNhap = thuNhapDuKien - thuNhapThangTruoc;
 
-
             const hieuQuaQuyDoi = data.doanhThu > 0 ? (data.doanhThuQuyDoi / data.doanhThu) - 1 : 0;
             const tyLeTraCham = data.doanhThu > 0 ? data.doanhThuTraGop / data.doanhThu : 0;
             const pctPhuKien = data.dtICT > 0 ? data.dtPhuKien / data.dtICT : 0;
@@ -773,12 +286,11 @@ const services = {
         });
     },
 
-    // --- REPORT GENERATION ---
     generateLuyKeChuaXuatReport(sourceYcxData) {
         if (!sourceYcxData || sourceYcxData.length === 0) return [];
 
-        const hinhThucXuatTinhDoanhThu = services.getHinhThucXuatTinhDoanhThu();
-        const heSoQuyDoi = services.getHeSoQuyDoi();
+        const hinhThucXuatTinhDoanhThu = dataProcessing.getHinhThucXuatTinhDoanhThu();
+        const heSoQuyDoi = dataProcessing.getHeSoQuyDoi();
         const report = {};
 
         sourceYcxData.forEach(row => {
@@ -817,8 +329,8 @@ const services = {
     generateRealtimeChuaXuatReport(sourceRealtimeYcxData) {
         if (!sourceRealtimeYcxData || sourceRealtimeYcxData.length === 0) return [];
 
-        const hinhThucXuatTinhDoanhThu = services.getHinhThucXuatTinhDoanhThu();
-        const heSoQuyDoi = services.getHeSoQuyDoi();
+        const hinhThucXuatTinhDoanhThu = dataProcessing.getHinhThucXuatTinhDoanhThu();
+        const heSoQuyDoi = dataProcessing.getHeSoQuyDoi();
         const report = {};
 
         sourceRealtimeYcxData.forEach(row => {
@@ -899,8 +411,8 @@ const services = {
     
         if (employeeData.length === 0) return null;
     
-        const hinhThucXuatTinhDoanhThu = services.getHinhThucXuatTinhDoanhThu();
-        const heSoQuyDoi = services.getHeSoQuyDoi();
+        const hinhThucXuatTinhDoanhThu = dataProcessing.getHinhThucXuatTinhDoanhThu();
+        const heSoQuyDoi = dataProcessing.getHeSoQuyDoi();
         
         const summary = { 
             totalRealRevenue: 0, 
@@ -966,7 +478,7 @@ const services = {
         const filteredData = realtimeYCXData.filter(row => {
             const categoryMatch = !selectedCategory || utils.cleanCategoryName(row.nganhHang) === selectedCategory;
             const brandMatch = !selectedBrand || (row.nhaSanXuat || 'Hãng khác') === selectedBrand;
-            const isDoanhThuHTX = services.getHinhThucXuatTinhDoanhThu().has(row.hinhThucXuat);
+            const isDoanhThuHTX = dataProcessing.getHinhThucXuatTinhDoanhThu().has(row.hinhThucXuat);
             const isBaseValid = (row.trangThaiThuTien || "").trim() === 'Đã thu' && (row.trangThaiHuy || "").trim() === 'Chưa hủy' && (row.tinhTrangTra || "").trim() === 'Chưa trả' && (row.trangThaiXuat || "").trim() === 'Đã xuất';
 
             return categoryMatch && brandMatch && isDoanhThuHTX && isBaseValid;
@@ -1001,8 +513,9 @@ const services = {
     
         return { byBrand: brandArray, byEmployee: employeeArray };
     },
+};
 
-    // --- UTILITIES FOR COMPOSER ---
+const composerServices = {
     getEmployeeRanking(reportData, key, direction = 'desc', count = 3, department = 'ALL') {
         if (!reportData || reportData.length === 0) return [];
         
@@ -1081,7 +594,7 @@ const services = {
             let phanTramHTQD = goals.doanhThuQD > 0 ? (dtQd / 1000000) / goals.doanhThuQD : 0;
             
             if (sectionId === 'luyke') {
-                const pastedLuyKeData = services.parseLuyKePastedData(document.getElementById('paste-luyke')?.value || '');
+                const pastedLuyKeData = dataProcessing.parseLuyKePastedData(document.getElementById('paste-luyke')?.value || '');
                 if (pastedLuyKeData.mainKpis['Thực hiện DT thực']) {
                     dtThuc = parseFloat(pastedLuyKeData.mainKpis['Thực hiện DT thực'].replace(/,/g, '')) * 1000000;
                 }
@@ -1102,7 +615,7 @@ const services = {
             
             if (tag === 'TLQD') {
                 if (sectionId === 'luyke') {
-                    const pastedLuyKeData = services.parseLuyKePastedData(document.getElementById('paste-luyke')?.value || '');
+                    const pastedLuyKeData = dataProcessing.parseLuyKePastedData(document.getElementById('paste-luyke')?.value || '');
                     if (pastedLuyKeData.mainKpis['Thực hiện DT thực'] && pastedLuyKeData.mainKpis['Thực hiện DTQĐ']) {
                         const dtThucPasted = parseFloat(String(pastedLuyKeData.mainKpis['Thực hiện DT thực']).replace(/,/g, ''));
                         const dtQdPasted = parseFloat(String(pastedLuyKeData.mainKpis['Thực hiện DTQĐ']).replace(/,/g, ''));
@@ -1148,12 +661,7 @@ const services = {
             const rankingMatch = tag.match(rankingRegex);
             if (rankingMatch && rankingReportData) {
                 const [_, type, count, metric, department] = rankingMatch;
-                
-                // === START: BẢN SỬA LỖI CUỐI CÙNG ===
-                // Làm sạch tên bộ phận để loại bỏ đuôi @msnv không mong muốn.
                 const cleanDepartment = department.replace(/@msnv$/, '').trim();
-                // === END: BẢN SỬA LỖI CUỐI CÙNG ===
-
                 const direction = type === 'TOP' ? 'desc' : 'asc';
                 const metricInfo = tagMapping[metric];
                 if (metricInfo) {
@@ -1161,10 +669,8 @@ const services = {
                     if (metric === 'THUNHAP' && appState.masterReportData.sknv.length > 0) {
                         dataForRanking = appState.masterReportData.sknv;
                     }
-                    
-                    const ranking = services.getEmployeeRanking(dataForRanking, metricInfo.key, direction, parseInt(count), cleanDepartment);
-                    
-                    return services.formatEmployeeList(ranking, metricInfo.key, metricInfo.format);
+                    const ranking = composerServices.getEmployeeRanking(dataForRanking, metricInfo.key, direction, parseInt(count), cleanDepartment);
+                    return composerServices.formatEmployeeList(ranking, metricInfo.key, metricInfo.format);
                 }
             }
             
@@ -1173,11 +679,10 @@ const services = {
             if(botTargetMatch && rankingReportData) {
                 let [_, metric, department] = botTargetMatch;
                 department = department.replace(/@msnv$/, '').trim();
-
                 const metricInfo = botTargetMapping[metric];
                 if (metricInfo) {
-                    const employeeList = services.getEmployeesBelowTarget(rankingReportData, metricInfo.dataKey, metricInfo.goalKey, department);
-                    return services.formatEmployeeList(employeeList, metricInfo.dataKey, metricInfo.format);
+                    const employeeList = composerServices.getEmployeesBelowTarget(rankingReportData, metricInfo.dataKey, metricInfo.goalKey, department);
+                    return composerServices.formatEmployeeList(employeeList, metricInfo.dataKey, metricInfo.format);
                 }
             }
 
@@ -1253,7 +758,7 @@ const services = {
         supermarketReport.pctVAS = supermarketReport.slSmartphone > 0 ? supermarketReport.slUDDD / supermarketReport.slSmartphone : 0;
         supermarketReport.pctBaoHiem = supermarketReport.slBaoHiemDenominator > 0 ? supermarketReport.slBaoHiemVAS / supermarketReport.slBaoHiemDenominator : 0;
         
-        const pastedLuyKeData = services.parseLuyKePastedData(document.getElementById('paste-luyke')?.value || '');
+        const pastedLuyKeData = dataProcessing.parseLuyKePastedData(document.getElementById('paste-luyke')?.value || '');
         supermarketReport.comparisonData = pastedLuyKeData.comparisonData;
         
         if (supermarketReport.qdc) {
@@ -1283,75 +788,6 @@ const services = {
             if (nv.maNV) appState.employeeMaNVMap.set(String(nv.maNV).trim(), nv);
             if (nv.hoTen) appState.employeeNameToMaNVMap.set(nv.hoTen.toLowerCase().replace(/\s+/g, ' '), String(nv.maNV).trim());
         });
-    },
-    
-    _findHeaderAndProcess(sheet, requiredKeywords) {
-        if (!sheet) return [];
-        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null });
-        if (rows.length === 0) return [];
-    
-        let headerRowIndex = -1;
-        let foundHeaders = [];
-    
-        for (let i = 0; i < Math.min(rows.length, 10); i++) {
-            const row = rows[i];
-            const lowerCaseRow = row.map(cell => String(cell || '').trim().toLowerCase());
-            
-            const allKeywordsFound = requiredKeywords.every(keyword => 
-                lowerCaseRow.some(cell => cell.includes(keyword))
-            );
-    
-            if (allKeywordsFound) {
-                headerRowIndex = i;
-                foundHeaders = rows[i].map(cell => String(cell || '').trim());
-                break;
-            }
-        }
-    
-        if (headerRowIndex === -1) {
-            throw new Error(`Không tìm thấy dòng tiêu đề chứa đủ các từ khóa: ${requiredKeywords.join(', ')}.`);
-        }
-    
-        const dataRows = rows.slice(headerRowIndex + 1);
-        const jsonData = dataRows.map(row => {
-            const obj = {};
-            foundHeaders.forEach((header, index) => {
-                if (header) { 
-                    const value = row[index];
-                    const upperKey = header.toUpperCase();
-                    if (upperKey.includes('KÊNH') || upperKey.includes('SIÊU THỊ') || upperKey.includes('NGÀNH HÀNG') || upperKey.includes('TỈNH') || upperKey.includes('BOSS')) {
-                        obj[header] = value;
-                    } else if (typeof value === 'string' && value.includes('%')) {
-                        obj[header] = parseFloat(value.replace(/%|,/g, '')) / 100 || 0;
-                    } else if (value !== null && value !== undefined) {
-                        obj[header] = parseFloat(String(value).replace(/,/g, '')) || 0;
-                    } else {
-                        obj[header] = 0;
-                    }
-                }
-            });
-            return obj;
-        }).filter(obj => {
-            const supermarketKey = Object.keys(obj).find(k => k.toLowerCase().includes('siêu thị'));
-            return supermarketKey && obj[supermarketKey];
-        });
-    
-        return jsonData;
-    },
-
-    processThiDuaVungFile(workbook) {
-        const sheetNames = workbook.SheetNames;
-        const chiTietSheet = workbook.Sheets[sheetNames.find(name => name.toUpperCase().includes('CHITIET'))];
-        const tongSheet = workbook.Sheets[sheetNames.find(name => name.toUpperCase().includes('TONG'))];
-
-        if (!chiTietSheet || !tongSheet) {
-            throw new Error('File Excel phải chứa sheet có tên chứa "CHITIET" và "TONG".');
-        }
-        
-        const chiTietData = this._findHeaderAndProcess(chiTietSheet, ['siêu thị', 'ngành hàng', 'kênh']);
-        const tongData = this._findHeaderAndProcess(tongSheet, ['siêu thị', 'tổng thưởng']);
-        
-        return { chiTietData, tongData };
     },
 
     generateThiDuaVungReport(selectedSupermarket) {
@@ -1429,6 +865,12 @@ const services = {
 
         return report;
     }
+};
+
+const services = {
+    ...dataProcessing,
+    ...reportGeneration,
+    ...composerServices
 };
 
 export { services };

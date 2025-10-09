@@ -1,4 +1,4 @@
-// Version 2.4 - Unify competition configs structure
+// Version 2.5 - Add cloud-based declaration properties
 // MODULE 2: TỦ TRẠNG THÁI (APPSTATE)
 // File này chứa đối tượng trạng thái chung của ứng dụng, hoạt động như một "bộ nhớ".
 
@@ -24,6 +24,14 @@ const appState = {
     categoryStructure: [],
     brandList: [], // Master list of all brands
 
+    // === START: DỮ LIỆU KHAI BÁO TÍNH TOÁN (ĐỒNG BỘ TỪ CLOUD) ===
+    declarations: {
+        hinhThucXuat: '',
+        hinhThucXuatGop: '',
+        heSoQuyDoi: ''
+    },
+    // === END: DỮ LIỆU KHAI BÁO TÍNH TOÁN ===
+
     // Dữ liệu cập nhật hàng ngày
     ycxData: [],
     rawGioCongData: [],
@@ -46,12 +54,8 @@ const appState = {
         realtime: []
     },
     
-    // === START: THAY ĐỔI CẤU TRÚC LƯU TRỮ THI ĐUA ===
-    // Hợp nhất lk và rt thành một danh sách duy nhất.
-    // Mỗi chương trình sẽ có thuộc tính 'applyTo' là một mảng, ví dụ: ['lk', 'rt']
     competitionConfigs: [],
-    // === END: THAY ĐỔI CẤU TRÚC LƯU TRỮ THI ĐUA ===
-
+    
     realtimeYCXData: [],
     luykeGoalSettings: {},
     realtimeGoalSettings: {},
@@ -69,7 +73,6 @@ const appState = {
         sknv_employee: null, sknv_date_picker: null, sknv_highlight_nhanhang: null, sknv_highlight_nhomhang: null, sknv_highlight_employee: null,
         realtime_employee: null, realtime_highlight_nhanhang: null, realtime_highlight_nhomhang: null, realtime_highlight_employee: null,
         thiDuaVung_sieuThi: null,
-        // Cấu hình Choices cho drawer mục tiêu hợp nhất
         competition_group: null,
         competition_brand: null,
     },

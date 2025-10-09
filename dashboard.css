@@ -1,4 +1,4 @@
-/* Version 3.7 - Sync with multi-brand competition feature update */
+/* Version 4.2 - Add static QR Code container styling */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -12,7 +12,11 @@
     --bg-lightness-6: 88%; --header-lightness-6: 80%; --header-text-lightness-6: 10%; --special-header-lightness-6: 70%; --below-target-lightness-6: 80%;
     --kpi-card-1-bg: #38bdf8; --kpi-card-2-bg: #34d399; --kpi-card-3-bg: #fbbf24;
     --kpi-card-4-bg: #2dd4bf; --kpi-card-5-bg: #a78bfa; --kpi-card-6-bg: #f472b6;
-    --kpi-text-color: #ffffff;
+    --kpi-card-7-bg: #818cf8;
+    --kpi-card-8-bg: #f87171;
+    --kpi-title-color: #ffffff;
+    --kpi-main-color: #ffffff;
+    --kpi-sub-color: #ffffff;
 }
 
 body { 
@@ -143,11 +147,21 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #
 #dtnv-realtime-employee-selector-container .choices__inner { min-width: 300px; }
 #dtnv-realtime-employee-selector-container .choices__list--single { min-width: 300px; }
 
-.kpi-card { color: var(--kpi-text-color); }
-.kpi-card p { color: inherit; }
-.kpi-card-title { opacity: 0.8; font-size: 1em; }
-.kpi-card p[id$="-main"] { font-size: var(--kpi-main-font-size); transition: font-size 0.2s ease-in-out; }
-.kpi-card p[id$="-sub"], .kpi-card p[id$="-sub1"], .kpi-card p[id$="-sub2"] { font-size: 1em; }
+.kpi-card-title {
+    color: var(--kpi-title-color);
+    opacity: 0.8;
+    font-size: 1em;
+}
+.kpi-card p[id$="-main"] {
+    color: var(--kpi-main-color);
+    font-size: var(--kpi-main-font-size);
+    transition: font-size 0.2s ease-in-out;
+}
+.kpi-card p[id$="-sub"], .kpi-card p[id$="-sub1"], .kpi-card p[id$="-sub2"] {
+    color: var(--kpi-sub-color);
+    font-size: 1em;
+}
+
 .kpi-percentage, .kpi-percentage-value { font-weight: 700; }
 .kpi-sub-value { opacity: 0.9; }
 #luyke-kpi-cards-container .kpi-card:nth-child(1), #realtime-kpi-cards-container .kpi-card:nth-child(1) { background-color: var(--kpi-card-1-bg); }
@@ -156,6 +170,8 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #
 #luyke-kpi-cards-container .kpi-card:nth-child(4), #realtime-kpi-cards-container .kpi-card:nth-child(4) { background-color: var(--kpi-card-4-bg); }
 #luyke-kpi-cards-container .kpi-card:nth-child(5) { background-color: var(--kpi-card-5-bg); }
 #luyke-kpi-cards-container .kpi-card:nth-child(6) { background-color: var(--kpi-card-6-bg); }
+#luyke-kpi-cards-container .kpi-card:nth-child(7) { background-color: var(--kpi-card-7-bg); }
+#luyke-kpi-cards-container .kpi-card:nth-child(8) { background-color: var(--kpi-card-8-bg); }
 
 #sknv-details-container .sknv-subtable-header th { font-size: 0.875em; font-weight: 600; background-color: #f3f4f6; }
 .choices__inner { min-height: 42px; }
@@ -374,3 +390,59 @@ details[open] > summary .arrow { transform: rotate(180deg); }
     width: auto;
     word-break: normal;
 }
+
+/* === START: FIX for Choices.js selected item visibility === */
+#goal-drawer .choices__list--multiple .choices__item {
+    display: inline-flex;
+    align-items: center;
+    background-color: #3b82f6;
+    border: 1px solid #2563eb;
+    color: white;
+    border-radius: 9999px;
+    padding: 2px 8px;
+    font-size: 0.8em;
+    font-weight: 500;
+    margin: 2px 4px 2px 0;
+}
+/* === END: FIX for Choices.js selected item visibility === */
+
+/* === START: CẢI THIỆN UX BỘ LỌC THI ĐUA (V4.1) === */
+#goal-drawer .choices__inner {
+    /* Dùng !important để đảm bảo ghi đè lên các style mặc định của thư viện */
+    height: auto !important;
+    min-height: 42px !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+}
+/* === END: CẢI THIỆN UX BỘ LỌC THI ĐUA === */
+
+/* === START: STATIC QR CODE STYLES === */
+.header-qr-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  border: 2px solid #ef4444; /* red-500 */
+  padding: 8px;
+  border-radius: 8px;
+  background-color: white;
+  margin-left: auto;
+}
+.header-qr-container span {
+  font-size: 0.8rem; /* 12.8px */
+  font-weight: 600;
+  color: #b91c1c; /* red-700 */
+  text-align: center;
+}
+.header-qr-image {
+  width: 80px;
+  height: 80px;
+  background-color: #f3f4f6; /* gray-100 placeholder */
+  border-radius: 4px;
+  display: block;
+  visibility: hidden; /* Ẩn ảnh cho đến khi src được tải */
+}
+.header-qr-image[src]:not([src=""]) {
+  visibility: visible; /* Chỉ hiện khi src có giá trị */
+}
+/* === END: STATIC QR CODE STYLES === */

@@ -431,7 +431,11 @@ export const uiComponents = {
         if (settings.kpiCard4Bg) root.style.setProperty('--kpi-card-4-bg', settings.kpiCard4Bg);
         if (settings.kpiCard5Bg) root.style.setProperty('--kpi-card-5-bg', settings.kpiCard5Bg);
         if (settings.kpiCard6Bg) root.style.setProperty('--kpi-card-6-bg', settings.kpiCard6Bg);
-        if (settings.kpiTextColor) root.style.setProperty('--kpi-text-color', settings.kpiTextColor);
+        if (settings.kpiCard7Bg) root.style.setProperty('--kpi-card-7-bg', settings.kpiCard7Bg);
+        if (settings.kpiCard8Bg) root.style.setProperty('--kpi-card-8-bg', settings.kpiCard8Bg);
+        if (settings.kpiTitleColor) root.style.setProperty('--kpi-title-color', settings.kpiTitleColor);
+        if (settings.kpiMainColor) root.style.setProperty('--kpi-main-color', settings.kpiMainColor);
+        if (settings.kpiSubColor) root.style.setProperty('--kpi-sub-color', settings.kpiSubColor);
     },
 
     displayDebugInfo(fileType) {

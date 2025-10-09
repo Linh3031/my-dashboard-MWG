@@ -9,21 +9,28 @@ import { uiComponents } from './ui-components.js';
 
 export const uiLuyke = {
     displayHealthKpiTable: (pastedData, goals) => {
-        const { mainKpis, comparisonData } = pastedData;
-    
+        const { mainKpis, comparisonData, dtDuKien, dtqdDuKien, luotKhachData } = pastedData;
+        
+        const competitionSummary = { dat: 0, total: 0 };
+        if (appState.competitionData && appState.competitionData.length > 0) {
+            competitionSummary.total = appState.competitionData.length;
+            competitionSummary.dat = appState.competitionData.filter(d => (parseFloat(String(d.hoanThanh).replace('%','')) || 0) >= 100).length;
+        }
+
         if (!mainKpis || Object.keys(mainKpis).length === 0) {
             const supermarketReport = services.aggregateReport(appState.masterReportData.luyke);
             const cardData = {
                 dtThucLK: supermarketReport.doanhThu,
                 dtQdLK: supermarketReport.doanhThuQuyDoi,
-                phanTramTargetThuc: (goals.doanhThuThuc > 0) ? (supermarketReport.doanhThu / 1000000) / goals.doanhThuThuc : 0,
-                phanTramTargetQd: (goals.doanhThuQD > 0) ? (supermarketReport.doanhThuQuyDoi / 1000000) / goals.doanhThuQD : 0,
-                phanTramQd: supermarketReport.doanhThu > 0 ? (supermarketReport.doanhThuQuyDoi / supermarketReport.doanhThu) -1 : 0,
+                phanTramQd: supermarketReport.doanhThu > 0 ? (supermarketReport.doanhThuQuyDoi / supermarketReport.doanhThu) - 1 : 0,
                 dtGop: supermarketReport.doanhThuTraGop,
                 phanTramGop: supermarketReport.doanhThu > 0 ? supermarketReport.doanhThuTraGop / supermarketReport.doanhThu : 0,
+                dtThucDuKien: 0,
+                dtQdDuKien: 0,
+                phanTramTargetQd: 0,
+                phanTramTargetThuc: 0,
             };
-            // Pass comparison data through even if main KPIs are calculated from file
-            uiLuyke.renderLuykeKpiCards(cardData, comparisonData, appState.masterReportData.luyke, goals);
+            uiLuyke.renderLuykeKpiCards(cardData, comparisonData, luotKhachData, appState.masterReportData.luyke, goals, competitionSummary);
             return;
         }
         
@@ -33,16 +40,21 @@ export const uiLuyke = {
         const dtQdLK = cleanValue(mainKpis['Thực hiện DTQĐ']) * 1000000;
         const phanTramGopRaw = cleanValue(mainKpis['Tỷ Trọng Trả Góp']);
         const dtGop = dtThucLK * (phanTramGopRaw / 100);
-
         const phanTramQd = dtThucLK > 0 ? (dtQdLK / dtThucLK) - 1 : 0;
         const phanTramGop = dtThucLK > 0 ? dtGop / dtThucLK : 0;
-        const targetThuc = (parseFloat(goals.doanhThuThuc) || 0);
-        const phanTramTargetThuc = targetThuc > 0 ? (dtThucLK / 1000000) / targetThuc : 0;
+        
+        const targetThuc = (parseFloat(goals.doanhThuThuc) || 0) * 1000000;
+        const phanTramTargetThuc = targetThuc > 0 ? (dtDuKien * 1000000) / targetThuc : 0;
         const phanTramTargetQd = (cleanValue(mainKpis['% HT Target Dự Kiến (QĐ)']) || 0) / 100;
 
-        const luykeCardData = { dtThucLK, dtQdLK, dtGop, phanTramQd, phanTramGop, phanTramTargetThuc, phanTramTargetQd };
+        const luykeCardData = { 
+            dtThucLK, dtQdLK, dtGop, phanTramQd, phanTramGop, 
+            phanTramTargetThuc, phanTramTargetQd,
+            dtThucDuKien: dtDuKien * 1000000,
+            dtQdDuKien: dtqdDuKien * 1000000,
+        };
         
-        uiLuyke.renderLuykeKpiCards(luykeCardData, comparisonData, appState.masterReportData.luyke, goals);
+        uiLuyke.renderLuykeKpiCards(luykeCardData, comparisonData, luotKhachData, appState.masterReportData.luyke, goals, competitionSummary);
     },
 
     displayCompetitionResultsFromLuyKe: (text, viewType = 'summary') => {
@@ -101,12 +113,10 @@ export const uiLuyke = {
 
             const headerColorClass = type === 'doanhthu' ? 'competition-header-doanhthu' : 'competition-header-soluong';
 
-            // --- START: LOGIC MỚI - TÍNH TOÁN BỘ ĐẾM ---
             const total = items.length;
             const dat = items.filter(item => (parseFloat(String(item.hoanThanh).replace('%','')) || 0) >= 100).length;
             const chuaDat = total - dat;
             const summaryText = `(Tổng: ${total}, Đạt: ${dat}, Chưa đạt: ${chuaDat})`;
-            // --- END: LOGIC MỚI ---
 
             return `<div class="flex flex-col"><h4 class="text-lg font-bold text-gray-800 p-2 border-b-2 ${headerColorClass}">${title} <span class="text-sm font-normal text-gray-500">${summaryText}</span></h4>
                 <div class="overflow-x-auto"><table class="min-w-full text-sm table-bordered table-striped" data-table-type="luyke_competition_${type}">
@@ -196,29 +206,42 @@ export const uiLuyke = {
             </tr></tfoot></table></div>`;
     },
 
-    renderLuykeKpiCards: (luykeData, comparisonData, masterReportDataLuyke, goals) => {
-        const { dtThucLK, dtQdLK, dtGop, phanTramQd, phanTramGop, phanTramTargetThuc, phanTramTargetQd } = luykeData;
+    renderLuykeKpiCards: (luykeData, comparisonData, luotKhachData, masterReportDataLuyke, goals, competitionSummary) => {
+        const { dtThucLK, dtQdLK, dtGop, phanTramQd, phanTramGop, phanTramTargetThuc, phanTramTargetQd, dtThucDuKien, dtQdDuKien } = luykeData;
 
-        const chuaXuatQuyDoi = masterReportDataLuyke.reduce((sum, item) => sum + (item.doanhThuQuyDoiChuaXuat || 0), 0);
-
+        // --- Thẻ 1: Doanh thu thực ---
         document.getElementById('luyke-kpi-dt-thuc-main').textContent = uiComponents.formatNumber((dtThucLK || 0) / 1000000, 0);
-        document.getElementById('luyke-kpi-dt-thuc-sub1').innerHTML = `% HT: <span class="kpi-percentage-value">${uiComponents.formatPercentage(phanTramTargetThuc || 0)}</span> / Target: ${uiComponents.formatNumber(goals?.doanhThuThuc || 0)}`;
+        document.getElementById('luyke-kpi-dt-thuc-sub1').innerHTML = `DK: <span class="font-bold">${uiComponents.formatNumber((dtThucDuKien || 0) / 1000000, 0)}</span> / Target: <span class="font-bold">${uiComponents.formatNumber(goals?.doanhThuThuc || 0)}</span>`;
 
+        // --- Thẻ 2: Doanh thu Quy đổi ---
         document.getElementById('luyke-kpi-dt-qd-main').textContent = uiComponents.formatNumber((dtQdLK || 0) / 1000000, 0);
-        document.getElementById('luyke-kpi-dt-qd-sub1').innerHTML = `% HT: <span class="kpi-percentage-value">${uiComponents.formatPercentage(phanTramTargetQd || 0)}</span> / Target: ${uiComponents.formatNumber(goals?.doanhThuQD || 0)}`;
+        document.getElementById('luyke-kpi-dt-qd-sub1').innerHTML = `DK: <span class="font-bold">${uiComponents.formatNumber((dtQdDuKien || 0) / 1000000, 0)}</span> / Target: <span class="font-bold">${uiComponents.formatNumber(goals?.doanhThuQD || 0)}</span>`;
+        
+        // --- Thẻ 3: Tỷ lệ HT Target ---
+        document.getElementById('luyke-kpi-ht-target-qd-main').textContent = uiComponents.formatPercentage(phanTramTargetQd || 0);
+        document.getElementById('luyke-kpi-ht-target-thuc-sub').innerHTML = `DT Thực: <span class="font-bold">${uiComponents.formatPercentage(phanTramTargetThuc || 0)}</span>`;
 
+        // --- Thẻ 4: Tỷ lệ quy đổi ---
         document.getElementById('luyke-kpi-tl-qd-main').textContent = uiComponents.formatPercentage(phanTramQd || 0);
-        document.getElementById('luyke-kpi-tl-qd-sub').textContent = `Mục tiêu: ${uiComponents.formatNumber(goals?.phanTramQD || 0)}%`;
+        document.getElementById('luyke-kpi-tl-qd-sub').innerHTML = `Mục tiêu: <span class="font-bold">${uiComponents.formatNumber(goals?.phanTramQD || 0)}%</span>`;
         
+        // --- Thẻ 5: Doanh thu trả chậm ---
         document.getElementById('luyke-kpi-dt-tc-main').textContent = uiComponents.formatNumber((dtGop || 0) / 1000000, 0);
-        document.getElementById('luyke-kpi-dt-tc-sub').innerHTML = `% thực trả chậm: <span class="kpi-percentage-value">${uiComponents.formatPercentage(phanTramGop || 0)}</span>`;
+        document.getElementById('luyke-kpi-dt-tc-sub').innerHTML = `% thực trả chậm: <span class="font-bold">${uiComponents.formatPercentage(phanTramGop || 0)}</span>`;
         
+        // --- Thẻ 6: DTQĐ Chưa xuất ---
+        const chuaXuatQuyDoi = masterReportDataLuyke.reduce((sum, item) => sum + (item.doanhThuQuyDoiChuaXuat || 0), 0);
         document.getElementById('luyke-kpi-dtqd-chua-xuat-main').textContent = uiComponents.formatNumber(chuaXuatQuyDoi / 1000000, 0);
         
-        if (comparisonData) {
-            document.getElementById('luyke-kpi-dtck-main').textContent = comparisonData.percentage || 'N/A';
-            document.getElementById('luyke-kpi-dtck-sub').textContent = uiComponents.formatNumber(comparisonData.value || 0, 0);
-        }
+        // --- Thẻ 7: Thi đua ngành hàng ---
+        const tyLeThiDuaDat = competitionSummary.total > 0 ? competitionSummary.dat / competitionSummary.total : 0;
+        document.getElementById('luyke-kpi-thidua-main').textContent = uiComponents.formatPercentage(tyLeThiDuaDat);
+        document.getElementById('luyke-kpi-thidua-sub').innerHTML = `<span class="font-bold">${competitionSummary.dat}/${competitionSummary.total}</span> Ngành`;
+
+        // --- Thẻ 8: Tăng/giảm cùng kỳ ---
+        document.getElementById('luyke-kpi-dtck-main').textContent = comparisonData.percentage || 'N/A';
+        document.getElementById('luyke-kpi-dtck-sub').innerHTML = `Doanh thu: <span class="font-bold">${uiComponents.formatNumber(comparisonData.value || 0)} | ${comparisonData.percentage || '0%'}</span>`;
+        document.getElementById('luyke-kpi-lkck-sub').innerHTML = `Lượt khách: <span class="font-bold">${uiComponents.formatNumber(luotKhachData.value || 0)} | ${luotKhachData.percentage || '0%'}</span>`;
     },
 
     renderLuykeCategoryDetailsTable: (data, numDays) => {

@@ -1,6 +1,0 @@
-{
-  "devDependencies": {
-    "cypress": "^15.3.0",
-    "cypress-file-upload": "^5.0.8"
-  }
-}

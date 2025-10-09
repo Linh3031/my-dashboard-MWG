@@ -1,9 +1,9 @@
-// Version 1.5 - Add Firestore functions for category management
+// Version 1.7 - Add function to get QR code URL from Storage
 // MODULE: FIREBASE
 // Chịu trách nhiệm kết nối, thiết lập listener với Firebase.
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, arrayUnion, serverTimestamp, query, orderBy, setDoc, increment, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, arrayUnion, serverTimestamp, query, orderBy, setDoc, increment, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 import { appState } from './state.js';
 import { ui } from './ui.js';
@@ -28,8 +28,8 @@ const firebase = {
             const firebaseApp = initializeApp(firebaseConfig);
             appState.auth = getAuth(firebaseApp);
             appState.db = getFirestore(firebaseApp);
-            appState.storage = getStorage(firebaseApp); 
-            
+            appState.storage = getStorage(firebaseApp);
+
             console.log("Firebase connected successfully!");
             this.setupListeners();
         } catch (error) {
@@ -58,7 +58,7 @@ const firebase = {
 
         const helpContentRef = collection(appState.db, "help_content");
         onSnapshot(helpContentRef, (querySnapshot) => {
-            let contentUpdated = false;
+             let contentUpdated = false;
             querySnapshot.forEach((doc) => {
                 if (appState.helpContent.hasOwnProperty(doc.id)) {
                     appState.helpContent[doc.id] = doc.data().content;
@@ -135,7 +135,7 @@ const firebase = {
             return false;
         }
     },
-    
+
     async saveHelpContent(contents) {
         if (!appState.db || !appState.isAdmin) return;
         ui.showNotification('Đang lưu nội dung hướng dẫn...', 'success');
@@ -152,13 +152,7 @@ const firebase = {
             ui.showNotification('Lỗi khi lưu nội dung.', 'error');
         }
     },
-    
-    // --- START: CÁC HÀM MỚI ĐỂ QUẢN LÝ DỮ LIỆU KHAI BÁO ---
-    /**
-     * Ghi/cập nhật dữ liệu khai báo (nhóm hàng, hãng) lên Firestore.
-     * Chỉ có Admin mới thực hiện được hành động này.
-     * @param {Object} data - Đối tượng chứa { categories: Array, brands: Array }.
-     */
+
     async saveCategoryDataToFirestore(data) {
         if (!appState.db || !appState.isAdmin) return;
         ui.showNotification('Đang đồng bộ dữ liệu khai báo lên cloud...', 'success');
@@ -168,7 +162,7 @@ const firebase = {
 
             const brandRef = doc(appState.db, "declarations", "brandList");
             await setDoc(brandRef, { data: data.brands || [] });
-            
+
             ui.showNotification('Đồng bộ dữ liệu khai báo thành công!', 'success');
         } catch (error) {
             console.error("Lỗi khi lưu dữ liệu khai báo lên Firestore:", error);
@@ -176,16 +170,12 @@ const firebase = {
         }
     },
 
-    /**
-     * Tải dữ liệu khai báo từ Firestore khi ứng dụng khởi động.
-     * Mọi người dùng đều thực hiện hành động này.
-     */
     async loadCategoryDataFromFirestore() {
         if (!appState.db) return { categories: [], brands: [] };
         try {
             const declarationsCollection = collection(appState.db, "declarations");
             const querySnapshot = await getDocs(declarationsCollection);
-            
+
             let categories = [];
             let brands = [];
 
@@ -196,13 +186,55 @@ const firebase = {
                     brands = doc.data().data || [];
                 }
             });
-            
+
             console.log(`Loaded ${categories.length} categories and ${brands.length} brands from Firestore.`);
             return { categories, brands };
         } catch (error) {
             console.error("Lỗi khi tải dữ liệu khai báo từ Firestore:", error);
             ui.showNotification('Không thể tải dữ liệu ngành hàng từ cloud.', 'error');
             return { categories: [], brands: [] };
+        }
+    },
+
+    // --- START: CÁC HÀM MỚI ĐỂ QUẢN LÝ DỮ LIỆU KHAI BÁO TÍNH TOÁN ---
+    async loadDeclarationsFromFirestore() {
+        if (!appState.db) return {};
+        console.log("Loading calculation declarations from Firestore...");
+        try {
+            const declarationIds = ['hinhThucXuat', 'hinhThucXuatGop', 'heSoQuyDoi'];
+            const declarations = {};
+            for (const id of declarationIds) {
+                const docRef = doc(appState.db, "declarations", id);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    // Dữ liệu được lưu dưới dạng một chuỗi dài, phân tách bằng \n
+                    declarations[id] = docSnap.data().content || '';
+                } else {
+                    declarations[id] = '';
+                }
+            }
+            console.log("Successfully loaded calculation declarations.");
+            return declarations;
+        } catch (error) {
+            console.error("Lỗi khi tải dữ liệu khai báo tính toán từ Firestore:", error);
+            ui.showNotification('Lỗi: Không thể tải các khai báo tính toán từ cloud.', 'error');
+            return {};
+        }
+    },
+
+    async saveDeclarationsToFirestore(declarations) {
+        if (!appState.db || !appState.isAdmin) return;
+        ui.showNotification('Đang đồng bộ khai báo tính toán lên cloud...', 'success');
+        try {
+            await Promise.all([
+                setDoc(doc(appState.db, "declarations", "hinhThucXuat"), { content: declarations.ycx }),
+                setDoc(doc(appState.db, "declarations", "hinhThucXuatGop"), { content: declarations.ycxGop }),
+                 setDoc(doc(appState.db, "declarations", "heSoQuyDoi"), { content: declarations.heSo })
+            ]);
+            ui.showNotification('Đồng bộ khai báo tính toán thành công!', 'success');
+        } catch (error) {
+            console.error("Lỗi khi lưu dữ liệu khai báo tính toán:", error);
+            ui.showNotification('Lỗi khi đồng bộ khai báo tính toán.', 'error');
         }
     },
     // --- END: CÁC HÀM MỚI ---
@@ -236,7 +268,29 @@ const firebase = {
             console.error("Lỗi khi lấy URL tải file bookmark: ", error);
             throw error;
         }
+    },
+
+    // === START: HÀM MỚI ĐỂ LẤY URL MÃ QR ===
+    async getQrCodeDownloadURL() {
+        if (!appState.storage) {
+            throw new Error("Firebase Storage chưa được khởi tạo.");
+        }
+        // --- LƯU Ý: File ảnh QR của bạn PHẢI được tải lên đúng đường dẫn này ---
+        const filePath = 'qrcodes/main-qr.jpg'; 
+        const storageRef = ref(appState.storage, filePath);
+        try {
+            const url = await getDownloadURL(storageRef);
+            return url;
+        } catch (error) {
+            console.error("Lỗi khi lấy URL của mã QR: ", error);
+            // Xử lý lỗi cụ thể khi không tìm thấy file
+            if (error.code === 'storage/object-not-found') {
+                throw new Error(`Không tìm thấy file mã QR tại đường dẫn '${filePath}'. Vui lòng kiểm tra lại Firebase Storage.`);
+            }
+            throw new Error("Không thể tải được mã QR từ server.");
+        }
     }
+    // === END: HÀM MỚI ===
 };
 
 export { firebase };
