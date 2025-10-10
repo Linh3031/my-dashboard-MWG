@@ -1,4 +1,4 @@
-// Version 42.0 - Integrate new general-purpose Selection Modal
+// Version 42.1 - Display update details in force-update modal
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -22,12 +22,12 @@ import { modalHelp } from './components/modal-help.js';
 import { modalChart } from './components/modal-chart.js';
 import { modalComposer } from './components/modal-composer.js';
 import { modalPreview } from './components/modal-preview.js';
-import { modalSelection } from './components/modal-selection.js'; // <<< THÊM DÒNG NÀY
+import { modalSelection } from './components/modal-selection.js';
 import { settingsService } from './modules/settings.service.js';
 import { highlightService } from './modules/highlight.service.js';
 
 const app = {
-    currentVersion: '3.1',
+    currentVersion: '3.2',
     storage: storage,
 
     async init() {
@@ -47,7 +47,7 @@ const app = {
             modalChart.render('#modal-chart-container');
             modalComposer.render('#modal-composer-container');
             modalPreview.render('#modal-preview-container');
-            modalSelection.render('#modal-selection-container'); // <<< THÊM DÒNG NÀY
+            modalSelection.render('#modal-selection-container');
 
             this.loadAndApplyBookmarkLink();
             this.loadAndDisplayQrCode(); 
@@ -97,8 +97,33 @@ const app = {
             const response = await fetch(`./version.json?v=${new Date().getTime()}`);
             if (!response.ok) return;
             const serverConfig = await response.json();
+            
             if (serverConfig.version && serverConfig.version !== this.currentVersion) {
                 console.log(`Phiên bản mới ${serverConfig.version} đã sẵn sàng!`);
+
+                // Fetch changelog to get update details
+                const changelogRes = await fetch(`./changelog.json?v=${new Date().getTime()}`);
+                const changelogData = await changelogRes.json();
+                const newVersionDetails = changelogData.find(log => log.version === serverConfig.version);
+
+                const titleEl = document.getElementById('force-update-title');
+                const notesContainer = document.getElementById('update-notes-container');
+
+                if (titleEl) {
+                    titleEl.textContent = `📢 Đã có phiên bản mới ${serverConfig.version}!`;
+                }
+
+                if (notesContainer && newVersionDetails && newVersionDetails.notes) {
+                    notesContainer.innerHTML = `
+                        <p class="text-sm font-semibold text-gray-700 mb-2">Nội dung cập nhật:</p>
+                        <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
+                            ${newVersionDetails.notes.map(note => `<li>${note}</li>`).join('')}
+                        </ul>
+                    `;
+                } else if (notesContainer) {
+                    notesContainer.innerHTML = '<p class="text-sm text-gray-500">Không thể tải chi tiết cập nhật.</p>';
+                }
+                
                 ui.toggleModal('force-update-modal', true);
             }
         } catch (error) {
@@ -122,7 +147,6 @@ const app = {
                 const { normalizedData, success } = services.normalizeData(savedData, fileType);
                 if (success) {
                     appState[stateKey] = normalizedData;
-                    // LOGIC CŨ ĐÃ BỊ XÓA
                     ui.updateFileStatus(uiId, '', `✓ Đã tải ${normalizedData.length} dòng.`, 'success');
                 }
             } catch (e) { console.error(`Lỗi đọc ${uiId} từ IndexedDB:`, e); }
