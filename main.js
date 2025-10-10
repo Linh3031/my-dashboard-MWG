@@ -1,4 +1,4 @@
-// Version 42.1 - Display update details in force-update modal
+// Version 42.2 - Add logic for scrolling version marquee
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -51,6 +51,7 @@ const app = {
 
             this.loadAndApplyBookmarkLink();
             this.loadAndDisplayQrCode(); 
+            this.setupMarquee(); // <<< GỌI HÀM MỚI
 
             await this.storage.openDB();
 
@@ -92,6 +93,63 @@ const app = {
         }
     },
 
+    // === START: HÀM MỚI ĐỂ XỬ LÝ DÒNG CHỮ CHẠY ===
+    async setupMarquee() {
+        const marqueeContainer = document.getElementById('version-marquee-container');
+        const marqueeText = marqueeContainer?.querySelector('.marquee-text');
+
+        if (!marqueeContainer || !marqueeText) return;
+
+        try {
+            // Lấy số phiên bản
+            const versionRes = await fetch(`./version.json?v=${new Date().getTime()}`);
+            const versionInfo = await versionRes.json();
+            const currentVersion = versionInfo.version || this.currentVersion;
+            marqueeText.textContent = `🔥 Chi tiết bản cập nhật - Phiên bản ${currentVersion}`;
+
+            // Gắn sự kiện click
+            marqueeContainer.addEventListener('click', async () => {
+                try {
+                    const changelogRes = await fetch(`./changelog.json?v=${new Date().getTime()}`);
+                    const changelogData = await changelogRes.json();
+                    
+                    const modalTitle = document.getElementById('help-modal-title');
+                    const modalContent = document.getElementById('help-modal-content');
+
+                    if (modalTitle) modalTitle.textContent = "Lịch Sử Cập Nhật";
+                    if (modalContent) {
+                        modalContent.innerHTML = this._formatChangelogForModal(changelogData);
+                    }
+                    
+                    ui.toggleModal('help-modal', true);
+
+                } catch (error) {
+                    console.error("Lỗi khi tải hoặc hiển thị changelog:", error);
+                    ui.showNotification("Không thể tải chi tiết cập nhật.", "error");
+                }
+            });
+
+        } catch (error) {
+            console.error("Lỗi khi thiết lập marquee:", error);
+            marqueeText.textContent = "Không thể tải thông tin phiên bản.";
+        }
+    },
+
+    _formatChangelogForModal(changelogData) {
+        if (!changelogData || changelogData.length === 0) {
+            return '<p>Không có lịch sử cập nhật.</p>';
+        }
+        return changelogData.map(item => `
+            <div class="mb-4 pb-4 border-b last:border-b-0">
+                <h4 class="font-bold text-blue-600 mb-2">Phiên bản ${item.version} (${item.date})</h4>
+                <ul class="list-disc list-inside text-gray-700 space-y-1 text-sm">
+                    ${item.notes.map(note => `<li>${note}</li>`).join('')}
+                </ul>
+            </div>
+        `).join('');
+    },
+    // === END: HÀM MỚI ===
+
     async checkForUpdates() {
         try {
             const response = await fetch(`./version.json?v=${new Date().getTime()}`);
@@ -101,7 +159,6 @@ const app = {
             if (serverConfig.version && serverConfig.version !== this.currentVersion) {
                 console.log(`Phiên bản mới ${serverConfig.version} đã sẵn sàng!`);
 
-                // Fetch changelog to get update details
                 const changelogRes = await fetch(`./changelog.json?v=${new Date().getTime()}`);
                 const changelogData = await changelogRes.json();
                 const newVersionDetails = changelogData.find(log => log.version === serverConfig.version);
@@ -135,7 +192,7 @@ const app = {
         const loadSavedFile = async (saveKey, stateKey, fileType, uiId) => {
             if (saveKey === 'saved_category_structure') {
                 if (appState.categoryStructure.length > 0 || appState.brandList.length > 0) {
-                     ui.updateFileStatus('category-structure', 'Tải từ Cloud', `✓ Đã tải ${appState.categoryStructure.length} nhóm & ${appState.brandList.length} hãng.`, 'success');
+                    ui.updateFileStatus('category-structure', 'Tải từ Cloud', `✓ Đã tải ${appState.categoryStructure.length} nhóm & ${appState.brandList.length} hãng.`, 'success');
                 }
                 return;
             }
@@ -851,7 +908,6 @@ const app = {
         }
     },
     
-    // === START: HÀM MỚI ĐỂ XỬ LÝ QR TĨNH ===
     async loadAndDisplayQrCode() {
         try {
             const qrUrl = await firebase.getQrCodeDownloadURL();
@@ -863,11 +919,10 @@ const app = {
             console.error("Không thể tải mã QR:", error);
             const container = document.querySelector('.header-qr-container');
             if (container) {
-                container.style.display = 'none'; // Ẩn toàn bộ khung nếu có lỗi
+                container.style.display = 'none';
             }
         }
     }
-    // === END: HÀM MỚI ===
 };
 
 app.init();

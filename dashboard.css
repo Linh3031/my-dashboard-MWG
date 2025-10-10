@@ -1,4 +1,4 @@
-/* Version 4.5 - Add styles for table settings trigger button */
+/* Version 4.6 - Add styles for version marquee */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -113,7 +113,8 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #
 .data-input-group__status-text--default { color: #6b7280; }
 .data-input-group__status-text--success { color: #16a34a; }
 .data-input-group__status-text--error { color: #dc2626; }
-.data-textarea { width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875em; font-family: 'Inter', sans-serif; }
+.data-textarea { 
+    width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875em; font-family: 'Inter', sans-serif; }
 .data-textarea:focus { outline: 2px solid transparent; outline-offset: 2px; border-color: #3b82f6; box-shadow: 0 0 0 1px #3b82f6; }
 .progress-bar-container { overflow: hidden; }
 .progress-bar { background-image: linear-gradient(45deg, rgba(255, 255, 255, .15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, .15) 50%, rgba(255, 255, 255, .15) 75%, transparent 75%, transparent); background-size: 1rem 1rem; animation: progress-bar-stripes 1s linear infinite; }
@@ -413,7 +414,6 @@ details[open] > summary .arrow { transform: rotate(180deg); }
     word-break: normal;
 }
 
-/* === START: FIX for Choices.js selected item visibility === */
 #goal-drawer .choices__list--multiple .choices__item {
     display: inline-flex;
     align-items: center;
@@ -426,50 +426,33 @@ details[open] > summary .arrow { transform: rotate(180deg); }
     font-weight: 500;
     margin: 2px 4px 2px 0;
 }
-/* === END: FIX for Choices.js selected item visibility === */
-
-/* === START: CẢI THIỆN UX BỘ LỌC THI ĐUA (V4.1) === */
 #goal-drawer .choices__inner {
-    /* Dùng !important để đảm bảo ghi đè lên các style mặc định của thư viện */
     height: auto !important;
     min-height: 42px !important;
     display: flex !important;
     flex-wrap: wrap !important;
 }
-/* === END: CẢI THIỆN UX BỘ LỌC THI ĐUA === */
-
-/* === START: STATIC QR CODE STYLES === */
 .header-qr-container {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   align-items: center;
   gap: 4px;
   border: 2px solid #ef4444; /* red-500 */
-  padding: 8px;
+  padding: 4px;
   border-radius: 8px;
   background-color: white;
-  margin-left: auto;
 }
 .header-qr-container span {
-  font-size: 0.8rem; /* 12.8px */
+  font-size: 0.75rem; /* 12px */
   font-weight: 600;
   color: #b91c1c; /* red-700 */
-  text-align: center;
 }
 .header-qr-image {
-  width: 80px;
-  height: 80px;
-  background-color: #f3f4f6; /* gray-100 placeholder */
+  width: 50px;
+  height: 50px;
+  background-color: #f3f4f6;
   border-radius: 4px;
-  display: block;
-  visibility: hidden; /* Ẩn ảnh cho đến khi src được tải */
 }
-.header-qr-image[src]:not([src=""]) {
-  visibility: visible; /* Chỉ hiện khi src có giá trị */
-}
-/* === END: STATIC QR CODE STYLES === */
-
-/* === START: NEW SELECTION MODAL STYLES === */
 .selection-item {
     display: flex;
     align-items: center;
@@ -490,9 +473,6 @@ details[open] > summary .arrow { transform: rotate(180deg); }
     flex-grow: 1;
     cursor: pointer;
 }
-/* === END: NEW SELECTION MODAL STYLES === */
-
-/* === START: TABLE SETTINGS BUTTON === */
 .settings-trigger-btn {
     background: none;
     border: none;
@@ -510,4 +490,38 @@ details[open] > summary .arrow { transform: rotate(180deg); }
     height: 18px;
     display: block;
 }
-/* === END: TABLE SETTINGS BUTTON === */
+
+/* === START: VERSION MARQUEE STYLES === */
+#version-marquee-container {
+    flex-grow: 1;
+    margin: 0 1.5rem;
+    overflow: hidden;
+    position: relative;
+    background-color: #eef2ff;
+    border: 1px solid #c7d2fe;
+    border-radius: 9999px;
+    cursor: pointer;
+    height: 38px;
+}
+#version-marquee-container:hover .marquee-text {
+    animation-play-state: paused;
+    color: #312e81;
+}
+.marquee-text {
+    position: absolute;
+    white-space: nowrap;
+    will-change: transform;
+    animation: marquee-scroll 25s linear infinite;
+    font-weight: 600;
+    color: #4338ca;
+    line-height: 36px;
+}
+@keyframes marquee-scroll {
+    from {
+        transform: translateX(100%);
+    }
+    to {
+        transform: translateX(-100%);
+    }
+}
+/* === END: VERSION MARQUEE STYLES === */
