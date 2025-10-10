@@ -1,4 +1,4 @@
-// Version 3.0 - Add dynamic tag population for Composer
+// Version 3.1 - Add renderSettingsButton helper function
 // MODULE: UI COMPONENTS
 // Chứa các hàm UI chung, tái sử dụng được trên toàn bộ ứng dụng.
 
@@ -7,6 +7,12 @@ import { services } from './services.js';
 import { utils } from './utils.js';
 
 export const uiComponents = {
+    renderSettingsButton(idSuffix) {
+        return `<button id="settings-btn-${idSuffix}" class="settings-trigger-btn" title="Tùy chỉnh hiển thị">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                </button>`;
+    },
+
     renderCompetitionConfigUI() {
         const container = document.getElementById(`competition-list-container`);
         if (!container) return;
@@ -32,7 +38,7 @@ export const uiComponents = {
                     </div>
                     <div class="flex items-center gap-x-2 flex-shrink-0">
                         <button class="edit-competition-btn p-2 rounded-md hover:bg-gray-200 text-gray-600" data-index="${index}" title="Sửa chương trình">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                         </button>
                         <button class="delete-competition-btn p-2 rounded-md hover:bg-red-100 text-red-600" data-index="${index}" title="Xóa chương trình">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
@@ -43,7 +49,6 @@ export const uiComponents = {
         }).join('');
     },
     
-    // === START: NEW FUNCTION FOR COMPOSER (FIX 5) ===
     populateComposerDetailTags(supermarketReport) {
         const qdcContainer = document.getElementById('composer-qdc-tags-container');
         const nganhHangContainer = document.getElementById('composer-nganhhang-tags-container');
@@ -86,7 +91,6 @@ export const uiComponents = {
             });
         }
     },
-    // === END: NEW FUNCTION FOR COMPOSER ===
 
     // --- GENERAL UI HELPERS ---
     showProgressBar: (elementId) => document.getElementById(`progress-${elementId}`)?.classList.remove('hidden'),
@@ -548,7 +552,6 @@ export const uiComponents = {
         }
     },
 
-    // === START: THÊM HÀM MỚI ĐỂ HIỂN THỊ KẾT QUẢ GỠ LỖI THI ĐUA ===
     renderCompetitionDebugReport(debugResults) {
         const container = document.getElementById('debug-competition-results');
         if (!container) return;
@@ -610,8 +613,7 @@ export const uiComponents = {
         tableHTML += '</tbody></table></div></div>';
         container.innerHTML = tableHTML;
     },
-    // === END: THÊM HÀM MỚI ===
-
+    
     populateAllFilters: () => {
         const { danhSachNhanVien } = appState;
         if (danhSachNhanVien.length === 0) return;
@@ -647,7 +649,7 @@ export const uiComponents = {
         });
         
         const createOptionsHTML = (items, includeAllOption = false) => {
-             let html = includeAllOption ? '<option value="">Tất cả</option>' : '';
+            let html = includeAllOption ? '<option value="">Tất cả</option>' : '';
              html += items.map(item => `<option value="${item}">${item}</option>`).join('');
              return html;
         };

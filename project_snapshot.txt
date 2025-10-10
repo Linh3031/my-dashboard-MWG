@@ -1,5 +1,5 @@
 --- START FILE: ./Firebase.js ---
-// Version 1.6 - Add declaration data management (read/write from Firestore)
+// Version 1.7 - Add function to get QR code URL from Storage
 // MODULE: FIREBASE
 // Chịu trách nhiệm kết nối, thiết lập listener với Firebase.
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -230,7 +230,7 @@ const firebase = {
             await Promise.all([
                 setDoc(doc(appState.db, "declarations", "hinhThucXuat"), { content: declarations.ycx }),
                 setDoc(doc(appState.db, "declarations", "hinhThucXuatGop"), { content: declarations.ycxGop }),
-                setDoc(doc(appState.db, "declarations", "heSoQuyDoi"), { content: declarations.heSo })
+                 setDoc(doc(appState.db, "declarations", "heSoQuyDoi"), { content: declarations.heSo })
             ]);
             ui.showNotification('Đồng bộ khai báo tính toán thành công!', 'success');
         } catch (error) {
@@ -269,7 +269,29 @@ const firebase = {
             console.error("Lỗi khi lấy URL tải file bookmark: ", error);
             throw error;
         }
+    },
+
+    // === START: HÀM MỚI ĐỂ LẤY URL MÃ QR ===
+    async getQrCodeDownloadURL() {
+        if (!appState.storage) {
+            throw new Error("Firebase Storage chưa được khởi tạo.");
+        }
+        // --- LƯU Ý: File ảnh QR của bạn PHẢI được tải lên đúng đường dẫn này ---
+        const filePath = 'qrcodes/main-qr.jpg'; 
+        const storageRef = ref(appState.storage, filePath);
+        try {
+            const url = await getDownloadURL(storageRef);
+            return url;
+        } catch (error) {
+            console.error("Lỗi khi lấy URL của mã QR: ", error);
+            // Xử lý lỗi cụ thể khi không tìm thấy file
+            if (error.code === 'storage/object-not-found') {
+                throw new Error(`Không tìm thấy file mã QR tại đường dẫn '${filePath}'. Vui lòng kiểm tra lại Firebase Storage.`);
+            }
+            throw new Error("Không thể tải được mã QR từ server.");
+        }
     }
+    // === END: HÀM MỚI ===
 };
 
 export { firebase };
@@ -354,6 +376,14 @@ export const auth = {
 
 --- START FILE: ./changelog.json ---
 [
+  {
+    "version": "3.1",
+    "date": "09/10/2025",
+    "notes": [
+      "Thêm 2 thẻ KPI mới cho tab siêu thị lũy kế",
+      "Thêm chức năng cài đặt màu chữ thẻ KPI trong cài đặt giao diện"
+    ]
+  },  
    {
     "version": "3.0",
     "date": "06/10/2025",
@@ -681,11 +711,11 @@ const drawerInterfaceHTML = `
                 </div>
                 <div class="flex items-center gap-2">
                     <input type="color" id="kpi-color-7" class="kpi-color-input p-1 h-10 w-14 block bg-white border border-gray-300 cursor-pointer rounded-lg" value="#818cf8">
-                    <label for="kpi-color-7" class="text-sm">Thẻ 7 (Thi đua)</label>
+                    <label for="kpi-color-7" class="text-sm">Thẻ 7</label>
                 </div>
                 <div class="flex items-center gap-2">
                     <input type="color" id="kpi-color-8" class="kpi-color-input p-1 h-10 w-14 block bg-white border border-gray-300 cursor-pointer rounded-lg" value="#f87171">
-                    <label for="kpi-color-8" class="text-sm">Thẻ 8 (Cùng kỳ)</label>
+                    <label for="kpi-color-8" class="text-sm">Thẻ 8</label>
                 </div>
             </div>
         </div>
@@ -1016,6 +1046,40 @@ export const modalPreview = {
 };
 --- END FILE: ./components/modal-preview.js ---
 
+--- START FILE: ./components/modal-selection.js ---
+// Version 1.0 - Component: Selection Modal
+// Chứa mã HTML cho modal tùy chỉnh hiển thị chung.
+
+const modalSelectionHTML = `
+<div id="selection-modal" class="modal hidden">
+    <div class="modal__overlay" data-close-modal></div>
+    <div class="modal__container">
+        <div class="modal__header">
+            <h3 id="selection-modal-title" class="modal__title">Tùy chỉnh hiển thị</h3>
+            <button class="modal__close-btn" data-close-modal>&times;</button>
+        </div>
+        <div class="modal__content">
+            <input type="text" id="selection-modal-search" class="w-full p-2 border rounded-md mb-4" placeholder="Tìm kiếm mục...">
+            <div id="selection-modal-list" class="space-y-2 max-h-64 overflow-y-auto">
+                </div>
+        </div>
+        <div class="modal__footer">
+            <button id="selection-modal-save-btn" class="action-btn action-btn--save">Lưu Cài Đặt</button>
+        </div>
+    </div>
+</div>
+`;
+
+export const modalSelection = {
+    render(containerSelector) {
+        const container = document.querySelector(containerSelector);
+        if (container) {
+            container.innerHTML = modalSelectionHTML;
+        }
+    }
+};
+--- END FILE: ./components/modal-selection.js ---
+
 --- START FILE: ./components/sidebar.js ---
 // Version 1.0 - Component: Sidebar
 // Chứa mã HTML và logic cho thanh điều hướng bên.
@@ -1272,7 +1336,7 @@ createSnapshot();
 --- END FILE: ./create_snapshot.js ---
 
 --- START FILE: ./dashboard.css ---
-/* Version 4.1 - Add !important to competition filter UX fix */
+/* Version 4.5 - Add styles for table settings trigger button */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -1331,7 +1395,7 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #
 .page-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
 .page-header__title { font-size: 1.75rem; font-weight: 700; color: #1f2937; }
 .content-card { background-color: white; border-radius: 0.75rem; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); padding: 1rem 1.5rem; margin-bottom: 2rem; border: 1px solid #e5e7eb; }
-.content-card__header { font-size: 1.125rem; font-weight: 600; color: #374151; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e5e7eb; }
+.content-card__header { display: flex; align-items: center; justify-content: space-between; font-size: 1.125rem; font-weight: 600; color: #374151; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e5e7eb; }
 
 #notification { position: fixed; bottom: 20px; right: 20px; padding: 1rem 1.5rem; border-radius: 0.5rem; color: white; z-index: 1200; opacity: 0; transition: opacity 0.5s, transform 0.5s; transform: translateY(100px); }
 #notification.show { opacity: 1; transform: translateY(0); }
@@ -1352,15 +1416,37 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #
 .sortable.sorted-desc .sort-indicator::after { opacity: 1; color: #3b82f6; }
 .sortable.sorted-desc .sort-indicator::before { opacity: 0.4; }
 
-.data-input-group { border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; background-color: #f9fafb; display: flex; flex-direction: column; }
+.data-input-group { 
+    border: 1px solid #e5e7eb; 
+    border-radius: 0.5rem; 
+    padding: 1rem; 
+    background-color: #f9fafb; 
+    display: flex; 
+    flex-direction: column; 
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+    border-top: 4px solid #9ca3af;
+}
+.data-input-group:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+#data-section > .content-card:nth-of-type(1) .data-input-group {
+    border-top-color: #3b82f6; /* blue-500 */
+}
+#data-section > .content-card:nth-of-type(3) .data-input-group {
+    border-top-color: #8b5cf6; /* violet-500 */
+}
 .data-input-group__label { font-weight: 600; color: #4b5563; margin-bottom: 0.75rem; }
+.data-input-group__label--link { text-decoration: none; display: inline-block; transition: color 0.2s ease-in-out; }
+.data-input-group__label--link:hover { text-decoration: underline; color: #2563eb; }
+.data-input-group__label--link > .font-normal { font-weight: 400; }
 .data-input-group__content { display: flex; flex-direction: column; gap: 0.5rem; flex-grow: 1; }
 .data-input-group__file-trigger { cursor: pointer; background-color: #e5e7eb; color: #374151; padding: 0.5rem 1rem; border-radius: 0.375rem; font-size: 0.875em; font-weight: 500; transition: background-color 0.2s ease-in-out; white-space: nowrap; }
 .data-input-group__file-trigger:hover { background-color: #d1d5db; }
 .data-input-group__file-name { font-size: 0.875em; color: #6b7280; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .data-input-group__link { color: #2563eb; text-decoration: none; font-size: 0.875em; }
 .data-input-group__link:hover { text-decoration: underline; }
-.data-input-group__status-wrapper { height: 1rem; margin-top: 0.25rem; }
+.data-input-group__status-wrapper { min-height: 1rem; margin-top: 0.25rem; }
 .data-input-group__status-text { font-size: 0.875em; font-weight: 500; }
 .data-input-group__status-text--default { color: #6b7280; }
 .data-input-group__status-text--success { color: #16a34a; }
@@ -1689,6 +1775,80 @@ details[open] > summary .arrow { transform: rotate(180deg); }
     flex-wrap: wrap !important;
 }
 /* === END: CẢI THIỆN UX BỘ LỌC THI ĐUA === */
+
+/* === START: STATIC QR CODE STYLES === */
+.header-qr-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  border: 2px solid #ef4444; /* red-500 */
+  padding: 8px;
+  border-radius: 8px;
+  background-color: white;
+  margin-left: auto;
+}
+.header-qr-container span {
+  font-size: 0.8rem; /* 12.8px */
+  font-weight: 600;
+  color: #b91c1c; /* red-700 */
+  text-align: center;
+}
+.header-qr-image {
+  width: 80px;
+  height: 80px;
+  background-color: #f3f4f6; /* gray-100 placeholder */
+  border-radius: 4px;
+  display: block;
+  visibility: hidden; /* Ẩn ảnh cho đến khi src được tải */
+}
+.header-qr-image[src]:not([src=""]) {
+  visibility: visible; /* Chỉ hiện khi src có giá trị */
+}
+/* === END: STATIC QR CODE STYLES === */
+
+/* === START: NEW SELECTION MODAL STYLES === */
+.selection-item {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+}
+.selection-item:hover {
+    background-color: #f3f4f6; /* gray-100 */
+}
+.selection-item input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    margin-right: 0.75rem;
+}
+.selection-item label {
+    flex-grow: 1;
+    cursor: pointer;
+}
+/* === END: NEW SELECTION MODAL STYLES === */
+
+/* === START: TABLE SETTINGS BUTTON === */
+.settings-trigger-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #9ca3af; /* gray-400 */
+    transition: color 0.2s ease-in-out, transform 0.2s ease-in-out;
+    padding: 2px;
+}
+.settings-trigger-btn:hover {
+    color: #3b82f6; /* blue-500 */
+    transform: rotate(45deg);
+}
+.settings-trigger-btn svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+}
+/* === END: TABLE SETTINGS BUTTON === */
 --- END FILE: ./dashboard.css ---
 
 --- START FILE: ./event-listeners/listeners-actions.js ---
@@ -1911,7 +2071,7 @@ export function initializeHighlightingListeners(appController) {
 --- END FILE: ./event-listeners/listeners-highlighting.js ---
 
 --- START FILE: ./event-listeners/listeners-settings.js ---
-// Version 1.0 - Refactored from ui-listeners.js
+// Version 1.2 - Add save handlers for QDC and Category view settings
 // MODULE: LISTENERS - SETTINGS
 // Chứa logic sự kiện cho các drawers Cài đặt và các Modals.
 
@@ -1936,7 +2096,6 @@ export function initializeSettingsListeners(appController) {
     // --- Goal Settings ---
     document.getElementById('rt-goal-warehouse-select')?.addEventListener('change', () => settingsService.loadAndApplyRealtimeGoalSettings());
     document.getElementById('luyke-goal-warehouse-select')?.addEventListener('change', () => settingsService.loadAndApplyLuykeGoalSettings());
-    
     document.querySelectorAll('.rt-goal-input, .rt-setting-input').forEach(input => input.addEventListener('input', () => {
         settingsService.saveRealtimeGoalSettings();
         appController.updateAndRenderCurrentTab();
@@ -1952,7 +2111,7 @@ export function initializeSettingsListeners(appController) {
     // --- Global Modals (Help, etc.) & Debug Tool ---
     document.getElementById('toggle-debug-btn')?.addEventListener('click', (e) => ui.toggleDebugTool(e.currentTarget));
     
-    // Sử dụng event delegation cho các nút mở/đóng modal chung
+    // --- Event Delegation for dynamically added elements ---
     document.body.addEventListener('click', (e) => {
         const helpTrigger = e.target.closest('.page-header__help-btn');
         if(helpTrigger) {
@@ -1966,7 +2125,41 @@ export function initializeSettingsListeners(appController) {
                 ui.toggleModal(modal.id, false);
             }
         }
+        
+        const selectionSaveBtn = e.target.closest('#selection-modal-save-btn');
+        if (selectionSaveBtn) {
+            const modal = document.getElementById('selection-modal');
+            const settingType = modal.dataset.settingType;
+
+            const selectedItems = [];
+            document.querySelectorAll('#selection-modal-list input[type="checkbox"]:checked').forEach(checkbox => {
+                selectedItems.push(checkbox.value);
+            });
+
+            if (settingType === 'efficiencyView') {
+                settingsService.saveEfficiencyViewSettings(selectedItems);
+            } else if (settingType === 'qdcView') { // <<< THÊM LOGIC MỚI
+                settingsService.saveQdcViewSettings(selectedItems);
+            } else if (settingType === 'categoryView') { // <<< THÊM LOGIC MỚI
+                settingsService.saveCategoryViewSettings(selectedItems);
+            }
+
+            ui.toggleModal('selection-modal', false);
+            ui.showNotification('Đã lưu cài đặt hiển thị!', 'success');
+            appController.updateAndRenderCurrentTab(); // Render lại tab để áp dụng thay đổi
+        }
     });
+
+    const searchInput = document.getElementById('selection-modal-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            document.querySelectorAll('#selection-modal-list .selection-item').forEach(item => {
+                const label = item.querySelector('label').textContent.toLowerCase();
+                item.style.display = label.includes(searchTerm) ? '' : 'none';
+            });
+        });
+    }
 }
 --- END FILE: ./event-listeners/listeners-settings.js ---
 
@@ -2240,7 +2433,7 @@ export function initializeEventListeners(mainAppController) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Công cụ phân tích số cho QLST MWG 4.4</title>
+    <title>Công cụ phân tích số cho QLST MWG 4.6</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -2333,7 +2526,10 @@ export function initializeEventListeners(mainAppController) {
                             <button class="page-header__help-btn" data-help-id="data" title="Xem hướng dẫn">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
                             </button>
-                            <span class="text-sm italic text-gray-500 font-normal hidden md:inline">Hướng dẫn sử dụng</span>
+                        </div>
+                        <div class="header-qr-container">
+                            <span>THAM GIA THẢO LUẬN - GÓP Ý</span>
+                            <img id="header-qr-image" src="" alt="Mã QR" class="header-qr-image">
                         </div>
                     </div>
                     <div class="content-card">
@@ -2347,46 +2543,41 @@ export function initializeEventListeners(mainAppController) {
                         <div class="flex flex-col gap-6 pt-4">
                             <div class="grid md:grid-cols-3 gap-6">
                                 <div class="data-input-group">
-                                    <label class="data-input-group__label">Yêu cầu xuất lũy kế:</label>
+                                    <a href="https://report.mwgroup.vn/home/dashboard/077" target="_blank" class="data-input-group__label data-input-group__label--link">📄 Yêu cầu xuất lũy kế:</a>
                                     <div class="data-input-group__content">
                                         <div class="flex items-center gap-2">
                                             <label for="file-ycx" class="data-input-group__file-trigger">Thêm file</label>
                                             <span id="file-name-ycx" class="data-input-group__file-name">Chưa thêm file</span>
                                         </div>
                                         <input type="file" id="file-ycx" class="hidden file-input" data-name="Yêu cầu xuất lũy kế" data-state-key="ycxData" data-save-key="saved_ycx" accept=".xlsx, .xls, .csv">
-                                        <a href="https://report.mwgroup.vn/home/dashboard/077" target="_blank" class="data-input-group__link">Lấy file tại đây</a>
                                         <div class="data-input-group__status-wrapper"><span id="file-status-ycx" class="data-input-group__status-text"></span></div>
                                         <div id="progress-ycx" class="progress-bar-container hidden"><div class="progress-bar"></div></div>
                                     </div>
                                 </div>
                                 <div class="data-input-group">
-                                    <label class="data-input-group__label">Giờ công:</label>
+                                    <a href="https://reports.thegioididong.com/#/viewreport/168754" target="_blank" class="data-input-group__label data-input-group__label--link">📄 Giờ công:</a>
                                     <div class="data-input-group__content">
                                         <div class="flex items-center gap-2">
                                             <label for="file-giocong" class="data-input-group__file-trigger">Thêm file</label>
                                             <span id="file-name-giocong" class="data-input-group__file-name">Chưa thêm file</span>
                                         </div>
                                         <input type="file" id="file-giocong" class="hidden file-input" data-name="Giờ công" data-state-key="rawGioCongData" data-save-key="saved_giocong" accept=".xlsx, .xls, .csv">
-                                        <a href="https://reports.thegioididong.com/#/viewreport/168754" target="_blank" class="data-input-group__link">Lấy file tại đây</a>
                                         <div class="data-input-group__status-wrapper">
                                             <span id="file-status-giocong" class="data-input-group__status-text"></span>
-                                            <span id="giocong-saved-status" class="data-input-group__status-text"></span>
                                         </div>
                                         <div id="progress-giocong" class="progress-bar-container hidden"><div class="progress-bar"></div></div>
                                     </div>
                                 </div>
                                 <div class="data-input-group">
-                                    <label class="data-input-group__label">Thưởng nóng:</label>
+                                    <a href="https://report.mwgroup.vn/home/dashboard/105" target="_blank" class="data-input-group__label data-input-group__label--link">📄 Thưởng nóng:</a>
                                     <div class="data-input-group__content">
                                         <div class="flex items-center gap-2">
                                             <label for="file-thuongnong" class="data-input-group__file-trigger">Thêm file</label>
                                             <span id="file-name-thuongnong" class="data-input-group__file-name">Chưa thêm file</span>
                                         </div>
                                         <input type="file" id="file-thuongnong" class="hidden file-input" data-name="Thưởng nóng" data-state-key="thuongNongData" data-save-key="saved_thuongnong" accept=".xlsx, .xls, .csv">
-                                        <a href="https://report.mwgroup.vn/home/dashboard/105" target="_blank" class="data-input-group__link">Lấy file tại đây</a>
                                         <div class="data-input-group__status-wrapper">
                                             <span id="file-status-thuongnong" class="data-input-group__status-text"></span>
-                                            <span id="thuongnong-saved-status" class="data-input-group__status-text"></span>
                                         </div>
                                         <div id="progress-thuongnong" class="progress-bar-container hidden"><div class="progress-bar"></div></div>
                                     </div>
@@ -2394,33 +2585,24 @@ export function initializeEventListeners(mainAppController) {
                             </div>
                             <div class="grid md:grid-cols-3 gap-6">
                                 <div class="data-input-group h-full">
-                                    <label class="data-input-group__label">Thưởng ERP:<br><span class="font-normal">(Copy từ BI)</span></label>
+                                    <a href="https://bi.thegioididong.com/reward?id=-1&tab=1" target="_blank" class="data-input-group__label data-input-group__label--link">📋 Thưởng ERP:<br><span class="font-normal">(Copy từ BI)</span></a>
                                     <div class="data-input-group__content">
                                         <textarea id="paste-thuongerp" rows="5" class="data-textarea" placeholder="Dán toàn bộ dữ liệu thưởng ERP..."></textarea>
-                                        <div class="flex items-center gap-x-4">
-                                            <a href="https://bi.thegioididong.com/reward?id=-1&tab=1" target="_blank" class="data-input-group__link">Lấy file tại đây</a>
-                                            <div class="data-input-group__status-wrapper"><span id="status-thuongerp" class="data-input-group__status-text"></span></div>
-                                        </div>
+                                        <div class="data-input-group__status-wrapper"><span id="status-thuongerp" class="data-input-group__status-text"></span></div>
                                     </div>
                                 </div>
                                 <div class="data-input-group h-full">
-                                    <label class="data-input-group__label">Data lũy kế:<br><span class="font-normal">(Copy từ BI)</span></label>
+                                    <a href="https://bi.thegioididong.com/sieu-thi-con?id=16612&tab=1" target="_blank" class="data-input-group__label data-input-group__label--link">📋 Data lũy kế:<br><span class="font-normal">(Copy từ BI)</span></a>
                                     <div class="data-input-group__content">
                                         <textarea id="paste-luyke" rows="5" class="data-textarea" placeholder="Dán dữ liệu đã sao chép..."></textarea>
-                                        <div class="flex items-center gap-x-4">
-                                            <a href="https://bi.thegioididong.com/sieu-thi-con?id=16612&tab=1" target="_blank" class="data-input-group__link">Lấy file tại đây</a>
-                                            <div class="data-input-group__status-wrapper"><span id="status-luyke" class="data-input-group__status-text"></span></div>
-                                        </div>
+                                        <div class="data-input-group__status-wrapper"><span id="status-luyke" class="data-input-group__status-text"></span></div>
                                     </div>
                                 </div>
                                 <div class="data-input-group h-full">
-                                    <label class="data-input-group__label">Thi đua nhân viên:<br><span class="font-normal">(Copy từ BI)</span></label>
+                                    <a href="https://bi.thegioididong.com/sieu-thi-con?id=16758&tab=bcdtnv&rt=2&dm=1" target="_blank" class="data-input-group__label data-input-group__label--link">📋 Thi đua nhân viên:<br><span class="font-normal">(Copy từ BI)</span></a>
                                     <div class="data-input-group__content">
                                         <textarea id="paste-thiduanv" rows="5" class="data-textarea" placeholder="Dán dữ liệu đã sao chép..."></textarea>
-                                        <div class="flex items-center gap-x-4">
-                                            <a href="https://bi.thegioididong.com/sieu-thi-con?id=16758&tab=bcdtnv&rt=2&dm=1" target="_blank" class="data-input-group__link">Lấy file tại đây</a>
-                                            <div class="data-input-group__status-wrapper"><span id="status-thiduanv" class="data-input-group__status-text"></span></div>
-                                        </div>
+                                        <div class="data-input-group__status-wrapper"><span id="status-thiduanv" class="data-input-group__status-text"></span></div>
                                     </div>
                                 </div>
                             </div>
@@ -2446,7 +2628,7 @@ export function initializeEventListeners(mainAppController) {
                         <div class="grid md:grid-cols-3 gap-6">
                             <div class="space-y-4">
                                 <div class="data-input-group">
-                                    <label class="data-input-group__label">Danh sách nhân viên:</label>
+                                    <label class="data-input-group__label">📄 Danh sách nhân viên:</label>
                                     <div class="data-input-group__content">
                                         <div class="flex items-center gap-2">
                                             <label for="file-danhsachnv" class="data-input-group__file-trigger">Thêm file</label>
@@ -2456,13 +2638,12 @@ export function initializeEventListeners(mainAppController) {
                                         <input type="file" id="file-danhsachnv" class="hidden file-input" data-name="Danh sách nhân viên" data-state-key="danhSachNhanVien" data-save-key="saved_danhsachnv" accept=".xlsx, .xls, .csv">
                                         <div class="data-input-group__status-wrapper">
                                             <span id="file-status-danhsachnv" class="data-input-group__status-text"></span>
-                                            <span id="danhsachnv-saved-status" class="data-input-group__status-text"></span>
                                         </div>
                                         <div id="progress-danhsachnv" class="progress-bar-container hidden"><div class="progress-bar"></div></div>
                                     </div>
                                 </div>
                                 <div class="data-input-group">
-                                    <label class="data-input-group__label">YCX Lũy Kế tháng trước:</label>
+                                    <label class="data-input-group__label">📄 YCX Lũy Kế tháng trước:</label>
                                     <div class="data-input-group__content">
                                         <div class="flex items-center gap-2">
                                             <label for="file-ycx-thangtruoc" class="data-input-group__file-trigger">Thêm file</label>
@@ -2478,7 +2659,7 @@ export function initializeEventListeners(mainAppController) {
                             </div>
                             <div class="space-y-4">
                                 <div class="data-input-group">
-                                    <label class="data-input-group__label">Thưởng nóng tháng trước:</label>
+                                    <label class="data-input-group__label">📄 Thưởng nóng tháng trước:</label>
                                     <div class="data-input-group__content">
                                         <div class="flex items-center gap-2">
                                             <label for="file-thuongnong-thangtruoc" class="data-input-group__file-trigger">Thêm file</label>
@@ -2494,7 +2675,7 @@ export function initializeEventListeners(mainAppController) {
                             </div>
                              <div class="space-y-4">
                                 <div class="data-input-group h-full">
-                                    <label class="data-input-group__label">Thưởng ERP tháng trước:</label>
+                                    <label class="data-input-group__label">📋 Thưởng ERP tháng trước:</label>
                                     <div class="data-input-group__content">
                                         <textarea id="paste-thuongerp-thangtruoc" rows="5" class="data-textarea" placeholder="Dán dữ liệu thưởng ERP tháng trước..."></textarea>
                                         <div class="data-input-group__status-wrapper">
@@ -2575,12 +2756,12 @@ export function initializeEventListeners(mainAppController) {
                                 <h2 id="luyke-supermarket-title" class="text-2xl font-bold text-center text-gray-700"></h2>
                                 
                                 <div id="luyke-kpi-cards-container" data-capture-group="kpi" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                    <div class="kpi-card p-6 rounded-2xl shadow-lg">
+                                     <div class="kpi-card p-6 rounded-2xl shadow-lg">
                                         <h4 class="kpi-card-title">Doanh thu thực</h4>
                                         <p id="luyke-kpi-dt-thuc-main" class="font-bold mt-2 mb-3">0</p>
                                         <p id="luyke-kpi-dt-thuc-sub1" class="text-sm">DK: 0 / Target: 0</p>
                                     </div>
-                                
+                                    
                                     <div class="kpi-card p-6 rounded-2xl shadow-lg">
                                         <h4 class="kpi-card-title">Doanh thu Quy đổi</h4>
                                         <p id="luyke-kpi-dt-qd-main" class="font-bold mt-2 mb-3">0</p>
@@ -2604,7 +2785,7 @@ export function initializeEventListeners(mainAppController) {
                                         <p id="luyke-kpi-dt-tc-main" class="font-bold mt-2 mb-3">0</p>
                                         <p id="luyke-kpi-dt-tc-sub" class="text-sm">% thực trả chậm: 0%</p>
                                     </div>
-                                
+                                    
                                     <div class="kpi-card p-6 rounded-2xl shadow-lg">
                                         <h4 class="kpi-card-title">DTQĐ Chưa xuất</h4>
                                         <p id="luyke-kpi-dtqd-chua-xuat-main" class="font-bold mt-2 mb-3">0</p>
@@ -2637,7 +2818,7 @@ export function initializeEventListeners(mainAppController) {
                                     <h3 class="text-xl font-bold text-gray-800 uppercase">Thi đua lũy kế <span id="luyke-competition-summary" class="text-sm font-normal"></span></h3>
                                 </div>
                                 <div id="luyke-competition-content"></div>
-                            </div>
+                             </div>
                             <div id="subtab-luyke-thidua-vung" class="sub-tab-content hidden">
                                 <div class="content-card">
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
@@ -2674,7 +2855,7 @@ export function initializeEventListeners(mainAppController) {
                                 <button class="page-header__help-btn" data-help-id="sknv" title="Xem hướng dẫn">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
                                 </button>
-                            </div>
+                             </div>
 
                             <button class="toggle-filters-btn" data-target="sknv-filter-container">
                                 <span class="text">Hiện bộ lọc nâng cao</span>
@@ -3037,6 +3218,7 @@ export function initializeEventListeners(mainAppController) {
     <div id="modal-chart-container"></div>
     <div id="modal-composer-container"></div>
     <div id="modal-preview-container"></div>
+    <div id="modal-selection-container"></div>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const tailwindScript = document.querySelector('script[src="https://cdn.tailwindcss.com"]');
@@ -3045,14 +3227,14 @@ export function initializeEventListeners(mainAppController) {
             }
         });
     </script>
-    <script type="module" src="./main.js?v=3.0"></script>
+    <script type="module" src="./main.js?v=3.1"></script>
 
 </body>
 </html>
 --- END FILE: ./index.html ---
 
 --- START FILE: ./main.js ---
-// Version 39.0 - Synchronize calculation declarations via Firestore
+// Version 42.0 - Integrate new general-purpose Selection Modal
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -3076,11 +3258,12 @@ import { modalHelp } from './components/modal-help.js';
 import { modalChart } from './components/modal-chart.js';
 import { modalComposer } from './components/modal-composer.js';
 import { modalPreview } from './components/modal-preview.js';
+import { modalSelection } from './components/modal-selection.js'; // <<< THÊM DÒNG NÀY
 import { settingsService } from './modules/settings.service.js';
 import { highlightService } from './modules/highlight.service.js';
 
 const app = {
-    currentVersion: '3.0',
+    currentVersion: '3.1',
     storage: storage,
 
     async init() {
@@ -3100,8 +3283,10 @@ const app = {
             modalChart.render('#modal-chart-container');
             modalComposer.render('#modal-composer-container');
             modalPreview.render('#modal-preview-container');
+            modalSelection.render('#modal-selection-container'); // <<< THÊM DÒNG NÀY
 
             this.loadAndApplyBookmarkLink();
+            this.loadAndDisplayQrCode(); 
 
             await this.storage.openDB();
 
@@ -3111,7 +3296,7 @@ const app = {
             appState.categoryStructure = categories;
             appState.brandList = brands;
             console.log(`Successfully populated ${appState.categoryStructure.length} categories and ${appState.brandList.length} brands from Firestore.`);
-
+            
             console.log("Loading calculation declarations from Firestore...");
             const declarations = await firebase.loadDeclarationsFromFirestore();
             appState.declarations = declarations;
@@ -3158,8 +3343,6 @@ const app = {
     },
 
     async loadDataFromStorage() {
-        // Đã xóa logic tải khai báo từ localStorage ở đây. Chúng được tải từ Firestore trong hàm init().
-
         const loadSavedFile = async (saveKey, stateKey, fileType, uiId) => {
             if (saveKey === 'saved_category_structure') {
                 if (appState.categoryStructure.length > 0 || appState.brandList.length > 0) {
@@ -3175,11 +3358,8 @@ const app = {
                 const { normalizedData, success } = services.normalizeData(savedData, fileType);
                 if (success) {
                     appState[stateKey] = normalizedData;
-                    const savedStatusSpan = document.getElementById(`${uiId}-saved-status`);
-                    if (savedStatusSpan) {
-                        savedStatusSpan.textContent = `Đã lưu ${normalizedData.length} dòng.`;
-                    }
-                    ui.updateFileStatus(uiId, 'Tải từ bộ nhớ đệm', `✓ Đã tải ${normalizedData.length} dòng.`, 'success');
+                    // LOGIC CŨ ĐÃ BỊ XÓA
+                    ui.updateFileStatus(uiId, '', `✓ Đã tải ${normalizedData.length} dòng.`, 'success');
                 }
             } catch (e) { console.error(`Lỗi đọc ${uiId} từ IndexedDB:`, e); }
         };
@@ -3378,7 +3558,7 @@ const app = {
             }
         } catch (err) { ui.showNotification(`Có lỗi khi đọc file: ${err.message}`, 'error'); console.error(err); }
     },
-
+    
     async handleCategoryFile(e) {
         const fileInput = e.target;
         const file = fileInput.files[0];
@@ -3412,7 +3592,7 @@ const app = {
             fileInput.value = '';
         }
     },
-
+    
     async handleThiDuaVungFileInput(e) {
         const fileInput = e.target;
         const file = fileInput.files[0];
@@ -3514,7 +3694,7 @@ const app = {
             ui.showNotification(`Lỗi khi đọc file gỡ lỗi: ${err.message}`, 'error');
         }
     },
-
+    
     _handleCompetitionFormShow(show = true, isEdit = false) {
         const form = document.getElementById('competition-form');
         const addBtn = document.getElementById('add-competition-btn');
@@ -3542,10 +3722,10 @@ const app = {
         if (!config) return;
 
         this._handleCompetitionFormShow(true, true);
-
+        
         document.getElementById('competition-id').value = index;
         document.getElementById('competition-name').value = config.name;
-
+        
         const brandChoices = appState.choices['competition_brand'];
         if(brandChoices) {
             brandChoices.removeActiveItems();
@@ -3554,7 +3734,7 @@ const app = {
 
         document.getElementById('competition-type').value = config.type;
         document.getElementById('competition-exclude-apple').checked = config.excludeApple;
-
+        
         const priceSegment = document.getElementById('price-segment');
         priceSegment.classList.toggle('hidden', config.type !== 'soluong');
 
@@ -3593,7 +3773,7 @@ const app = {
             ui.showNotification('Lỗi: Vui lòng chọn ít nhất một hãng sản xuất.', 'error');
             return;
         }
-
+        
         const newConfig = {
             id: id ? appState.competitionConfigs[parseInt(id, 10)].id : `comp_${new Date().getTime()}`,
             name: name,
@@ -3620,7 +3800,7 @@ const app = {
      _saveCompetitionConfigs() {
         localStorage.setItem('competitionConfigs', JSON.stringify(appState.competitionConfigs));
     },
-
+    
     async handleTemplateDownload() {
         ui.showNotification('Đang chuẩn bị file mẫu...', 'success');
         try {
@@ -3650,7 +3830,7 @@ const app = {
             document.getElementById('admin-error-msg').classList.remove('hidden');
         }
     },
-
+    
     handleContrastChange(e) {
         const level = e.target.value;
         localStorage.setItem('contrastLevel', level);
@@ -3695,7 +3875,7 @@ const app = {
         // Render lại tab hiện tại để áp dụng thay đổi
         this.updateAndRenderCurrentTab();
     },
-
+    
     saveHelpContent() {
         const contents = {
             data: document.getElementById('edit-help-data').value,
@@ -3705,13 +3885,13 @@ const app = {
         };
         firebase.saveHelpContent(contents);
     },
-
+    
     async handleSubmitFeedback() {
         const textarea = document.getElementById('feedback-textarea');
         const success = await firebase.submitFeedback(textarea.value.trim());
         if (success) textarea.value = '';
     },
-
+    
     async handleFeedbackReplyActions(e, feedbackItem) {
         const docId = feedbackItem.dataset.id;
         const replyForm = feedbackItem.querySelector('.reply-form-container');
@@ -3738,7 +3918,7 @@ const app = {
         const selectedWarehouse = document.getElementById(`${sectionId}-filter-warehouse`).value;
         const selectedDept = document.getElementById(`${sectionId}-filter-department`).value;
         const selectedNames = appState.choices[`${sectionId}_employee`] ? appState.choices[`${sectionId}_employee`].getValue(true) : [];
-
+        
         let filteredReport = masterData;
         if (selectedWarehouse) filteredReport = filteredReport.filter(nv => nv.maKho == selectedWarehouse);
         if (selectedDept) filteredReport = filteredReport.filter(nv => nv.boPhan === selectedDept);
@@ -3757,12 +3937,12 @@ const app = {
             const uniqueDepartments = [...new Set(appState.danhSachNhanVien.map(nv => nv.boPhan).filter(Boolean))].sort();
             deptFilter.innerHTML = '<option value="ALL">Toàn siêu thị</option>' + uniqueDepartments.map(dept => `<option value="${dept}">${dept}</option>`).join('');
         }
-
+        
         const navIdMap = { luyke: 'luyke-subtabs-nav', sknv: 'employee-subtabs-nav', realtime: 'realtime-subtabs-nav' };
         const mainViewNav = document.getElementById(navIdMap[sectionId]);
         const contextTabsContainer = document.getElementById('composer-context-tabs');
         const contextContentContainer = document.getElementById('composer-context-content');
-
+        
         contextTabsContainer.innerHTML = '';
         contextContentContainer.innerHTML = '';
 
@@ -3787,22 +3967,22 @@ const app = {
                 const newContentPane = document.createElement('div');
                 newContentPane.id = `context-pane-${subTabId}`;
                 newContentPane.className = `composer__context-pane ${!isActive ? 'hidden' : ''}`;
-
+                
                 const textarea = document.createElement('textarea');
                 textarea.className = 'composer__textarea';
                 textarea.rows = 15;
                 textarea.placeholder = `Soạn thảo nhận xét cho tab ${btn.textContent.trim()}...`;
-
+                
                 if (!appState.composerTemplates[sectionId]) {
                     appState.composerTemplates[sectionId] = {};
                 }
                 textarea.value = appState.composerTemplates[sectionId][subTabId] || '';
-
+                
                 newContentPane.appendChild(textarea);
                 contextContentContainer.appendChild(newContentPane);
             });
         }
-
+        
         contextTabsContainer.classList.toggle('hidden', contextTabsContainer.children.length === 0);
 
         const filteredReportData = this._getFilteredReportData(sectionId);
@@ -3816,7 +3996,7 @@ const app = {
         const sectionId = modal.dataset.sectionId;
         const activeContextPane = modal.querySelector('.composer__context-pane:not(.hidden)');
         const activeTextarea = activeContextPane ? activeContextPane.querySelector('textarea') : null;
-
+        
         if (e.target.matches('.composer__tab-btn:not([data-context-tab])')) {
              const nav = e.target.closest('.composer__nav');
             const content = nav.nextElementSibling;
@@ -3860,28 +4040,46 @@ const app = {
                 ui.showNotification(`Không tìm thấy tab con để lưu.`, 'error');
             }
         }
-
+        
         if (e.target.id === 'copy-composed-notification-btn') {
             if (!activeTextarea) {
-                 ui.showNotification("Lỗi: Không tìm thấy ô nội dung đang hoạt động.", "error");
+                 ui.showNotification("Lỗi: Không tìm thấy ô nội dung đang hoạt động.", "error"); 
                 return;
             }
 
             const template = activeTextarea.value;
-
+            
             const filteredReportData = this._getFilteredReportData(sectionId);
             const supermarketReport = services.aggregateReport(filteredReportData);
-
+            
             const selectedWarehouse = document.getElementById(`${sectionId}-filter-warehouse`).value;
             const goals = sectionId === 'realtime' ? settingsService.getRealtimeGoalSettings(selectedWarehouse).goals : settingsService.getLuykeGoalSettings(selectedWarehouse).goals;
-
+            
             const competitionDataForComposer = services.parseCompetitionDataFromLuyKe(document.getElementById('paste-luyke')?.value || '');
-
+            
             const processedText = services.processComposerTemplate(template, supermarketReport, goals, filteredReportData, competitionDataForComposer, sectionId);
 
             ui.showPreviewAndCopy(processedText);
         }
     },
+    
+    // === START: HÀM MỚI ĐỂ XỬ LÝ QR TĨNH ===
+    async loadAndDisplayQrCode() {
+        try {
+            const qrUrl = await firebase.getQrCodeDownloadURL();
+            const imgEl = document.getElementById('header-qr-image');
+            if (imgEl) {
+                imgEl.src = qrUrl;
+            }
+        } catch (error) {
+            console.error("Không thể tải mã QR:", error);
+            const container = document.querySelector('.header-qr-container');
+            if (container) {
+                container.style.display = 'none'; // Ẩn toàn bộ khung nếu có lỗi
+            }
+        }
+    }
+    // === END: HÀM MỚI ===
 };
 
 app.init();
@@ -4137,7 +4335,7 @@ export const highlightService = {
 --- END FILE: ./modules/highlight.service.js ---
 
 --- START FILE: ./modules/settings.service.js ---
-// Version 1.0 - Refactored from utils.js
+// Version 1.2 - Add settings handlers for QDC and Category tables
 // MODULE: SETTINGS SERVICE
 // Chứa toàn bộ logic liên quan đến việc quản lý cài đặt (lưu/tải từ localStorage).
 
@@ -4145,6 +4343,76 @@ import { appState } from '../state.js';
 import { ui } from '../ui.js';
 
 export const settingsService = {
+    // === START: HÀM MỚI ĐỂ LƯU CÀI ĐẶT CÁ NHÂN HÓA ===
+    saveEfficiencyViewSettings(settings) {
+        if (!Array.isArray(settings)) return;
+        try {
+            localStorage.setItem('efficiencyViewSettings', JSON.stringify(settings));
+        } catch (e) {
+            console.error("Lỗi khi lưu cài đặt hiển thị Hiệu quả khai thác:", e);
+        }
+    },
+    
+    saveQdcViewSettings(settings) {
+        if (!Array.isArray(settings)) return;
+        try {
+            localStorage.setItem('qdcViewSettings', JSON.stringify(settings));
+        } catch (e) {
+            console.error("Lỗi khi lưu cài đặt hiển thị Nhóm hàng QĐC:", e);
+        }
+    },
+
+    saveCategoryViewSettings(settings) {
+        if (!Array.isArray(settings)) return;
+        try {
+            localStorage.setItem('categoryViewSettings', JSON.stringify(settings));
+        } catch (e) {
+            console.error("Lỗi khi lưu cài đặt hiển thị Ngành hàng chi tiết:", e);
+        }
+    },
+    // === END: HÀM MỚI ===
+
+    // === START: HÀM MỚI ĐỂ TẢI CÀI ĐẶT CÁ NHÂN HÓA ===
+    loadEfficiencyViewSettings() {
+        try {
+            const savedSettings = localStorage.getItem('efficiencyViewSettings');
+            if (savedSettings) {
+                return JSON.parse(savedSettings);
+            }
+        } catch (e) {
+            console.error("Lỗi khi tải cài đặt hiển thị Hiệu quả khai thác:", e);
+        }
+        // Trả về giá trị mặc định nếu không có gì được lưu
+        return ['% Phụ kiện', '% Gia dụng', '% MLN', '% Sim', '% VAS', '% Bảo hiểm'];
+    },
+
+    loadQdcViewSettings(allItems) {
+        try {
+            const savedSettings = localStorage.getItem('qdcViewSettings');
+            if (savedSettings) {
+                return JSON.parse(savedSettings);
+            }
+        } catch (e) {
+            console.error("Lỗi khi tải cài đặt hiển thị Nhóm hàng QĐC:", e);
+        }
+        // Mặc định hiển thị tất cả nếu chưa có cài đặt
+        return allItems;
+    },
+
+    loadCategoryViewSettings(allItems) {
+        try {
+            const savedSettings = localStorage.getItem('categoryViewSettings');
+            if (savedSettings) {
+                return JSON.parse(savedSettings);
+            }
+        } catch (e) {
+            console.error("Lỗi khi tải cài đặt hiển thị Ngành hàng chi tiết:", e);
+        }
+        // Mặc định hiển thị tất cả nếu chưa có cài đặt
+        return allItems;
+    },
+    // === END: HÀM MỚI ===
+
     loadInterfaceSettings() {
         try {
             const savedSettings = JSON.parse(localStorage.getItem('interfaceSettings')) || {};
@@ -4421,7 +4689,7 @@ export const storage = {
 
 --- START FILE: ./project_snapshot.txt ---
 --- START FILE: ./Firebase.js ---
-// Version 1.6 - Add declaration data management (read/write from Firestore)
+// Version 1.7 - Add function to get QR code URL from Storage
 // MODULE: FIREBASE
 // Chịu trách nhiệm kết nối, thiết lập listener với Firebase.
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -4652,7 +4920,7 @@ const firebase = {
             await Promise.all([
                 setDoc(doc(appState.db, "declarations", "hinhThucXuat"), { content: declarations.ycx }),
                 setDoc(doc(appState.db, "declarations", "hinhThucXuatGop"), { content: declarations.ycxGop }),
-                setDoc(doc(appState.db, "declarations", "heSoQuyDoi"), { content: declarations.heSo })
+                 setDoc(doc(appState.db, "declarations", "heSoQuyDoi"), { content: declarations.heSo })
             ]);
             ui.showNotification('Đồng bộ khai báo tính toán thành công!', 'success');
         } catch (error) {
@@ -4691,7 +4959,29 @@ const firebase = {
             console.error("Lỗi khi lấy URL tải file bookmark: ", error);
             throw error;
         }
+    },
+
+    // === START: HÀM MỚI ĐỂ LẤY URL MÃ QR ===
+    async getQrCodeDownloadURL() {
+        if (!appState.storage) {
+            throw new Error("Firebase Storage chưa được khởi tạo.");
+        }
+        // --- LƯU Ý: File ảnh QR của bạn PHẢI được tải lên đúng đường dẫn này ---
+        const filePath = 'qrcodes/main-qr.jpg'; 
+        const storageRef = ref(appState.storage, filePath);
+        try {
+            const url = await getDownloadURL(storageRef);
+            return url;
+        } catch (error) {
+            console.error("Lỗi khi lấy URL của mã QR: ", error);
+            // Xử lý lỗi cụ thể khi không tìm thấy file
+            if (error.code === 'storage/object-not-found') {
+                throw new Error(`Không tìm thấy file mã QR tại đường dẫn '${filePath}'. Vui lòng kiểm tra lại Firebase Storage.`);
+            }
+            throw new Error("Không thể tải được mã QR từ server.");
+        }
     }
+    // === END: HÀM MỚI ===
 };
 
 export { firebase };
@@ -4776,6 +5066,14 @@ export const auth = {
 
 --- START FILE: ./changelog.json ---
 [
+  {
+    "version": "3.1",
+    "date": "09/10/2025",
+    "notes": [
+      "Thêm 2 thẻ KPI mới cho tab siêu thị lũy kế",
+      "Thêm chức năng cài đặt màu chữ thẻ KPI trong cài đặt giao diện"
+    ]
+  },  
    {
     "version": "3.0",
     "date": "06/10/2025",
@@ -5103,11 +5401,11 @@ const drawerInterfaceHTML = `
                 </div>
                 <div class="flex items-center gap-2">
                     <input type="color" id="kpi-color-7" class="kpi-color-input p-1 h-10 w-14 block bg-white border border-gray-300 cursor-pointer rounded-lg" value="#818cf8">
-                    <label for="kpi-color-7" class="text-sm">Thẻ 7 (Thi đua)</label>
+                    <label for="kpi-color-7" class="text-sm">Thẻ 7</label>
                 </div>
                 <div class="flex items-center gap-2">
                     <input type="color" id="kpi-color-8" class="kpi-color-input p-1 h-10 w-14 block bg-white border border-gray-300 cursor-pointer rounded-lg" value="#f87171">
-                    <label for="kpi-color-8" class="text-sm">Thẻ 8 (Cùng kỳ)</label>
+                    <label for="kpi-color-8" class="text-sm">Thẻ 8</label>
                 </div>
             </div>
         </div>
@@ -5438,6 +5736,40 @@ export const modalPreview = {
 };
 --- END FILE: ./components/modal-preview.js ---
 
+--- START FILE: ./components/modal-selection.js ---
+// Version 1.0 - Component: Selection Modal
+// Chứa mã HTML cho modal tùy chỉnh hiển thị chung.
+
+const modalSelectionHTML = `
+<div id="selection-modal" class="modal hidden">
+    <div class="modal__overlay" data-close-modal></div>
+    <div class="modal__container">
+        <div class="modal__header">
+            <h3 id="selection-modal-title" class="modal__title">Tùy chỉnh hiển thị</h3>
+            <button class="modal__close-btn" data-close-modal>&times;</button>
+        </div>
+        <div class="modal__content">
+            <input type="text" id="selection-modal-search" class="w-full p-2 border rounded-md mb-4" placeholder="Tìm kiếm mục...">
+            <div id="selection-modal-list" class="space-y-2 max-h-64 overflow-y-auto">
+                </div>
+        </div>
+        <div class="modal__footer">
+            <button id="selection-modal-save-btn" class="action-btn action-btn--save">Lưu Cài Đặt</button>
+        </div>
+    </div>
+</div>
+`;
+
+export const modalSelection = {
+    render(containerSelector) {
+        const container = document.querySelector(containerSelector);
+        if (container) {
+            container.innerHTML = modalSelectionHTML;
+        }
+    }
+};
+--- END FILE: ./components/modal-selection.js ---
+
 --- START FILE: ./components/sidebar.js ---
 // Version 1.0 - Component: Sidebar
 // Chứa mã HTML và logic cho thanh điều hướng bên.
@@ -5694,7 +6026,7 @@ createSnapshot();
 --- END FILE: ./create_snapshot.js ---
 
 --- START FILE: ./dashboard.css ---
-/* Version 4.1 - Add !important to competition filter UX fix */
+/* Version 4.5 - Add styles for table settings trigger button */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -5753,7 +6085,7 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #
 .page-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
 .page-header__title { font-size: 1.75rem; font-weight: 700; color: #1f2937; }
 .content-card { background-color: white; border-radius: 0.75rem; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); padding: 1rem 1.5rem; margin-bottom: 2rem; border: 1px solid #e5e7eb; }
-.content-card__header { font-size: 1.125rem; font-weight: 600; color: #374151; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e5e7eb; }
+.content-card__header { display: flex; align-items: center; justify-content: space-between; font-size: 1.125rem; font-weight: 600; color: #374151; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e5e7eb; }
 
 #notification { position: fixed; bottom: 20px; right: 20px; padding: 1rem 1.5rem; border-radius: 0.5rem; color: white; z-index: 1200; opacity: 0; transition: opacity 0.5s, transform 0.5s; transform: translateY(100px); }
 #notification.show { opacity: 1; transform: translateY(0); }
@@ -5774,15 +6106,37 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #
 .sortable.sorted-desc .sort-indicator::after { opacity: 1; color: #3b82f6; }
 .sortable.sorted-desc .sort-indicator::before { opacity: 0.4; }
 
-.data-input-group { border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; background-color: #f9fafb; display: flex; flex-direction: column; }
+.data-input-group { 
+    border: 1px solid #e5e7eb; 
+    border-radius: 0.5rem; 
+    padding: 1rem; 
+    background-color: #f9fafb; 
+    display: flex; 
+    flex-direction: column; 
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+    border-top: 4px solid #9ca3af;
+}
+.data-input-group:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+#data-section > .content-card:nth-of-type(1) .data-input-group {
+    border-top-color: #3b82f6; /* blue-500 */
+}
+#data-section > .content-card:nth-of-type(3) .data-input-group {
+    border-top-color: #8b5cf6; /* violet-500 */
+}
 .data-input-group__label { font-weight: 600; color: #4b5563; margin-bottom: 0.75rem; }
+.data-input-group__label--link { text-decoration: none; display: inline-block; transition: color 0.2s ease-in-out; }
+.data-input-group__label--link:hover { text-decoration: underline; color: #2563eb; }
+.data-input-group__label--link > .font-normal { font-weight: 400; }
 .data-input-group__content { display: flex; flex-direction: column; gap: 0.5rem; flex-grow: 1; }
 .data-input-group__file-trigger { cursor: pointer; background-color: #e5e7eb; color: #374151; padding: 0.5rem 1rem; border-radius: 0.375rem; font-size: 0.875em; font-weight: 500; transition: background-color 0.2s ease-in-out; white-space: nowrap; }
 .data-input-group__file-trigger:hover { background-color: #d1d5db; }
 .data-input-group__file-name { font-size: 0.875em; color: #6b7280; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .data-input-group__link { color: #2563eb; text-decoration: none; font-size: 0.875em; }
 .data-input-group__link:hover { text-decoration: underline; }
-.data-input-group__status-wrapper { height: 1rem; margin-top: 0.25rem; }
+.data-input-group__status-wrapper { min-height: 1rem; margin-top: 0.25rem; }
 .data-input-group__status-text { font-size: 0.875em; font-weight: 500; }
 .data-input-group__status-text--default { color: #6b7280; }
 .data-input-group__status-text--success { color: #16a34a; }
@@ -6111,6 +6465,80 @@ details[open] > summary .arrow { transform: rotate(180deg); }
     flex-wrap: wrap !important;
 }
 /* === END: CẢI THIỆN UX BỘ LỌC THI ĐUA === */
+
+/* === START: STATIC QR CODE STYLES === */
+.header-qr-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  border: 2px solid #ef4444; /* red-500 */
+  padding: 8px;
+  border-radius: 8px;
+  background-color: white;
+  margin-left: auto;
+}
+.header-qr-container span {
+  font-size: 0.8rem; /* 12.8px */
+  font-weight: 600;
+  color: #b91c1c; /* red-700 */
+  text-align: center;
+}
+.header-qr-image {
+  width: 80px;
+  height: 80px;
+  background-color: #f3f4f6; /* gray-100 placeholder */
+  border-radius: 4px;
+  display: block;
+  visibility: hidden; /* Ẩn ảnh cho đến khi src được tải */
+}
+.header-qr-image[src]:not([src=""]) {
+  visibility: visible; /* Chỉ hiện khi src có giá trị */
+}
+/* === END: STATIC QR CODE STYLES === */
+
+/* === START: NEW SELECTION MODAL STYLES === */
+.selection-item {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+}
+.selection-item:hover {
+    background-color: #f3f4f6; /* gray-100 */
+}
+.selection-item input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    margin-right: 0.75rem;
+}
+.selection-item label {
+    flex-grow: 1;
+    cursor: pointer;
+}
+/* === END: NEW SELECTION MODAL STYLES === */
+
+/* === START: TABLE SETTINGS BUTTON === */
+.settings-trigger-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #9ca3af; /* gray-400 */
+    transition: color 0.2s ease-in-out, transform 0.2s ease-in-out;
+    padding: 2px;
+}
+.settings-trigger-btn:hover {
+    color: #3b82f6; /* blue-500 */
+    transform: rotate(45deg);
+}
+.settings-trigger-btn svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+}
+/* === END: TABLE SETTINGS BUTTON === */
 --- END FILE: ./dashboard.css ---
 
 --- START FILE: ./event-listeners/listeners-actions.js ---
@@ -6333,7 +6761,7 @@ export function initializeHighlightingListeners(appController) {
 --- END FILE: ./event-listeners/listeners-highlighting.js ---
 
 --- START FILE: ./event-listeners/listeners-settings.js ---
-// Version 1.0 - Refactored from ui-listeners.js
+// Version 1.2 - Add save handlers for QDC and Category view settings
 // MODULE: LISTENERS - SETTINGS
 // Chứa logic sự kiện cho các drawers Cài đặt và các Modals.
 
@@ -6358,7 +6786,6 @@ export function initializeSettingsListeners(appController) {
     // --- Goal Settings ---
     document.getElementById('rt-goal-warehouse-select')?.addEventListener('change', () => settingsService.loadAndApplyRealtimeGoalSettings());
     document.getElementById('luyke-goal-warehouse-select')?.addEventListener('change', () => settingsService.loadAndApplyLuykeGoalSettings());
-    
     document.querySelectorAll('.rt-goal-input, .rt-setting-input').forEach(input => input.addEventListener('input', () => {
         settingsService.saveRealtimeGoalSettings();
         appController.updateAndRenderCurrentTab();
@@ -6374,7 +6801,7 @@ export function initializeSettingsListeners(appController) {
     // --- Global Modals (Help, etc.) & Debug Tool ---
     document.getElementById('toggle-debug-btn')?.addEventListener('click', (e) => ui.toggleDebugTool(e.currentTarget));
     
-    // Sử dụng event delegation cho các nút mở/đóng modal chung
+    // --- Event Delegation for dynamically added elements ---
     document.body.addEventListener('click', (e) => {
         const helpTrigger = e.target.closest('.page-header__help-btn');
         if(helpTrigger) {
@@ -6388,7 +6815,41 @@ export function initializeSettingsListeners(appController) {
                 ui.toggleModal(modal.id, false);
             }
         }
+        
+        const selectionSaveBtn = e.target.closest('#selection-modal-save-btn');
+        if (selectionSaveBtn) {
+            const modal = document.getElementById('selection-modal');
+            const settingType = modal.dataset.settingType;
+
+            const selectedItems = [];
+            document.querySelectorAll('#selection-modal-list input[type="checkbox"]:checked').forEach(checkbox => {
+                selectedItems.push(checkbox.value);
+            });
+
+            if (settingType === 'efficiencyView') {
+                settingsService.saveEfficiencyViewSettings(selectedItems);
+            } else if (settingType === 'qdcView') { // <<< THÊM LOGIC MỚI
+                settingsService.saveQdcViewSettings(selectedItems);
+            } else if (settingType === 'categoryView') { // <<< THÊM LOGIC MỚI
+                settingsService.saveCategoryViewSettings(selectedItems);
+            }
+
+            ui.toggleModal('selection-modal', false);
+            ui.showNotification('Đã lưu cài đặt hiển thị!', 'success');
+            appController.updateAndRenderCurrentTab(); // Render lại tab để áp dụng thay đổi
+        }
     });
+
+    const searchInput = document.getElementById('selection-modal-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            document.querySelectorAll('#selection-modal-list .selection-item').forEach(item => {
+                const label = item.querySelector('label').textContent.toLowerCase();
+                item.style.display = label.includes(searchTerm) ? '' : 'none';
+            });
+        });
+    }
 }
 --- END FILE: ./event-listeners/listeners-settings.js ---
 
@@ -6662,7 +7123,7 @@ export function initializeEventListeners(mainAppController) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Công cụ phân tích số cho QLST MWG 4.4</title>
+    <title>Công cụ phân tích số cho QLST MWG 4.6</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -6755,7 +7216,10 @@ export function initializeEventListeners(mainAppController) {
                             <button class="page-header__help-btn" data-help-id="data" title="Xem hướng dẫn">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
                             </button>
-                            <span class="text-sm italic text-gray-500 font-normal hidden md:inline">Hướng dẫn sử dụng</span>
+                        </div>
+                        <div class="header-qr-container">
+                            <span>THAM GIA THẢO LUẬN - GÓP Ý</span>
+                            <img id="header-qr-image" src="" alt="Mã QR" class="header-qr-image">
                         </div>
                     </div>
                     <div class="content-card">
@@ -6769,46 +7233,41 @@ export function initializeEventListeners(mainAppController) {
                         <div class="flex flex-col gap-6 pt-4">
                             <div class="grid md:grid-cols-3 gap-6">
                                 <div class="data-input-group">
-                                    <label class="data-input-group__label">Yêu cầu xuất lũy kế:</label>
+                                    <a href="https://report.mwgroup.vn/home/dashboard/077" target="_blank" class="data-input-group__label data-input-group__label--link">📄 Yêu cầu xuất lũy kế:</a>
                                     <div class="data-input-group__content">
                                         <div class="flex items-center gap-2">
                                             <label for="file-ycx" class="data-input-group__file-trigger">Thêm file</label>
                                             <span id="file-name-ycx" class="data-input-group__file-name">Chưa thêm file</span>
                                         </div>
                                         <input type="file" id="file-ycx" class="hidden file-input" data-name="Yêu cầu xuất lũy kế" data-state-key="ycxData" data-save-key="saved_ycx" accept=".xlsx, .xls, .csv">
-                                        <a href="https://report.mwgroup.vn/home/dashboard/077" target="_blank" class="data-input-group__link">Lấy file tại đây</a>
                                         <div class="data-input-group__status-wrapper"><span id="file-status-ycx" class="data-input-group__status-text"></span></div>
                                         <div id="progress-ycx" class="progress-bar-container hidden"><div class="progress-bar"></div></div>
                                     </div>
                                 </div>
                                 <div class="data-input-group">
-                                    <label class="data-input-group__label">Giờ công:</label>
+                                    <a href="https://reports.thegioididong.com/#/viewreport/168754" target="_blank" class="data-input-group__label data-input-group__label--link">📄 Giờ công:</a>
                                     <div class="data-input-group__content">
                                         <div class="flex items-center gap-2">
                                             <label for="file-giocong" class="data-input-group__file-trigger">Thêm file</label>
                                             <span id="file-name-giocong" class="data-input-group__file-name">Chưa thêm file</span>
                                         </div>
                                         <input type="file" id="file-giocong" class="hidden file-input" data-name="Giờ công" data-state-key="rawGioCongData" data-save-key="saved_giocong" accept=".xlsx, .xls, .csv">
-                                        <a href="https://reports.thegioididong.com/#/viewreport/168754" target="_blank" class="data-input-group__link">Lấy file tại đây</a>
                                         <div class="data-input-group__status-wrapper">
                                             <span id="file-status-giocong" class="data-input-group__status-text"></span>
-                                            <span id="giocong-saved-status" class="data-input-group__status-text"></span>
                                         </div>
                                         <div id="progress-giocong" class="progress-bar-container hidden"><div class="progress-bar"></div></div>
                                     </div>
                                 </div>
                                 <div class="data-input-group">
-                                    <label class="data-input-group__label">Thưởng nóng:</label>
+                                    <a href="https://report.mwgroup.vn/home/dashboard/105" target="_blank" class="data-input-group__label data-input-group__label--link">📄 Thưởng nóng:</a>
                                     <div class="data-input-group__content">
                                         <div class="flex items-center gap-2">
                                             <label for="file-thuongnong" class="data-input-group__file-trigger">Thêm file</label>
                                             <span id="file-name-thuongnong" class="data-input-group__file-name">Chưa thêm file</span>
                                         </div>
                                         <input type="file" id="file-thuongnong" class="hidden file-input" data-name="Thưởng nóng" data-state-key="thuongNongData" data-save-key="saved_thuongnong" accept=".xlsx, .xls, .csv">
-                                        <a href="https://report.mwgroup.vn/home/dashboard/105" target="_blank" class="data-input-group__link">Lấy file tại đây</a>
                                         <div class="data-input-group__status-wrapper">
                                             <span id="file-status-thuongnong" class="data-input-group__status-text"></span>
-                                            <span id="thuongnong-saved-status" class="data-input-group__status-text"></span>
                                         </div>
                                         <div id="progress-thuongnong" class="progress-bar-container hidden"><div class="progress-bar"></div></div>
                                     </div>
@@ -6816,33 +7275,24 @@ export function initializeEventListeners(mainAppController) {
                             </div>
                             <div class="grid md:grid-cols-3 gap-6">
                                 <div class="data-input-group h-full">
-                                    <label class="data-input-group__label">Thưởng ERP:<br><span class="font-normal">(Copy từ BI)</span></label>
+                                    <a href="https://bi.thegioididong.com/reward?id=-1&tab=1" target="_blank" class="data-input-group__label data-input-group__label--link">📋 Thưởng ERP:<br><span class="font-normal">(Copy từ BI)</span></a>
                                     <div class="data-input-group__content">
                                         <textarea id="paste-thuongerp" rows="5" class="data-textarea" placeholder="Dán toàn bộ dữ liệu thưởng ERP..."></textarea>
-                                        <div class="flex items-center gap-x-4">
-                                            <a href="https://bi.thegioididong.com/reward?id=-1&tab=1" target="_blank" class="data-input-group__link">Lấy file tại đây</a>
-                                            <div class="data-input-group__status-wrapper"><span id="status-thuongerp" class="data-input-group__status-text"></span></div>
-                                        </div>
+                                        <div class="data-input-group__status-wrapper"><span id="status-thuongerp" class="data-input-group__status-text"></span></div>
                                     </div>
                                 </div>
                                 <div class="data-input-group h-full">
-                                    <label class="data-input-group__label">Data lũy kế:<br><span class="font-normal">(Copy từ BI)</span></label>
+                                    <a href="https://bi.thegioididong.com/sieu-thi-con?id=16612&tab=1" target="_blank" class="data-input-group__label data-input-group__label--link">📋 Data lũy kế:<br><span class="font-normal">(Copy từ BI)</span></a>
                                     <div class="data-input-group__content">
                                         <textarea id="paste-luyke" rows="5" class="data-textarea" placeholder="Dán dữ liệu đã sao chép..."></textarea>
-                                        <div class="flex items-center gap-x-4">
-                                            <a href="https://bi.thegioididong.com/sieu-thi-con?id=16612&tab=1" target="_blank" class="data-input-group__link">Lấy file tại đây</a>
-                                            <div class="data-input-group__status-wrapper"><span id="status-luyke" class="data-input-group__status-text"></span></div>
-                                        </div>
+                                        <div class="data-input-group__status-wrapper"><span id="status-luyke" class="data-input-group__status-text"></span></div>
                                     </div>
                                 </div>
                                 <div class="data-input-group h-full">
-                                    <label class="data-input-group__label">Thi đua nhân viên:<br><span class="font-normal">(Copy từ BI)</span></label>
+                                    <a href="https://bi.thegioididong.com/sieu-thi-con?id=16758&tab=bcdtnv&rt=2&dm=1" target="_blank" class="data-input-group__label data-input-group__label--link">📋 Thi đua nhân viên:<br><span class="font-normal">(Copy từ BI)</span></a>
                                     <div class="data-input-group__content">
                                         <textarea id="paste-thiduanv" rows="5" class="data-textarea" placeholder="Dán dữ liệu đã sao chép..."></textarea>
-                                        <div class="flex items-center gap-x-4">
-                                            <a href="https://bi.thegioididong.com/sieu-thi-con?id=16758&tab=bcdtnv&rt=2&dm=1" target="_blank" class="data-input-group__link">Lấy file tại đây</a>
-                                            <div class="data-input-group__status-wrapper"><span id="status-thiduanv" class="data-input-group__status-text"></span></div>
-                                        </div>
+                                        <div class="data-input-group__status-wrapper"><span id="status-thiduanv" class="data-input-group__status-text"></span></div>
                                     </div>
                                 </div>
                             </div>
@@ -6868,7 +7318,7 @@ export function initializeEventListeners(mainAppController) {
                         <div class="grid md:grid-cols-3 gap-6">
                             <div class="space-y-4">
                                 <div class="data-input-group">
-                                    <label class="data-input-group__label">Danh sách nhân viên:</label>
+                                    <label class="data-input-group__label">📄 Danh sách nhân viên:</label>
                                     <div class="data-input-group__content">
                                         <div class="flex items-center gap-2">
                                             <label for="file-danhsachnv" class="data-input-group__file-trigger">Thêm file</label>
@@ -6878,13 +7328,12 @@ export function initializeEventListeners(mainAppController) {
                                         <input type="file" id="file-danhsachnv" class="hidden file-input" data-name="Danh sách nhân viên" data-state-key="danhSachNhanVien" data-save-key="saved_danhsachnv" accept=".xlsx, .xls, .csv">
                                         <div class="data-input-group__status-wrapper">
                                             <span id="file-status-danhsachnv" class="data-input-group__status-text"></span>
-                                            <span id="danhsachnv-saved-status" class="data-input-group__status-text"></span>
                                         </div>
                                         <div id="progress-danhsachnv" class="progress-bar-container hidden"><div class="progress-bar"></div></div>
                                     </div>
                                 </div>
                                 <div class="data-input-group">
-                                    <label class="data-input-group__label">YCX Lũy Kế tháng trước:</label>
+                                    <label class="data-input-group__label">📄 YCX Lũy Kế tháng trước:</label>
                                     <div class="data-input-group__content">
                                         <div class="flex items-center gap-2">
                                             <label for="file-ycx-thangtruoc" class="data-input-group__file-trigger">Thêm file</label>
@@ -6900,7 +7349,7 @@ export function initializeEventListeners(mainAppController) {
                             </div>
                             <div class="space-y-4">
                                 <div class="data-input-group">
-                                    <label class="data-input-group__label">Thưởng nóng tháng trước:</label>
+                                    <label class="data-input-group__label">📄 Thưởng nóng tháng trước:</label>
                                     <div class="data-input-group__content">
                                         <div class="flex items-center gap-2">
                                             <label for="file-thuongnong-thangtruoc" class="data-input-group__file-trigger">Thêm file</label>
@@ -6916,7 +7365,7 @@ export function initializeEventListeners(mainAppController) {
                             </div>
                              <div class="space-y-4">
                                 <div class="data-input-group h-full">
-                                    <label class="data-input-group__label">Thưởng ERP tháng trước:</label>
+                                    <label class="data-input-group__label">📋 Thưởng ERP tháng trước:</label>
                                     <div class="data-input-group__content">
                                         <textarea id="paste-thuongerp-thangtruoc" rows="5" class="data-textarea" placeholder="Dán dữ liệu thưởng ERP tháng trước..."></textarea>
                                         <div class="data-input-group__status-wrapper">
@@ -6997,12 +7446,12 @@ export function initializeEventListeners(mainAppController) {
                                 <h2 id="luyke-supermarket-title" class="text-2xl font-bold text-center text-gray-700"></h2>
                                 
                                 <div id="luyke-kpi-cards-container" data-capture-group="kpi" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                    <div class="kpi-card p-6 rounded-2xl shadow-lg">
+                                     <div class="kpi-card p-6 rounded-2xl shadow-lg">
                                         <h4 class="kpi-card-title">Doanh thu thực</h4>
                                         <p id="luyke-kpi-dt-thuc-main" class="font-bold mt-2 mb-3">0</p>
                                         <p id="luyke-kpi-dt-thuc-sub1" class="text-sm">DK: 0 / Target: 0</p>
                                     </div>
-                                
+                                    
                                     <div class="kpi-card p-6 rounded-2xl shadow-lg">
                                         <h4 class="kpi-card-title">Doanh thu Quy đổi</h4>
                                         <p id="luyke-kpi-dt-qd-main" class="font-bold mt-2 mb-3">0</p>
@@ -7026,7 +7475,7 @@ export function initializeEventListeners(mainAppController) {
                                         <p id="luyke-kpi-dt-tc-main" class="font-bold mt-2 mb-3">0</p>
                                         <p id="luyke-kpi-dt-tc-sub" class="text-sm">% thực trả chậm: 0%</p>
                                     </div>
-                                
+                                    
                                     <div class="kpi-card p-6 rounded-2xl shadow-lg">
                                         <h4 class="kpi-card-title">DTQĐ Chưa xuất</h4>
                                         <p id="luyke-kpi-dtqd-chua-xuat-main" class="font-bold mt-2 mb-3">0</p>
@@ -7059,7 +7508,7 @@ export function initializeEventListeners(mainAppController) {
                                     <h3 class="text-xl font-bold text-gray-800 uppercase">Thi đua lũy kế <span id="luyke-competition-summary" class="text-sm font-normal"></span></h3>
                                 </div>
                                 <div id="luyke-competition-content"></div>
-                            </div>
+                             </div>
                             <div id="subtab-luyke-thidua-vung" class="sub-tab-content hidden">
                                 <div class="content-card">
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
@@ -7096,7 +7545,7 @@ export function initializeEventListeners(mainAppController) {
                                 <button class="page-header__help-btn" data-help-id="sknv" title="Xem hướng dẫn">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
                                 </button>
-                            </div>
+                             </div>
 
                             <button class="toggle-filters-btn" data-target="sknv-filter-container">
                                 <span class="text">Hiện bộ lọc nâng cao</span>
@@ -7459,6 +7908,7 @@ export function initializeEventListeners(mainAppController) {
     <div id="modal-chart-container"></div>
     <div id="modal-composer-container"></div>
     <div id="modal-preview-container"></div>
+    <div id="modal-selection-container"></div>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const tailwindScript = document.querySelector('script[src="https://cdn.tailwindcss.com"]');
@@ -7467,14 +7917,14 @@ export function initializeEventListeners(mainAppController) {
             }
         });
     </script>
-    <script type="module" src="./main.js?v=3.0"></script>
+    <script type="module" src="./main.js?v=3.1"></script>
 
 </body>
 </html>
 --- END FILE: ./index.html ---
 
 --- START FILE: ./main.js ---
-// Version 39.0 - Synchronize calculation declarations via Firestore
+// Version 42.0 - Integrate new general-purpose Selection Modal
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -7498,11 +7948,12 @@ import { modalHelp } from './components/modal-help.js';
 import { modalChart } from './components/modal-chart.js';
 import { modalComposer } from './components/modal-composer.js';
 import { modalPreview } from './components/modal-preview.js';
+import { modalSelection } from './components/modal-selection.js'; // <<< THÊM DÒNG NÀY
 import { settingsService } from './modules/settings.service.js';
 import { highlightService } from './modules/highlight.service.js';
 
 const app = {
-    currentVersion: '3.0',
+    currentVersion: '3.1',
     storage: storage,
 
     async init() {
@@ -7522,8 +7973,10 @@ const app = {
             modalChart.render('#modal-chart-container');
             modalComposer.render('#modal-composer-container');
             modalPreview.render('#modal-preview-container');
+            modalSelection.render('#modal-selection-container'); // <<< THÊM DÒNG NÀY
 
             this.loadAndApplyBookmarkLink();
+            this.loadAndDisplayQrCode(); 
 
             await this.storage.openDB();
 
@@ -7533,7 +7986,7 @@ const app = {
             appState.categoryStructure = categories;
             appState.brandList = brands;
             console.log(`Successfully populated ${appState.categoryStructure.length} categories and ${appState.brandList.length} brands from Firestore.`);
-
+            
             console.log("Loading calculation declarations from Firestore...");
             const declarations = await firebase.loadDeclarationsFromFirestore();
             appState.declarations = declarations;
@@ -7580,8 +8033,6 @@ const app = {
     },
 
     async loadDataFromStorage() {
-        // Đã xóa logic tải khai báo từ localStorage ở đây. Chúng được tải từ Firestore trong hàm init().
-
         const loadSavedFile = async (saveKey, stateKey, fileType, uiId) => {
             if (saveKey === 'saved_category_structure') {
                 if (appState.categoryStructure.length > 0 || appState.brandList.length > 0) {
@@ -7597,11 +8048,8 @@ const app = {
                 const { normalizedData, success } = services.normalizeData(savedData, fileType);
                 if (success) {
                     appState[stateKey] = normalizedData;
-                    const savedStatusSpan = document.getElementById(`${uiId}-saved-status`);
-                    if (savedStatusSpan) {
-                        savedStatusSpan.textContent = `Đã lưu ${normalizedData.length} dòng.`;
-                    }
-                    ui.updateFileStatus(uiId, 'Tải từ bộ nhớ đệm', `✓ Đã tải ${normalizedData.length} dòng.`, 'success');
+                    // LOGIC CŨ ĐÃ BỊ XÓA
+                    ui.updateFileStatus(uiId, '', `✓ Đã tải ${normalizedData.length} dòng.`, 'success');
                 }
             } catch (e) { console.error(`Lỗi đọc ${uiId} từ IndexedDB:`, e); }
         };
@@ -7800,7 +8248,7 @@ const app = {
             }
         } catch (err) { ui.showNotification(`Có lỗi khi đọc file: ${err.message}`, 'error'); console.error(err); }
     },
-
+    
     async handleCategoryFile(e) {
         const fileInput = e.target;
         const file = fileInput.files[0];
@@ -7834,7 +8282,7 @@ const app = {
             fileInput.value = '';
         }
     },
-
+    
     async handleThiDuaVungFileInput(e) {
         const fileInput = e.target;
         const file = fileInput.files[0];
@@ -7936,7 +8384,7 @@ const app = {
             ui.showNotification(`Lỗi khi đọc file gỡ lỗi: ${err.message}`, 'error');
         }
     },
-
+    
     _handleCompetitionFormShow(show = true, isEdit = false) {
         const form = document.getElementById('competition-form');
         const addBtn = document.getElementById('add-competition-btn');
@@ -7964,10 +8412,10 @@ const app = {
         if (!config) return;
 
         this._handleCompetitionFormShow(true, true);
-
+        
         document.getElementById('competition-id').value = index;
         document.getElementById('competition-name').value = config.name;
-
+        
         const brandChoices = appState.choices['competition_brand'];
         if(brandChoices) {
             brandChoices.removeActiveItems();
@@ -7976,7 +8424,7 @@ const app = {
 
         document.getElementById('competition-type').value = config.type;
         document.getElementById('competition-exclude-apple').checked = config.excludeApple;
-
+        
         const priceSegment = document.getElementById('price-segment');
         priceSegment.classList.toggle('hidden', config.type !== 'soluong');
 
@@ -8015,7 +8463,7 @@ const app = {
             ui.showNotification('Lỗi: Vui lòng chọn ít nhất một hãng sản xuất.', 'error');
             return;
         }
-
+        
         const newConfig = {
             id: id ? appState.competitionConfigs[parseInt(id, 10)].id : `comp_${new Date().getTime()}`,
             name: name,
@@ -8042,7 +8490,7 @@ const app = {
      _saveCompetitionConfigs() {
         localStorage.setItem('competitionConfigs', JSON.stringify(appState.competitionConfigs));
     },
-
+    
     async handleTemplateDownload() {
         ui.showNotification('Đang chuẩn bị file mẫu...', 'success');
         try {
@@ -8072,7 +8520,7 @@ const app = {
             document.getElementById('admin-error-msg').classList.remove('hidden');
         }
     },
-
+    
     handleContrastChange(e) {
         const level = e.target.value;
         localStorage.setItem('contrastLevel', level);
@@ -8117,7 +8565,7 @@ const app = {
         // Render lại tab hiện tại để áp dụng thay đổi
         this.updateAndRenderCurrentTab();
     },
-
+    
     saveHelpContent() {
         const contents = {
             data: document.getElementById('edit-help-data').value,
@@ -8127,13 +8575,13 @@ const app = {
         };
         firebase.saveHelpContent(contents);
     },
-
+    
     async handleSubmitFeedback() {
         const textarea = document.getElementById('feedback-textarea');
         const success = await firebase.submitFeedback(textarea.value.trim());
         if (success) textarea.value = '';
     },
-
+    
     async handleFeedbackReplyActions(e, feedbackItem) {
         const docId = feedbackItem.dataset.id;
         const replyForm = feedbackItem.querySelector('.reply-form-container');
@@ -8160,7 +8608,7 @@ const app = {
         const selectedWarehouse = document.getElementById(`${sectionId}-filter-warehouse`).value;
         const selectedDept = document.getElementById(`${sectionId}-filter-department`).value;
         const selectedNames = appState.choices[`${sectionId}_employee`] ? appState.choices[`${sectionId}_employee`].getValue(true) : [];
-
+        
         let filteredReport = masterData;
         if (selectedWarehouse) filteredReport = filteredReport.filter(nv => nv.maKho == selectedWarehouse);
         if (selectedDept) filteredReport = filteredReport.filter(nv => nv.boPhan === selectedDept);
@@ -8179,12 +8627,12 @@ const app = {
             const uniqueDepartments = [...new Set(appState.danhSachNhanVien.map(nv => nv.boPhan).filter(Boolean))].sort();
             deptFilter.innerHTML = '<option value="ALL">Toàn siêu thị</option>' + uniqueDepartments.map(dept => `<option value="${dept}">${dept}</option>`).join('');
         }
-
+        
         const navIdMap = { luyke: 'luyke-subtabs-nav', sknv: 'employee-subtabs-nav', realtime: 'realtime-subtabs-nav' };
         const mainViewNav = document.getElementById(navIdMap[sectionId]);
         const contextTabsContainer = document.getElementById('composer-context-tabs');
         const contextContentContainer = document.getElementById('composer-context-content');
-
+        
         contextTabsContainer.innerHTML = '';
         contextContentContainer.innerHTML = '';
 
@@ -8209,22 +8657,22 @@ const app = {
                 const newContentPane = document.createElement('div');
                 newContentPane.id = `context-pane-${subTabId}`;
                 newContentPane.className = `composer__context-pane ${!isActive ? 'hidden' : ''}`;
-
+                
                 const textarea = document.createElement('textarea');
                 textarea.className = 'composer__textarea';
                 textarea.rows = 15;
                 textarea.placeholder = `Soạn thảo nhận xét cho tab ${btn.textContent.trim()}...`;
-
+                
                 if (!appState.composerTemplates[sectionId]) {
                     appState.composerTemplates[sectionId] = {};
                 }
                 textarea.value = appState.composerTemplates[sectionId][subTabId] || '';
-
+                
                 newContentPane.appendChild(textarea);
                 contextContentContainer.appendChild(newContentPane);
             });
         }
-
+        
         contextTabsContainer.classList.toggle('hidden', contextTabsContainer.children.length === 0);
 
         const filteredReportData = this._getFilteredReportData(sectionId);
@@ -8238,7 +8686,7 @@ const app = {
         const sectionId = modal.dataset.sectionId;
         const activeContextPane = modal.querySelector('.composer__context-pane:not(.hidden)');
         const activeTextarea = activeContextPane ? activeContextPane.querySelector('textarea') : null;
-
+        
         if (e.target.matches('.composer__tab-btn:not([data-context-tab])')) {
              const nav = e.target.closest('.composer__nav');
             const content = nav.nextElementSibling;
@@ -8282,28 +8730,46 @@ const app = {
                 ui.showNotification(`Không tìm thấy tab con để lưu.`, 'error');
             }
         }
-
+        
         if (e.target.id === 'copy-composed-notification-btn') {
             if (!activeTextarea) {
-                 ui.showNotification("Lỗi: Không tìm thấy ô nội dung đang hoạt động.", "error");
+                 ui.showNotification("Lỗi: Không tìm thấy ô nội dung đang hoạt động.", "error"); 
                 return;
             }
 
             const template = activeTextarea.value;
-
+            
             const filteredReportData = this._getFilteredReportData(sectionId);
             const supermarketReport = services.aggregateReport(filteredReportData);
-
+            
             const selectedWarehouse = document.getElementById(`${sectionId}-filter-warehouse`).value;
             const goals = sectionId === 'realtime' ? settingsService.getRealtimeGoalSettings(selectedWarehouse).goals : settingsService.getLuykeGoalSettings(selectedWarehouse).goals;
-
+            
             const competitionDataForComposer = services.parseCompetitionDataFromLuyKe(document.getElementById('paste-luyke')?.value || '');
-
+            
             const processedText = services.processComposerTemplate(template, supermarketReport, goals, filteredReportData, competitionDataForComposer, sectionId);
 
             ui.showPreviewAndCopy(processedText);
         }
     },
+    
+    // === START: HÀM MỚI ĐỂ XỬ LÝ QR TĨNH ===
+    async loadAndDisplayQrCode() {
+        try {
+            const qrUrl = await firebase.getQrCodeDownloadURL();
+            const imgEl = document.getElementById('header-qr-image');
+            if (imgEl) {
+                imgEl.src = qrUrl;
+            }
+        } catch (error) {
+            console.error("Không thể tải mã QR:", error);
+            const container = document.querySelector('.header-qr-container');
+            if (container) {
+                container.style.display = 'none'; // Ẩn toàn bộ khung nếu có lỗi
+            }
+        }
+    }
+    // === END: HÀM MỚI ===
 };
 
 app.init();
@@ -8559,7 +9025,7 @@ export const highlightService = {
 --- END FILE: ./modules/highlight.service.js ---
 
 --- START FILE: ./modules/settings.service.js ---
-// Version 1.0 - Refactored from utils.js
+// Version 1.2 - Add settings handlers for QDC and Category tables
 // MODULE: SETTINGS SERVICE
 // Chứa toàn bộ logic liên quan đến việc quản lý cài đặt (lưu/tải từ localStorage).
 
@@ -8567,6 +9033,76 @@ import { appState } from '../state.js';
 import { ui } from '../ui.js';
 
 export const settingsService = {
+    // === START: HÀM MỚI ĐỂ LƯU CÀI ĐẶT CÁ NHÂN HÓA ===
+    saveEfficiencyViewSettings(settings) {
+        if (!Array.isArray(settings)) return;
+        try {
+            localStorage.setItem('efficiencyViewSettings', JSON.stringify(settings));
+        } catch (e) {
+            console.error("Lỗi khi lưu cài đặt hiển thị Hiệu quả khai thác:", e);
+        }
+    },
+    
+    saveQdcViewSettings(settings) {
+        if (!Array.isArray(settings)) return;
+        try {
+            localStorage.setItem('qdcViewSettings', JSON.stringify(settings));
+        } catch (e) {
+            console.error("Lỗi khi lưu cài đặt hiển thị Nhóm hàng QĐC:", e);
+        }
+    },
+
+    saveCategoryViewSettings(settings) {
+        if (!Array.isArray(settings)) return;
+        try {
+            localStorage.setItem('categoryViewSettings', JSON.stringify(settings));
+        } catch (e) {
+            console.error("Lỗi khi lưu cài đặt hiển thị Ngành hàng chi tiết:", e);
+        }
+    },
+    // === END: HÀM MỚI ===
+
+    // === START: HÀM MỚI ĐỂ TẢI CÀI ĐẶT CÁ NHÂN HÓA ===
+    loadEfficiencyViewSettings() {
+        try {
+            const savedSettings = localStorage.getItem('efficiencyViewSettings');
+            if (savedSettings) {
+                return JSON.parse(savedSettings);
+            }
+        } catch (e) {
+            console.error("Lỗi khi tải cài đặt hiển thị Hiệu quả khai thác:", e);
+        }
+        // Trả về giá trị mặc định nếu không có gì được lưu
+        return ['% Phụ kiện', '% Gia dụng', '% MLN', '% Sim', '% VAS', '% Bảo hiểm'];
+    },
+
+    loadQdcViewSettings(allItems) {
+        try {
+            const savedSettings = localStorage.getItem('qdcViewSettings');
+            if (savedSettings) {
+                return JSON.parse(savedSettings);
+            }
+        } catch (e) {
+            console.error("Lỗi khi tải cài đặt hiển thị Nhóm hàng QĐC:", e);
+        }
+        // Mặc định hiển thị tất cả nếu chưa có cài đặt
+        return allItems;
+    },
+
+    loadCategoryViewSettings(allItems) {
+        try {
+            const savedSettings = localStorage.getItem('categoryViewSettings');
+            if (savedSettings) {
+                return JSON.parse(savedSettings);
+            }
+        } catch (e) {
+            console.error("Lỗi khi tải cài đặt hiển thị Ngành hàng chi tiết:", e);
+        }
+        // Mặc định hiển thị tất cả nếu chưa có cài đặt
+        return allItems;
+    },
+    // === END: HÀM MỚI ===
+
     loadInterfaceSettings() {
         try {
             const savedSettings = JSON.parse(localStorage.getItem('interfaceSettings')) || {};
@@ -10895,7 +11431,7 @@ export { uiCompetition };
 --- END FILE: ./ui-competition.js ---
 
 --- START FILE: ./ui-components.js ---
-// Version 3.0 - Add dynamic tag population for Composer
+// Version 3.1 - Add renderSettingsButton helper function
 // MODULE: UI COMPONENTS
 // Chứa các hàm UI chung, tái sử dụng được trên toàn bộ ứng dụng.
 
@@ -10904,6 +11440,12 @@ import { services } from './services.js';
 import { utils } from './utils.js';
 
 export const uiComponents = {
+    renderSettingsButton(idSuffix) {
+        return `<button id="settings-btn-${idSuffix}" class="settings-trigger-btn" title="Tùy chỉnh hiển thị">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                </button>`;
+    },
+
     renderCompetitionConfigUI() {
         const container = document.getElementById(`competition-list-container`);
         if (!container) return;
@@ -10929,7 +11471,7 @@ export const uiComponents = {
                     </div>
                     <div class="flex items-center gap-x-2 flex-shrink-0">
                         <button class="edit-competition-btn p-2 rounded-md hover:bg-gray-200 text-gray-600" data-index="${index}" title="Sửa chương trình">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                         </button>
                         <button class="delete-competition-btn p-2 rounded-md hover:bg-red-100 text-red-600" data-index="${index}" title="Xóa chương trình">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
@@ -10940,7 +11482,6 @@ export const uiComponents = {
         }).join('');
     },
     
-    // === START: NEW FUNCTION FOR COMPOSER (FIX 5) ===
     populateComposerDetailTags(supermarketReport) {
         const qdcContainer = document.getElementById('composer-qdc-tags-container');
         const nganhHangContainer = document.getElementById('composer-nganhhang-tags-container');
@@ -10983,7 +11524,6 @@ export const uiComponents = {
             });
         }
     },
-    // === END: NEW FUNCTION FOR COMPOSER ===
 
     // --- GENERAL UI HELPERS ---
     showProgressBar: (elementId) => document.getElementById(`progress-${elementId}`)?.classList.remove('hidden'),
@@ -11445,7 +11985,6 @@ export const uiComponents = {
         }
     },
 
-    // === START: THÊM HÀM MỚI ĐỂ HIỂN THỊ KẾT QUẢ GỠ LỖI THI ĐUA ===
     renderCompetitionDebugReport(debugResults) {
         const container = document.getElementById('debug-competition-results');
         if (!container) return;
@@ -11507,8 +12046,7 @@ export const uiComponents = {
         tableHTML += '</tbody></table></div></div>';
         container.innerHTML = tableHTML;
     },
-    // === END: THÊM HÀM MỚI ===
-
+    
     populateAllFilters: () => {
         const { danhSachNhanVien } = appState;
         if (danhSachNhanVien.length === 0) return;
@@ -11544,7 +12082,7 @@ export const uiComponents = {
         });
         
         const createOptionsHTML = (items, includeAllOption = false) => {
-             let html = includeAllOption ? '<option value="">Tất cả</option>' : '';
+            let html = includeAllOption ? '<option value="">Tất cả</option>' : '';
              html += items.map(item => `<option value="${item}">${item}</option>`).join('');
              return html;
         };
@@ -11678,7 +12216,7 @@ export const uiComponents = {
 --- END FILE: ./ui-components.js ---
 
 --- START FILE: ./ui-luyke.js ---
-// Version 1.5 - Add 'Completed' and 'Not Completed' counters to competition titles
+// Version 2.0 - Fix reference error in category table rendering
 // MODULE: UI LUY KE
 // Chứa các hàm render giao diện cho tab "Sức khỏe Siêu thị (Lũy kế)".
 
@@ -11686,8 +12224,81 @@ import { appState } from './state.js';
 import { services } from './services.js';
 import { utils } from './utils.js';
 import { uiComponents } from './ui-components.js';
+import { settingsService } from './modules/settings.service.js';
+import { highlightService } from './modules/highlight.service.js';
 
 export const uiLuyke = {
+    // === CÁC HÀM MỞ MODAL CÀI ĐẶT CHO TỪNG BẢNG ===
+    _showEfficiencySettingsModal() {
+        const modal = document.getElementById('selection-modal');
+        if (!modal) return;
+
+        const allItems = ['% Phụ kiện', '% Gia dụng', '% MLN', '% Sim', '% VAS', '% Bảo hiểm'];
+        const savedSettings = settingsService.loadEfficiencyViewSettings();
+        
+        const listContainer = document.getElementById('selection-modal-list');
+        listContainer.innerHTML = allItems.map(item => `
+            <div class="selection-item">
+                <input type="checkbox" id="select-item-lk-eff-${item.replace(/[^a-zA-Z0-9]/g, '')}" value="${item}" ${savedSettings.includes(item) ? 'checked' : ''}>
+                <label for="select-item-lk-eff-${item.replace(/[^a-zA-Z0-9]/g, '')}">${item}</label>
+            </div>
+        `).join('');
+
+        document.getElementById('selection-modal-title').textContent = 'Tùy chỉnh hiển thị Hiệu quả khai thác';
+        modal.dataset.settingType = 'efficiencyView';
+        const searchInput = document.getElementById('selection-modal-search');
+        if (searchInput) searchInput.value = '';
+        
+        uiComponents.toggleModal('selection-modal', true);
+    },
+
+    _showQdcSettingsModal(supermarketReport) {
+        const modal = document.getElementById('selection-modal');
+        if (!modal || !supermarketReport || !supermarketReport.qdc) return;
+
+        const allItems = Object.values(supermarketReport.qdc).map(item => item.name).sort();
+        const savedSettings = settingsService.loadQdcViewSettings(allItems);
+        
+        const listContainer = document.getElementById('selection-modal-list');
+        listContainer.innerHTML = allItems.map(item => `
+            <div class="selection-item">
+                <input type="checkbox" id="select-item-lk-qdc-${item.replace(/[^a-zA-Z0-9]/g, '')}" value="${item}" ${savedSettings.includes(item) ? 'checked' : ''}>
+                <label for="select-item-lk-qdc-${item.replace(/[^a-zA-Z0-9]/g, '')}">${item}</label>
+            </div>
+        `).join('');
+
+        document.getElementById('selection-modal-title').textContent = 'Tùy chỉnh hiển thị Nhóm hàng QĐC';
+        modal.dataset.settingType = 'qdcView';
+        const searchInput = document.getElementById('selection-modal-search');
+        if (searchInput) searchInput.value = '';
+        
+        uiComponents.toggleModal('selection-modal', true);
+    },
+
+    _showCategorySettingsModal(supermarketReport) {
+        const modal = document.getElementById('selection-modal');
+        if (!modal || !supermarketReport || !supermarketReport.nganhHangChiTiet) return;
+
+        const allItems = Object.keys(supermarketReport.nganhHangChiTiet).sort();
+        const savedSettings = settingsService.loadCategoryViewSettings(allItems);
+        
+        const listContainer = document.getElementById('selection-modal-list');
+        listContainer.innerHTML = allItems.map(item => `
+            <div class="selection-item">
+                <input type="checkbox" id="select-item-lk-cat-${item.replace(/[^a-zA-Z0-9]/g, '')}" value="${item}" ${savedSettings.includes(item) ? 'checked' : ''}>
+                <label for="select-item-lk-cat-${item.replace(/[^a-zA-Z0-9]/g, '')}">${item}</label>
+            </div>
+        `).join('');
+
+        document.getElementById('selection-modal-title').textContent = 'Tùy chỉnh hiển thị Ngành hàng chi tiết';
+        modal.dataset.settingType = 'categoryView';
+        const searchInput = document.getElementById('selection-modal-search');
+        if (searchInput) searchInput.value = '';
+        
+        uiComponents.toggleModal('selection-modal', true);
+    },
+
+    // === CÁC HÀM RENDER GIAO DIỆN ===
     displayHealthKpiTable: (pastedData, goals) => {
         const { mainKpis, comparisonData, dtDuKien, dtqdDuKien, luotKhachData } = pastedData;
         
@@ -11750,7 +12361,7 @@ export const uiLuyke = {
         const data = appState.competitionData;
         if(data.length === 0) {
              container.innerHTML = '<p class="text-yellow-600 font-bold col-span-2">Không tìm thấy dữ liệu thi đua trong văn bản đã dán.</p>';
-            return;
+             return;
         }
         
         const summary = {
@@ -11765,7 +12376,7 @@ export const uiLuyke = {
         if (viewType === 'summary') {
             container.innerHTML = uiLuyke.renderLuykeCompetitionSummary(data);
         } else {
-            container.innerHTML = uiLuyke.renderLuykeCompetitionByCategory(data);
+             container.innerHTML = uiLuyke.renderLuykeCompetitionByCategory(data);
         }
     },
     
@@ -11851,7 +12462,7 @@ export const uiLuyke = {
         const { key, direction } = sortState;
         const sortedData = [...reportData].sort((a, b) => {
             const valA = a[key] || 0; const valB = b[key] || 0;
-            return direction === 'asc' ? valA - valB : valB - a[key];
+            return direction === 'asc' ? valA - valB : valB - valA;
         });
 
         const totals = reportData.reduce((acc, item) => {
@@ -11918,24 +12529,38 @@ export const uiLuyke = {
         document.getElementById('luyke-kpi-thidua-main').textContent = uiComponents.formatPercentage(tyLeThiDuaDat);
         document.getElementById('luyke-kpi-thidua-sub').innerHTML = `<span class="font-bold">${competitionSummary.dat}/${competitionSummary.total}</span> Ngành`;
 
-        // --- Thẻ 8: Tăng/giảm cùng kỳ ---
-        document.getElementById('luyke-kpi-dtck-main').textContent = comparisonData.percentage || 'N/A';
-        document.getElementById('luyke-kpi-dtck-sub').innerHTML = `Doanh thu: <span class="font-bold">${uiComponents.formatNumber(comparisonData.value || 0)} | ${comparisonData.percentage || '0%'}</span>`;
-        document.getElementById('luyke-kpi-lkck-sub').innerHTML = `Lượt khách: <span class="font-bold">${uiComponents.formatNumber(luotKhachData.value || 0)} | ${luotKhachData.percentage || '0%'}</span>`;
+        // --- THẺ 8: SỬA LỖI LÀM TRÒN SỐ (TÍCH HỢP VĨNH VIỄN) ---
+        const formatComparisonPercentage = (percentageString) => {
+            if (!percentageString || typeof percentageString !== 'string') return 'N/A';
+            const numericValue = parseFloat(percentageString.replace('%', ''));
+            if (isNaN(numericValue)) return 'N/A';
+            return Math.round(numericValue) + '%';
+        };
+        const formattedDtPercentage = formatComparisonPercentage(comparisonData.percentage);
+        const formattedLkPercentage = formatComparisonPercentage(luotKhachData.percentage);
+
+        document.getElementById('luyke-kpi-dtck-main').textContent = formattedDtPercentage;
+        document.getElementById('luyke-kpi-dtck-sub').innerHTML = `Doanh thu: <span class="font-bold">${uiComponents.formatNumber(comparisonData.value || 0)} | ${formattedDtPercentage}</span>`;
+        document.getElementById('luyke-kpi-lkck-sub').innerHTML = `Lượt khách: <span class="font-bold">${uiComponents.formatNumber(luotKhachData.value || 0)} | ${formattedLkPercentage}</span>`;
     },
 
     renderLuykeCategoryDetailsTable: (data, numDays) => {
         const container = document.getElementById('luyke-category-details-content');
-        if (!container || !data || !data.nganhHangChiTiet) { container.innerHTML = '<p class="text-gray-500 font-bold">Không có dữ liệu.</p>'; return; }
-        const { nganhHangChiTiet } = data;
-        if (Object.keys(nganhHangChiTiet).length === 0) {
+        const cardHeader = container.previousElementSibling;
+        if (!container || !cardHeader || !data || !data.nganhHangChiTiet) { container.innerHTML = '<p class="text-gray-500 font-bold">Không có dữ liệu.</p>'; return; }
+        
+        const allItems = Object.keys(data.nganhHangChiTiet).sort();
+        const visibleItems = settingsService.loadCategoryViewSettings(allItems);
+        
+        if (Object.keys(data.nganhHangChiTiet).length === 0) {
             container.innerHTML = '<p class="text-gray-500 font-bold">Không có dữ liệu.</p>'; return;
         }
 
         const sortState = appState.sortState.luyke_nganhhang || { key: 'revenue', direction: 'desc' };
         const { key, direction } = sortState;
-        const sortedData = Object.entries(nganhHangChiTiet)
+        const sortedData = Object.entries(data.nganhHangChiTiet)
             .map(([name, values]) => ({ name, ...values }))
+            .filter(item => visibleItems.includes(item.name)) // Lọc theo cài đặt
             .sort((a, b) => direction === 'asc' ? a[key] - b[key] : b[key] - a[key]);
 
         const totals = sortedData.reduce((acc, item) => {
@@ -11943,6 +12568,16 @@ export const uiLuyke = {
             acc.revenue += item.revenue;
             return acc;
         }, { quantity: 0, revenue: 0 });
+
+        if (!cardHeader.querySelector('.settings-trigger-btn')) {
+            cardHeader.classList.add('flex', 'items-center', 'justify-between');
+            cardHeader.innerHTML = `<span>NGÀNH HÀNG CHI TIẾT</span>` + uiComponents.renderSettingsButton('lk-cat');
+            setTimeout(() => {
+                document.getElementById('settings-btn-lk-cat').addEventListener('click', () => {
+                    uiLuyke._showCategorySettingsModal(data);
+                });
+            }, 0);
+        }
 
         const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
         container.innerHTML = `<div class="overflow-x-auto"><table class="min-w-full text-sm table-bordered table-striped" data-table-type="luyke_nganhhang">
@@ -11972,12 +12607,28 @@ export const uiLuyke = {
 
     renderLuykeQdcTable: (data, numDays) => {
         const container = document.getElementById('luyke-qdc-content');
-        if (!container || !data || !data.qdc) { container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; return; }
+        const cardHeader = container.previousElementSibling;
+        if (!container || !cardHeader || !data || !data.qdc) { container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; return; }
         
         const qdcData = Object.entries(data.qdc).map(([key, value]) => ({ id: key, ...value }));
+        const allItems = qdcData.map(item => item.name);
+        const visibleItems = settingsService.loadQdcViewSettings(allItems);
+
         const sortState = appState.sortState.luyke_qdc || { key: 'dtqd', direction: 'desc' };
         const { key, direction } = sortState;
-        const sortedData = [...qdcData].sort((a,b) => direction === 'asc' ? a[key] - b[key] : b[key] - a[key]);
+        const sortedData = [...qdcData]
+            .filter(item => visibleItems.includes(item.name))
+            .sort((a,b) => direction === 'asc' ? a[key] - b[key] : b[key] - a[key]);
+        
+        if (!cardHeader.querySelector('.settings-trigger-btn')) {
+            cardHeader.classList.add('flex', 'items-center', 'justify-between');
+            cardHeader.innerHTML = `<span>NHÓM HÀNG QUY ĐỔI CAO</span>` + uiComponents.renderSettingsButton('lk-qdc');
+            setTimeout(() => {
+                document.getElementById('settings-btn-lk-qdc').addEventListener('click', () => {
+                    uiLuyke._showQdcSettingsModal(data);
+                });
+            }, 0);
+        }
 
         const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
 
@@ -11997,11 +12648,27 @@ export const uiLuyke = {
                 ).join('')}
             </tbody></table></div>`;
     },
-
+    
     renderLuykeEfficiencyTable: (data, goals) => {
         const container = document.getElementById('luyke-efficiency-content');
-        if (!container || !data || !goals) { container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; return; }
-        const { pctPhuKien, pctGiaDung, pctMLN, pctSim, pctVAS, pctBaoHiem } = data;
+        const cardHeader = container.previousElementSibling;
+
+        if (!container || !cardHeader || !data || !goals) { 
+            if(container) container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; 
+            return; 
+        }
+
+        const visibleItems = settingsService.loadEfficiencyViewSettings();
+
+        const allItems = {
+            '% Phụ kiện': { value: data.pctPhuKien, target: goals.phanTramPhuKien },
+            '% Gia dụng': { value: data.pctGiaDung, target: goals.phanTramGiaDung },
+            '% MLN': { value: data.pctMLN, target: goals.phanTramMLN },
+            '% Sim': { value: data.pctSim, target: goals.phanTramSim },
+            '% VAS': { value: data.pctVAS, target: goals.phanTramVAS },
+            '% Bảo hiểm': { value: data.pctBaoHiem, target: goals.phanTramBaoHiem }
+        };
+
         const createRow = (label, value, target) => {
             const isBelow = value < (target / 100);
             return `<tr class="border-t">
@@ -12010,18 +12677,38 @@ export const uiLuyke = {
                 <td class="px-4 py-2 text-right text-gray-600">${target || 0}%</td>
             </tr>`;
         };
-        container.innerHTML = `<div class="overflow-x-auto"><table class="min-w-full text-sm table-bordered">
-            <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold"><tr>
-                <th class="px-4 py-3 text-left">Chỉ số</th><th class="px-4 py-3 text-right">Thực hiện</th><th class="px-4 py-3 text-right">Mục tiêu</th></tr>
-            </thead>
-            <tbody>
-                ${createRow('% Phụ kiện', pctPhuKien, goals.phanTramPhuKien)}
-                ${createRow('% Gia dụng', pctGiaDung, goals.phanTramGiaDung)}
-                ${createRow('% MLN', pctMLN, goals.phanTramMLN)}
-                ${createRow('% Sim', pctSim, goals.phanTramSim)}
-                ${createRow('% VAS', pctVAS, goals.phanTramVAS)}
-                ${createRow('% Bảo hiểm', pctBaoHiem, goals.phanTramBaoHiem)}
-            </tbody></table></div>`;
+        
+        if (!cardHeader.querySelector('.settings-trigger-btn')) {
+            cardHeader.classList.add('flex', 'items-center', 'justify-between');
+            cardHeader.innerHTML = `<span>HIỆU QUẢ KHAI THÁC</span>` + uiComponents.renderSettingsButton('lk-eff');
+            
+            setTimeout(() => {
+                document.getElementById('settings-btn-lk-eff').addEventListener('click', () => {
+                    uiLuyke._showEfficiencySettingsModal();
+                });
+            }, 0);
+        }
+        
+        container.innerHTML = `
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm table-bordered">
+                    <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
+                        <tr>
+                            <th class="px-4 py-3 text-left">Chỉ số</th>
+                            <th class="px-4 py-3 text-right">Thực hiện</th>
+                            <th class="px-4 py-3 text-right">Mục tiêu</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${Object.keys(allItems)
+                            .filter(key => visibleItems.includes(key))
+                            .map(itemKey => {
+                                const itemData = allItems[itemKey];
+                                return createRow(itemKey, itemData.value, itemData.target);
+                            }).join('')}
+                    </tbody>
+                </table>
+            </div>`;
     },
 
     updateLuykeSupermarketTitle: (warehouse, date) => {
@@ -12032,7 +12719,7 @@ export const uiLuyke = {
 --- END FILE: ./ui-luyke.js ---
 
 --- START FILE: ./ui-realtime.js ---
-// Version 3.0 - Fix bug calling settingsService and add import
+// Version 3.2 - Add settings for QDC and Category tables
 // MODULE: UI REALTIME
 // Chứa các hàm render giao diện cho tab "Doanh thu Realtime".
 
@@ -12040,9 +12727,78 @@ import { appState } from './state.js';
 import { services } from './services.js';
 import { utils } from './utils.js';
 import { uiComponents } from './ui-components.js';
-import { settingsService } from './modules/settings.service.js'; // <<< THÊM DÒNG NÀY
+import { settingsService } from './modules/settings.service.js';
 
 export const uiRealtime = {
+    _showEfficiencySettingsModal() {
+        const modal = document.getElementById('selection-modal');
+        if (!modal) return;
+
+        const allItems = ['% Phụ kiện', '% Gia dụng', '% MLN', '% Sim', '% VAS', '% Bảo hiểm'];
+        const savedSettings = settingsService.loadEfficiencyViewSettings();
+        
+        const listContainer = document.getElementById('selection-modal-list');
+        listContainer.innerHTML = allItems.map(item => `
+            <div class="selection-item">
+                <input type="checkbox" id="select-item-rt-eff-${item.replace(/[^a-zA-Z0-9]/g, '')}" value="${item}" ${savedSettings.includes(item) ? 'checked' : ''}>
+                <label for="select-item-rt-eff-${item.replace(/[^a-zA-Z0-9]/g, '')}">${item}</label>
+            </div>
+        `).join('');
+
+        document.getElementById('selection-modal-title').textContent = 'Tùy chỉnh hiển thị Hiệu quả khai thác';
+        modal.dataset.settingType = 'efficiencyView';
+        const searchInput = document.getElementById('selection-modal-search');
+        if (searchInput) searchInput.value = '';
+        
+        uiComponents.toggleModal('selection-modal', true);
+    },
+
+    _showQdcSettingsModal(supermarketReport) {
+        const modal = document.getElementById('selection-modal');
+        if (!modal || !supermarketReport || !supermarketReport.qdc) return;
+
+        const allItems = Object.values(supermarketReport.qdc).map(item => item.name).sort();
+        const savedSettings = settingsService.loadQdcViewSettings(allItems);
+        
+        const listContainer = document.getElementById('selection-modal-list');
+        listContainer.innerHTML = allItems.map(item => `
+            <div class="selection-item">
+                <input type="checkbox" id="select-item-rt-qdc-${item.replace(/[^a-zA-Z0-9]/g, '')}" value="${item}" ${savedSettings.includes(item) ? 'checked' : ''}>
+                <label for="select-item-rt-qdc-${item.replace(/[^a-zA-Z0-9]/g, '')}">${item}</label>
+            </div>
+        `).join('');
+
+        document.getElementById('selection-modal-title').textContent = 'Tùy chỉnh hiển thị Nhóm hàng QĐC';
+        modal.dataset.settingType = 'qdcView';
+        const searchInput = document.getElementById('selection-modal-search');
+        if (searchInput) searchInput.value = '';
+        
+        uiComponents.toggleModal('selection-modal', true);
+    },
+
+    _showCategorySettingsModal(supermarketReport) {
+        const modal = document.getElementById('selection-modal');
+        if (!modal || !supermarketReport || !supermarketReport.nganhHangChiTiet) return;
+
+        const allItems = Object.keys(supermarketReport.nganhHangChiTiet).sort();
+        const savedSettings = settingsService.loadCategoryViewSettings(allItems);
+        
+        const listContainer = document.getElementById('selection-modal-list');
+        listContainer.innerHTML = allItems.map(item => `
+            <div class="selection-item">
+                <input type="checkbox" id="select-item-rt-cat-${item.replace(/[^a-zA-Z0-9]/g, '')}" value="${item}" ${savedSettings.includes(item) ? 'checked' : ''}>
+                <label for="select-item-rt-cat-${item.replace(/[^a-zA-Z0-9]/g, '')}">${item}</label>
+            </div>
+        `).join('');
+
+        document.getElementById('selection-modal-title').textContent = 'Tùy chỉnh hiển thị Ngành hàng chi tiết';
+        modal.dataset.settingType = 'categoryView';
+        const searchInput = document.getElementById('selection-modal-search');
+        if (searchInput) searchInput.value = '';
+        
+        uiComponents.toggleModal('selection-modal', true);
+    },
+
     displayRealtimeEmployeeRevenueReport: (reportData, containerId, sortStateKey) => {
         const container = document.getElementById(containerId);
         if (!container) return;
@@ -12102,22 +12858,18 @@ export const uiRealtime = {
 
         const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
 
-        let tableHTML = `<div class="department-block">
-            <h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4>
-            <div class="overflow-x-auto">
-                <table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}">
-                    <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
-                        <tr>
-                            <th class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('doanhThu')} text-right header-group-7" data-sort="doanhThu">Doanh Thu <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('doanhThuQuyDoi')} text-right header-group-7" data-sort="doanhThuQuyDoi">Doanh Thu QĐ <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('hieuQuaQuyDoi')} text-right header-group-7" data-sort="hieuQuaQuyDoi">% QĐ <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('doanhThuTraGop')} text-right header-group-8" data-sort="doanhThuTraGop">DT trả chậm <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('tyLeTraCham')} text-right header-group-8" data-sort="tyLeTraCham">% trả chậm <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('doanhThuChuaXuat')} text-right header-group-9" data-sort="doanhThuChuaXuat">DT Chưa Xuất <span class="sort-indicator"></span></th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
+        let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}">
+                        <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
+                            <tr>
+                                <th class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('doanhThu')} text-right header-group-7" data-sort="doanhThu">Doanh Thu <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('doanhThuQuyDoi')} text-right header-group-7" data-sort="doanhThuQuyDoi">Doanh Thu QĐ <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('hieuQuaQuyDoi')} text-right header-group-7" data-sort="hieuQuaQuyDoi">% QĐ <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('doanhThuTraGop')} text-right header-group-8" data-sort="doanhThuTraGop">DT trả chậm <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('tyLeTraCham')} text-right header-group-8" data-sort="tyLeTraCham">% trả chậm <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('doanhThuChuaXuat')} text-right header-group-9" data-sort="doanhThuChuaXuat">DT Chưa Xuất <span class="sort-indicator"></span></th>
+                            </tr>
+                        </thead><tbody>`;
         sortedData.forEach(item => {
             const { mucTieu } = item;
             const qdClass = item.hieuQuaQuyDoi < ((mucTieu?.phanTramQD || 0) / 100) ? 'cell-performance is-below' : '';
@@ -12177,7 +12929,7 @@ export const uiRealtime = {
         const { key, direction } = sortState;
         const sortedData = [...reportData].sort((a, b) => {
             const valA = a[key] || 0; const valB = b[key] || 0;
-            return direction === 'asc' ? valA - valB : valB - a[key];
+            return direction === 'asc' ? valA - valB : valB - valA;
         });
 
         const totals = reportData.reduce((acc, item) => {
@@ -12214,12 +12966,13 @@ export const uiRealtime = {
 
     renderRealtimeCategoryDetailsTable: (data) => {
         const container = document.getElementById('realtime-category-details-content');
-        const titleElement = document.getElementById('realtime-category-title');
-        if (!container || !titleElement ||!data || !data.nganhHangChiTiet) { container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; return; }
-
-        titleElement.className = 'text-xl font-bold uppercase mb-4 p-2 rounded-md header-bg-bright-2';
+        const cardHeader = document.getElementById('realtime-category-title');
+        if (!container || !cardHeader ||!data || !data.nganhHangChiTiet) { container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; return; }
 
         const { nganhHangChiTiet } = data;
+        const allItems = Object.keys(nganhHangChiTiet).sort();
+        const visibleItems = settingsService.loadCategoryViewSettings(allItems);
+
         if (Object.keys(nganhHangChiTiet).length === 0) {
             container.innerHTML = '<p class="text-gray-500 font-bold">Không có dữ liệu.</p>'; return;
         }
@@ -12229,9 +12982,20 @@ export const uiRealtime = {
 
         const sortedData = Object.entries(nganhHangChiTiet)
             .map(([name, values]) => ({ name, ...values }))
+            .filter(item => visibleItems.includes(item.name)) // Lọc theo cài đặt
             .sort((a, b) => b.revenue - a.revenue)
             .slice(0, 15)
             .sort((a, b) => direction === 'asc' ? a[key] - b[key] : b[key] - a[key]);
+
+        if (!cardHeader.querySelector('.settings-trigger-btn')) {
+            cardHeader.classList.add('flex', 'items-center', 'justify-between');
+            cardHeader.innerHTML = `<span>NGÀNH HÀNG CHI TIẾT</span>` + uiComponents.renderSettingsButton('rt-cat');
+            setTimeout(() => {
+                document.getElementById('settings-btn-rt-cat').addEventListener('click', () => {
+                    uiRealtime._showCategorySettingsModal(data);
+                });
+            }, 0);
+        }
 
         const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
 
@@ -12253,11 +13017,26 @@ export const uiRealtime = {
                 </tr>`).join('')}
             </tbody></table></div>`;
     },
-
+    
     renderRealtimeEfficiencyTable: (data, goals) => {
         const container = document.getElementById('realtime-efficiency-content');
-        if (!container || !data || !goals) { container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; return; }
-        const { pctPhuKien, pctGiaDung, pctMLN, pctSim, pctVAS, pctBaoHiem } = data;
+        const cardHeader = document.getElementById('realtime-efficiency-title');
+
+        if (!container || !cardHeader || !data || !goals) { 
+            if(container) container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; 
+            return; 
+        }
+
+        const visibleItems = settingsService.loadEfficiencyViewSettings();
+
+        const allItems = {
+            '% Phụ kiện': { value: data.pctPhuKien, target: goals.phanTramPhuKien },
+            '% Gia dụng': { value: data.pctGiaDung, target: goals.phanTramGiaDung },
+            '% MLN': { value: data.pctMLN, target: goals.phanTramMLN },
+            '% Sim': { value: data.pctSim, target: goals.phanTramSim },
+            '% VAS': { value: data.pctVAS, target: goals.phanTramVAS },
+            '% Bảo hiểm': { value: data.pctBaoHiem, target: goals.phanTramBaoHiem }
+        };
 
         const createRow = (label, value, target) => {
             const isBelow = value < ((target || 0) / 100);
@@ -12268,31 +13047,63 @@ export const uiRealtime = {
             </tr>`;
         };
 
-        container.innerHTML = `<div class="overflow-x-auto"><table class="min-w-full text-sm table-bordered">
-            <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold"><tr>
-                <th class="px-4 py-3 text-left">Chỉ số</th><th class="px-4 py-3 text-right">Thực hiện</th><th class="px-4 py-3 text-right">Mục tiêu</th></tr>
-            </thead>
-            <tbody>
-                ${createRow('% Phụ kiện', pctPhuKien, goals.phanTramPhuKien)}
-                ${createRow('% Gia dụng', pctGiaDung, goals.phanTramGiaDung)}
-                ${createRow('% MLN', pctMLN, goals.phanTramMLN)}
-                ${createRow('% Sim', pctSim, goals.phanTramSim)}
-                ${createRow('% VAS', pctVAS, goals.phanTramVAS)}
-                ${createRow('% Bảo hiểm', pctBaoHiem, goals.phanTramBaoHiem)}
-            </tbody></table></div>`;
+        if (!cardHeader.querySelector('.settings-trigger-btn')) {
+            cardHeader.classList.add('flex', 'items-center', 'justify-between');
+            cardHeader.innerHTML = `<span>HIỆU QUẢ KHAI THÁC</span>` + uiComponents.renderSettingsButton('rt-eff');
+            
+            setTimeout(() => {
+                document.getElementById('settings-btn-rt-eff').addEventListener('click', () => {
+                    uiRealtime._showEfficiencySettingsModal();
+                });
+            }, 0);
+        }
+        
+        container.innerHTML = `
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm table-bordered">
+                    <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
+                        <tr>
+                            <th class="px-4 py-3 text-left">Chỉ số</th>
+                            <th class="px-4 py-3 text-right">Thực hiện</th>
+                            <th class="px-4 py-3 text-right">Mục tiêu</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${Object.keys(allItems)
+                            .filter(key => visibleItems.includes(key))
+                            .map(itemKey => {
+                                const itemData = allItems[itemKey];
+                                return createRow(itemKey, itemData.value, itemData.target);
+                            }).join('')}
+                    </tbody>
+                </table>
+            </div>`;
     },
 
     renderRealtimeQdcTable: (data) => {
         const container = document.getElementById('realtime-qdc-content');
-        const titleElement = document.getElementById('realtime-qdc-title');
-        if (!container || !titleElement || !data || !data.qdc) { container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; return; }
-
-        titleElement.className = 'text-xl font-bold uppercase mb-4 p-2 rounded-md header-bg-bright-1';
-
+        const cardHeader = document.getElementById('realtime-qdc-title');
+        if (!container || !cardHeader || !data || !data.qdc) { container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; return; }
+        
         const qdcData = Object.entries(data.qdc).map(([key, value]) => ({ id: key, ...value }));
+        const allItems = qdcData.map(item => item.name);
+        const visibleItems = settingsService.loadQdcViewSettings(allItems);
+        
         const sortState = appState.sortState.realtime_qdc || { key: 'dtqd', direction: 'desc' };
         const { key, direction } = sortState;
-        const sortedData = [...qdcData].sort((a,b) => direction === 'asc' ? a[key] - b[key] : b[key] - a[key]);
+        const sortedData = [...qdcData]
+            .filter(item => visibleItems.includes(item.name)) // Lọc theo cài đặt
+            .sort((a,b) => direction === 'asc' ? a[key] - b[key] : b[key] - a[key]);
+
+        if (!cardHeader.querySelector('.settings-trigger-btn')) {
+            cardHeader.classList.add('flex', 'items-center', 'justify-between');
+            cardHeader.innerHTML = `<span>NHÓM HÀNG QUY ĐỔI CAO</span>` + uiComponents.renderSettingsButton('rt-qdc');
+            setTimeout(() => {
+                document.getElementById('settings-btn-rt-qdc').addEventListener('click', () => {
+                    uiRealtime._showQdcSettingsModal(data);
+                });
+            }, 0);
+        }
 
         const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
 
@@ -12328,7 +13139,7 @@ export const uiRealtime = {
         }
 
         const selectedWarehouse = document.getElementById('realtime-filter-warehouse').value;
-        const { goals } = settingsService.getRealtimeGoalSettings(selectedWarehouse); // <<< SỬA LỖI Ở ĐÂY
+        const { goals } = settingsService.getRealtimeGoalSettings(selectedWarehouse);
         const { summary, byProductGroup, byCustomer } = detailData;
         const totalRevenue = byProductGroup.reduce((sum, g) => sum + g.realRevenue, 0);
 
@@ -13569,7 +14380,7 @@ export const utils = {
 
 --- START FILE: ./version.json ---
 {
-  "version": "3.0"
+  "version": "3.1"
 }
 
 --- END FILE: ./version.json ---

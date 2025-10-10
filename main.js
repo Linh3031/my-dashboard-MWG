@@ -1,4 +1,4 @@
-// Version 40.0 - Add static QR Code loading on init
+// Version 42.0 - Integrate new general-purpose Selection Modal
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -22,6 +22,7 @@ import { modalHelp } from './components/modal-help.js';
 import { modalChart } from './components/modal-chart.js';
 import { modalComposer } from './components/modal-composer.js';
 import { modalPreview } from './components/modal-preview.js';
+import { modalSelection } from './components/modal-selection.js'; // <<< THÊM DÒNG NÀY
 import { settingsService } from './modules/settings.service.js';
 import { highlightService } from './modules/highlight.service.js';
 
@@ -46,9 +47,10 @@ const app = {
             modalChart.render('#modal-chart-container');
             modalComposer.render('#modal-composer-container');
             modalPreview.render('#modal-preview-container');
+            modalSelection.render('#modal-selection-container'); // <<< THÊM DÒNG NÀY
 
             this.loadAndApplyBookmarkLink();
-            this.loadAndDisplayQrCode(); // <<< THÊM DÒNG NÀY
+            this.loadAndDisplayQrCode(); 
 
             await this.storage.openDB();
 
@@ -58,7 +60,7 @@ const app = {
             appState.categoryStructure = categories;
             appState.brandList = brands;
             console.log(`Successfully populated ${appState.categoryStructure.length} categories and ${appState.brandList.length} brands from Firestore.`);
-
+            
             console.log("Loading calculation declarations from Firestore...");
             const declarations = await firebase.loadDeclarationsFromFirestore();
             appState.declarations = declarations;
@@ -105,8 +107,6 @@ const app = {
     },
 
     async loadDataFromStorage() {
-        // Đã xóa logic tải khai báo từ localStorage ở đây. Chúng được tải từ Firestore trong hàm init().
-
         const loadSavedFile = async (saveKey, stateKey, fileType, uiId) => {
             if (saveKey === 'saved_category_structure') {
                 if (appState.categoryStructure.length > 0 || appState.brandList.length > 0) {
@@ -122,11 +122,8 @@ const app = {
                 const { normalizedData, success } = services.normalizeData(savedData, fileType);
                 if (success) {
                     appState[stateKey] = normalizedData;
-                    const savedStatusSpan = document.getElementById(`${uiId}-saved-status`);
-                    if (savedStatusSpan) {
-                        savedStatusSpan.textContent = `Đã lưu ${normalizedData.length} dòng.`;
-                    }
-                    ui.updateFileStatus(uiId, 'Tải từ bộ nhớ đệm', `✓ Đã tải ${normalizedData.length} dòng.`, 'success');
+                    // LOGIC CŨ ĐÃ BỊ XÓA
+                    ui.updateFileStatus(uiId, '', `✓ Đã tải ${normalizedData.length} dòng.`, 'success');
                 }
             } catch (e) { console.error(`Lỗi đọc ${uiId} từ IndexedDB:`, e); }
         };
@@ -461,7 +458,7 @@ const app = {
             ui.showNotification(`Lỗi khi đọc file gỡ lỗi: ${err.message}`, 'error');
         }
     },
-
+    
     _handleCompetitionFormShow(show = true, isEdit = false) {
         const form = document.getElementById('competition-form');
         const addBtn = document.getElementById('add-competition-btn');

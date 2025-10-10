@@ -1,4 +1,4 @@
-// Version 1.5 - Add 'Completed' and 'Not Completed' counters to competition titles
+// Version 2.0 - Fix reference error in category table rendering
 // MODULE: UI LUY KE
 // Chứa các hàm render giao diện cho tab "Sức khỏe Siêu thị (Lũy kế)".
 
@@ -6,8 +6,81 @@ import { appState } from './state.js';
 import { services } from './services.js';
 import { utils } from './utils.js';
 import { uiComponents } from './ui-components.js';
+import { settingsService } from './modules/settings.service.js';
+import { highlightService } from './modules/highlight.service.js';
 
 export const uiLuyke = {
+    // === CÁC HÀM MỞ MODAL CÀI ĐẶT CHO TỪNG BẢNG ===
+    _showEfficiencySettingsModal() {
+        const modal = document.getElementById('selection-modal');
+        if (!modal) return;
+
+        const allItems = ['% Phụ kiện', '% Gia dụng', '% MLN', '% Sim', '% VAS', '% Bảo hiểm'];
+        const savedSettings = settingsService.loadEfficiencyViewSettings();
+        
+        const listContainer = document.getElementById('selection-modal-list');
+        listContainer.innerHTML = allItems.map(item => `
+            <div class="selection-item">
+                <input type="checkbox" id="select-item-lk-eff-${item.replace(/[^a-zA-Z0-9]/g, '')}" value="${item}" ${savedSettings.includes(item) ? 'checked' : ''}>
+                <label for="select-item-lk-eff-${item.replace(/[^a-zA-Z0-9]/g, '')}">${item}</label>
+            </div>
+        `).join('');
+
+        document.getElementById('selection-modal-title').textContent = 'Tùy chỉnh hiển thị Hiệu quả khai thác';
+        modal.dataset.settingType = 'efficiencyView';
+        const searchInput = document.getElementById('selection-modal-search');
+        if (searchInput) searchInput.value = '';
+        
+        uiComponents.toggleModal('selection-modal', true);
+    },
+
+    _showQdcSettingsModal(supermarketReport) {
+        const modal = document.getElementById('selection-modal');
+        if (!modal || !supermarketReport || !supermarketReport.qdc) return;
+
+        const allItems = Object.values(supermarketReport.qdc).map(item => item.name).sort();
+        const savedSettings = settingsService.loadQdcViewSettings(allItems);
+        
+        const listContainer = document.getElementById('selection-modal-list');
+        listContainer.innerHTML = allItems.map(item => `
+            <div class="selection-item">
+                <input type="checkbox" id="select-item-lk-qdc-${item.replace(/[^a-zA-Z0-9]/g, '')}" value="${item}" ${savedSettings.includes(item) ? 'checked' : ''}>
+                <label for="select-item-lk-qdc-${item.replace(/[^a-zA-Z0-9]/g, '')}">${item}</label>
+            </div>
+        `).join('');
+
+        document.getElementById('selection-modal-title').textContent = 'Tùy chỉnh hiển thị Nhóm hàng QĐC';
+        modal.dataset.settingType = 'qdcView';
+        const searchInput = document.getElementById('selection-modal-search');
+        if (searchInput) searchInput.value = '';
+        
+        uiComponents.toggleModal('selection-modal', true);
+    },
+
+    _showCategorySettingsModal(supermarketReport) {
+        const modal = document.getElementById('selection-modal');
+        if (!modal || !supermarketReport || !supermarketReport.nganhHangChiTiet) return;
+
+        const allItems = Object.keys(supermarketReport.nganhHangChiTiet).sort();
+        const savedSettings = settingsService.loadCategoryViewSettings(allItems);
+        
+        const listContainer = document.getElementById('selection-modal-list');
+        listContainer.innerHTML = allItems.map(item => `
+            <div class="selection-item">
+                <input type="checkbox" id="select-item-lk-cat-${item.replace(/[^a-zA-Z0-9]/g, '')}" value="${item}" ${savedSettings.includes(item) ? 'checked' : ''}>
+                <label for="select-item-lk-cat-${item.replace(/[^a-zA-Z0-9]/g, '')}">${item}</label>
+            </div>
+        `).join('');
+
+        document.getElementById('selection-modal-title').textContent = 'Tùy chỉnh hiển thị Ngành hàng chi tiết';
+        modal.dataset.settingType = 'categoryView';
+        const searchInput = document.getElementById('selection-modal-search');
+        if (searchInput) searchInput.value = '';
+        
+        uiComponents.toggleModal('selection-modal', true);
+    },
+
+    // === CÁC HÀM RENDER GIAO DIỆN ===
     displayHealthKpiTable: (pastedData, goals) => {
         const { mainKpis, comparisonData, dtDuKien, dtqdDuKien, luotKhachData } = pastedData;
         
@@ -70,7 +143,7 @@ export const uiLuyke = {
         const data = appState.competitionData;
         if(data.length === 0) {
              container.innerHTML = '<p class="text-yellow-600 font-bold col-span-2">Không tìm thấy dữ liệu thi đua trong văn bản đã dán.</p>';
-            return;
+             return;
         }
         
         const summary = {
@@ -85,7 +158,7 @@ export const uiLuyke = {
         if (viewType === 'summary') {
             container.innerHTML = uiLuyke.renderLuykeCompetitionSummary(data);
         } else {
-            container.innerHTML = uiLuyke.renderLuykeCompetitionByCategory(data);
+             container.innerHTML = uiLuyke.renderLuykeCompetitionByCategory(data);
         }
     },
     
@@ -171,7 +244,7 @@ export const uiLuyke = {
         const { key, direction } = sortState;
         const sortedData = [...reportData].sort((a, b) => {
             const valA = a[key] || 0; const valB = b[key] || 0;
-            return direction === 'asc' ? valA - valB : valB - a[key];
+            return direction === 'asc' ? valA - valB : valB - valA;
         });
 
         const totals = reportData.reduce((acc, item) => {
@@ -238,24 +311,38 @@ export const uiLuyke = {
         document.getElementById('luyke-kpi-thidua-main').textContent = uiComponents.formatPercentage(tyLeThiDuaDat);
         document.getElementById('luyke-kpi-thidua-sub').innerHTML = `<span class="font-bold">${competitionSummary.dat}/${competitionSummary.total}</span> Ngành`;
 
-        // --- Thẻ 8: Tăng/giảm cùng kỳ ---
-        document.getElementById('luyke-kpi-dtck-main').textContent = comparisonData.percentage || 'N/A';
-        document.getElementById('luyke-kpi-dtck-sub').innerHTML = `Doanh thu: <span class="font-bold">${uiComponents.formatNumber(comparisonData.value || 0)} | ${comparisonData.percentage || '0%'}</span>`;
-        document.getElementById('luyke-kpi-lkck-sub').innerHTML = `Lượt khách: <span class="font-bold">${uiComponents.formatNumber(luotKhachData.value || 0)} | ${luotKhachData.percentage || '0%'}</span>`;
+        // --- THẺ 8: SỬA LỖI LÀM TRÒN SỐ (TÍCH HỢP VĨNH VIỄN) ---
+        const formatComparisonPercentage = (percentageString) => {
+            if (!percentageString || typeof percentageString !== 'string') return 'N/A';
+            const numericValue = parseFloat(percentageString.replace('%', ''));
+            if (isNaN(numericValue)) return 'N/A';
+            return Math.round(numericValue) + '%';
+        };
+        const formattedDtPercentage = formatComparisonPercentage(comparisonData.percentage);
+        const formattedLkPercentage = formatComparisonPercentage(luotKhachData.percentage);
+
+        document.getElementById('luyke-kpi-dtck-main').textContent = formattedDtPercentage;
+        document.getElementById('luyke-kpi-dtck-sub').innerHTML = `Doanh thu: <span class="font-bold">${uiComponents.formatNumber(comparisonData.value || 0)} | ${formattedDtPercentage}</span>`;
+        document.getElementById('luyke-kpi-lkck-sub').innerHTML = `Lượt khách: <span class="font-bold">${uiComponents.formatNumber(luotKhachData.value || 0)} | ${formattedLkPercentage}</span>`;
     },
 
     renderLuykeCategoryDetailsTable: (data, numDays) => {
         const container = document.getElementById('luyke-category-details-content');
-        if (!container || !data || !data.nganhHangChiTiet) { container.innerHTML = '<p class="text-gray-500 font-bold">Không có dữ liệu.</p>'; return; }
-        const { nganhHangChiTiet } = data;
-        if (Object.keys(nganhHangChiTiet).length === 0) {
+        const cardHeader = container.previousElementSibling;
+        if (!container || !cardHeader || !data || !data.nganhHangChiTiet) { container.innerHTML = '<p class="text-gray-500 font-bold">Không có dữ liệu.</p>'; return; }
+        
+        const allItems = Object.keys(data.nganhHangChiTiet).sort();
+        const visibleItems = settingsService.loadCategoryViewSettings(allItems);
+        
+        if (Object.keys(data.nganhHangChiTiet).length === 0) {
             container.innerHTML = '<p class="text-gray-500 font-bold">Không có dữ liệu.</p>'; return;
         }
 
         const sortState = appState.sortState.luyke_nganhhang || { key: 'revenue', direction: 'desc' };
         const { key, direction } = sortState;
-        const sortedData = Object.entries(nganhHangChiTiet)
+        const sortedData = Object.entries(data.nganhHangChiTiet)
             .map(([name, values]) => ({ name, ...values }))
+            .filter(item => visibleItems.includes(item.name)) // Lọc theo cài đặt
             .sort((a, b) => direction === 'asc' ? a[key] - b[key] : b[key] - a[key]);
 
         const totals = sortedData.reduce((acc, item) => {
@@ -263,6 +350,16 @@ export const uiLuyke = {
             acc.revenue += item.revenue;
             return acc;
         }, { quantity: 0, revenue: 0 });
+
+        if (!cardHeader.querySelector('.settings-trigger-btn')) {
+            cardHeader.classList.add('flex', 'items-center', 'justify-between');
+            cardHeader.innerHTML = `<span>NGÀNH HÀNG CHI TIẾT</span>` + uiComponents.renderSettingsButton('lk-cat');
+            setTimeout(() => {
+                document.getElementById('settings-btn-lk-cat').addEventListener('click', () => {
+                    uiLuyke._showCategorySettingsModal(data);
+                });
+            }, 0);
+        }
 
         const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
         container.innerHTML = `<div class="overflow-x-auto"><table class="min-w-full text-sm table-bordered table-striped" data-table-type="luyke_nganhhang">
@@ -292,12 +389,28 @@ export const uiLuyke = {
 
     renderLuykeQdcTable: (data, numDays) => {
         const container = document.getElementById('luyke-qdc-content');
-        if (!container || !data || !data.qdc) { container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; return; }
+        const cardHeader = container.previousElementSibling;
+        if (!container || !cardHeader || !data || !data.qdc) { container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; return; }
         
         const qdcData = Object.entries(data.qdc).map(([key, value]) => ({ id: key, ...value }));
+        const allItems = qdcData.map(item => item.name);
+        const visibleItems = settingsService.loadQdcViewSettings(allItems);
+
         const sortState = appState.sortState.luyke_qdc || { key: 'dtqd', direction: 'desc' };
         const { key, direction } = sortState;
-        const sortedData = [...qdcData].sort((a,b) => direction === 'asc' ? a[key] - b[key] : b[key] - a[key]);
+        const sortedData = [...qdcData]
+            .filter(item => visibleItems.includes(item.name))
+            .sort((a,b) => direction === 'asc' ? a[key] - b[key] : b[key] - a[key]);
+        
+        if (!cardHeader.querySelector('.settings-trigger-btn')) {
+            cardHeader.classList.add('flex', 'items-center', 'justify-between');
+            cardHeader.innerHTML = `<span>NHÓM HÀNG QUY ĐỔI CAO</span>` + uiComponents.renderSettingsButton('lk-qdc');
+            setTimeout(() => {
+                document.getElementById('settings-btn-lk-qdc').addEventListener('click', () => {
+                    uiLuyke._showQdcSettingsModal(data);
+                });
+            }, 0);
+        }
 
         const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
 
@@ -317,11 +430,27 @@ export const uiLuyke = {
                 ).join('')}
             </tbody></table></div>`;
     },
-
+    
     renderLuykeEfficiencyTable: (data, goals) => {
         const container = document.getElementById('luyke-efficiency-content');
-        if (!container || !data || !goals) { container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; return; }
-        const { pctPhuKien, pctGiaDung, pctMLN, pctSim, pctVAS, pctBaoHiem } = data;
+        const cardHeader = container.previousElementSibling;
+
+        if (!container || !cardHeader || !data || !goals) { 
+            if(container) container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; 
+            return; 
+        }
+
+        const visibleItems = settingsService.loadEfficiencyViewSettings();
+
+        const allItems = {
+            '% Phụ kiện': { value: data.pctPhuKien, target: goals.phanTramPhuKien },
+            '% Gia dụng': { value: data.pctGiaDung, target: goals.phanTramGiaDung },
+            '% MLN': { value: data.pctMLN, target: goals.phanTramMLN },
+            '% Sim': { value: data.pctSim, target: goals.phanTramSim },
+            '% VAS': { value: data.pctVAS, target: goals.phanTramVAS },
+            '% Bảo hiểm': { value: data.pctBaoHiem, target: goals.phanTramBaoHiem }
+        };
+
         const createRow = (label, value, target) => {
             const isBelow = value < (target / 100);
             return `<tr class="border-t">
@@ -330,18 +459,38 @@ export const uiLuyke = {
                 <td class="px-4 py-2 text-right text-gray-600">${target || 0}%</td>
             </tr>`;
         };
-        container.innerHTML = `<div class="overflow-x-auto"><table class="min-w-full text-sm table-bordered">
-            <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold"><tr>
-                <th class="px-4 py-3 text-left">Chỉ số</th><th class="px-4 py-3 text-right">Thực hiện</th><th class="px-4 py-3 text-right">Mục tiêu</th></tr>
-            </thead>
-            <tbody>
-                ${createRow('% Phụ kiện', pctPhuKien, goals.phanTramPhuKien)}
-                ${createRow('% Gia dụng', pctGiaDung, goals.phanTramGiaDung)}
-                ${createRow('% MLN', pctMLN, goals.phanTramMLN)}
-                ${createRow('% Sim', pctSim, goals.phanTramSim)}
-                ${createRow('% VAS', pctVAS, goals.phanTramVAS)}
-                ${createRow('% Bảo hiểm', pctBaoHiem, goals.phanTramBaoHiem)}
-            </tbody></table></div>`;
+        
+        if (!cardHeader.querySelector('.settings-trigger-btn')) {
+            cardHeader.classList.add('flex', 'items-center', 'justify-between');
+            cardHeader.innerHTML = `<span>HIỆU QUẢ KHAI THÁC</span>` + uiComponents.renderSettingsButton('lk-eff');
+            
+            setTimeout(() => {
+                document.getElementById('settings-btn-lk-eff').addEventListener('click', () => {
+                    uiLuyke._showEfficiencySettingsModal();
+                });
+            }, 0);
+        }
+        
+        container.innerHTML = `
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm table-bordered">
+                    <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
+                        <tr>
+                            <th class="px-4 py-3 text-left">Chỉ số</th>
+                            <th class="px-4 py-3 text-right">Thực hiện</th>
+                            <th class="px-4 py-3 text-right">Mục tiêu</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${Object.keys(allItems)
+                            .filter(key => visibleItems.includes(key))
+                            .map(itemKey => {
+                                const itemData = allItems[itemKey];
+                                return createRow(itemKey, itemData.value, itemData.target);
+                            }).join('')}
+                    </tbody>
+                </table>
+            </div>`;
     },
 
     updateLuykeSupermarketTitle: (warehouse, date) => {

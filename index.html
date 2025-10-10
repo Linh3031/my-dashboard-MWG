@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Công cụ phân tích số cho QLST MWG 4.4</title>
+    <title>Công cụ phân tích số cho QLST MWG 4.6</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -96,13 +96,12 @@
                             <button class="page-header__help-btn" data-help-id="data" title="Xem hướng dẫn">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
                             </button>
-                            <span class="text-sm italic text-gray-500 font-normal hidden md:inline">Hướng dẫn sử dụng</span>
                         </div>
                         <div class="header-qr-container">
                             <span>THAM GIA THẢO LUẬN - GÓP Ý</span>
                             <img id="header-qr-image" src="" alt="Mã QR" class="header-qr-image">
                         </div>
-                        </div>
+                    </div>
                     <div class="content-card">
                         <div class="flex justify-start items-baseline gap-x-4">
                             <h3 class="content-card__header !mb-0 !border-b-0">DỮ LIỆU CẬP NHẬT HÀNG NGÀY</h3>
@@ -114,46 +113,41 @@
                         <div class="flex flex-col gap-6 pt-4">
                             <div class="grid md:grid-cols-3 gap-6">
                                 <div class="data-input-group">
-                                    <label class="data-input-group__label">Yêu cầu xuất lũy kế:</label>
+                                    <a href="https://report.mwgroup.vn/home/dashboard/077" target="_blank" class="data-input-group__label data-input-group__label--link">📄 Yêu cầu xuất lũy kế:</a>
                                     <div class="data-input-group__content">
                                         <div class="flex items-center gap-2">
                                             <label for="file-ycx" class="data-input-group__file-trigger">Thêm file</label>
                                             <span id="file-name-ycx" class="data-input-group__file-name">Chưa thêm file</span>
                                         </div>
                                         <input type="file" id="file-ycx" class="hidden file-input" data-name="Yêu cầu xuất lũy kế" data-state-key="ycxData" data-save-key="saved_ycx" accept=".xlsx, .xls, .csv">
-                                        <a href="https://report.mwgroup.vn/home/dashboard/077" target="_blank" class="data-input-group__link">Lấy file tại đây</a>
                                         <div class="data-input-group__status-wrapper"><span id="file-status-ycx" class="data-input-group__status-text"></span></div>
                                         <div id="progress-ycx" class="progress-bar-container hidden"><div class="progress-bar"></div></div>
                                     </div>
                                 </div>
                                 <div class="data-input-group">
-                                    <label class="data-input-group__label">Giờ công:</label>
+                                    <a href="https://reports.thegioididong.com/#/viewreport/168754" target="_blank" class="data-input-group__label data-input-group__label--link">📄 Giờ công:</a>
                                     <div class="data-input-group__content">
                                         <div class="flex items-center gap-2">
                                             <label for="file-giocong" class="data-input-group__file-trigger">Thêm file</label>
                                             <span id="file-name-giocong" class="data-input-group__file-name">Chưa thêm file</span>
                                         </div>
                                         <input type="file" id="file-giocong" class="hidden file-input" data-name="Giờ công" data-state-key="rawGioCongData" data-save-key="saved_giocong" accept=".xlsx, .xls, .csv">
-                                        <a href="https://reports.thegioididong.com/#/viewreport/168754" target="_blank" class="data-input-group__link">Lấy file tại đây</a>
                                         <div class="data-input-group__status-wrapper">
                                             <span id="file-status-giocong" class="data-input-group__status-text"></span>
-                                            <span id="giocong-saved-status" class="data-input-group__status-text"></span>
                                         </div>
                                         <div id="progress-giocong" class="progress-bar-container hidden"><div class="progress-bar"></div></div>
                                     </div>
                                 </div>
                                 <div class="data-input-group">
-                                    <label class="data-input-group__label">Thưởng nóng:</label>
+                                    <a href="https://report.mwgroup.vn/home/dashboard/105" target="_blank" class="data-input-group__label data-input-group__label--link">📄 Thưởng nóng:</a>
                                     <div class="data-input-group__content">
                                         <div class="flex items-center gap-2">
                                             <label for="file-thuongnong" class="data-input-group__file-trigger">Thêm file</label>
                                             <span id="file-name-thuongnong" class="data-input-group__file-name">Chưa thêm file</span>
                                         </div>
                                         <input type="file" id="file-thuongnong" class="hidden file-input" data-name="Thưởng nóng" data-state-key="thuongNongData" data-save-key="saved_thuongnong" accept=".xlsx, .xls, .csv">
-                                        <a href="https://report.mwgroup.vn/home/dashboard/105" target="_blank" class="data-input-group__link">Lấy file tại đây</a>
                                         <div class="data-input-group__status-wrapper">
                                             <span id="file-status-thuongnong" class="data-input-group__status-text"></span>
-                                            <span id="thuongnong-saved-status" class="data-input-group__status-text"></span>
                                         </div>
                                         <div id="progress-thuongnong" class="progress-bar-container hidden"><div class="progress-bar"></div></div>
                                     </div>
@@ -161,33 +155,24 @@
                             </div>
                             <div class="grid md:grid-cols-3 gap-6">
                                 <div class="data-input-group h-full">
-                                    <label class="data-input-group__label">Thưởng ERP:<br><span class="font-normal">(Copy từ BI)</span></label>
+                                    <a href="https://bi.thegioididong.com/reward?id=-1&tab=1" target="_blank" class="data-input-group__label data-input-group__label--link">📋 Thưởng ERP:<br><span class="font-normal">(Copy từ BI)</span></a>
                                     <div class="data-input-group__content">
                                         <textarea id="paste-thuongerp" rows="5" class="data-textarea" placeholder="Dán toàn bộ dữ liệu thưởng ERP..."></textarea>
-                                        <div class="flex items-center gap-x-4">
-                                            <a href="https://bi.thegioididong.com/reward?id=-1&tab=1" target="_blank" class="data-input-group__link">Lấy file tại đây</a>
-                                            <div class="data-input-group__status-wrapper"><span id="status-thuongerp" class="data-input-group__status-text"></span></div>
-                                        </div>
+                                        <div class="data-input-group__status-wrapper"><span id="status-thuongerp" class="data-input-group__status-text"></span></div>
                                     </div>
                                 </div>
                                 <div class="data-input-group h-full">
-                                    <label class="data-input-group__label">Data lũy kế:<br><span class="font-normal">(Copy từ BI)</span></label>
+                                    <a href="https://bi.thegioididong.com/sieu-thi-con?id=16612&tab=1" target="_blank" class="data-input-group__label data-input-group__label--link">📋 Data lũy kế:<br><span class="font-normal">(Copy từ BI)</span></a>
                                     <div class="data-input-group__content">
                                         <textarea id="paste-luyke" rows="5" class="data-textarea" placeholder="Dán dữ liệu đã sao chép..."></textarea>
-                                        <div class="flex items-center gap-x-4">
-                                            <a href="https://bi.thegioididong.com/sieu-thi-con?id=16612&tab=1" target="_blank" class="data-input-group__link">Lấy file tại đây</a>
-                                            <div class="data-input-group__status-wrapper"><span id="status-luyke" class="data-input-group__status-text"></span></div>
-                                        </div>
+                                        <div class="data-input-group__status-wrapper"><span id="status-luyke" class="data-input-group__status-text"></span></div>
                                     </div>
                                 </div>
                                 <div class="data-input-group h-full">
-                                    <label class="data-input-group__label">Thi đua nhân viên:<br><span class="font-normal">(Copy từ BI)</span></label>
+                                    <a href="https://bi.thegioididong.com/sieu-thi-con?id=16758&tab=bcdtnv&rt=2&dm=1" target="_blank" class="data-input-group__label data-input-group__label--link">📋 Thi đua nhân viên:<br><span class="font-normal">(Copy từ BI)</span></a>
                                     <div class="data-input-group__content">
                                         <textarea id="paste-thiduanv" rows="5" class="data-textarea" placeholder="Dán dữ liệu đã sao chép..."></textarea>
-                                        <div class="flex items-center gap-x-4">
-                                            <a href="https://bi.thegioididong.com/sieu-thi-con?id=16758&tab=bcdtnv&rt=2&dm=1" target="_blank" class="data-input-group__link">Lấy file tại đây</a>
-                                            <div class="data-input-group__status-wrapper"><span id="status-thiduanv" class="data-input-group__status-text"></span></div>
-                                        </div>
+                                        <div class="data-input-group__status-wrapper"><span id="status-thiduanv" class="data-input-group__status-text"></span></div>
                                     </div>
                                 </div>
                             </div>
@@ -213,7 +198,7 @@
                         <div class="grid md:grid-cols-3 gap-6">
                             <div class="space-y-4">
                                 <div class="data-input-group">
-                                    <label class="data-input-group__label">Danh sách nhân viên:</label>
+                                    <label class="data-input-group__label">📄 Danh sách nhân viên:</label>
                                     <div class="data-input-group__content">
                                         <div class="flex items-center gap-2">
                                             <label for="file-danhsachnv" class="data-input-group__file-trigger">Thêm file</label>
@@ -223,13 +208,12 @@
                                         <input type="file" id="file-danhsachnv" class="hidden file-input" data-name="Danh sách nhân viên" data-state-key="danhSachNhanVien" data-save-key="saved_danhsachnv" accept=".xlsx, .xls, .csv">
                                         <div class="data-input-group__status-wrapper">
                                             <span id="file-status-danhsachnv" class="data-input-group__status-text"></span>
-                                            <span id="danhsachnv-saved-status" class="data-input-group__status-text"></span>
                                         </div>
                                         <div id="progress-danhsachnv" class="progress-bar-container hidden"><div class="progress-bar"></div></div>
                                     </div>
                                 </div>
                                 <div class="data-input-group">
-                                    <label class="data-input-group__label">YCX Lũy Kế tháng trước:</label>
+                                    <label class="data-input-group__label">📄 YCX Lũy Kế tháng trước:</label>
                                     <div class="data-input-group__content">
                                         <div class="flex items-center gap-2">
                                             <label for="file-ycx-thangtruoc" class="data-input-group__file-trigger">Thêm file</label>
@@ -245,7 +229,7 @@
                             </div>
                             <div class="space-y-4">
                                 <div class="data-input-group">
-                                    <label class="data-input-group__label">Thưởng nóng tháng trước:</label>
+                                    <label class="data-input-group__label">📄 Thưởng nóng tháng trước:</label>
                                     <div class="data-input-group__content">
                                         <div class="flex items-center gap-2">
                                             <label for="file-thuongnong-thangtruoc" class="data-input-group__file-trigger">Thêm file</label>
@@ -261,7 +245,7 @@
                             </div>
                              <div class="space-y-4">
                                 <div class="data-input-group h-full">
-                                    <label class="data-input-group__label">Thưởng ERP tháng trước:</label>
+                                    <label class="data-input-group__label">📋 Thưởng ERP tháng trước:</label>
                                     <div class="data-input-group__content">
                                         <textarea id="paste-thuongerp-thangtruoc" rows="5" class="data-textarea" placeholder="Dán dữ liệu thưởng ERP tháng trước..."></textarea>
                                         <div class="data-input-group__status-wrapper">
@@ -342,7 +326,7 @@
                                 <h2 id="luyke-supermarket-title" class="text-2xl font-bold text-center text-gray-700"></h2>
                                 
                                 <div id="luyke-kpi-cards-container" data-capture-group="kpi" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                    <div class="kpi-card p-6 rounded-2xl shadow-lg">
+                                     <div class="kpi-card p-6 rounded-2xl shadow-lg">
                                         <h4 class="kpi-card-title">Doanh thu thực</h4>
                                         <p id="luyke-kpi-dt-thuc-main" class="font-bold mt-2 mb-3">0</p>
                                         <p id="luyke-kpi-dt-thuc-sub1" class="text-sm">DK: 0 / Target: 0</p>
@@ -371,7 +355,7 @@
                                         <p id="luyke-kpi-dt-tc-main" class="font-bold mt-2 mb-3">0</p>
                                         <p id="luyke-kpi-dt-tc-sub" class="text-sm">% thực trả chậm: 0%</p>
                                     </div>
-                                
+                                    
                                     <div class="kpi-card p-6 rounded-2xl shadow-lg">
                                         <h4 class="kpi-card-title">DTQĐ Chưa xuất</h4>
                                         <p id="luyke-kpi-dtqd-chua-xuat-main" class="font-bold mt-2 mb-3">0</p>
@@ -392,7 +376,7 @@
                                 </div>
                                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                                     <div data-capture-group="1" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200"><h3 class="text-xl font-bold text-gray-700 mb-4 uppercase">Hiệu quả khai thác</h3><div id="luyke-efficiency-content"></div></div>
-                                     <div data-capture-group="1" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200"><h3 class="text-xl font-bold text-gray-700 mb-4 uppercase">Nhóm hàng quy đổi cao</h3><div id="luyke-qdc-content"></div></div>
+                                    <div data-capture-group="1" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200"><h3 class="text-xl font-bold text-gray-700 mb-4 uppercase">Nhóm hàng quy đổi cao</h3><div id="luyke-qdc-content"></div></div>
                                 </div>
                                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                                     <div data-capture-group="2" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200"><h3 class="text-xl font-bold text-gray-700 mb-4 uppercase">Ngành hàng chi tiết</h3><div id="luyke-category-details-content"></div></div>
@@ -400,11 +384,11 @@
                                 </div>
                             </div>
                              <div id="subtab-luyke-thi-dua" class="sub-tab-content hidden space-y-4">
-                                 <div class="flex flex-wrap items-center gap-4">
+                                <div class="flex flex-wrap items-center gap-4">
                                     <h3 class="text-xl font-bold text-gray-800 uppercase">Thi đua lũy kế <span id="luyke-competition-summary" class="text-sm font-normal"></span></h3>
                                 </div>
                                 <div id="luyke-competition-content"></div>
-                            </div>
+                             </div>
                             <div id="subtab-luyke-thidua-vung" class="sub-tab-content hidden">
                                 <div class="content-card">
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
@@ -441,7 +425,7 @@
                                 <button class="page-header__help-btn" data-help-id="sknv" title="Xem hướng dẫn">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
                                 </button>
-                            </div>
+                             </div>
 
                             <button class="toggle-filters-btn" data-target="sknv-filter-container">
                                 <span class="text">Hiện bộ lọc nâng cao</span>
@@ -804,6 +788,7 @@
     <div id="modal-chart-container"></div>
     <div id="modal-composer-container"></div>
     <div id="modal-preview-container"></div>
+    <div id="modal-selection-container"></div>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const tailwindScript = document.querySelector('script[src="https://cdn.tailwindcss.com"]');
