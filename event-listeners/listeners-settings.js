@@ -1,4 +1,4 @@
-// Version 1.0 - Refactored from ui-listeners.js
+// Version 1.2 - Add save handlers for QDC and Category view settings
 // MODULE: LISTENERS - SETTINGS
 // Chứa logic sự kiện cho các drawers Cài đặt và các Modals.
 
@@ -23,7 +23,6 @@ export function initializeSettingsListeners(appController) {
     // --- Goal Settings ---
     document.getElementById('rt-goal-warehouse-select')?.addEventListener('change', () => settingsService.loadAndApplyRealtimeGoalSettings());
     document.getElementById('luyke-goal-warehouse-select')?.addEventListener('change', () => settingsService.loadAndApplyLuykeGoalSettings());
-    
     document.querySelectorAll('.rt-goal-input, .rt-setting-input').forEach(input => input.addEventListener('input', () => {
         settingsService.saveRealtimeGoalSettings();
         appController.updateAndRenderCurrentTab();
@@ -39,7 +38,7 @@ export function initializeSettingsListeners(appController) {
     // --- Global Modals (Help, etc.) & Debug Tool ---
     document.getElementById('toggle-debug-btn')?.addEventListener('click', (e) => ui.toggleDebugTool(e.currentTarget));
     
-    // Sử dụng event delegation cho các nút mở/đóng modal chung
+    // --- Event Delegation for dynamically added elements ---
     document.body.addEventListener('click', (e) => {
         const helpTrigger = e.target.closest('.page-header__help-btn');
         if(helpTrigger) {
@@ -53,5 +52,39 @@ export function initializeSettingsListeners(appController) {
                 ui.toggleModal(modal.id, false);
             }
         }
+        
+        const selectionSaveBtn = e.target.closest('#selection-modal-save-btn');
+        if (selectionSaveBtn) {
+            const modal = document.getElementById('selection-modal');
+            const settingType = modal.dataset.settingType;
+
+            const selectedItems = [];
+            document.querySelectorAll('#selection-modal-list input[type="checkbox"]:checked').forEach(checkbox => {
+                selectedItems.push(checkbox.value);
+            });
+
+            if (settingType === 'efficiencyView') {
+                settingsService.saveEfficiencyViewSettings(selectedItems);
+            } else if (settingType === 'qdcView') { // <<< THÊM LOGIC MỚI
+                settingsService.saveQdcViewSettings(selectedItems);
+            } else if (settingType === 'categoryView') { // <<< THÊM LOGIC MỚI
+                settingsService.saveCategoryViewSettings(selectedItems);
+            }
+
+            ui.toggleModal('selection-modal', false);
+            ui.showNotification('Đã lưu cài đặt hiển thị!', 'success');
+            appController.updateAndRenderCurrentTab(); // Render lại tab để áp dụng thay đổi
+        }
     });
+
+    const searchInput = document.getElementById('selection-modal-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            document.querySelectorAll('#selection-modal-list .selection-item').forEach(item => {
+                const label = item.querySelector('label').textContent.toLowerCase();
+                item.style.display = label.includes(searchTerm) ? '' : 'none';
+            });
+        });
+    }
 }

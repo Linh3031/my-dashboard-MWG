@@ -1,4 +1,12 @@
 [
+   {
+    "version": "3.2",
+    "date": "10/10/2025",
+    "notes": [
+      "Thêm bộ lọc ( hình răng cưa ) vào 3 bảng Hiệu quả khai thác, Nhóm hàng quy đổi cao, Ngành hàng chi tiết trong Siêu thị lũy kế và realtime",
+      "Sửa lại giao diện khu vực cập nhật dữ liệu cho gọn hơn"
+    ]
+  },  
   {
     "version": "3.1",
     "date": "09/10/2025",

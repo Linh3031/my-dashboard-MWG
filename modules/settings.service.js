@@ -1,4 +1,4 @@
-// Version 1.0 - Refactored from utils.js
+// Version 1.2 - Add settings handlers for QDC and Category tables
 // MODULE: SETTINGS SERVICE
 // Chứa toàn bộ logic liên quan đến việc quản lý cài đặt (lưu/tải từ localStorage).
 
@@ -6,6 +6,76 @@ import { appState } from '../state.js';
 import { ui } from '../ui.js';
 
 export const settingsService = {
+    // === START: HÀM MỚI ĐỂ LƯU CÀI ĐẶT CÁ NHÂN HÓA ===
+    saveEfficiencyViewSettings(settings) {
+        if (!Array.isArray(settings)) return;
+        try {
+            localStorage.setItem('efficiencyViewSettings', JSON.stringify(settings));
+        } catch (e) {
+            console.error("Lỗi khi lưu cài đặt hiển thị Hiệu quả khai thác:", e);
+        }
+    },
+    
+    saveQdcViewSettings(settings) {
+        if (!Array.isArray(settings)) return;
+        try {
+            localStorage.setItem('qdcViewSettings', JSON.stringify(settings));
+        } catch (e) {
+            console.error("Lỗi khi lưu cài đặt hiển thị Nhóm hàng QĐC:", e);
+        }
+    },
+
+    saveCategoryViewSettings(settings) {
+        if (!Array.isArray(settings)) return;
+        try {
+            localStorage.setItem('categoryViewSettings', JSON.stringify(settings));
+        } catch (e) {
+            console.error("Lỗi khi lưu cài đặt hiển thị Ngành hàng chi tiết:", e);
+        }
+    },
+    // === END: HÀM MỚI ===
+
+    // === START: HÀM MỚI ĐỂ TẢI CÀI ĐẶT CÁ NHÂN HÓA ===
+    loadEfficiencyViewSettings() {
+        try {
+            const savedSettings = localStorage.getItem('efficiencyViewSettings');
+            if (savedSettings) {
+                return JSON.parse(savedSettings);
+            }
+        } catch (e) {
+            console.error("Lỗi khi tải cài đặt hiển thị Hiệu quả khai thác:", e);
+        }
+        // Trả về giá trị mặc định nếu không có gì được lưu
+        return ['% Phụ kiện', '% Gia dụng', '% MLN', '% Sim', '% VAS', '% Bảo hiểm'];
+    },
+
+    loadQdcViewSettings(allItems) {
+        try {
+            const savedSettings = localStorage.getItem('qdcViewSettings');
+            if (savedSettings) {
+                return JSON.parse(savedSettings);
+            }
+        } catch (e) {
+            console.error("Lỗi khi tải cài đặt hiển thị Nhóm hàng QĐC:", e);
+        }
+        // Mặc định hiển thị tất cả nếu chưa có cài đặt
+        return allItems;
+    },
+
+    loadCategoryViewSettings(allItems) {
+        try {
+            const savedSettings = localStorage.getItem('categoryViewSettings');
+            if (savedSettings) {
+                return JSON.parse(savedSettings);
+            }
+        } catch (e) {
+            console.error("Lỗi khi tải cài đặt hiển thị Ngành hàng chi tiết:", e);
+        }
+        // Mặc định hiển thị tất cả nếu chưa có cài đặt
+        return allItems;
+    },
+    // === END: HÀM MỚI ===
+
     loadInterfaceSettings() {
         try {
             const savedSettings = JSON.parse(localStorage.getItem('interfaceSettings')) || {};

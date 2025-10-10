@@ -1,4 +1,4 @@
-// Version 3.0 - Fix bug calling settingsService and add import
+// Version 3.2 - Add settings for QDC and Category tables
 // MODULE: UI REALTIME
 // Chứa các hàm render giao diện cho tab "Doanh thu Realtime".
 
@@ -6,9 +6,78 @@ import { appState } from './state.js';
 import { services } from './services.js';
 import { utils } from './utils.js';
 import { uiComponents } from './ui-components.js';
-import { settingsService } from './modules/settings.service.js'; // <<< THÊM DÒNG NÀY
+import { settingsService } from './modules/settings.service.js';
 
 export const uiRealtime = {
+    _showEfficiencySettingsModal() {
+        const modal = document.getElementById('selection-modal');
+        if (!modal) return;
+
+        const allItems = ['% Phụ kiện', '% Gia dụng', '% MLN', '% Sim', '% VAS', '% Bảo hiểm'];
+        const savedSettings = settingsService.loadEfficiencyViewSettings();
+        
+        const listContainer = document.getElementById('selection-modal-list');
+        listContainer.innerHTML = allItems.map(item => `
+            <div class="selection-item">
+                <input type="checkbox" id="select-item-rt-eff-${item.replace(/[^a-zA-Z0-9]/g, '')}" value="${item}" ${savedSettings.includes(item) ? 'checked' : ''}>
+                <label for="select-item-rt-eff-${item.replace(/[^a-zA-Z0-9]/g, '')}">${item}</label>
+            </div>
+        `).join('');
+
+        document.getElementById('selection-modal-title').textContent = 'Tùy chỉnh hiển thị Hiệu quả khai thác';
+        modal.dataset.settingType = 'efficiencyView';
+        const searchInput = document.getElementById('selection-modal-search');
+        if (searchInput) searchInput.value = '';
+        
+        uiComponents.toggleModal('selection-modal', true);
+    },
+
+    _showQdcSettingsModal(supermarketReport) {
+        const modal = document.getElementById('selection-modal');
+        if (!modal || !supermarketReport || !supermarketReport.qdc) return;
+
+        const allItems = Object.values(supermarketReport.qdc).map(item => item.name).sort();
+        const savedSettings = settingsService.loadQdcViewSettings(allItems);
+        
+        const listContainer = document.getElementById('selection-modal-list');
+        listContainer.innerHTML = allItems.map(item => `
+            <div class="selection-item">
+                <input type="checkbox" id="select-item-rt-qdc-${item.replace(/[^a-zA-Z0-9]/g, '')}" value="${item}" ${savedSettings.includes(item) ? 'checked' : ''}>
+                <label for="select-item-rt-qdc-${item.replace(/[^a-zA-Z0-9]/g, '')}">${item}</label>
+            </div>
+        `).join('');
+
+        document.getElementById('selection-modal-title').textContent = 'Tùy chỉnh hiển thị Nhóm hàng QĐC';
+        modal.dataset.settingType = 'qdcView';
+        const searchInput = document.getElementById('selection-modal-search');
+        if (searchInput) searchInput.value = '';
+        
+        uiComponents.toggleModal('selection-modal', true);
+    },
+
+    _showCategorySettingsModal(supermarketReport) {
+        const modal = document.getElementById('selection-modal');
+        if (!modal || !supermarketReport || !supermarketReport.nganhHangChiTiet) return;
+
+        const allItems = Object.keys(supermarketReport.nganhHangChiTiet).sort();
+        const savedSettings = settingsService.loadCategoryViewSettings(allItems);
+        
+        const listContainer = document.getElementById('selection-modal-list');
+        listContainer.innerHTML = allItems.map(item => `
+            <div class="selection-item">
+                <input type="checkbox" id="select-item-rt-cat-${item.replace(/[^a-zA-Z0-9]/g, '')}" value="${item}" ${savedSettings.includes(item) ? 'checked' : ''}>
+                <label for="select-item-rt-cat-${item.replace(/[^a-zA-Z0-9]/g, '')}">${item}</label>
+            </div>
+        `).join('');
+
+        document.getElementById('selection-modal-title').textContent = 'Tùy chỉnh hiển thị Ngành hàng chi tiết';
+        modal.dataset.settingType = 'categoryView';
+        const searchInput = document.getElementById('selection-modal-search');
+        if (searchInput) searchInput.value = '';
+        
+        uiComponents.toggleModal('selection-modal', true);
+    },
+
     displayRealtimeEmployeeRevenueReport: (reportData, containerId, sortStateKey) => {
         const container = document.getElementById(containerId);
         if (!container) return;
@@ -68,22 +137,18 @@ export const uiRealtime = {
 
         const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
 
-        let tableHTML = `<div class="department-block">
-            <h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4>
-            <div class="overflow-x-auto">
-                <table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}">
-                    <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
-                        <tr>
-                            <th class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('doanhThu')} text-right header-group-7" data-sort="doanhThu">Doanh Thu <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('doanhThuQuyDoi')} text-right header-group-7" data-sort="doanhThuQuyDoi">Doanh Thu QĐ <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('hieuQuaQuyDoi')} text-right header-group-7" data-sort="hieuQuaQuyDoi">% QĐ <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('doanhThuTraGop')} text-right header-group-8" data-sort="doanhThuTraGop">DT trả chậm <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('tyLeTraCham')} text-right header-group-8" data-sort="tyLeTraCham">% trả chậm <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('doanhThuChuaXuat')} text-right header-group-9" data-sort="doanhThuChuaXuat">DT Chưa Xuất <span class="sort-indicator"></span></th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
+        let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}">
+                        <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
+                            <tr>
+                                <th class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('doanhThu')} text-right header-group-7" data-sort="doanhThu">Doanh Thu <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('doanhThuQuyDoi')} text-right header-group-7" data-sort="doanhThuQuyDoi">Doanh Thu QĐ <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('hieuQuaQuyDoi')} text-right header-group-7" data-sort="hieuQuaQuyDoi">% QĐ <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('doanhThuTraGop')} text-right header-group-8" data-sort="doanhThuTraGop">DT trả chậm <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('tyLeTraCham')} text-right header-group-8" data-sort="tyLeTraCham">% trả chậm <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('doanhThuChuaXuat')} text-right header-group-9" data-sort="doanhThuChuaXuat">DT Chưa Xuất <span class="sort-indicator"></span></th>
+                            </tr>
+                        </thead><tbody>`;
         sortedData.forEach(item => {
             const { mucTieu } = item;
             const qdClass = item.hieuQuaQuyDoi < ((mucTieu?.phanTramQD || 0) / 100) ? 'cell-performance is-below' : '';
@@ -143,7 +208,7 @@ export const uiRealtime = {
         const { key, direction } = sortState;
         const sortedData = [...reportData].sort((a, b) => {
             const valA = a[key] || 0; const valB = b[key] || 0;
-            return direction === 'asc' ? valA - valB : valB - a[key];
+            return direction === 'asc' ? valA - valB : valB - valA;
         });
 
         const totals = reportData.reduce((acc, item) => {
@@ -180,12 +245,13 @@ export const uiRealtime = {
 
     renderRealtimeCategoryDetailsTable: (data) => {
         const container = document.getElementById('realtime-category-details-content');
-        const titleElement = document.getElementById('realtime-category-title');
-        if (!container || !titleElement ||!data || !data.nganhHangChiTiet) { container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; return; }
-
-        titleElement.className = 'text-xl font-bold uppercase mb-4 p-2 rounded-md header-bg-bright-2';
+        const cardHeader = document.getElementById('realtime-category-title');
+        if (!container || !cardHeader ||!data || !data.nganhHangChiTiet) { container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; return; }
 
         const { nganhHangChiTiet } = data;
+        const allItems = Object.keys(nganhHangChiTiet).sort();
+        const visibleItems = settingsService.loadCategoryViewSettings(allItems);
+
         if (Object.keys(nganhHangChiTiet).length === 0) {
             container.innerHTML = '<p class="text-gray-500 font-bold">Không có dữ liệu.</p>'; return;
         }
@@ -195,9 +261,20 @@ export const uiRealtime = {
 
         const sortedData = Object.entries(nganhHangChiTiet)
             .map(([name, values]) => ({ name, ...values }))
+            .filter(item => visibleItems.includes(item.name)) // Lọc theo cài đặt
             .sort((a, b) => b.revenue - a.revenue)
             .slice(0, 15)
             .sort((a, b) => direction === 'asc' ? a[key] - b[key] : b[key] - a[key]);
+
+        if (!cardHeader.querySelector('.settings-trigger-btn')) {
+            cardHeader.classList.add('flex', 'items-center', 'justify-between');
+            cardHeader.innerHTML = `<span>NGÀNH HÀNG CHI TIẾT</span>` + uiComponents.renderSettingsButton('rt-cat');
+            setTimeout(() => {
+                document.getElementById('settings-btn-rt-cat').addEventListener('click', () => {
+                    uiRealtime._showCategorySettingsModal(data);
+                });
+            }, 0);
+        }
 
         const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
 
@@ -219,11 +296,26 @@ export const uiRealtime = {
                 </tr>`).join('')}
             </tbody></table></div>`;
     },
-
+    
     renderRealtimeEfficiencyTable: (data, goals) => {
         const container = document.getElementById('realtime-efficiency-content');
-        if (!container || !data || !goals) { container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; return; }
-        const { pctPhuKien, pctGiaDung, pctMLN, pctSim, pctVAS, pctBaoHiem } = data;
+        const cardHeader = document.getElementById('realtime-efficiency-title');
+
+        if (!container || !cardHeader || !data || !goals) { 
+            if(container) container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; 
+            return; 
+        }
+
+        const visibleItems = settingsService.loadEfficiencyViewSettings();
+
+        const allItems = {
+            '% Phụ kiện': { value: data.pctPhuKien, target: goals.phanTramPhuKien },
+            '% Gia dụng': { value: data.pctGiaDung, target: goals.phanTramGiaDung },
+            '% MLN': { value: data.pctMLN, target: goals.phanTramMLN },
+            '% Sim': { value: data.pctSim, target: goals.phanTramSim },
+            '% VAS': { value: data.pctVAS, target: goals.phanTramVAS },
+            '% Bảo hiểm': { value: data.pctBaoHiem, target: goals.phanTramBaoHiem }
+        };
 
         const createRow = (label, value, target) => {
             const isBelow = value < ((target || 0) / 100);
@@ -234,31 +326,63 @@ export const uiRealtime = {
             </tr>`;
         };
 
-        container.innerHTML = `<div class="overflow-x-auto"><table class="min-w-full text-sm table-bordered">
-            <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold"><tr>
-                <th class="px-4 py-3 text-left">Chỉ số</th><th class="px-4 py-3 text-right">Thực hiện</th><th class="px-4 py-3 text-right">Mục tiêu</th></tr>
-            </thead>
-            <tbody>
-                ${createRow('% Phụ kiện', pctPhuKien, goals.phanTramPhuKien)}
-                ${createRow('% Gia dụng', pctGiaDung, goals.phanTramGiaDung)}
-                ${createRow('% MLN', pctMLN, goals.phanTramMLN)}
-                ${createRow('% Sim', pctSim, goals.phanTramSim)}
-                ${createRow('% VAS', pctVAS, goals.phanTramVAS)}
-                ${createRow('% Bảo hiểm', pctBaoHiem, goals.phanTramBaoHiem)}
-            </tbody></table></div>`;
+        if (!cardHeader.querySelector('.settings-trigger-btn')) {
+            cardHeader.classList.add('flex', 'items-center', 'justify-between');
+            cardHeader.innerHTML = `<span>HIỆU QUẢ KHAI THÁC</span>` + uiComponents.renderSettingsButton('rt-eff');
+            
+            setTimeout(() => {
+                document.getElementById('settings-btn-rt-eff').addEventListener('click', () => {
+                    uiRealtime._showEfficiencySettingsModal();
+                });
+            }, 0);
+        }
+        
+        container.innerHTML = `
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm table-bordered">
+                    <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
+                        <tr>
+                            <th class="px-4 py-3 text-left">Chỉ số</th>
+                            <th class="px-4 py-3 text-right">Thực hiện</th>
+                            <th class="px-4 py-3 text-right">Mục tiêu</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${Object.keys(allItems)
+                            .filter(key => visibleItems.includes(key))
+                            .map(itemKey => {
+                                const itemData = allItems[itemKey];
+                                return createRow(itemKey, itemData.value, itemData.target);
+                            }).join('')}
+                    </tbody>
+                </table>
+            </div>`;
     },
 
     renderRealtimeQdcTable: (data) => {
         const container = document.getElementById('realtime-qdc-content');
-        const titleElement = document.getElementById('realtime-qdc-title');
-        if (!container || !titleElement || !data || !data.qdc) { container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; return; }
-
-        titleElement.className = 'text-xl font-bold uppercase mb-4 p-2 rounded-md header-bg-bright-1';
-
+        const cardHeader = document.getElementById('realtime-qdc-title');
+        if (!container || !cardHeader || !data || !data.qdc) { container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; return; }
+        
         const qdcData = Object.entries(data.qdc).map(([key, value]) => ({ id: key, ...value }));
+        const allItems = qdcData.map(item => item.name);
+        const visibleItems = settingsService.loadQdcViewSettings(allItems);
+        
         const sortState = appState.sortState.realtime_qdc || { key: 'dtqd', direction: 'desc' };
         const { key, direction } = sortState;
-        const sortedData = [...qdcData].sort((a,b) => direction === 'asc' ? a[key] - b[key] : b[key] - a[key]);
+        const sortedData = [...qdcData]
+            .filter(item => visibleItems.includes(item.name)) // Lọc theo cài đặt
+            .sort((a,b) => direction === 'asc' ? a[key] - b[key] : b[key] - a[key]);
+
+        if (!cardHeader.querySelector('.settings-trigger-btn')) {
+            cardHeader.classList.add('flex', 'items-center', 'justify-between');
+            cardHeader.innerHTML = `<span>NHÓM HÀNG QUY ĐỔI CAO</span>` + uiComponents.renderSettingsButton('rt-qdc');
+            setTimeout(() => {
+                document.getElementById('settings-btn-rt-qdc').addEventListener('click', () => {
+                    uiRealtime._showQdcSettingsModal(data);
+                });
+            }, 0);
+        }
 
         const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
 
@@ -294,7 +418,7 @@ export const uiRealtime = {
         }
 
         const selectedWarehouse = document.getElementById('realtime-filter-warehouse').value;
-        const { goals } = settingsService.getRealtimeGoalSettings(selectedWarehouse); // <<< SỬA LỖI Ở ĐÂY
+        const { goals } = settingsService.getRealtimeGoalSettings(selectedWarehouse);
         const { summary, byProductGroup, byCustomer } = detailData;
         const totalRevenue = byProductGroup.reduce((sum, g) => sum + g.realRevenue, 0);
 
