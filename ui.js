@@ -1,4 +1,4 @@
-// Version 2.3 - Integrate ui-competition module
+// Version 2.4 - Integrate uiLuyke module
 // MODULE: UI FACADE (Mặt tiền Giao diện)
 
 import { uiComponents } from './ui-components.js';
@@ -11,7 +11,7 @@ import { uiCompetition } from './ui-competition.js'; // <<< THÊM DÒNG NÀY
 // Gộp tất cả các hàm từ các module con vào một đối tượng 'ui' duy nhất.
 const ui = {
     ...uiComponents,
-    ...uiLuyke,
+    ...uiLuyke, 
     ...uiSknv,
     ...uiRealtime,
     ...uiThiDuaVung,

@@ -1,4 +1,4 @@
-// Version 1.2 - Add settings handlers for QDC and Category tables
+// Version 1.3 - Upgrade efficiency view settings to support ordering
 // MODULE: SETTINGS SERVICE
 // Chứa toàn bộ logic liên quan đến việc quản lý cài đặt (lưu/tải từ localStorage).
 
@@ -6,7 +6,12 @@ import { appState } from '../state.js';
 import { ui } from '../ui.js';
 
 export const settingsService = {
-    // === START: HÀM MỚI ĐỂ LƯU CÀI ĐẶT CÁ NHÂN HÓA ===
+    // === START: HÀM ĐƯỢC NÂNG CẤP ===
+    /**
+     * Lưu cài đặt hiển thị cho bảng Hiệu quả khai thác.
+     * Cấu trúc mới là một mảng các đối tượng, mỗi đối tượng chứa {id, label, visible}.
+     * @param {Array<Object>} settings - Mảng cấu hình cột đầy đủ.
+     */
     saveEfficiencyViewSettings(settings) {
         if (!Array.isArray(settings)) return;
         try {
@@ -16,6 +21,51 @@ export const settingsService = {
         }
     },
     
+    /**
+     * Tải cài đặt hiển thị cho bảng Hiệu quả khai thác.
+     * Sẽ trả về một cấu trúc đầy đủ chứa tất cả các cột, trạng thái hiển thị và thứ tự của chúng.
+     * Tự động xử lý chuyển đổi từ định dạng lưu trữ cũ (mảng chuỗi) sang định dạng mới (mảng đối tượng).
+     * @returns {Array<Object>} Mảng cấu hình cột đầy đủ.
+     */
+    loadEfficiencyViewSettings() {
+        const ALL_ITEMS = [
+            { id: 'pctPhuKien', label: '% Phụ kiện' },
+            { id: 'pctGiaDung', label: '% Gia dụng' },
+            { id: 'pctMLN',    label: '% MLN' },
+            { id: 'pctSim',    label: '% Sim' },
+            { id: 'pctVAS',    label: '% VAS' },
+            { id: 'pctBaoHiem', label: '% Bảo hiểm' }
+        ];
+
+        try {
+            const savedSettingsJSON = localStorage.getItem('efficiencyViewSettings');
+            if (savedSettingsJSON) {
+                const savedSettings = JSON.parse(savedSettingsJSON);
+
+                // Kiểm tra nếu là định dạng mới (mảng đối tượng)
+                if (Array.isArray(savedSettings) && typeof savedSettings[0] === 'object') {
+                    // Đảm bảo tất cả các cột mới có thể được thêm vào nếu người dùng có cài đặt cũ
+                    const savedIds = new Set(savedSettings.map(s => s.id));
+                    const newItems = ALL_ITEMS.filter(item => !savedIds.has(item.id)).map(item => ({ ...item, visible: true }));
+                    return [...savedSettings, ...newItems];
+                }
+                
+                // Xử lý chuyển đổi từ định dạng cũ (mảng chuỗi)
+                if (Array.isArray(savedSettings) && typeof savedSettings[0] === 'string') {
+                    return ALL_ITEMS.map(item => ({
+                        ...item,
+                        visible: savedSettings.includes(item.label)
+                    }));
+                }
+            }
+        } catch (e) {
+            console.error("Lỗi khi tải cài đặt hiển thị Hiệu quả khai thác:", e);
+        }
+
+        // Trả về giá trị mặc định nếu không có gì được lưu hoặc có lỗi
+        return ALL_ITEMS.map(item => ({ ...item, visible: true }));
+    },
+
     saveQdcViewSettings(settings) {
         if (!Array.isArray(settings)) return;
         try {
@@ -26,28 +76,14 @@ export const settingsService = {
     },
 
     saveCategoryViewSettings(settings) {
-        if (!Array.isArray(settings)) return;
+         if (!Array.isArray(settings)) return;
         try {
             localStorage.setItem('categoryViewSettings', JSON.stringify(settings));
         } catch (e) {
             console.error("Lỗi khi lưu cài đặt hiển thị Ngành hàng chi tiết:", e);
         }
     },
-    // === END: HÀM MỚI ===
-
-    // === START: HÀM MỚI ĐỂ TẢI CÀI ĐẶT CÁ NHÂN HÓA ===
-    loadEfficiencyViewSettings() {
-        try {
-            const savedSettings = localStorage.getItem('efficiencyViewSettings');
-            if (savedSettings) {
-                return JSON.parse(savedSettings);
-            }
-        } catch (e) {
-            console.error("Lỗi khi tải cài đặt hiển thị Hiệu quả khai thác:", e);
-        }
-        // Trả về giá trị mặc định nếu không có gì được lưu
-        return ['% Phụ kiện', '% Gia dụng', '% MLN', '% Sim', '% VAS', '% Bảo hiểm'];
-    },
+    // === END: HÀM ĐƯỢC NÂNG CẤP ===
 
     loadQdcViewSettings(allItems) {
         try {
@@ -74,8 +110,7 @@ export const settingsService = {
         // Mặc định hiển thị tất cả nếu chưa có cài đặt
         return allItems;
     },
-    // === END: HÀM MỚI ===
-
+    
     loadInterfaceSettings() {
         try {
             const savedSettings = JSON.parse(localStorage.getItem('interfaceSettings')) || {};

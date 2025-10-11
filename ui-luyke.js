@@ -1,4 +1,4 @@
-// Version 2.0 - Fix reference error in category table rendering
+// Version 2.4 - Optimize competition card layout for mobile/capture (3 columns -> 2 columns)
 // MODULE: UI LUY KE
 // Chứa các hàm render giao diện cho tab "Sức khỏe Siêu thị (Lũy kế)".
 
@@ -10,19 +10,19 @@ import { settingsService } from './modules/settings.service.js';
 import { highlightService } from './modules/highlight.service.js';
 
 export const uiLuyke = {
-    // === CÁC HÀM MỞ MODAL CÀI ĐẶT CHO TỪNG BẢNG ===
+    // === CÁC HÀM MỞ MODAL CÀI ĐẶT CHO TỪNG BẢNG (Giữ nguyên) ===
     _showEfficiencySettingsModal() {
         const modal = document.getElementById('selection-modal');
         if (!modal) return;
 
-        const allItems = ['% Phụ kiện', '% Gia dụng', '% MLN', '% Sim', '% VAS', '% Bảo hiểm'];
-        const savedSettings = settingsService.loadEfficiencyViewSettings();
+        // Lấy danh sách đầy đủ các mục từ settings service
+        const allItemsConfig = settingsService.loadEfficiencyViewSettings();
         
         const listContainer = document.getElementById('selection-modal-list');
-        listContainer.innerHTML = allItems.map(item => `
+        listContainer.innerHTML = allItemsConfig.map(item => `
             <div class="selection-item">
-                <input type="checkbox" id="select-item-lk-eff-${item.replace(/[^a-zA-Z0-9]/g, '')}" value="${item}" ${savedSettings.includes(item) ? 'checked' : ''}>
-                <label for="select-item-lk-eff-${item.replace(/[^a-zA-Z0-9]/g, '')}">${item}</label>
+                <input type="checkbox" id="select-item-lk-eff-${item.id}" value="${item.id}" ${item.visible ? 'checked' : ''}>
+                <label for="select-item-lk-eff-${item.id}">${item.label}</label>
             </div>
         `).join('');
 
@@ -80,7 +80,29 @@ export const uiLuyke = {
         uiComponents.toggleModal('selection-modal', true);
     },
 
-    // === CÁC HÀM RENDER GIAO DIỆN ===
+    // === START: HÀM RENDER CHÍNH (FIXES) ===
+    renderCompetitionSummaryCounter: (data) => {
+        const summary = {
+            total: data.length,
+            dat: data.filter(d => d.hoanThanhValue >= 100).length,
+            doanhThuCount: data.filter(d => d.type === 'doanhThu').length,
+            soLuongCount: data.filter(d => d.type === 'soLuong').length,
+        };
+        
+        // Sử dụng các lớp CSS đã định nghĩa trong dashboard.css để tăng size và màu sắc
+        const totalHtml = `<strong class="text-blue-600">${summary.total}</strong>`;
+        const datHtml = `<strong class="text-blue-600">${summary.dat}</strong>`;
+        const chuaDatHtml = `<strong class="text-red-600">${summary.total - summary.dat}</strong>`;
+        const dtHtml = `<strong class="text-blue-600">${summary.doanhThuCount}</strong>`;
+        const slHtml = `<strong class="text-blue-600">${summary.soLuongCount}</strong>`;
+
+        return `(<span class="font-normal text-gray-500">Tổng:</span> ${totalHtml}, 
+                <span class="font-normal text-gray-500">Đạt:</span> ${datHtml}, 
+                <span class="font-normal text-gray-500">Chưa đạt:</span> ${chuaDatHtml}, 
+                <span class="font-normal text-gray-500">DT:</span> ${dtHtml}, 
+                <span class="font-normal text-gray-500">SL:</span> ${slHtml})`;
+    },
+    
     displayHealthKpiTable: (pastedData, goals) => {
         const { mainKpis, comparisonData, dtDuKien, dtqdDuKien, luotKhachData } = pastedData;
         
@@ -130,8 +152,9 @@ export const uiLuyke = {
         uiLuyke.renderLuykeKpiCards(luykeCardData, comparisonData, luotKhachData, appState.masterReportData.luyke, goals, competitionSummary);
     },
 
+    // === HÀM ĐƯỢC NÂNG CẤP (v2.4) ===
     displayCompetitionResultsFromLuyKe: (text, viewType = 'summary') => {
-        const container = document.getElementById('luyke-competition-content');
+        const container = document.getElementById('luyke-competition-infographic-container');
         if (!container) return;
 
         if (!text || !text.trim()) {
@@ -140,99 +163,112 @@ export const uiLuyke = {
         }
 
         appState.competitionData = services.parseCompetitionDataFromLuyKe(text);
-        const data = appState.competitionData;
-        if(data.length === 0) {
-             container.innerHTML = '<p class="text-yellow-600 font-bold col-span-2">Không tìm thấy dữ liệu thi đua trong văn bản đã dán.</p>';
-             return;
-        }
         
-        const summary = {
-            total: data.length,
-            dat: data.filter(d => parseFloat(String(d.hoanThanh).replace('%','')) >= 100).length,
-        };
-        summary.chuaDat = summary.total - summary.dat;
+        // Thêm trường hoanThanhValue để dễ dàng sắp xếp
+        const data = appState.competitionData.map(item => {
+            const hoanThanhValue = (parseFloat(String(item.hoanThanh).replace('%', '')) || 0);
+            return { ...item, hoanThanhValue: hoanThanhValue };
+        });
+
+        if (data.length === 0) {
+            container.innerHTML = '<p class="text-yellow-600 font-bold col-span-2">Không tìm thấy dữ liệu thi đua trong văn bản đã dán.</p>';
+            return;
+        }
         
         const summaryEl = document.getElementById('luyke-competition-summary');
-        if (summaryEl) summaryEl.textContent = `(Tổng: ${summary.total}, Đạt: ${summary.dat}, Chưa đạt: ${summary.chuaDat})`;
+        if (summaryEl) {
+             // Cập nhật bộ đếm tổng thể bằng hàm mới
+             summaryEl.innerHTML = uiLuyke.renderCompetitionSummaryCounter(data);
+        }
+        
+        container.innerHTML = uiLuyke.renderLuykeCompetitionInfographic(data, viewType);
+    },
+    
+    // === HÀM RENDER INFOGRAPHIC (v2.4) ===
+    renderLuykeCompetitionInfographic(data, viewType) {
+        
+        const sortData = (items) => {
+            // Fix #2: Sắp xếp giảm dần theo tỷ lệ hoàn thành
+            return [...items].sort((a, b) => b.hoanThanhValue - a.hoanThanhValue);
+        };
 
-        if (viewType === 'summary') {
-            container.innerHTML = uiLuyke.renderLuykeCompetitionSummary(data);
-        } else {
-             container.innerHTML = uiLuyke.renderLuykeCompetitionByCategory(data);
+        const renderRow = (items, title, titleClass) => {
+            if (items.length === 0) return '';
+    
+            const today = new Date();
+            const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+            const daysRemaining = Math.max(daysInMonth - today.getDate(), 1); // Tránh chia cho 0
+            
+            const sortedItems = sortData(items);
+
+            // Fix #5: Tính toán bộ đếm cho tiêu đề nhóm
+            const achievedCount = items.filter(item => item.hoanThanhValue >= 100).length;
+            const unachievedCount = items.length - achievedCount;
+            
+            // Fix #5 & #7: Áp dụng CSS class cho bộ đếm nhóm
+            const achievedHtml = `<strong class="text-blue-600">${achievedCount}</strong>`;
+            const unachievedHtml = `<strong class="text-red-600">${unachievedCount}</strong>`;
+            const counterText = `<span class="text-sm font-normal text-gray-700">(Đạt: ${achievedHtml} / Cần nỗ lực: ${unachievedHtml})</span>`;
+    
+            const itemsHtml = sortedItems.map(item => {
+                const hoanThanhValue = item.hoanThanhValue;
+                
+                // Fix #3: Cải tiến logic mục tiêu ngày
+                let dailyTarget = 0;
+                const targetRemaining = item.target - item.luyKe;
+                
+                if (item.target > 0 && targetRemaining > 0 && daysRemaining > 0) {
+                    dailyTarget = targetRemaining / daysRemaining;
+                }
+                
+                const targetClass = dailyTarget > 0 ? 'text-red-600' : 'text-green-600';
+    
+                return `
+                    <div class="tdv-item-card">
+                        <p class="tdv-item-card__title">${item.name}</p>
+                        <div class="tdv-progress-bar-container">
+                            <div class="tdv-progress-bar ${hoanThanhValue >= 100 ? 'tdv-progress-bar--blue' : 'tdv-progress-bar--yellow'}" style="width: ${Math.min(hoanThanhValue, 100)}%;"></div>
+                            <span class="tdv-progress-bar__text">${uiComponents.formatPercentage(hoanThanhValue / 100)}</span>
+                        </div>
+                        <div class="tdv-item-card__details">
+                            <span>Lũy kế: <strong>${uiComponents.formatNumberOrDash(item.luyKe)}</strong></span>
+                            <span>Target: <strong>${uiComponents.formatNumberOrDash(item.target)}</strong></span>
+                            <span class="font-bold ${targetClass}">Mục tiêu/ngày: <strong>${uiComponents.formatNumberOrDash(dailyTarget)}</strong></span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+    
+            return `
+                <div class="tdv-row" data-capture-group="comp-row-${title.replace(/\s/g, '-')}" data-capture-columns="2">
+                    <h3 class="tdv-row-title ${titleClass}">${title} ${counterText}</h3>
+                    <div class="tdv-row-body grid grid-cols-2 gap-4">${itemsHtml}</div>
+                </div>
+            `;
+        };
+    
+        if (viewType === 'summary') { // Chế độ xem theo Phân Loại (Mặc định)
+            const dataDoanhThu = data.filter(d => d.type === 'doanhThu');
+            const dataSoLuong = data.filter(d => d.type === 'soLuong');
+            return `
+                <div class="tdv-rows-container space-y-6">
+                    ${renderRow(dataDoanhThu, 'Thi Đua Doanh Thu', 'tdv-row-title--prize')}
+                    ${renderRow(dataSoLuong, 'Thi Đua Số Lượng', 'tdv-row-title--soon-prize')}
+                </div>
+            `;
+        } else { // Chế độ xem theo Tỷ Lệ Hoàn Thành (completion)
+            const completed = data.filter(d => d.hoanThanhValue >= 100);
+            const pending = data.filter(d => d.hoanThanhValue < 100);
+            return `
+                <div class="tdv-rows-container space-y-6">
+                    ${renderRow(completed, 'Các Chương Trình Đã Đạt Mục Tiêu', 'tdv-row-title--prize')}
+                    ${renderRow(pending, 'Các Chương Trình Cần Nỗ Lực Thêm', 'tdv-row-title--effort')}
+                </div>
+            `;
         }
     },
     
-    renderLuykeCompetitionSummary(data) {
-        const dataDoanhThu = data.filter(d => d.type === 'doanhThu');
-        const dataSoLuong = data.filter(d => d.type === 'soLuong');
-        const renderTable = (title, items, type) => {
-            if(items.length === 0) return '';
-            const sortState = appState.sortState[`luyke_competition_${type}`] || { key: 'hoanThanh', direction: 'desc' };
-            const { key, direction } = sortState;
-            
-            const sortedItems = [...items].sort((a, b) => {
-                let valA = a[key]; let valB = b[key];
-                if (key === 'hoanThanh') {
-                    valA = parseFloat(String(valA).replace('%', '')) || 0;
-                    valB = parseFloat(String(valB).replace('%', '')) || 0;
-                }
-                return direction === 'asc' ? valA - valB : valB - valA;
-            });
-            
-            const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
-            const today = new Date();
-            const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-            const daysRemaining = daysInMonth - today.getDate();
-
-            const headerColorClass = type === 'doanhthu' ? 'competition-header-doanhthu' : 'competition-header-soluong';
-
-            const total = items.length;
-            const dat = items.filter(item => (parseFloat(String(item.hoanThanh).replace('%','')) || 0) >= 100).length;
-            const chuaDat = total - dat;
-            const summaryText = `(Tổng: ${total}, Đạt: ${dat}, Chưa đạt: ${chuaDat})`;
-
-            return `<div class="flex flex-col"><h4 class="text-lg font-bold text-gray-800 p-2 border-b-2 ${headerColorClass}">${title} <span class="text-sm font-normal text-gray-500">${summaryText}</span></h4>
-                <div class="overflow-x-auto"><table class="min-w-full text-sm table-bordered table-striped" data-table-type="luyke_competition_${type}">
-                    <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
-                        <tr>
-                            <th class="${headerClass('name')}" data-sort="name">Chương trình<span class="sort-indicator"></span></th>
-                            <th class="${headerClass('luyKe')} text-right" data-sort="luyKe">Lũy kế<span class="sort-indicator"></span></th>
-                            <th class="${headerClass('target')} text-right" data-sort="target">Target<span class="sort-indicator"></span></th>
-                            <th class="${headerClass('hoanThanh')} text-right" data-sort="hoanThanh">% HT<span class="sort-indicator"></span></th>
-                            <th class="${headerClass('mucTieuNgay')} text-right header-highlight-special" data-sort="mucTieuNgay" style="max-width: 100px; white-space: normal;">Mục tiêu ngày<span class="sort-indicator"></span></th>
-                        </tr>
-                    </thead>
-                    <tbody>${sortedItems.map(item => {
-                        let dailyTarget = 0;
-                        if (daysRemaining > 0) {
-                            dailyTarget = (item.target - item.luyKe) / daysRemaining;
-                        } else { 
-                            dailyTarget = item.target - item.luyKe;
-                        }
-                        const hoanThanhValue = parseFloat(String(item.hoanThanh).replace('%', '')) || 0;
-                        const rowClass = hoanThanhValue < 100 ? 'competition-row-below-100' : 'hover:bg-purple-50';
-                        const formattedHoanThanh = uiComponents.formatPercentage(hoanThanhValue / 100);
-
-                        return `<tr class="${rowClass}">
-                            <td class="px-2 py-2 font-semibold line-clamp-2">${item.name}</td>
-                            <td class="px-2 py-2 text-right font-bold">${uiComponents.formatNumberOrDash(item.luyKe)}</td>
-                            <td class="px-2 py-2 text-right font-bold">${uiComponents.formatNumberOrDash(item.target)}</td>
-                            <td class="px-2 py-2 text-right font-bold text-blue-600">${formattedHoanThanh}</td>
-                            <td class="px-2 py-2 text-right font-bold text-orange-600">${uiComponents.formatNumberOrDash(dailyTarget)}</td>
-                        </tr>`
-                    }).join('')}</tbody></table></div></div>`;
-        };
-        return `<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            ${renderTable('Thi đua Doanh thu', dataDoanhThu, 'doanhthu')}
-            ${renderTable('Thi đua Số lượng', dataSoLuong, 'soluong')}
-        </div>`;
-    },
-    
-    renderLuykeCompetitionByCategory(data) {
-        return '<p class="text-gray-500 font-bold col-span-2">Chế độ xem theo ngành hàng cho Thi đua Lũy kế sẽ được phát triển sau.</p>';
-    },
-
-    renderChuaXuatTable: (reportData) => {
+    renderChuaXuatTable: (reportData) => { /* ... (Giữ nguyên) ... */
         const container = document.getElementById('luyke-unexported-revenue-content');
         if (!container) return;
         if (!reportData || reportData.length === 0) {
@@ -279,7 +315,7 @@ export const uiLuyke = {
             </tr></tfoot></table></div>`;
     },
 
-    renderLuykeKpiCards: (luykeData, comparisonData, luotKhachData, masterReportDataLuyke, goals, competitionSummary) => {
+    renderLuykeKpiCards: (luykeData, comparisonData, luotKhachData, masterReportDataLuyke, goals, competitionSummary) => { /* ... (Giữ nguyên) ... */
         const { dtThucLK, dtQdLK, dtGop, phanTramQd, phanTramGop, phanTramTargetThuc, phanTramTargetQd, dtThucDuKien, dtQdDuKien } = luykeData;
 
         // --- Thẻ 1: Doanh thu thực ---
@@ -311,7 +347,7 @@ export const uiLuyke = {
         document.getElementById('luyke-kpi-thidua-main').textContent = uiComponents.formatPercentage(tyLeThiDuaDat);
         document.getElementById('luyke-kpi-thidua-sub').innerHTML = `<span class="font-bold">${competitionSummary.dat}/${competitionSummary.total}</span> Ngành`;
 
-        // --- THẺ 8: SỬA LỖI LÀM TRÒN SỐ (TÍCH HỢP VĨNH VIỄN) ---
+        // --- THẺ 8: Tăng/giảm cùng kỳ ---
         const formatComparisonPercentage = (percentageString) => {
             if (!percentageString || typeof percentageString !== 'string') return 'N/A';
             const numericValue = parseFloat(percentageString.replace('%', ''));
@@ -326,7 +362,7 @@ export const uiLuyke = {
         document.getElementById('luyke-kpi-lkck-sub').innerHTML = `Lượt khách: <span class="font-bold">${uiComponents.formatNumber(luotKhachData.value || 0)} | ${formattedLkPercentage}</span>`;
     },
 
-    renderLuykeCategoryDetailsTable: (data, numDays) => {
+    renderLuykeCategoryDetailsTable: (data, numDays) => { /* ... (Giữ nguyên) ... */
         const container = document.getElementById('luyke-category-details-content');
         const cardHeader = container.previousElementSibling;
         if (!container || !cardHeader || !data || !data.nganhHangChiTiet) { container.innerHTML = '<p class="text-gray-500 font-bold">Không có dữ liệu.</p>'; return; }
@@ -387,7 +423,7 @@ export const uiLuyke = {
             </tr></tfoot></table></div>`;
     },
 
-    renderLuykeQdcTable: (data, numDays) => {
+    renderLuykeQdcTable: (data, numDays) => { /* ... (Giữ nguyên) ... */
         const container = document.getElementById('luyke-qdc-content');
         const cardHeader = container.previousElementSibling;
         if (!container || !cardHeader || !data || !data.qdc) { container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; return; }
@@ -431,7 +467,7 @@ export const uiLuyke = {
             </tbody></table></div>`;
     },
     
-    renderLuykeEfficiencyTable: (data, goals) => {
+    renderLuykeEfficiencyTable: (data, goals) => { /* ... (Giữ nguyên) ... */
         const container = document.getElementById('luyke-efficiency-content');
         const cardHeader = container.previousElementSibling;
 
@@ -440,19 +476,20 @@ export const uiLuyke = {
             return; 
         }
 
-        const visibleItems = settingsService.loadEfficiencyViewSettings();
+        // Tải cấu hình cột từ settings service
+        const allItemsConfig = settingsService.loadEfficiencyViewSettings();
 
-        const allItems = {
-            '% Phụ kiện': { value: data.pctPhuKien, target: goals.phanTramPhuKien },
-            '% Gia dụng': { value: data.pctGiaDung, target: goals.phanTramGiaDung },
-            '% MLN': { value: data.pctMLN, target: goals.phanTramMLN },
-            '% Sim': { value: data.pctSim, target: goals.phanTramSim },
-            '% VAS': { value: data.pctVAS, target: goals.phanTramVAS },
-            '% Bảo hiểm': { value: data.pctBaoHiem, target: goals.phanTramBaoHiem }
-        };
-
+        // Ánh xạ dữ liệu vào cấu hình cột
+        const allItems = allItemsConfig.map(config => ({
+            ...config,
+            value: data[config.id],
+            target: goals[config.id]
+        }));
+        
         const createRow = (label, value, target) => {
-            const isBelow = value < (target / 100);
+            // Target là giá trị số (ví dụ: 20) nên chia 100
+            const isBelow = value < (target / 100); 
+            
             return `<tr class="border-t">
                 <td class="px-4 py-2 font-semibold text-gray-800">${label}</td>
                 <td class="px-4 py-2 text-right font-bold text-lg ${isBelow ? 'cell-performance is-below' : 'text-green-600'}">${uiComponents.formatPercentage(value || 0)}</td>
@@ -482,18 +519,16 @@ export const uiLuyke = {
                         </tr>
                     </thead>
                     <tbody>
-                        ${Object.keys(allItems)
-                            .filter(key => visibleItems.includes(key))
-                            .map(itemKey => {
-                                const itemData = allItems[itemKey];
-                                return createRow(itemKey, itemData.value, itemData.target);
-                            }).join('')}
+                        ${allItems
+                            .filter(item => item.visible) // Lọc theo cài đặt hiển thị
+                            .map(item => createRow(item.label, item.value, item.target))
+                            .join('')}
                     </tbody>
                 </table>
             </div>`;
     },
 
-    updateLuykeSupermarketTitle: (warehouse, date) => {
+    updateLuykeSupermarketTitle: (warehouse, date) => { /* ... (Giữ nguyên) ... */
         const titleEl = document.getElementById('luyke-supermarket-title');
         if (titleEl) titleEl.textContent = `Báo cáo lũy kế ${warehouse ? 'kho ' + warehouse : 'toàn bộ'} - Tính đến ${date.toLocaleDateString('vi-VN')}`;
     },
