@@ -1,4 +1,4 @@
-// Version 3.2 - Isolate competition multi-select config
+// Version 3.4 - Fix: Use event delegation for dynamically replaced view switchers
 // MODULE: EVENT LISTENERS INITIALIZER
 // File này đóng vai trò là điểm khởi đầu, import và khởi chạy tất cả các module listener con.
 
@@ -214,7 +214,19 @@ export function initializeEventListeners(mainAppController) {
     
     document.getElementById('sknv-view-selector')?.addEventListener('click', (e) => appController.handleSknvViewChange(e));
     document.getElementById('sknv-employee-filter')?.addEventListener('change', () => sknvTab.render());
-    document.getElementById('luyke-thidua-view-selector')?.addEventListener('click', (e) => appController.handleLuykeThiDuaViewChange(e));
+    
+    // === START: THAY THẾ SỰ KIỆN CŨ BẰNG UỶ QUYỀN SỰ KIỆN (FIX #1) ===
+    // Loại bỏ: document.getElementById('luyke-thidua-view-selector')?.addEventListener('click', (e) => appController.handleLuykeThiDuaViewChange(e));
+    document.body.addEventListener('click', (e) => {
+        // Lắng nghe click trên body và chỉ xử lý nếu click đến từ nút trong view-switcher của tab Thi đua Lũy kế
+        const viewSwitcherBtn = e.target.closest('#luyke-thidua-view-selector .view-switcher__btn');
+        if (viewSwitcherBtn) {
+            e.preventDefault();
+            appController.handleLuykeThiDuaViewChange(e);
+        }
+    });
+    // === END: THAY THẾ SỰ KIỆN CŨ ===
+    
     document.getElementById('thidua-view-selector')?.addEventListener('click', (e) => appController.handleThiDuaViewChange(e));
     document.getElementById('thidua-employee-filter')?.addEventListener('change', () => ui.displayCompetitionReport('employee'));
     document.getElementById('dtnv-realtime-view-selector')?.addEventListener('click', (e) => appController.handleDtnvRealtimeViewChange(e));

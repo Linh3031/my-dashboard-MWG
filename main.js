@@ -1,4 +1,4 @@
-// Version 42.2 - Add logic for scrolling version marquee
+// Version 3.3 - Add handler for Luy Ke Competition view switcher
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -539,7 +539,7 @@ const app = {
             ui.showNotification(`Lỗi khi đọc file gỡ lỗi: ${err.message}`, 'error');
         }
     },
-    
+
     _handleCompetitionFormShow(show = true, isEdit = false) {
         const form = document.getElementById('competition-form');
         const addBtn = document.getElementById('add-competition-btn');

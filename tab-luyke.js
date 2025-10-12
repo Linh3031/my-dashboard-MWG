@@ -1,4 +1,4 @@
-// Version 2.6 - Fix: Add missing highlightService import
+// Version 2.8 - Fix: Remove duplicate H3 title in competition tab
 // MODULE: Chịu trách nhiệm cho Tab Sức khỏe Siêu thị (Lũy kế)
 
 import { appState } from './state.js';
@@ -58,9 +58,28 @@ const luykeTab = {
             ui.displayHealthKpiTable(pastedData, goals); 
 
         } else if (activeSubTabId === 'subtab-luyke-thi-dua') {
+            // === START: THAY ĐỔI LOGIC (FIX DUPLICATE H3 & VIEW SWITCHER PLACEMENT) ===
+            const container = document.getElementById('luyke-competition-content');
+            if(container) {
+                // Thêm bộ chuyển đổi view nếu chưa có
+                if (!container.querySelector('#luyke-thidua-view-selector')) {
+                    // Loại bỏ H3 khỏi logic render này để giữ lại tiêu đề bên ngoài (Fix #6)
+                    container.innerHTML = `
+                        <div class="flex flex-wrap items-center justify-end gap-4 mb-4"> 
+                            <div id="luyke-thidua-view-selector" class="view-switcher">
+                                <button data-view="summary" class="view-switcher__btn active">Theo Phân Loại</button>
+                                <button data-view="completion" class="view-switcher__btn">Theo % Hoàn Thành</button>
+                            </div>
+                        </div>
+                        <div id="luyke-competition-infographic-container" class="mt-4"></div>
+                    `;
+                }
+            }
+            
             const activeViewBtn = document.querySelector('#luyke-thidua-view-selector .view-switcher__btn.active');
             const viewType = activeViewBtn ? activeViewBtn.dataset.view : 'summary';
             ui.displayCompetitionResultsFromLuyKe(document.getElementById('paste-luyke').value, viewType);
+            // === END: THAY ĐỔI LOGIC ===
         }
         
         highlightService.populateHighlightFilters('luyke', filteredYCXData, filteredReport);

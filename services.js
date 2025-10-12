@@ -1,4 +1,4 @@
-// Version 33.0 - Refactor: Extract data processing logic to a separate module
+// Version 34.0 - Fix: Improve regex for employee ID matching in realtime data
 // MODULE: SERVICES FACADE
 // File này đóng vai trò điều phối, nhập khẩu các module logic con và export chúng ra ngoài.
 
@@ -55,7 +55,9 @@ const reportGeneration = {
                 let baseCategoryQuantity = 0;
                 
                 baseSalesData.forEach(row => {
-                    const msnvMatch = String(row.nguoiTao || '').match(/^(\d+)/);
+                    // <<< START FIX: Use flexible regex for matching employee ID >>>
+                    const msnvMatch = String(row.nguoiTao || '').match(/(\d+)/);
+                    // <<< END FIX >>>
                     if (msnvMatch && msnvMatch[1].trim() === employee.maNV) {
                         const revenueValue = (parseFloat(String(row.thanhTien || "0").replace(/,/g, '')) || 0);
                         const quantityValue = (parseInt(String(row.soLuong || "0"), 10) || 0);
@@ -151,7 +153,9 @@ const reportGeneration = {
             for (const key in PG.QDC_GROUPS) data.qdc[key] = { sl: 0, dt: 0, dtqd: 0, name: PG.QDC_GROUPS[key].name };
 
             sourceData.forEach(row => {
-                const msnvMatch = String(row.nguoiTao || '').match(/^(\d+)/);
+                // <<< START FIX: Use flexible regex for matching employee ID >>>
+                const msnvMatch = String(row.nguoiTao || '').match(/(\d+)/);
+                // <<< END FIX >>>
                 if (msnvMatch && msnvMatch[1].trim() === employee.maNV) {
                     const isDoanhThuHTX = hinhThucXuatTinhDoanhThu.has(row.hinhThucXuat);
                     const isBaseValid = (row.trangThaiThuTien || "").trim() === 'Đã thu' && (row.trangThaiHuy || "").trim() === 'Chưa hủy' && (row.tinhTrangTra || "").trim() === 'Chưa trả';
@@ -405,7 +409,9 @@ const reportGeneration = {
         if (!employeeMaNV || !realtimeYCXData || realtimeYCXData.length === 0) return null;
     
         const employeeData = realtimeYCXData.filter(row => {
-            const msnvMatch = String(row.nguoiTao || '').match(/^(\d+)/);
+            // <<< START FIX: Use flexible regex for matching employee ID >>>
+            const msnvMatch = String(row.nguoiTao || '').match(/(\d+)/);
+            // <<< END FIX >>>
             return msnvMatch && msnvMatch[1].trim() === String(employeeMaNV);
         });
     
@@ -489,7 +495,9 @@ const reportGeneration = {
     
         filteredData.forEach(row => {
             const brand = row.nhaSanXuat || 'Hãng khác';
-            const msnvMatch = String(row.nguoiTao || '').match(/^(\d+)/);
+            // <<< START FIX: Use flexible regex for matching employee ID >>>
+            const msnvMatch = String(row.nguoiTao || '').match(/(\d+)/);
+            // <<< END FIX >>>
             const employeeId = msnvMatch ? msnvMatch[1].trim() : 'Unknown';
             const realRevenue = parseFloat(String(row.thanhTien || "0").replace(/,/g, '')) || 0;
             const quantity = parseInt(String(row.soLuong || "0"), 10) || 0;

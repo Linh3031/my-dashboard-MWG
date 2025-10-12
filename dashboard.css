@@ -1,4 +1,4 @@
-/* Version 4.6 - Add styles for version marquee */
+/* Version 4.7 - Add competition summary styles and fix event delegation */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -525,3 +525,17 @@ details[open] > summary .arrow { transform: rotate(180deg); }
     }
 }
 /* === END: VERSION MARQUEE STYLES === */
+
+/* === START: STYLES CHO BỘ ĐẾM TIÊU ĐỀ THI ĐUA (FIX #7) === */
+.competition-summary-counter strong {
+    font-size: 1.15rem !important; 
+    font-weight: 800 !important;
+    white-space: nowrap;
+}
+.competition-summary-counter .text-blue-600 {
+    color: #2563eb !important; 
+}
+.competition-summary-counter .text-red-600 {
+    color: #dc2626 !important; 
+}
+/* === END: STYLES CHO BỘ ĐẾM TIÊU ĐỀ THI ĐUA === */
