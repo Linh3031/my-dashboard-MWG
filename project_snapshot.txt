@@ -13159,7 +13159,7 @@ export const uiLuyke = {
 --- END FILE: ./ui-luyke.js ---
 
 --- START FILE: ./ui-realtime.js ---
-// Version 3.2 - Add settings for QDC and Category tables
+// Version 3.4 - Fix efficiency settings modal and rendering logic
 // MODULE: UI REALTIME
 // Chứa các hàm render giao diện cho tab "Doanh thu Realtime".
 
@@ -13174,14 +13174,14 @@ export const uiRealtime = {
         const modal = document.getElementById('selection-modal');
         if (!modal) return;
 
-        const allItems = ['% Phụ kiện', '% Gia dụng', '% MLN', '% Sim', '% VAS', '% Bảo hiểm'];
-        const savedSettings = settingsService.loadEfficiencyViewSettings();
+        // Lấy danh sách đầy đủ các mục từ settings service
+        const allItemsConfig = settingsService.loadEfficiencyViewSettings();
         
         const listContainer = document.getElementById('selection-modal-list');
-        listContainer.innerHTML = allItems.map(item => `
+        listContainer.innerHTML = allItemsConfig.map(item => `
             <div class="selection-item">
-                <input type="checkbox" id="select-item-rt-eff-${item.replace(/[^a-zA-Z0-9]/g, '')}" value="${item}" ${savedSettings.includes(item) ? 'checked' : ''}>
-                <label for="select-item-rt-eff-${item.replace(/[^a-zA-Z0-9]/g, '')}">${item}</label>
+                <input type="checkbox" id="select-item-rt-eff-${item.id}" value="${item.id}" ${item.visible ? 'checked' : ''}>
+                <label for="select-item-rt-eff-${item.id}">${item.label}</label>
             </div>
         `).join('');
 
@@ -13246,7 +13246,6 @@ export const uiRealtime = {
             container.innerHTML = '<p class="text-gray-500">Không có dữ liệu doanh thu cho lựa chọn này.</p>';
             return;
         }
-
         let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden" data-capture-group="1">
             <div class="p-4 header-group-1 text-gray-800">
                 <h3 class="text-xl font-bold uppercase">Doanh thu nhân viên Realtime</h3>
@@ -13297,9 +13296,9 @@ export const uiRealtime = {
         else if (title.includes('Trang Trí')) titleClass = 'department-header-tt';
 
         const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
-
-        let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}">
-                        <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
+        
+        let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="7">
+                         <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                             <tr>
                                 <th class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('doanhThu')} text-right header-group-7" data-sort="doanhThu">Doanh Thu <span class="sort-indicator"></span></th>
@@ -13308,7 +13307,7 @@ export const uiRealtime = {
                                 <th class="${headerClass('doanhThuTraGop')} text-right header-group-8" data-sort="doanhThuTraGop">DT trả chậm <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('tyLeTraCham')} text-right header-group-8" data-sort="tyLeTraCham">% trả chậm <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('doanhThuChuaXuat')} text-right header-group-9" data-sort="doanhThuChuaXuat">DT Chưa Xuất <span class="sort-indicator"></span></th>
-                            </tr>
+                             </tr>
                         </thead><tbody>`;
         sortedData.forEach(item => {
             const { mucTieu } = item;
@@ -13408,7 +13407,7 @@ export const uiRealtime = {
         const container = document.getElementById('realtime-category-details-content');
         const cardHeader = document.getElementById('realtime-category-title');
         if (!container || !cardHeader ||!data || !data.nganhHangChiTiet) { container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; return; }
-
+        
         const { nganhHangChiTiet } = data;
         const allItems = Object.keys(nganhHangChiTiet).sort();
         const visibleItems = settingsService.loadCategoryViewSettings(allItems);
@@ -13462,21 +13461,27 @@ export const uiRealtime = {
         const container = document.getElementById('realtime-efficiency-content');
         const cardHeader = document.getElementById('realtime-efficiency-title');
 
-        if (!container || !cardHeader || !data || !goals) { 
-            if(container) container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; 
-            return; 
+        if (!container || !cardHeader || !data || !goals) {
+            if (container) container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`;
+            return;
         }
 
-        const visibleItems = settingsService.loadEfficiencyViewSettings();
+        const allItemsConfig = settingsService.loadEfficiencyViewSettings();
 
-        const allItems = {
-            '% Phụ kiện': { value: data.pctPhuKien, target: goals.phanTramPhuKien },
-            '% Gia dụng': { value: data.pctGiaDung, target: goals.phanTramGiaDung },
-            '% MLN': { value: data.pctMLN, target: goals.phanTramMLN },
-            '% Sim': { value: data.pctSim, target: goals.phanTramSim },
-            '% VAS': { value: data.pctVAS, target: goals.phanTramVAS },
-            '% Bảo hiểm': { value: data.pctBaoHiem, target: goals.phanTramBaoHiem }
+        const goalKeyMap = {
+            pctPhuKien: 'phanTramPhuKien',
+            pctGiaDung: 'phanTramGiaDung',
+            pctMLN: 'phanTramMLN',
+            pctSim: 'phanTramSim',
+            pctVAS: 'phanTramVAS',
+            pctBaoHiem: 'phanTramBaoHiem'
         };
+
+        const allItems = allItemsConfig.map(config => ({
+            ...config,
+            value: data[config.id],
+            target: goals[goalKeyMap[config.id]]
+        }));
 
         const createRow = (label, value, target) => {
             const isBelow = value < ((target || 0) / 100);
@@ -13509,12 +13514,10 @@ export const uiRealtime = {
                         </tr>
                     </thead>
                     <tbody>
-                        ${Object.keys(allItems)
-                            .filter(key => visibleItems.includes(key))
-                            .map(itemKey => {
-                                const itemData = allItems[itemKey];
-                                return createRow(itemKey, itemData.value, itemData.target);
-                            }).join('')}
+                        ${allItems
+                            .filter(item => item.visible)
+                            .map(item => createRow(item.label, item.value, item.target))
+                            .join('')}
                     </tbody>
                 </table>
             </div>`;
@@ -13645,7 +13648,6 @@ export const uiRealtime = {
             const sortedItems = [...items].sort((a,b) => direction === 'asc' ? (a[key] - b[key]) : (b[key] - a[key]));
 
             const headerClass = (sortKey) => `px-4 py-2 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
-
             return `<div class="overflow-x-auto"><h4 class="text-lg font-semibold text-gray-700 mb-2">${title}</h4>
                 <table class="min-w-full text-sm table-bordered table-striped" data-table-type="${sortStateKey}">
                     <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">

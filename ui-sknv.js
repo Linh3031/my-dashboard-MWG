@@ -1,14 +1,33 @@
-// Version 2.7 - Fix: Corrected syntax error (removed extra closing brace)
+// Version 2.9 - Fix: Correct variable scope for formatMap in efficiency table
 // MODULE: UI SKNV
 // Chứa các hàm render giao diện cho tab "Sức khỏe nhân viên"
+
 import { appState } from './state.js';
 import { config } from './config.js';
 import { services } from './services.js';
 import { uiComponents } from './ui-components.js';
-import { utils } from './utils.js';
-
+import { settingsService } from './modules/settings.service.js';
 
 export const uiSknv = {
+    /**
+     * Helper private để lấy danh sách bộ phận đã được sắp xếp theo yêu cầu.
+     * 'BP Tư Vấn - ĐM' luôn được ưu tiên lên đầu.
+     * @param {Array} reportData - Dữ liệu báo cáo để trích xuất danh sách bộ phận.
+     * @returns {Array<string>} - Mảng chứa tên các bộ phận đã được sắp xếp.
+     */
+    _getSortedDepartmentList(reportData) {
+        const allDepts = [...new Set(reportData.map(item => item.boPhan).filter(Boolean))];
+        const priorityDept = 'BP Tư Vấn - ĐM';
+
+        allDepts.sort((a, b) => {
+            if (a === priorityDept) return -1;
+            if (b === priorityDept) return 1;
+            return a.localeCompare(b);
+        });
+
+        return allDepts;
+    },
+
     displayEmployeeRevenueReport: (reportData, containerId, sortStateKey) => {
         const container = document.getElementById(containerId);
         if (!container) return;
@@ -17,6 +36,7 @@ export const uiSknv = {
             return;
         }
         let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"><div class="p-4 header-group-1 text-gray-800"><h3 class="text-xl font-bold uppercase">Doanh thu nhân viên</h3><p class="text-sm italic text-gray-600">(đơn vị tính: Triệu đồng)</p></div>`;
+        
         const groupedByDept = {};
         reportData.forEach(item => {
             const dept = item.boPhan;
@@ -24,8 +44,8 @@ export const uiSknv = {
             groupedByDept[dept].push(item);
         });
         
-        const departmentOrder = [...new Set(reportData.map(item => item.boPhan))].filter(Boolean).sort();
-        
+        const departmentOrder = uiSknv._getSortedDepartmentList(reportData);
+
         departmentOrder.forEach(deptName => {
             if (groupedByDept[deptName]) {
                 finalHTML += uiSknv.renderRevenueTableForDepartment(deptName, groupedByDept[deptName], sortStateKey);
@@ -59,25 +79,36 @@ export const uiSknv = {
         if (title.includes('Tư Vấn')) titleClass = 'department-header-tv';
         else if (title.includes('Kho')) titleClass = 'department-header-kho';
         else if (title.includes('Trang Trí')) titleClass = 'department-header-tt';
-        
-        const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
+
+        const isRealtime = sortStateKey === 'realtime_dt_nhanvien';
+        const headerClasses = {
+            hoTen: '',
+            doanhThu: isRealtime ? 'header-group-4' : 'header-bg-blue',
+            doanhThuQuyDoi: isRealtime ? 'header-group-4' : 'header-bg-blue',
+            hieuQuaQuyDoi: isRealtime ? 'header-group-4' : 'header-bg-blue',
+            doanhThuTraGop: isRealtime ? 'header-group-5' : 'header-bg-green',
+            tyLeTraCham: isRealtime ? 'header-group-5' : 'header-bg-green',
+            doanhThuChuaXuat: isRealtime ? 'header-group-6' : 'header-bg-yellow'
+        };
+
+        const headerClass = (sortKey) => `px-4 py-3 sortable ${headerClasses[sortKey] || ''} ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
         
         let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="7">
                         <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                             <tr>
                                 <th class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('doanhThu')} text-right header-group-7" data-sort="doanhThu">Doanh Thu <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('doanhThuQuyDoi')} text-right header-group-7" data-sort="doanhThuQuyDoi">Doanh Thu QĐ <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('hieuQuaQuyDoi')} text-right header-group-7" data-sort="hieuQuaQuyDoi">% QĐ <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('doanhThuTraGop')} text-right header-group-8" data-sort="doanhThuTraGop">DT trả chậm <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('tyLeTraCham')} text-right header-group-8" data-sort="tyLeTraCham">% trả chậm <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('doanhThuChuaXuat')} text-right header-group-9" data-sort="doanhThuChuaXuat">DT Chưa Xuất <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('doanhThu')} text-right" data-sort="doanhThu">Doanh Thu <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('doanhThuQuyDoi')} text-right" data-sort="doanhThuQuyDoi">Doanh Thu QĐ <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('hieuQuaQuyDoi')} text-right" data-sort="hieuQuaQuyDoi">% QĐ <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('doanhThuTraGop')} text-right" data-sort="doanhThuTraGop">DT trả chậm <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('tyLeTraCham')} text-right" data-sort="tyLeTraCham">% trả chậm <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('doanhThuChuaXuat')} text-right" data-sort="doanhThuChuaXuat">DT Chưa Xuất <span class="sort-indicator"></span></th>
                             </tr>
                         </thead><tbody>`;
         sortedData.forEach(item => {
             const { mucTieu } = item;
-            const qdClass = item.hieuQuaQuyDoi < ((mucTieu?.phanTramQD || 0) / 100) ? 'cell-performance is-below' : '';
-            const tcClass = item.tyLeTraCham < ((mucTieu?.phanTramTC || 0) / 100) ? 'cell-performance is-below' : '';
+            const qdClass = item.hieuQuaQuyDoi < (mucTieu.phanTramQD / 100) ? 'cell-performance is-below' : '';
+            const tcClass = item.tyLeTraCham < (mucTieu.phanTramTC / 100) ? 'cell-performance is-below' : '';
             tableHTML += `<tr class="hover:bg-gray-50">
                     <td class="px-4 py-2 font-semibold line-clamp-2">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</td>
                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThu)}</td>
@@ -109,6 +140,7 @@ export const uiSknv = {
         }
         placeholder.classList.add('hidden');
         let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"><div class="p-4 header-group-2 text-gray-800"><h3 class="text-xl font-bold uppercase">Thu nhập nhân viên</h3><p class="text-sm italic text-gray-600">(đơn vị tính: Triệu đồng)</p></div>`;
+        
         const groupedByDept = {};
         reportData.forEach(item => {
             const dept = item.boPhan;
@@ -116,7 +148,7 @@ export const uiSknv = {
             groupedByDept[dept].push(item);
         });
         
-        const departmentOrder = [...new Set(reportData.map(item => item.boPhan))].filter(Boolean).sort();
+        const departmentOrder = uiSknv._getSortedDepartmentList(reportData);
         
         departmentOrder.forEach(deptName => {
             if (groupedByDept[deptName]) finalHTML += uiSknv.renderIncomeTableForDepartment(deptName, groupedByDept[deptName]);
@@ -191,11 +223,36 @@ export const uiSknv = {
     displayEmployeeEfficiencyReport: (reportData, containerId, sortStateKey) => {
         const container = document.getElementById(containerId);
         if (!container) return;
+
         if (!reportData || reportData.length === 0) {
             container.innerHTML = '<p class="text-gray-500">Không có dữ liệu hiệu quả cho lựa chọn này.</p>';
             return;
         }
-        let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"><div class="p-4 header-group-3 text-gray-800"><h3 class="text-xl font-bold uppercase">HIỆU QUẢ KHAI THÁC</h3><p class="text-sm italic text-gray-600">(đơn vị tính: Triệu đồng)</p></div>`;
+
+        const columnSettings = settingsService.loadEfficiencyViewSettings();
+        const visibleColumns = columnSettings.filter(c => c.visible);
+
+        const columnTogglesHTML = `
+            <div id="efficiency-column-toggles" class="p-3 border-b border-gray-200 flex flex-wrap items-center gap-x-3 gap-y-2">
+                <span class="text-sm font-semibold mr-2 text-gray-700">Tùy chỉnh cột:</span>
+                ${columnSettings.map(col => `
+                    <button 
+                        class="column-toggle-btn ${col.visible ? 'active' : ''}" 
+                        data-column-id="${col.id}">
+                        ${col.label}
+                    </button>
+                `).join('')}
+            </div>
+        `;
+
+        let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+                            <div class="p-4 header-group-3 text-gray-800">
+                                <h3 class="text-xl font-bold uppercase">HIỆU QUẢ KHAI THÁC</h3>
+                                <p class="text-sm italic text-gray-600">(đơn vị tính: Triệu đồng)</p>
+                            </div>
+                            ${columnTogglesHTML}
+                        `;
+
         const groupedByDept = {};
         reportData.forEach(item => {
             const dept = item.boPhan;
@@ -203,17 +260,19 @@ export const uiSknv = {
             groupedByDept[dept].push(item);
         });
 
-        const departmentOrder = [...new Set(reportData.map(item => item.boPhan))].filter(Boolean).sort();
+        const departmentOrder = uiSknv._getSortedDepartmentList(reportData);
 
         departmentOrder.forEach(deptName => {
-            if (groupedByDept[deptName]) finalHTML += uiSknv.renderEfficiencyTableForDepartment(deptName, groupedByDept[deptName], sortStateKey);
+            if (groupedByDept[deptName]) {
+                finalHTML += uiSknv.renderEfficiencyTableForDepartment(deptName, groupedByDept[deptName], sortStateKey, visibleColumns);
+            }
         });
-        
+
         finalHTML += `</div>`;
         container.innerHTML = finalHTML;
     },
 
-    renderEfficiencyTableForDepartment: (title, data, sortStateKey) => {
+    renderEfficiencyTableForDepartment: (title, data, sortStateKey, visibleColumns) => {
         const sortState = appState.sortState[sortStateKey] || { key: 'dtICT', direction: 'desc' };
         const { key, direction } = sortState;
         const sortedData = [...data].sort((a, b) => {
@@ -247,59 +306,69 @@ export const uiSknv = {
         else if (title.includes('Kho')) titleClass = 'department-header-kho';
         else if (title.includes('Trang Trí')) titleClass = 'department-header-tt';
 
-        const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
+        const allHeaders = {
+            dtICT: { label: 'DT ICT', class: 'text-right header-group-10' },
+            dtPhuKien: { label: 'DT Phụ kiện', class: 'text-right header-group-10' },
+            pctPhuKien: { label: '% Phụ kiện', class: 'text-right header-group-10' },
+            dtCE: { label: 'DT CE', class: 'text-right header-group-11' },
+            dtGiaDung: { label: 'DT Gia dụng', class: 'text-right header-group-11' },
+            pctGiaDung: { label: '% Gia dụng', class: 'text-right header-group-11' },
+            pctMLN: { label: '% MLN', class: 'text-right header-group-12' },
+            pctSim: { label: '% Sim', class: 'text-right header-group-12' },
+            pctVAS: { label: '% VAS', class: 'text-right header-group-12' },
+            pctBaoHiem: { label: '% Bảo hiểm', class: 'text-right header-group-12' }
+        };
 
-        let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="11">
-                    <thead class="text-xs text-slate-800 uppercase font-bold">
-                        <tr>
-                            <th class="${headerClass('hoTen')}" data-sort="hoTen">Tên nhân viên <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('dtICT')} text-right header-group-10" data-sort="dtICT">DT ICT <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('dtPhuKien')} text-right header-group-10" data-sort="dtPhuKien">DT Phụ kiện <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('pctPhuKien')} text-right header-group-10" data-sort="pctPhuKien">% Phụ kiện <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('dtCE')} text-right header-group-11" data-sort="dtCE">DT CE <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('dtGiaDung')} text-right header-group-11" data-sort="dtGiaDung">DT Gia dụng <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('pctGiaDung')} text-right header-group-11" data-sort="pctGiaDung">% Gia dụng <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('pctMLN')} text-right header-group-12" data-sort="pctMLN">% MLN <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('pctSim')} text-right header-group-12" data-sort="pctSim">% Sim <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('pctVAS')} text-right header-group-12" data-sort="pctVAS">% VAS <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('pctBaoHiem')} text-right header-group-12" data-sort="pctBaoHiem">% Bảo hiểm <span class="sort-indicator"></span></th>
-                        </tr>
-                    </thead><tbody>`;
+        // *** FIX IS HERE: Moved formatMap declaration to the top of the function ***
+        const formatMap = {
+            dtICT: (val) => uiComponents.formatRevenue(val),
+            dtPhuKien: (val) => uiComponents.formatRevenue(val),
+            dtCE: (val) => uiComponents.formatRevenue(val),
+            dtGiaDung: (val) => uiComponents.formatRevenue(val),
+            defaultPercent: (val) => uiComponents.formatPercentage(val)
+        };
+
+        const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
+        const captureColumnCount = 1 + visibleColumns.length;
+
+        let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="${captureColumnCount}">
+            <thead class="text-xs text-slate-800 uppercase font-bold">
+                <tr>
+                    <th class="${headerClass('hoTen')}" data-sort="hoTen">Tên nhân viên <span class="sort-indicator"></span></th>
+                    ${visibleColumns.map(col => `<th class="${headerClass(col.id)} ${allHeaders[col.id].class}" data-sort="${col.id}">${allHeaders[col.id].label} <span class="sort-indicator"></span></th>`).join('')}
+                </tr>
+            </thead><tbody>`;
+
         sortedData.forEach(item => {
             const { mucTieu } = item;
-            const pkClass = item.pctPhuKien < ((mucTieu?.phanTramPhuKien || 0) / 100) ? 'cell-performance is-below' : '';
-            const gdClass = item.pctGiaDung < ((mucTieu?.phanTramGiaDung || 0) / 100) ? 'cell-performance is-below' : '';
-            const mlnClass = item.pctMLN < ((mucTieu?.phanTramMLN || 0) / 100) ? 'cell-performance is-below' : '';
-            const simClass = item.pctSim < ((mucTieu?.phanTramSim || 0) / 100) ? 'cell-performance is-below' : '';
-            const vasClass = item.pctVAS < ((mucTieu?.phanTramVAS || 0) / 100) ? 'cell-performance is-below' : '';
-            const bhClass = item.pctBaoHiem < ((mucTieu?.phanTramBaoHiem || 0) / 100) ? 'cell-performance is-below' : '';
+            const classMap = {
+                pctPhuKien: item.pctPhuKien < ((mucTieu?.phanTramPhuKien || 0) / 100) ? 'cell-performance is-below' : '',
+                pctGiaDung: item.pctGiaDung < ((mucTieu?.phanTramGiaDung || 0) / 100) ? 'cell-performance is-below' : '',
+                pctMLN: item.pctMLN < ((mucTieu?.phanTramMLN || 0) / 100) ? 'cell-performance is-below' : '',
+                pctSim: item.pctSim < ((mucTieu?.phanTramSim || 0) / 100) ? 'cell-performance is-below' : '',
+                pctVAS: item.pctVAS < ((mucTieu?.phanTramVAS || 0) / 100) ? 'cell-performance is-below' : '',
+                pctBaoHiem: item.pctBaoHiem < ((mucTieu?.phanTramBaoHiem || 0) / 100) ? 'cell-performance is-below' : ''
+            };
 
             tableHTML += `<tr class="hover:bg-gray-50">
                 <td class="px-4 py-2 font-semibold line-clamp-2">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</td>
-                <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.dtICT)}</td>
-                <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.dtPhuKien)}</td>
-                <td class="px-4 py-2 text-right font-bold ${pkClass}">${uiComponents.formatPercentage(item.pctPhuKien)}</td>
-                <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.dtCE)}</td>
-                <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.dtGiaDung)}</td>
-                <td class="px-4 py-2 text-right font-bold ${gdClass}">${uiComponents.formatPercentage(item.pctGiaDung)}</td>
-                <td class="px-4 py-2 text-right font-bold ${mlnClass}">${uiComponents.formatPercentage(item.pctMLN)}</td>
-                <td class="px-4 py-2 text-right font-bold ${simClass}">${uiComponents.formatPercentage(item.pctSim)}</td>
-                <td class="px-4 py-2 text-right font-bold ${vasClass}">${uiComponents.formatPercentage(item.pctVAS)}</td>
-                <td class="px-4 py-2 text-right font-bold ${bhClass}">${uiComponents.formatPercentage(item.pctBaoHiem)}</td></tr>`;
+                ${visibleColumns.map(col => {
+                    const value = item[col.id];
+                    const className = classMap[col.id] || '';
+                    const formatter = formatMap[col.id] || formatMap.defaultPercent;
+                    return `<td class="px-4 py-2 text-right font-bold ${className}">${formatter(value)}</td>`;
+                }).join('')}
+            </tr>`;
         });
+
         tableHTML += `</tbody><tfoot class="table-footer font-bold">
             <tr>
                 <td class="px-4 py-2">Tổng</td>
-                <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.dtICT)}</td>
-                <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.dtPhuKien)}</td>
-                <td class="px-4 py-2 text-right">${uiComponents.formatPercentage(totals.pctPhuKien)}</td>
-                <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.dtCE)}</td>
-                <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.dtGiaDung)}</td>
-                <td class="px-4 py-2 text-right">${uiComponents.formatPercentage(totals.pctGiaDung)}</td>
-                <td class="px-4 py-2 text-right">${uiComponents.formatPercentage(totals.pctMLN)}</td>
-                <td class="px-4 py-2 text-right">${uiComponents.formatPercentage(totals.pctSim)}</td>
-                <td class="px-4 py-2 text-right">${uiComponents.formatPercentage(totals.pctVAS)}</td>
-                <td class="px-4 py-2 text-right">${uiComponents.formatPercentage(totals.pctBaoHiem)}</td>
+                ${visibleColumns.map(col => {
+                    const value = totals[col.id];
+                    const formatter = formatMap[col.id] || formatMap.defaultPercent;
+                     return `<td class="px-4 py-2 text-right">${formatter(value)}</td>`;
+                }).join('')}
             </tr>
         </tfoot></table></div></div>`;
         return tableHTML;
@@ -581,10 +650,8 @@ export const uiSknv = {
             return direction === 'asc' ? valA - valB : valB - valA;
         });
         
-        // <<< START FIX #1: Sửa lỗi ReferenceError >>>
         const headerClass = (sortKey) => `px-2 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
-        // <<< END FIX #1 >>>
-        
+       
         let tableHTML = `<div class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200"><h3 class="text-xl font-bold text-gray-800 mb-4 uppercase">Bảng tổng hợp hiệu suất nhân viên</h3><div class="overflow-x-auto"><table class="min-w-full text-sm table-bordered" data-table-type="sknv_summary">
             <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                 <tr>
@@ -611,11 +678,9 @@ export const uiSknv = {
             groupedByDept[item.boPhan].push(item);
         });
 
-        // <<< START FIX #2: Lấy danh sách bộ phận động >>>
-        const departmentOrder = [...new Set(summaryData.map(item => item.boPhan))].filter(Boolean).sort();
+        const departmentOrder = uiSknv._getSortedDepartmentList(summaryData);
 
         departmentOrder.forEach(deptName => {
-        // <<< END FIX #2 >>>
             if (groupedByDept[deptName]) {
                 tableHTML += `<tr class="font-bold bg-slate-100"><td colspan="12" class="px-4 py-2">${deptName}</td></tr>`;
                 groupedByDept[deptName].forEach(item => {
@@ -716,83 +781,33 @@ export const uiSknv = {
             </tbody></table></div></div>`;
     },
 
-    // --- HÀM ĐƯỢC CẬP NHẬT (FIX BUG 2) ---
-    displayCompetitionReport() {
+    displayCompetitionReport(viewType = 'summary') {
         const container = document.getElementById('employee-competition-container');
         if (!container) return;
     
         const data = appState.thiDuaReportData;
         const activeViewBtn = document.querySelector('#thidua-view-selector .view-switcher__btn.active');
-        const viewType = activeViewBtn ? activeViewBtn.dataset.view : 'summary';
+        const effectiveViewType = activeViewBtn ? activeViewBtn.dataset.view : viewType;
     
-        // Hiển thị thông tin chẩn đoán trước
         uiComponents.displayPastedDebugInfo('thiduanv-pasted');
     
-        // Kiểm tra xem có dữ liệu đã xử lý để hiển thị không
         if (!data || data.length === 0) {
             container.innerHTML = `<p class="text-gray-500">Không có dữ liệu thi đua để hiển thị. Vui lòng dán "Data lũy kế" và "Thi đua nhân viên" ở tab Cập nhật dữ liệu để xử lý báo cáo.</p>`;
             return;
         }
     
-        // Dựa vào viewType để render nội dung phù hợp
         let htmlContent = '';
-        if (viewType === 'summary') {
+        if (effectiveViewType === 'summary') {
             htmlContent = this.renderCompetitionSummary(data);
-        } else if (viewType === 'category') {
+        } else if (effectiveViewType === 'category') {
             htmlContent = this.renderCompetitionByCategory(data);
-        } else if (viewType === 'employee') {
+        } else if (effectiveViewType === 'employee') {
             const selectedMaNV = document.getElementById('thidua-employee-filter')?.value;
             const employeeData = data.find(e => String(e.maNV) === String(selectedMaNV));
             htmlContent = this.renderCompetitionByEmployee(employeeData);
         }
         
         container.innerHTML = htmlContent;
-    },
-
-    // --- HÀM NÀY GIỮ LẠI ĐỂ DỰ PHÒNG, NHƯNG KHÔNG CÒN ĐƯỢC SỬ DỤNG TRỰC TIẾP
-    renderPastedThiDuaTable(data) {
-        if (!data || !data.success) {
-            return `<div class="p-4 bg-red-100 text-red-700 rounded-lg">
-                        <p class="font-bold">Lỗi xử lý dữ liệu!</p>
-                        <p>${data.error || 'Vui lòng kiểm tra lại định dạng dữ liệu đã dán.'}</p>
-                    </div>`;
-        }
-    
-        let tableHTML = '<div class="overflow-x-auto border border-slate-200 rounded-lg"><table class="min-w-full text-sm">';
-        
-        tableHTML += '<thead class="font-semibold text-slate-700">';
-        
-        if (data.mainHeaders.length > 0) {
-            tableHTML += '<tr>';
-            tableHTML += '<th class="p-3 text-left sticky left-0 z-10 bg-slate-200">Nhân viên / Bộ phận</th>';
-            data.mainHeaders.forEach(header => {
-                tableHTML += `<th class="p-3 text-center bg-slate-200">${header}</th>`;
-            });
-            tableHTML += '</tr>';
-        }
-
-        if (data.subHeaders.length > 0) {
-            tableHTML += '<tr>';
-            tableHTML += `<th class="p-3 sticky left-0 z-10 bg-slate-100"></th>`;
-            data.subHeaders.forEach(subHeader => {
-                tableHTML += `<th class="p-3 text-center bg-slate-100">${subHeader}</th>`;
-            });
-            tableHTML += '</tr>';
-        }
-        tableHTML += '</thead>';
-
-        tableHTML += '<tbody class="bg-white">';
-        data.dataRows.forEach(row => {
-            tableHTML += '<tr class="border-t hover:bg-gray-50">';
-            tableHTML += `<td class="p-3 font-semibold text-slate-800 sticky left-0 z-10 bg-white">${row.name}</td>`;
-            row.values.forEach(value => {
-                tableHTML += `<td class="p-3 text-right">${value}</td>`;
-            });
-            tableHTML += '</tr>';
-        });
-        tableHTML += '</tbody></table></div>';
-    
-        return tableHTML;
     },
 
     renderCompetitionSummary(data) {
@@ -835,6 +850,7 @@ export const uiSknv = {
                     thucHien: competition.thucHien,
                     mucTieu: competition.mucTieu,
                     percentExpected: competition.percentExpected,
+                    conLai: competition.conLai
                 };
             }).filter(e => e.thucHien > 0 || e.mucTieu > 0);
             
@@ -843,7 +859,7 @@ export const uiSknv = {
             const sortedCategoryData = [...categoryData].sort((a,b) => direction === 'asc' ? a[key] - b[key] : b[key] - a[key]);
             
             const headerClass = (sortKey) => `px-4 py-2 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
-            const cleanName = utils.cleanCategoryName(categoryName.replace(/thi đua doanh thu bán hàng|thi đua doanh thu|thi đua số lượng/gi, "").trim());
+            const cleanName = categoryName.replace(/thi đua doanh thu bán hàng|thi đua doanh thu|thi đua số lượng/gi, "").trim();
 
             html += `<div class="infographic-card"><h4 class="infographic-card__header infographic-card__header--completed">${cleanName}</h4>
                 <div class="overflow-x-auto"><table class="min-w-full text-sm table-bordered" data-table-type="sknv_thidua_category">
