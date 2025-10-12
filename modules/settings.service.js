@@ -1,4 +1,4 @@
-// Version 1.3 - Upgrade efficiency view settings to support ordering
+// Version 1.4 - Fix: Handle loading efficiency view settings saved as IDs
 // MODULE: SETTINGS SERVICE
 // Chứa toàn bộ logic liên quan đến việc quản lý cài đặt (lưu/tải từ localStorage).
 
@@ -15,6 +15,7 @@ export const settingsService = {
     saveEfficiencyViewSettings(settings) {
         if (!Array.isArray(settings)) return;
         try {
+            // Lưu mảng các IDs được chọn (Đây là định dạng mới nhất cho phép lưu)
             localStorage.setItem('efficiencyViewSettings', JSON.stringify(settings));
         } catch (e) {
             console.error("Lỗi khi lưu cài đặt hiển thị Hiệu quả khai thác:", e);
@@ -23,8 +24,6 @@ export const settingsService = {
     
     /**
      * Tải cài đặt hiển thị cho bảng Hiệu quả khai thác.
-     * Sẽ trả về một cấu trúc đầy đủ chứa tất cả các cột, trạng thái hiển thị và thứ tự của chúng.
-     * Tự động xử lý chuyển đổi từ định dạng lưu trữ cũ (mảng chuỗi) sang định dạng mới (mảng đối tượng).
      * @returns {Array<Object>} Mảng cấu hình cột đầy đủ.
      */
     loadEfficiencyViewSettings() {
@@ -42,7 +41,7 @@ export const settingsService = {
             if (savedSettingsJSON) {
                 const savedSettings = JSON.parse(savedSettingsJSON);
 
-                // Kiểm tra nếu là định dạng mới (mảng đối tượng)
+                // 1. Kiểm tra nếu là định dạng MẢNG ĐỐI TƯỢNG (định dạng mong muốn cho tương lai)
                 if (Array.isArray(savedSettings) && typeof savedSettings[0] === 'object') {
                     // Đảm bảo tất cả các cột mới có thể được thêm vào nếu người dùng có cài đặt cũ
                     const savedIds = new Set(savedSettings.map(s => s.id));
@@ -50,8 +49,21 @@ export const settingsService = {
                     return [...savedSettings, ...newItems];
                 }
                 
-                // Xử lý chuyển đổi từ định dạng cũ (mảng chuỗi)
+                // 2. Kiểm tra định dạng MẢNG CHUỖI (có thể là ID hoặc Label)
                 if (Array.isArray(savedSettings) && typeof savedSettings[0] === 'string') {
+                    
+                    // Giả định định dạng lưu mới là mảng các ID: ['pctPhuKien', 'pctGiaDung', ...]
+                    const isNewIdFormat = ALL_ITEMS.some(item => savedSettings.includes(item.id));
+                    
+                    if (isNewIdFormat) {
+                        // Xử lý định dạng mới (mảng ID)
+                        return ALL_ITEMS.map(item => ({
+                            ...item,
+                            visible: savedSettings.includes(item.id) 
+                        }));
+                    }
+                    
+                    // Xử lý định dạng cũ (mảng Label): ['% Phụ kiện', '% Gia dụng', ...]
                     return ALL_ITEMS.map(item => ({
                         ...item,
                         visible: savedSettings.includes(item.label)

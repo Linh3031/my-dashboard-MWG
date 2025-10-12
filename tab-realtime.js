@@ -1,11 +1,11 @@
-// Version 2.9 - Fix: Use settingsService instead of utils
+// Version 3.0 - Fix: Use flexible regex for employee ID matching
 // MODULE: Chịu trách nhiệm cho Tab Doanh thu Realtime
 
 import { appState } from './state.js';
 import { ui } from './ui.js';
 import { services } from './services.js';
-import { settingsService } from './modules/settings.service.js'; // <<< THÊM DÒNG NÀY
-import { highlightService } from './modules/highlight.service.js'; // <<< THÊM DÒNG NÀY
+import { settingsService } from './modules/settings.service.js';
+import { highlightService } from './modules/highlight.service.js';
 
 const realtimeTab = {
     render() {
@@ -37,7 +37,7 @@ const realtimeTab = {
         const selectedDept = document.getElementById('realtime-filter-department').value;
         const selectedEmployees = appState.choices.realtime_employee ? appState.choices.realtime_employee.getValue(true) : [];
         
-        const settings = settingsService.getRealtimeGoalSettings(selectedWarehouse); // <<< CẬP NHẬT DÒNG NÀY
+        const settings = settingsService.getRealtimeGoalSettings(selectedWarehouse);
         
         appState.masterReportData.realtime = services.generateMasterReportData(appState.realtimeYCXData, settings.goals, true);
         
@@ -48,7 +48,9 @@ const realtimeTab = {
 
         const visibleEmployees = new Set(filteredReport.map(nv => String(nv.maNV)));
         const filteredRealtimeYCX = appState.realtimeYCXData.filter(row => {
-            const msnvMatch = String(row.nguoiTao || '').match(/^(\d+)/);
+            // <<< START FIX: Use flexible regex for matching employee ID >>>
+            const msnvMatch = String(row.nguoiTao || '').match(/(\d+)/);
+            // <<< END FIX >>>
             return msnvMatch && visibleEmployees.has(msnvMatch[1].trim());
         });
         
@@ -93,8 +95,8 @@ const realtimeTab = {
             this.handleBrandFilterChange();
         }
         
-        highlightService.populateHighlightFilters('realtime', filteredRealtimeYCX, filteredReport); // Sửa lỗi tiềm tàng
-        highlightService.applyHighlights('realtime'); // Sửa lỗi tiềm tàng
+        highlightService.populateHighlightFilters('realtime', filteredRealtimeYCX, filteredReport);
+        highlightService.applyHighlights('realtime');
     },
 
     handleEmployeeDetailChange() {

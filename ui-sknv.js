@@ -1,7 +1,6 @@
-// Version 2.3 - Restore competition report processing logic
+// Version 2.7 - Fix: Corrected syntax error (removed extra closing brace)
 // MODULE: UI SKNV
-// Chứa các hàm render giao diện cho tab "Sức khỏe nhân viên".
-
+// Chứa các hàm render giao diện cho tab "Sức khỏe nhân viên"
 import { appState } from './state.js';
 import { config } from './config.js';
 import { services } from './services.js';
@@ -25,13 +24,13 @@ export const uiSknv = {
             groupedByDept[dept].push(item);
         });
         
-        if (config && config.DEPARTMENT_GROUPS) {
-            config.DEPARTMENT_GROUPS.forEach(deptName => {
-                if (groupedByDept[deptName]) {
-                    finalHTML += uiSknv.renderRevenueTableForDepartment(deptName, groupedByDept[deptName], sortStateKey);
-                }
-            });
-        }
+        const departmentOrder = [...new Set(reportData.map(item => item.boPhan))].filter(Boolean).sort();
+        
+        departmentOrder.forEach(deptName => {
+            if (groupedByDept[deptName]) {
+                finalHTML += uiSknv.renderRevenueTableForDepartment(deptName, groupedByDept[deptName], sortStateKey);
+            }
+        });
 
         finalHTML += `</div>`;
         container.innerHTML = finalHTML;
@@ -117,11 +116,11 @@ export const uiSknv = {
             groupedByDept[dept].push(item);
         });
         
-        if(config && config.DEPARTMENT_GROUPS) {
-            config.DEPARTMENT_GROUPS.forEach(deptName => {
-                if (groupedByDept[deptName]) finalHTML += uiSknv.renderIncomeTableForDepartment(deptName, groupedByDept[deptName]);
-            });
-        }
+        const departmentOrder = [...new Set(reportData.map(item => item.boPhan))].filter(Boolean).sort();
+        
+        departmentOrder.forEach(deptName => {
+            if (groupedByDept[deptName]) finalHTML += uiSknv.renderIncomeTableForDepartment(deptName, groupedByDept[deptName]);
+        });
         
         finalHTML += `</div>`;
         container.innerHTML = finalHTML;
@@ -204,12 +203,12 @@ export const uiSknv = {
             groupedByDept[dept].push(item);
         });
 
-        if (config && config.DEPARTMENT_GROUPS) {
-            config.DEPARTMENT_GROUPS.forEach(deptName => {
-                if (groupedByDept[deptName]) finalHTML += uiSknv.renderEfficiencyTableForDepartment(deptName, groupedByDept[deptName], sortStateKey);
-            });
-        }
+        const departmentOrder = [...new Set(reportData.map(item => item.boPhan))].filter(Boolean).sort();
 
+        departmentOrder.forEach(deptName => {
+            if (groupedByDept[deptName]) finalHTML += uiSknv.renderEfficiencyTableForDepartment(deptName, groupedByDept[deptName], sortStateKey);
+        });
+        
         finalHTML += `</div>`;
         container.innerHTML = finalHTML;
     },
@@ -582,7 +581,10 @@ export const uiSknv = {
             return direction === 'asc' ? valA - valB : valB - valA;
         });
         
+        // <<< START FIX #1: Sửa lỗi ReferenceError >>>
         const headerClass = (sortKey) => `px-2 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
+        // <<< END FIX #1 >>>
+        
         let tableHTML = `<div class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200"><h3 class="text-xl font-bold text-gray-800 mb-4 uppercase">Bảng tổng hợp hiệu suất nhân viên</h3><div class="overflow-x-auto"><table class="min-w-full text-sm table-bordered" data-table-type="sknv_summary">
             <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                 <tr>
@@ -609,7 +611,11 @@ export const uiSknv = {
             groupedByDept[item.boPhan].push(item);
         });
 
-        config.DEPARTMENT_GROUPS.forEach(deptName => {
+        // <<< START FIX #2: Lấy danh sách bộ phận động >>>
+        const departmentOrder = [...new Set(summaryData.map(item => item.boPhan))].filter(Boolean).sort();
+
+        departmentOrder.forEach(deptName => {
+        // <<< END FIX #2 >>>
             if (groupedByDept[deptName]) {
                 tableHTML += `<tr class="font-bold bg-slate-100"><td colspan="12" class="px-4 py-2">${deptName}</td></tr>`;
                 groupedByDept[deptName].forEach(item => {
