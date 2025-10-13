@@ -1,4 +1,4 @@
-// Version 1.0 - Refactored from utils.js
+// Version 1.1 - Fix incorrect import paths for modules
 // MODULE: HIGHLIGHT SERVICE
 // Chứa logic để quản lý và áp dụng tính năng tô màu (highlight) trên các bảng.
 

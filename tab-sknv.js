@@ -1,11 +1,13 @@
-// Version 2.5 - Fix: Use settingsService instead of utils
+// Version 2.6 - Add initializer call for drag-and-drop functionality
 // MODULE: TAB SKNV
 // Chịu trách nhiệm render và xử lý logic cho tab "Sức khỏe nhân viên"
+
 import { appState } from './state.js';
 import { services } from './services.js';
 import { ui } from './ui.js';
-import { settingsService } from './modules/settings.service.js'; // <<< THÊM DÒNG NÀY
-import { highlightService } from './modules/highlight.service.js'; // <<< THÊM DÒNG NÀY
+import { settingsService } from './modules/settings.service.js';
+import { highlightService } from './modules/highlight.service.js';
+import { dragDroplisteners } from './event-listeners/listeners-dragdrop.js';
 
 export const sknvTab = {
     render() {
@@ -27,7 +29,7 @@ export const sknvTab = {
             filteredYCXData = appState.ycxData.filter(row => row.ngayTao instanceof Date && !isNaN(row.ngayTao) && selectedDateSet.has(startOfDay(row.ngayTao)));
         }
         
-        const goals = settingsService.getLuykeGoalSettings(selectedWarehouse).goals; // <<< CẬP NHẬT DÒNG NÀY
+        const goals = settingsService.getLuykeGoalSettings(selectedWarehouse).goals;
         appState.masterReportData.sknv = services.generateMasterReportData(filteredYCXData, goals, false);
         
         let filteredReport = appState.masterReportData.sknv;
@@ -56,7 +58,13 @@ export const sknvTab = {
             ui.displaySknvReport(filteredReport);
         }
 
-        highlightService.populateHighlightFilters('sknv', filteredYCXData, filteredReport); // Sửa lỗi tiềm tàng
-        highlightService.applyHighlights('sknv'); // Sửa lỗi tiềm tàng
+        highlightService.populateHighlightFilters('sknv', filteredYCXData, filteredReport);
+        highlightService.applyHighlights('sknv');
+
+        // Kích hoạt lại tính năng kéo thả cho các cột hiệu quả sau khi render
+        const efficiencyReportContainer = document.getElementById('efficiency-report-container');
+        if (efficiencyReportContainer) {
+            dragDroplisteners.initializeForContainer('efficiency-report-container');
+        }
     }
 };

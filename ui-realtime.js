@@ -1,4 +1,4 @@
-// Version 3.4 - Fix efficiency settings modal and rendering logic
+// Version 3.5 - Fix dependency error by importing uiSknv
 // MODULE: UI REALTIME
 // Chứa các hàm render giao diện cho tab "Doanh thu Realtime".
 
@@ -7,6 +7,7 @@ import { services } from './services.js';
 import { utils } from './utils.js';
 import { uiComponents } from './ui-components.js';
 import { settingsService } from './modules/settings.service.js';
+import { uiSknv } from './ui-sknv.js'; // <<< THÊM DÒNG NÀY ĐỂ SỬA LỖI
 
 export const uiRealtime = {
     _showEfficiencySettingsModal() {
@@ -98,79 +99,16 @@ export const uiRealtime = {
             groupedByDept[dept].push(item);
         });
 
-        const departmentOrder = appState.danhSachNhanVien ? [...new Set(appState.danhSachNhanVien.map(nv => nv.boPhan))] : Object.keys(groupedByDept);
+        const departmentOrder = uiSknv._getSortedDepartmentList(reportData);
 
         departmentOrder.forEach(deptName => {
             if (groupedByDept[deptName]) {
-                finalHTML += uiRealtime.renderRealtimeRevenueTableForDepartment(deptName, groupedByDept[deptName], sortStateKey);
+                finalHTML += uiSknv.renderRevenueTableForDepartment(deptName, groupedByDept[deptName], sortStateKey);
             }
         });
 
         finalHTML += `</div>`;
         container.innerHTML = finalHTML;
-    },
-
-    renderRealtimeRevenueTableForDepartment: (title, data, sortStateKey) => {
-        const sortState = appState.sortState[sortStateKey] || { key: 'doanhThu', direction: 'desc' };
-        const { key, direction } = sortState;
-        const sortedData = [...data].sort((a, b) => {
-            const valA = a[key] || 0; const valB = b[key] || 0;
-            return direction === 'asc' ? valA - valB : valB - valA;
-        });
-
-        const totals = data.reduce((acc, item) => {
-            acc.doanhThu += item.doanhThu;
-            acc.doanhThuQuyDoi += item.doanhThuQuyDoi;
-            acc.doanhThuTraGop += item.doanhThuTraGop;
-            acc.doanhThuChuaXuat += item.doanhThuChuaXuat;
-            return acc;
-        }, { doanhThu: 0, doanhThuQuyDoi: 0, doanhThuTraGop: 0, doanhThuChuaXuat: 0 });
-
-        totals.hieuQuaQuyDoi = totals.doanhThu > 0 ? (totals.doanhThuQuyDoi / totals.doanhThu) - 1 : 0;
-        totals.tyLeTraCham = totals.doanhThu > 0 ? totals.doanhThuTraGop / totals.doanhThu : 0;
-
-        let titleClass = '';
-        if (title.includes('Tư Vấn')) titleClass = 'department-header-tv';
-        else if (title.includes('Kho')) titleClass = 'department-header-kho';
-        else if (title.includes('Trang Trí')) titleClass = 'department-header-tt';
-
-        const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
-        
-        let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="7">
-                         <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
-                            <tr>
-                                <th class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('doanhThu')} text-right header-group-7" data-sort="doanhThu">Doanh Thu <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('doanhThuQuyDoi')} text-right header-group-7" data-sort="doanhThuQuyDoi">Doanh Thu QĐ <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('hieuQuaQuyDoi')} text-right header-group-7" data-sort="hieuQuaQuyDoi">% QĐ <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('doanhThuTraGop')} text-right header-group-8" data-sort="doanhThuTraGop">DT trả chậm <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('tyLeTraCham')} text-right header-group-8" data-sort="tyLeTraCham">% trả chậm <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('doanhThuChuaXuat')} text-right header-group-9" data-sort="doanhThuChuaXuat">DT Chưa Xuất <span class="sort-indicator"></span></th>
-                             </tr>
-                        </thead><tbody>`;
-        sortedData.forEach(item => {
-            const { mucTieu } = item;
-            const qdClass = item.hieuQuaQuyDoi < ((mucTieu?.phanTramQD || 0) / 100) ? 'cell-performance is-below' : '';
-            const tcClass = item.tyLeTraCham < ((mucTieu?.phanTramTC || 0) / 100) ? 'cell-performance is-below' : '';
-            tableHTML += `<tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2 font-semibold line-clamp-2">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</td>
-                    <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThu)}</td>
-                    <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThuQuyDoi)}</td>
-                    <td class="px-4 py-2 text-right font-bold ${qdClass}">${uiComponents.formatPercentage(item.hieuQuaQuyDoi)}</td>
-                    <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThuTraGop)}</td>
-                    <td class="px-4 py-2 text-right font-bold ${tcClass}">${uiComponents.formatPercentage(item.tyLeTraCham)}</td>
-                    <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThuChuaXuat)}</td></tr>`;
-        });
-         tableHTML += `</tbody><tfoot class="table-footer font-bold"><tr>
-                    <td class="px-4 py-2">Tổng</td>
-                    <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThu)}</td>
-                    <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuQuyDoi)}</td>
-                    <td class="px-4 py-2 text-right">${uiComponents.formatPercentage(totals.hieuQuaQuyDoi)}</td>
-                    <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuTraGop)}</td>
-                    <td class="px-4 py-2 text-right">${uiComponents.formatPercentage(totals.tyLeTraCham)}</td>
-                    <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuChuaXuat)}</td>
-                </tr></tfoot></table></div></div>`;
-        return tableHTML;
     },
 
     renderRealtimeKpiCards: (data, settings) => {
@@ -321,7 +259,7 @@ export const uiRealtime = {
             value: data[config.id],
             target: goals[goalKeyMap[config.id]]
         }));
-
+        
         const createRow = (label, value, target) => {
             const isBelow = value < ((target || 0) / 100);
             return `<tr class="border-t">
@@ -330,7 +268,7 @@ export const uiRealtime = {
                 <td class="px-4 py-2 text-right text-gray-600">${target || 0}%</td>
             </tr>`;
         };
-
+        
         if (!cardHeader.querySelector('.settings-trigger-btn')) {
             cardHeader.classList.add('flex', 'items-center', 'justify-between');
             cardHeader.innerHTML = `<span>HIỆU QUẢ KHAI THÁC</span>` + uiComponents.renderSettingsButton('rt-eff');

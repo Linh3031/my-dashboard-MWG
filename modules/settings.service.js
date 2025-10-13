@@ -1,11 +1,11 @@
-// Version 1.5 - Rework efficiency settings to support object-based config
+// Version 2.0 - Revert loading logic to respect user-saved drag-drop order
 // MODULE: SETTINGS SERVICE
 // Chứa toàn bộ logic liên quan đến việc quản lý cài đặt (lưu/tải từ localStorage).
 
 import { appState } from '../state.js';
 import { ui } from '../ui.js';
 
-// Hằng số chứa danh sách đầy đủ và chính xác các cột cho bảng Hiệu quả khai thác
+// Hằng số chứa danh sách đầy đủ và thứ tự cột chính xác cho bảng Hiệu quả khai thác
 const ALL_EFFICIENCY_ITEMS = [
     { id: 'dtICT', label: 'DT ICT' },
     { id: 'dtPhuKien', label: 'DT Phụ kiện' },
@@ -37,6 +37,7 @@ export const settingsService = {
     
     /**
      * Tải cài đặt hiển thị cho bảng Hiệu quả khai thác.
+     * Logic mới: Ưu tiên thứ tự đã lưu của người dùng, và thêm các cột mới vào cuối.
      * @returns {Array<Object>} Mảng cấu hình cột đầy đủ.
      */
     loadEfficiencyViewSettings() {
@@ -53,7 +54,10 @@ export const settingsService = {
                         .filter(item => !savedIds.has(item.id))
                         .map(item => ({ ...item, visible: true }));
                     
-                    return [...savedItems, ...newItems];
+                    // Lọc ra các mục đã lưu mà không còn tồn tại trong code nữa
+                    const currentItems = savedItems.filter(item => ALL_EFFICIENCY_ITEMS.some(config => config.id === item.id));
+                    
+                    return [...currentItems, ...newItems];
                 }
             }
         } catch (e) {

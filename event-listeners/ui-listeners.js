@@ -1,4 +1,4 @@
-// Version 3.4 - Fix: Use event delegation for dynamically replaced view switchers
+// Version 3.5 - Import and initialize drag-drop listener module
 // MODULE: EVENT LISTENERS INITIALIZER
 // File này đóng vai trò là điểm khởi đầu, import và khởi chạy tất cả các module listener con.
 
@@ -14,6 +14,7 @@ import { initializeCompetitionListeners } from './listeners-competition.js';
 import { initializeHighlightingListeners } from './listeners-highlighting.js';
 import { initializeSettingsListeners } from './listeners-settings.js';
 import { initializeSortingListeners } from './listeners-sorting.js';
+import { dragDroplisteners } from './listeners-dragdrop.js'; // <<< THÊM DÒNG NÀY
 
 let appController = null;
 
@@ -171,6 +172,7 @@ export function initializeEventListeners(mainAppController) {
     initializeCollaborationListeners(appController);
     initializeSortingListeners(appController);
     initializeCompetitionListeners(appController);
+    dragDroplisteners.init(appController); // <<< THÊM DÒNG NÀY
 
     // --- Các sự kiện còn lại ---
     document.getElementById('force-reload-btn')?.addEventListener('click', () => window.location.reload());

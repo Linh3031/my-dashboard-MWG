@@ -1,4 +1,4 @@
-/* Version 4.8 - Add styles for column toggle buttons */
+/* Version 5.0 - Add styles for draggable column toggle tags and icons */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -541,7 +541,7 @@ details[open] > summary .arrow { transform: rotate(180deg); }
 }
 /* === END: STYLES CHO BỘ ĐẾM TIÊU ĐỀ THI ĐUA === */
 
-/* === START: COLUMN TOGGLE STYLES === */
+/* === START: COLUMN TOGGLE & DRAG-DROP STYLES === */
 .column-toggle-btn {
     padding: 4px 12px;
     font-size: 12px;
@@ -568,4 +568,48 @@ details[open] > summary .arrow { transform: rotate(180deg); }
 .column-toggle-btn:not(.active):hover {
     background-color: #d1d5db; /* gray-300 */
 }
-/* === END: COLUMN TOGGLE STYLES === */
+
+/* Styles for SortableJS */
+.draggable-header {
+    cursor: move;
+    cursor: grab;
+}
+.draggable-header:active {
+    cursor: grabbing;
+}
+.sortable-ghost {
+    opacity: 0.4;
+    background-color: #c7d2fe; /* indigo-200 */
+}
+/* === END: COLUMN TOGGLE & DRAG-DROP STYLES === */
+
+/* === START: DRAGGABLE TAG STYLES (NEW) === */
+.column-toggle-btn.draggable-tag {
+    cursor: grab;
+}
+
+.column-toggle-btn.draggable-tag:active {
+    cursor: grabbing;
+}
+
+.column-toggle-btn.draggable-tag:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.drag-handle-icon {
+    color: #6b7280; /* gray-500 for better contrast */
+    transition: color 0.2s ease-in-out;
+}
+
+.column-toggle-btn.draggable-tag:hover .drag-handle-icon {
+    color: #1f2937; /* gray-800 */
+}
+
+/* Style for the item being actively dragged by SortableJS */
+.sortable-drag {
+    opacity: 0.95;
+    transform: rotate(-2deg);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+}
+/* === END: DRAGGABLE TAG STYLES === */

@@ -1,4 +1,4 @@
-// Version 3.0 - Fix: Use flexible regex for employee ID matching
+// Version 3.3 - Add initializer call for drag-and-drop functionality
 // MODULE: Chịu trách nhiệm cho Tab Doanh thu Realtime
 
 import { appState } from './state.js';
@@ -6,8 +6,9 @@ import { ui } from './ui.js';
 import { services } from './services.js';
 import { settingsService } from './modules/settings.service.js';
 import { highlightService } from './modules/highlight.service.js';
+import { dragDroplisteners } from './event-listeners/listeners-dragdrop.js';
 
-const realtimeTab = {
+export const realtimeTab = {
     render() {
         if (appState.danhSachNhanVien.length === 0) {
             ui.togglePlaceholder('realtime-section', true);
@@ -48,9 +49,7 @@ const realtimeTab = {
 
         const visibleEmployees = new Set(filteredReport.map(nv => String(nv.maNV)));
         const filteredRealtimeYCX = appState.realtimeYCXData.filter(row => {
-            // <<< START FIX: Use flexible regex for matching employee ID >>>
             const msnvMatch = String(row.nguoiTao || '').match(/(\d+)/);
-            // <<< END FIX >>>
             return msnvMatch && visibleEmployees.has(msnvMatch[1].trim());
         });
         
@@ -80,13 +79,13 @@ const realtimeTab = {
             
             const employeeSelectorContainer = document.getElementById('dtnv-realtime-employee-selector-container');
             employeeSelectorContainer.classList.toggle('hidden', dtnvViewType !== 'infographic');
-
+            
             if (dtnvViewType === 'infographic') {
                 this.handleEmployeeDetailChange();
             } else {
                 document.getElementById('realtime-revenue-report-container').classList.remove('hidden');
                 document.getElementById('realtime-employee-detail-container').classList.add('hidden');
-                ui.displayRealtimeEmployeeRevenueReport(filteredReport, 'realtime-revenue-report-container', 'realtime_dt_nhanvien');
+                ui.displayEmployeeRevenueReport(filteredReport, 'realtime-revenue-report-container', 'realtime_dt_nhanvien');
             }
 
             ui.displayEmployeeEfficiencyReport(filteredReport, 'realtime-efficiency-report-container', 'realtime_hieuqua_nhanvien');
@@ -97,6 +96,12 @@ const realtimeTab = {
         
         highlightService.populateHighlightFilters('realtime', filteredRealtimeYCX, filteredReport);
         highlightService.applyHighlights('realtime');
+        
+        // Kích hoạt lại tính năng kéo thả cho các cột hiệu quả sau khi render
+        const efficiencyReportContainer = document.getElementById('realtime-efficiency-report-container');
+        if (efficiencyReportContainer) {
+            dragDroplisteners.initializeForContainer('realtime-efficiency-report-container');
+        }
     },
 
     handleEmployeeDetailChange() {
@@ -145,5 +150,3 @@ const realtimeTab = {
         ui.renderRealtimeBrandReport(reportData, dthangViewType);
     }
 };
-
-export { realtimeTab };

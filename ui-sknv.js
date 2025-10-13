@@ -1,4 +1,4 @@
-// Version 2.9 - Fix: Correct variable scope for formatMap in efficiency table
+// Version 3.1 - Rename title, move toggles, add drag handles, and restructure for capture
 // MODULE: UI SKNV
 // Chứa các hàm render giao diện cho tab "Sức khỏe nhân viên"
 
@@ -107,8 +107,8 @@ export const uiSknv = {
                         </thead><tbody>`;
         sortedData.forEach(item => {
             const { mucTieu } = item;
-            const qdClass = item.hieuQuaQuyDoi < (mucTieu.phanTramQD / 100) ? 'cell-performance is-below' : '';
-            const tcClass = item.tyLeTraCham < (mucTieu.phanTramTC / 100) ? 'cell-performance is-below' : '';
+            const qdClass = (mucTieu && item.hieuQuaQuyDoi < (mucTieu.phanTramQD / 100)) ? 'cell-performance is-below' : '';
+            const tcClass = (mucTieu && item.tyLeTraCham < (mucTieu.phanTramTC / 100)) ? 'cell-performance is-below' : '';
             tableHTML += `<tr class="hover:bg-gray-50">
                     <td class="px-4 py-2 font-semibold line-clamp-2">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</td>
                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThu)}</td>
@@ -233,25 +233,26 @@ export const uiSknv = {
         const visibleColumns = columnSettings.filter(c => c.visible);
 
         const columnTogglesHTML = `
-            <div id="efficiency-column-toggles" class="p-3 border-b border-gray-200 flex flex-wrap items-center gap-x-3 gap-y-2">
-                <span class="text-sm font-semibold mr-2 text-gray-700">Tùy chỉnh cột:</span>
+            <div id="efficiency-column-toggles" class="p-3 border-b border-gray-200 flex flex-wrap items-center gap-x-2 gap-y-2">
+                <span class="text-sm font-semibold mr-2 text-gray-700 non-draggable">Tùy chỉnh cột:</span>
                 ${columnSettings.map(col => `
                     <button 
-                        class="column-toggle-btn ${col.visible ? 'active' : ''}" 
+                        class="column-toggle-btn draggable-tag flex items-center ${col.visible ? 'active' : ''}" 
                         data-column-id="${col.id}">
-                        ${col.label}
+                        <svg class="drag-handle-icon mr-2 cursor-grab" width="12" height="12" viewBox="0 0 10 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M4 2a1 1 0 10-2 0 1 1 0 002 0zM2 9a1 1 0 110-2 1 1 0 010 2zm0 5a1 1 0 110-2 1 1 0 010 2zm5-12a1 1 0 10-2 0 1 1 0 002 0zM7 9a1 1 0 110-2 1 1 0 010 2zm0 5a1 1 0 110-2 1 1 0 010 2z" fill="currentColor"></path></svg>
+                        <span>${col.label}</span>
                     </button>
                 `).join('')}
             </div>
         `;
 
         let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-                            <div class="p-4 header-group-3 text-gray-800">
-                                <h3 class="text-xl font-bold uppercase">HIỆU QUẢ KHAI THÁC</h3>
-                                <p class="text-sm italic text-gray-600">(đơn vị tính: Triệu đồng)</p>
-                            </div>
                             ${columnTogglesHTML}
-                        `;
+                            <div data-capture-group="efficiency-table">
+                                <div class="p-4 header-group-3 text-gray-800">
+                                    <h3 class="text-xl font-bold uppercase">HIỆU QUẢ KHAI THÁC THEO NHÂN VIÊN</h3>
+                                    <p class="text-sm italic text-gray-600">(đơn vị tính: Triệu đồng)</p>
+                                </div>`;
 
         const groupedByDept = {};
         reportData.forEach(item => {
@@ -268,7 +269,8 @@ export const uiSknv = {
             }
         });
 
-        finalHTML += `</div>`;
+        finalHTML += `    </div> 
+                      </div>`;
         container.innerHTML = finalHTML;
     },
 
@@ -279,6 +281,14 @@ export const uiSknv = {
             const valA = a[key] || 0; const valB = b[key] || 0;
             return direction === 'asc' ? valA - valB : valB - valA;
         });
+
+        const formatMap = {
+            dtICT: (val) => uiComponents.formatRevenue(val),
+            dtPhuKien: (val) => uiComponents.formatRevenue(val),
+            dtCE: (val) => uiComponents.formatRevenue(val),
+            dtGiaDung: (val) => uiComponents.formatRevenue(val),
+            defaultPercent: (val) => uiComponents.formatPercentage(val)
+        };
 
         const totals = data.reduce((acc, item) => {
             acc.dtICT += item.dtICT;
@@ -319,16 +329,7 @@ export const uiSknv = {
             pctBaoHiem: { label: '% Bảo hiểm', class: 'text-right header-group-12' }
         };
 
-        // *** FIX IS HERE: Moved formatMap declaration to the top of the function ***
-        const formatMap = {
-            dtICT: (val) => uiComponents.formatRevenue(val),
-            dtPhuKien: (val) => uiComponents.formatRevenue(val),
-            dtCE: (val) => uiComponents.formatRevenue(val),
-            dtGiaDung: (val) => uiComponents.formatRevenue(val),
-            defaultPercent: (val) => uiComponents.formatPercentage(val)
-        };
-
-        const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
+        const headerClass = (sortKey) => `px-4 py-3 sortable draggable-header ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
         const captureColumnCount = 1 + visibleColumns.length;
 
         let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="${captureColumnCount}">
@@ -342,12 +343,12 @@ export const uiSknv = {
         sortedData.forEach(item => {
             const { mucTieu } = item;
             const classMap = {
-                pctPhuKien: item.pctPhuKien < ((mucTieu?.phanTramPhuKien || 0) / 100) ? 'cell-performance is-below' : '',
-                pctGiaDung: item.pctGiaDung < ((mucTieu?.phanTramGiaDung || 0) / 100) ? 'cell-performance is-below' : '',
-                pctMLN: item.pctMLN < ((mucTieu?.phanTramMLN || 0) / 100) ? 'cell-performance is-below' : '',
-                pctSim: item.pctSim < ((mucTieu?.phanTramSim || 0) / 100) ? 'cell-performance is-below' : '',
-                pctVAS: item.pctVAS < ((mucTieu?.phanTramVAS || 0) / 100) ? 'cell-performance is-below' : '',
-                pctBaoHiem: item.pctBaoHiem < ((mucTieu?.phanTramBaoHiem || 0) / 100) ? 'cell-performance is-below' : ''
+                pctPhuKien: (mucTieu && item.pctPhuKien < (mucTieu.phanTramPhuKien / 100)) ? 'cell-performance is-below' : '',
+                pctGiaDung: (mucTieu && item.pctGiaDung < (mucTieu.phanTramGiaDung / 100)) ? 'cell-performance is-below' : '',
+                pctMLN: (mucTieu && item.pctMLN < (mucTieu.phanTramMLN / 100)) ? 'cell-performance is-below' : '',
+                pctSim: (mucTieu && item.pctSim < (mucTieu.phanTramSim / 100)) ? 'cell-performance is-below' : '',
+                pctVAS: (mucTieu && item.pctVAS < (mucTieu.phanTramVAS / 100)) ? 'cell-performance is-below' : '',
+                pctBaoHiem: (mucTieu && item.pctBaoHiem < (mucTieu.phanTramBaoHiem / 100)) ? 'cell-performance is-below' : ''
             };
 
             tableHTML += `<tr class="hover:bg-gray-50">
@@ -512,11 +513,11 @@ export const uiSknv = {
         const doanhThuData = [
             { label: 'Doanh thu thực', value: uiComponents.formatRevenue(employeeData.doanhThu), average: uiComponents.formatRevenue(departmentAverages.doanhThu || 0), rawValue: employeeData.doanhThu, rawAverage: departmentAverages.doanhThu },
             { label: 'Doanh thu quy đổi', value: uiComponents.formatRevenue(employeeData.doanhThuQuyDoi), average: uiComponents.formatRevenue(departmentAverages.doanhThuQuyDoi || 0), rawValue: employeeData.doanhThuQuyDoi, rawAverage: departmentAverages.doanhThuQuyDoi },
-            { label: '% Quy đổi', value: uiComponents.formatPercentage(employeeData.hieuQuaQuyDoi), valueClass: employeeData.hieuQuaQuyDoi < ((mucTieu?.phanTramQD || 0) /100) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.hieuQuaQuyDoi), rawValue: employeeData.hieuQuaQuyDoi, rawAverage: departmentAverages.hieuQuaQuyDoi },
+            { label: '% Quy đổi', value: uiComponents.formatPercentage(employeeData.hieuQuaQuyDoi), valueClass: (mucTieu && employeeData.hieuQuaQuyDoi < (mucTieu.phanTramQD / 100)) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.hieuQuaQuyDoi), rawValue: employeeData.hieuQuaQuyDoi, rawAverage: departmentAverages.hieuQuaQuyDoi },
             { label: 'Doanh thu CE', value: uiComponents.formatRevenue(employeeData.dtCE), average: uiComponents.formatRevenue(departmentAverages.dtCE || 0), rawValue: employeeData.dtCE, rawAverage: departmentAverages.dtCE },
             { label: 'Doanh thu ICT', value: uiComponents.formatRevenue(employeeData.dtICT), average: uiComponents.formatRevenue(departmentAverages.dtICT || 0), rawValue: employeeData.dtICT, rawAverage: departmentAverages.dtICT },
             { label: 'Doanh thu trả chậm', value: uiComponents.formatRevenue(employeeData.doanhThuTraGop), average: uiComponents.formatRevenue(departmentAverages.doanhThuTraGop || 0), rawValue: employeeData.doanhThuTraGop, rawAverage: departmentAverages.doanhThuTraGop },
-            { label: '% Trả chậm', value: uiComponents.formatPercentage(employeeData.tyLeTraCham), valueClass: employeeData.tyLeTraCham < ((mucTieu?.phanTramTC || 0) /100) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.tyLeTraCham), rawValue: employeeData.tyLeTraCham, rawAverage: departmentAverages.tyLeTraCham }
+            { label: '% Trả chậm', value: uiComponents.formatPercentage(employeeData.tyLeTraCham), valueClass: (mucTieu && employeeData.tyLeTraCham < (mucTieu.phanTramTC / 100)) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.tyLeTraCham), rawValue: employeeData.tyLeTraCham, rawAverage: departmentAverages.tyLeTraCham }
         ];
         doanhThuData.forEach(d => countEvaluation('doanhthu', d.rawValue, d.rawAverage));
 
@@ -532,12 +533,12 @@ export const uiSknv = {
         nangSuatData.forEach(d => countEvaluation('nangsuat', d.rawValue, d.rawAverage));
 
         const hieuQuaData = [
-            { label: '% PK', value: uiComponents.formatPercentage(employeeData.pctPhuKien), valueClass: employeeData.pctPhuKien < ((mucTieu?.phanTramPhuKien || 0)/100) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctPhuKien), rawValue: employeeData.pctPhuKien, rawAverage: departmentAverages.pctPhuKien },
-            { label: '% Gia dụng', value: uiComponents.formatPercentage(employeeData.pctGiaDung), valueClass: employeeData.pctGiaDung < ((mucTieu?.phanTramGiaDung || 0)/100) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctGiaDung), rawValue: employeeData.pctGiaDung, rawAverage: departmentAverages.pctGiaDung },
-            { label: '% MLN', value: uiComponents.formatPercentage(employeeData.pctMLN), valueClass: employeeData.pctMLN < ((mucTieu?.phanTramMLN || 0)/100) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctMLN), rawValue: employeeData.pctMLN, rawAverage: departmentAverages.pctMLN },
-            { label: '% Sim', value: uiComponents.formatPercentage(employeeData.pctSim), valueClass: employeeData.pctSim < ((mucTieu?.phanTramSim || 0)/100) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctSim), rawValue: employeeData.pctSim, rawAverage: departmentAverages.pctSim },
-            { label: '% VAS', value: uiComponents.formatPercentage(employeeData.pctVAS), valueClass: employeeData.pctVAS < ((mucTieu?.phanTramVAS || 0)/100) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctVAS), rawValue: employeeData.pctVAS, rawAverage: departmentAverages.pctVAS },
-            { label: '% Bảo hiểm', value: uiComponents.formatPercentage(employeeData.pctBaoHiem), valueClass: employeeData.pctBaoHiem < ((mucTieu?.phanTramBaoHiem || 0)/100) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctBaoHiem), rawValue: employeeData.pctBaoHiem, rawAverage: departmentAverages.pctBaoHiem },
+            { label: '% PK', value: uiComponents.formatPercentage(employeeData.pctPhuKien), valueClass: (mucTieu && employeeData.pctPhuKien < (mucTieu.phanTramPhuKien / 100)) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctPhuKien), rawValue: employeeData.pctPhuKien, rawAverage: departmentAverages.pctPhuKien },
+            { label: '% Gia dụng', value: uiComponents.formatPercentage(employeeData.pctGiaDung), valueClass: (mucTieu && employeeData.pctGiaDung < (mucTieu.phanTramGiaDung / 100)) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctGiaDung), rawValue: employeeData.pctGiaDung, rawAverage: departmentAverages.pctGiaDung },
+            { label: '% MLN', value: uiComponents.formatPercentage(employeeData.pctMLN), valueClass: (mucTieu && employeeData.pctMLN < (mucTieu.phanTramMLN / 100)) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctMLN), rawValue: employeeData.pctMLN, rawAverage: departmentAverages.pctMLN },
+            { label: '% Sim', value: uiComponents.formatPercentage(employeeData.pctSim), valueClass: (mucTieu && employeeData.pctSim < (mucTieu.phanTramSim / 100)) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctSim), rawValue: employeeData.pctSim, rawAverage: departmentAverages.pctSim },
+            { label: '% VAS', value: uiComponents.formatPercentage(employeeData.pctVAS), valueClass: (mucTieu && employeeData.pctVAS < (mucTieu.phanTramVAS / 100)) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctVAS), rawValue: employeeData.pctVAS, rawAverage: departmentAverages.pctVAS },
+            { label: '% Bảo hiểm', value: uiComponents.formatPercentage(employeeData.pctBaoHiem), valueClass: (mucTieu && employeeData.pctBaoHiem < (mucTieu.phanTramBaoHiem / 100)) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctBaoHiem), rawValue: employeeData.pctBaoHiem, rawAverage: departmentAverages.pctBaoHiem },
         ];
         hieuQuaData.forEach(d => countEvaluation('hieuqua', d.rawValue, d.rawAverage));
 
