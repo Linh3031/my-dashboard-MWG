@@ -1,12 +1,26 @@
-// Version 1.4 - Fix: Handle loading efficiency view settings saved as IDs
+// Version 2.0 - Revert loading logic to respect user-saved drag-drop order
 // MODULE: SETTINGS SERVICE
 // Chứa toàn bộ logic liên quan đến việc quản lý cài đặt (lưu/tải từ localStorage).
 
 import { appState } from '../state.js';
 import { ui } from '../ui.js';
 
+// Hằng số chứa danh sách đầy đủ và thứ tự cột chính xác cho bảng Hiệu quả khai thác
+const ALL_EFFICIENCY_ITEMS = [
+    { id: 'dtICT', label: 'DT ICT' },
+    { id: 'dtPhuKien', label: 'DT Phụ kiện' },
+    { id: 'pctPhuKien', label: '% Phụ kiện' },
+    { id: 'dtCE', label: 'DT CE' },
+    { id: 'dtGiaDung', label: 'DT Gia dụng' },
+    { id: 'pctGiaDung', label: '% Gia dụng' },
+    { id: 'pctMLN',    label: '% MLN' },
+    { id: 'pctSim',    label: '% Sim' },
+    { id: 'pctVAS',    label: '% VAS' },
+    { id: 'pctBaoHiem', label: '% Bảo hiểm' }
+];
+
+
 export const settingsService = {
-    // === START: HÀM ĐƯỢC NÂNG CẤP ===
     /**
      * Lưu cài đặt hiển thị cho bảng Hiệu quả khai thác.
      * Cấu trúc mới là một mảng các đối tượng, mỗi đối tượng chứa {id, label, visible}.
@@ -15,7 +29,6 @@ export const settingsService = {
     saveEfficiencyViewSettings(settings) {
         if (!Array.isArray(settings)) return;
         try {
-            // Lưu mảng các IDs được chọn (Đây là định dạng mới nhất cho phép lưu)
             localStorage.setItem('efficiencyViewSettings', JSON.stringify(settings));
         } catch (e) {
             console.error("Lỗi khi lưu cài đặt hiển thị Hiệu quả khai thác:", e);
@@ -24,50 +37,27 @@ export const settingsService = {
     
     /**
      * Tải cài đặt hiển thị cho bảng Hiệu quả khai thác.
+     * Logic mới: Ưu tiên thứ tự đã lưu của người dùng, và thêm các cột mới vào cuối.
      * @returns {Array<Object>} Mảng cấu hình cột đầy đủ.
      */
     loadEfficiencyViewSettings() {
-        const ALL_ITEMS = [
-            { id: 'pctPhuKien', label: '% Phụ kiện' },
-            { id: 'pctGiaDung', label: '% Gia dụng' },
-            { id: 'pctMLN',    label: '% MLN' },
-            { id: 'pctSim',    label: '% Sim' },
-            { id: 'pctVAS',    label: '% VAS' },
-            { id: 'pctBaoHiem', label: '% Bảo hiểm' }
-        ];
-
         try {
             const savedSettingsJSON = localStorage.getItem('efficiencyViewSettings');
             if (savedSettingsJSON) {
-                const savedSettings = JSON.parse(savedSettingsJSON);
-
-                // 1. Kiểm tra nếu là định dạng MẢNG ĐỐI TƯỢNG (định dạng mong muốn cho tương lai)
-                if (Array.isArray(savedSettings) && typeof savedSettings[0] === 'object') {
-                    // Đảm bảo tất cả các cột mới có thể được thêm vào nếu người dùng có cài đặt cũ
-                    const savedIds = new Set(savedSettings.map(s => s.id));
-                    const newItems = ALL_ITEMS.filter(item => !savedIds.has(item.id)).map(item => ({ ...item, visible: true }));
-                    return [...savedSettings, ...newItems];
-                }
+                const savedItems = JSON.parse(savedSettingsJSON);
                 
-                // 2. Kiểm tra định dạng MẢNG CHUỖI (có thể là ID hoặc Label)
-                if (Array.isArray(savedSettings) && typeof savedSettings[0] === 'string') {
+                // Đảm bảo dữ liệu lưu là một mảng các đối tượng
+                if (Array.isArray(savedItems) && savedItems.length > 0 && typeof savedItems[0] === 'object') {
+                    const savedIds = new Set(savedItems.map(s => s.id));
+                    // Thêm các cột mới (nếu có trong bản cập nhật) mà người dùng chưa có trong cài đặt
+                    const newItems = ALL_EFFICIENCY_ITEMS
+                        .filter(item => !savedIds.has(item.id))
+                        .map(item => ({ ...item, visible: true }));
                     
-                    // Giả định định dạng lưu mới là mảng các ID: ['pctPhuKien', 'pctGiaDung', ...]
-                    const isNewIdFormat = ALL_ITEMS.some(item => savedSettings.includes(item.id));
+                    // Lọc ra các mục đã lưu mà không còn tồn tại trong code nữa
+                    const currentItems = savedItems.filter(item => ALL_EFFICIENCY_ITEMS.some(config => config.id === item.id));
                     
-                    if (isNewIdFormat) {
-                        // Xử lý định dạng mới (mảng ID)
-                        return ALL_ITEMS.map(item => ({
-                            ...item,
-                            visible: savedSettings.includes(item.id) 
-                        }));
-                    }
-                    
-                    // Xử lý định dạng cũ (mảng Label): ['% Phụ kiện', '% Gia dụng', ...]
-                    return ALL_ITEMS.map(item => ({
-                        ...item,
-                        visible: savedSettings.includes(item.label)
-                    }));
+                    return [...currentItems, ...newItems];
                 }
             }
         } catch (e) {
@@ -75,7 +65,7 @@ export const settingsService = {
         }
 
         // Trả về giá trị mặc định nếu không có gì được lưu hoặc có lỗi
-        return ALL_ITEMS.map(item => ({ ...item, visible: true }));
+        return ALL_EFFICIENCY_ITEMS.map(item => ({ ...item, visible: true }));
     },
 
     saveQdcViewSettings(settings) {
@@ -88,14 +78,13 @@ export const settingsService = {
     },
 
     saveCategoryViewSettings(settings) {
-         if (!Array.isArray(settings)) return;
+        if (!Array.isArray(settings)) return;
         try {
             localStorage.setItem('categoryViewSettings', JSON.stringify(settings));
         } catch (e) {
             console.error("Lỗi khi lưu cài đặt hiển thị Ngành hàng chi tiết:", e);
         }
     },
-    // === END: HÀM ĐƯỢC NÂNG CẤP ===
 
     loadQdcViewSettings(allItems) {
         try {

@@ -1,4 +1,4 @@
-// Version 1.2 - Add save handlers for QDC and Category view settings
+// Version 1.3 - Add event listener for efficiency column toggles
 // MODULE: LISTENERS - SETTINGS
 // Chứa logic sự kiện cho các drawers Cài đặt và các Modals.
 
@@ -64,17 +64,45 @@ export function initializeSettingsListeners(appController) {
             });
 
             if (settingType === 'efficiencyView') {
-                settingsService.saveEfficiencyViewSettings(selectedItems);
-            } else if (settingType === 'qdcView') { // <<< THÊM LOGIC MỚI
+                // Logic cũ này vẫn có thể được sử dụng bởi modal, nhưng UI mới sẽ dùng logic riêng
+                const allItems = settingsService.loadEfficiencyViewSettings();
+                const updatedItems = allItems.map(item => ({...item, visible: selectedItems.includes(item.id)}));
+                settingsService.saveEfficiencyViewSettings(updatedItems);
+            } else if (settingType === 'qdcView') {
                 settingsService.saveQdcViewSettings(selectedItems);
-            } else if (settingType === 'categoryView') { // <<< THÊM LOGIC MỚI
+            } else if (settingType === 'categoryView') {
                 settingsService.saveCategoryViewSettings(selectedItems);
             }
 
             ui.toggleModal('selection-modal', false);
             ui.showNotification('Đã lưu cài đặt hiển thị!', 'success');
-            appController.updateAndRenderCurrentTab(); // Render lại tab để áp dụng thay đổi
+            appController.updateAndRenderCurrentTab();
         }
+
+        // === BẮT ĐẦU LOGIC MỚI CHO TÙY CHỈNH CỘT ===
+        const columnToggleButton = e.target.closest('.column-toggle-btn');
+        if (columnToggleButton && columnToggleButton.closest('#efficiency-column-toggles')) {
+            e.preventDefault();
+            const columnId = columnToggleButton.dataset.columnId;
+            
+            // 1. Tải cài đặt hiện tại
+            const currentSettings = settingsService.loadEfficiencyViewSettings();
+            
+            // 2. Thay đổi trạng thái của cột được nhấp
+            const newSettings = currentSettings.map(col => {
+                if (col.id === columnId) {
+                    return { ...col, visible: !col.visible };
+                }
+                return col;
+            });
+
+            // 3. Lưu cài đặt mới
+            settingsService.saveEfficiencyViewSettings(newSettings);
+            
+            // 4. Render lại tab để áp dụng thay đổi
+            appController.updateAndRenderCurrentTab();
+        }
+        // === KẾT THÚC LOGIC MỚI ===
     });
 
     const searchInput = document.getElementById('selection-modal-search');

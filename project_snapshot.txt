@@ -1355,7 +1355,7 @@ createSnapshot();
 --- END FILE: ./create_snapshot.js ---
 
 --- START FILE: ./dashboard.css ---
-/* Version 4.7 - Add competition summary styles and fix event delegation */
+/* Version 4.9 - Add styles for column toggles and drag-and-drop UX */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -1436,7 +1436,7 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #
 .sortable.sorted-desc .sort-indicator::before { opacity: 0.4; }
 
 .data-input-group { 
-    border: 1px solid #e5e7eb; 
+    border: 1px solid #e5e7eb;
     border-radius: 0.5rem; 
     padding: 1rem; 
     background-color: #f9fafb; 
@@ -1460,7 +1460,8 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #
 .data-input-group__label--link:hover { text-decoration: underline; color: #2563eb; }
 .data-input-group__label--link > .font-normal { font-weight: 400; }
 .data-input-group__content { display: flex; flex-direction: column; gap: 0.5rem; flex-grow: 1; }
-.data-input-group__file-trigger { cursor: pointer; background-color: #e5e7eb; color: #374151; padding: 0.5rem 1rem; border-radius: 0.375rem; font-size: 0.875em; font-weight: 500; transition: background-color 0.2s ease-in-out; white-space: nowrap; }
+.data-input-group__file-trigger { cursor: pointer; background-color: #e5e7eb; color: #374151; padding: 0.5rem 1rem; border-radius: 0.375rem;
+font-size: 0.875em; font-weight: 500; transition: background-color 0.2s ease-in-out; white-space: nowrap; }
 .data-input-group__file-trigger:hover { background-color: #d1d5db; }
 .data-input-group__file-name { font-size: 0.875em; color: #6b7280; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .data-input-group__link { color: #2563eb; text-decoration: none; font-size: 0.875em; }
@@ -1896,6 +1897,51 @@ details[open] > summary .arrow { transform: rotate(180deg); }
     color: #dc2626 !important; 
 }
 /* === END: STYLES CHO BỘ ĐẾM TIÊU ĐỀ THI ĐUA === */
+
+/* === START: COLUMN TOGGLE & DRAG-DROP STYLES === */
+.column-toggle-btn {
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    user-select: none;
+}
+
+.column-toggle-btn.active {
+    background-color: #3b82f6; /* blue-500 */
+    color: white;
+    border-color: #3b82f6;
+}
+
+.column-toggle-btn:not(.active) {
+    background-color: #e5e7eb; /* gray-200 */
+    color: #374151; /* gray-700 */
+    border-color: #d1d5db; /* gray-300 */
+}
+
+.column-toggle-btn:not(.active):hover {
+    background-color: #d1d5db; /* gray-300 */
+}
+
+/* Styles for SortableJS */
+.draggable-header {
+    cursor: move;
+    cursor: grab;
+}
+.draggable-header:active {
+    cursor: grabbing;
+}
+.sortable-ghost {
+    opacity: 0.4;
+    background-color: #c7d2fe; /* indigo-200 */
+}
+.sortable-drag {
+    opacity: 0.9;
+}
+/* === END: COLUMN TOGGLE & DRAG-DROP STYLES === */
 --- END FILE: ./dashboard.css ---
 
 --- START FILE: ./event-listeners/listeners-actions.js ---
@@ -2061,6 +2107,84 @@ export function initializeCompetitionListeners(appController) {
 }
 --- END FILE: ./event-listeners/listeners-competition.js ---
 
+--- START FILE: ./event-listeners/listeners-dragdrop.js ---
+// Version 1.0 - Initial creation for column drag-and-drop functionality
+// MODULE: LISTENERS - DRAG & DROP
+// Chứa logic khởi tạo và xử lý sự kiện kéo-thả cột bằng SortableJS.
+
+import { settingsService } from '../modules/settings.service.js';
+
+let appController = null;
+
+/**
+ * Khởi tạo SortableJS trên các dòng tiêu đề của bảng hiệu quả.
+ * @param {HTMLElement} container - Phần tử DOM chứa các bảng cần kích hoạt kéo-thả.
+ */
+function activateSortableOnEfficiencyTables(container) {
+    if (!container) return;
+
+    const headerRows = container.querySelectorAll('table[data-table-type="hieu_qua"] thead tr, table[data-table-type="realtime_hieuqua_nhanvien"] thead tr');
+
+    headerRows.forEach(row => {
+        new Sortable(row, {
+            animation: 150, // Hiệu ứng chuyển động mượt mà
+            filter: '.non-draggable', // Không cho phép kéo cột có class này
+            onEnd: (evt) => {
+                // Lấy danh sách các thẻ <th> trong thứ tự mới
+                const newHeaderOrder = Array.from(evt.target.querySelectorAll('th'));
+                
+                // Lấy ra ID của các cột theo thứ tự mới
+                const newColumnIdOrder = newHeaderOrder.map(th => th.dataset.sort).filter(Boolean);
+
+                // Tải cài đặt hiện tại
+                const currentSettings = settingsService.loadEfficiencyViewSettings();
+                
+                // Tạo một Map để truy cập nhanh các đối tượng cài đặt theo ID
+                const settingsMap = new Map(currentSettings.map(s => [s.id, s]));
+
+                // Tạo lại mảng cài đặt theo thứ tự mới
+                const reorderedSettings = newColumnIdOrder.map(id => settingsMap.get(id));
+                
+                // Thêm lại các cột đã bị ẩn (nếu có) vào cuối danh sách để không làm mất chúng
+                currentSettings.forEach(setting => {
+                    if (!reorderedSettings.find(s => s.id === setting.id)) {
+                        reorderedSettings.push(setting);
+                    }
+                });
+
+                // Lưu lại cấu hình mới
+                settingsService.saveEfficiencyViewSettings(reorderedSettings);
+
+                // Vẽ lại toàn bộ tab để đồng bộ header, body, và footer của bảng
+                if (appController) {
+                    appController.updateAndRenderCurrentTab();
+                }
+            }
+        });
+    });
+}
+
+
+export const dragDroplisteners = {
+    /**
+     * Hàm khởi tạo chính, nhận vào controller của ứng dụng.
+     * @param {object} mainAppController - Controller chính của ứng dụng.
+     */
+    init(mainAppController) {
+        appController = mainAppController;
+    },
+    
+    /**
+     * Hàm được gọi sau mỗi lần render để kích hoạt lại tính năng kéo-thả.
+     * @param {string} containerId - ID của container chứa bảng (ví dụ: 'efficiency-report-container').
+     */
+    initializeForContainer(containerId) {
+        const container = document.getElementById(containerId);
+        activateSortableOnEfficiencyTables(container);
+    }
+};
+--- END FILE: ./event-listeners/listeners-dragdrop.js ---
+
 --- START FILE: ./event-listeners/listeners-highlighting.js ---
 // Version 1.0 - Refactored from ui-listeners.js
 // MODULE: LISTENERS - HIGHLIGHTING
@@ -2118,7 +2242,7 @@ export function initializeHighlightingListeners(appController) {
 --- END FILE: ./event-listeners/listeners-highlighting.js ---
 
 --- START FILE: ./event-listeners/listeners-settings.js ---
-// Version 1.2 - Add save handlers for QDC and Category view settings
+// Version 1.3 - Add event listener for efficiency column toggles
 // MODULE: LISTENERS - SETTINGS
 // Chứa logic sự kiện cho các drawers Cài đặt và các Modals.
 
@@ -2184,17 +2308,45 @@ export function initializeSettingsListeners(appController) {
             });
 
             if (settingType === 'efficiencyView') {
-                settingsService.saveEfficiencyViewSettings(selectedItems);
-            } else if (settingType === 'qdcView') { // <<< THÊM LOGIC MỚI
+                // Logic cũ này vẫn có thể được sử dụng bởi modal, nhưng UI mới sẽ dùng logic riêng
+                const allItems = settingsService.loadEfficiencyViewSettings();
+                const updatedItems = allItems.map(item => ({...item, visible: selectedItems.includes(item.id)}));
+                settingsService.saveEfficiencyViewSettings(updatedItems);
+            } else if (settingType === 'qdcView') {
                 settingsService.saveQdcViewSettings(selectedItems);
-            } else if (settingType === 'categoryView') { // <<< THÊM LOGIC MỚI
+            } else if (settingType === 'categoryView') {
                 settingsService.saveCategoryViewSettings(selectedItems);
             }
 
             ui.toggleModal('selection-modal', false);
             ui.showNotification('Đã lưu cài đặt hiển thị!', 'success');
-            appController.updateAndRenderCurrentTab(); // Render lại tab để áp dụng thay đổi
+            appController.updateAndRenderCurrentTab();
         }
+
+        // === BẮT ĐẦU LOGIC MỚI CHO TÙY CHỈNH CỘT ===
+        const columnToggleButton = e.target.closest('.column-toggle-btn');
+        if (columnToggleButton && columnToggleButton.closest('#efficiency-column-toggles')) {
+            e.preventDefault();
+            const columnId = columnToggleButton.dataset.columnId;
+            
+            // 1. Tải cài đặt hiện tại
+            const currentSettings = settingsService.loadEfficiencyViewSettings();
+            
+            // 2. Thay đổi trạng thái của cột được nhấp
+            const newSettings = currentSettings.map(col => {
+                if (col.id === columnId) {
+                    return { ...col, visible: !col.visible };
+                }
+                return col;
+            });
+
+            // 3. Lưu cài đặt mới
+            settingsService.saveEfficiencyViewSettings(newSettings);
+            
+            // 4. Render lại tab để áp dụng thay đổi
+            appController.updateAndRenderCurrentTab();
+        }
+        // === KẾT THÚC LOGIC MỚI ===
     });
 
     const searchInput = document.getElementById('selection-modal-search');
@@ -2957,9 +3109,9 @@ export function initializeEventListeners(mainAppController) {
                                     <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-sknv" data-title="SKNV">SKNV</button>
                                     <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-doanhthu-lk" data-title="DoanhThuLK">Doanh thu LK</button>
                                     <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-thunhap" data-title="ThuNhap">Thu nhập</button>
-                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-khai-thac-luy-ke" data-title="HieuQuaKhaiThacLuyKe">Hiệu quả khai thác LK</button>
+                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-khai-thac-luy-ke" data-title="HieuQuaKhaiThacLuyKe">Hiệu quả NV LK</button>
                                     <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-doanhthu-nganhhang" data-title="DTNganhHang">DT ngành hàng</button>
-                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-thi-dua-lk" data-title="HieuQuaThiDuaLK">Hiệu quả thi đua LK</button>
+                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-thi-dua-lk" data-title="HieuQuaThiDuaLK">Thi đua NV LK</button>
                                 </nav>
                                  <div class="flex items-center gap-x-2">
                                      <button id="compose-sknv-notification-btn" class="action-btn action-btn--composer" title="Nhận xét">
@@ -3065,10 +3217,10 @@ export function initializeEventListeners(mainAppController) {
                             <nav id="realtime-subtabs-nav" class="border-b border-gray-200 -mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs" data-content-container="realtime-subtabs-content">
                                 <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-sieu-thi" data-title="SieuThiRealtime">Siêu thị Realtime</button>
                                 <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-nhan-vien" data-title="DTNVRealtime">DT NV Realtime</button>
-                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-hieu-qua" data-title="HieuQuaKhaiThacRealtime">Hiệu quả khai thác Realtime</button>
+                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-hieu-qua" data-title="HieuQuaKhaiThacRealtime">Hiệu quả NV Realtime</button>
                                 <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-nganh-hang" data-title="NganhHangRealtime">Ngành hàng Realtime</button>
                                 <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-hang" data-title="HangRealtime">DT Hãng Realtime</button>
-                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-thi-dua-realtime" data-title="HieuQuaThiDuaRealtime">Hiệu quả thi đua Realtime</button>
+                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-thi-dua-realtime" data-title="HieuQuaThiDuaRealtime">Thi đua NV Realtime</button>
                             </nav>
                              <div class="flex items-center gap-x-2">
                                 <button id="compose-realtime-notification-btn" class="action-btn action-btn--composer" title="Nhận xét">
@@ -4476,15 +4628,29 @@ export const highlightService = {
 --- END FILE: ./modules/highlight.service.js ---
 
 --- START FILE: ./modules/settings.service.js ---
-// Version 1.4 - Fix: Handle loading efficiency view settings saved as IDs
+// Version 1.5 - Rework efficiency settings to support object-based config
 // MODULE: SETTINGS SERVICE
 // Chứa toàn bộ logic liên quan đến việc quản lý cài đặt (lưu/tải từ localStorage).
 
 import { appState } from '../state.js';
 import { ui } from '../ui.js';
 
+// Hằng số chứa danh sách đầy đủ và chính xác các cột cho bảng Hiệu quả khai thác
+const ALL_EFFICIENCY_ITEMS = [
+    { id: 'dtICT', label: 'DT ICT' },
+    { id: 'dtPhuKien', label: 'DT Phụ kiện' },
+    { id: 'pctPhuKien', label: '% Phụ kiện' },
+    { id: 'dtCE', label: 'DT CE' },
+    { id: 'dtGiaDung', label: 'DT Gia dụng' },
+    { id: 'pctGiaDung', label: '% Gia dụng' },
+    { id: 'pctMLN',    label: '% MLN' },
+    { id: 'pctSim',    label: '% Sim' },
+    { id: 'pctVAS',    label: '% VAS' },
+    { id: 'pctBaoHiem', label: '% Bảo hiểm' }
+];
+
+
 export const settingsService = {
-    // === START: HÀM ĐƯỢC NÂNG CẤP ===
     /**
      * Lưu cài đặt hiển thị cho bảng Hiệu quả khai thác.
      * Cấu trúc mới là một mảng các đối tượng, mỗi đối tượng chứa {id, label, visible}.
@@ -4493,7 +4659,6 @@ export const settingsService = {
     saveEfficiencyViewSettings(settings) {
         if (!Array.isArray(settings)) return;
         try {
-            // Lưu mảng các IDs được chọn (Đây là định dạng mới nhất cho phép lưu)
             localStorage.setItem('efficiencyViewSettings', JSON.stringify(settings));
         } catch (e) {
             console.error("Lỗi khi lưu cài đặt hiển thị Hiệu quả khai thác:", e);
@@ -4505,47 +4670,20 @@ export const settingsService = {
      * @returns {Array<Object>} Mảng cấu hình cột đầy đủ.
      */
     loadEfficiencyViewSettings() {
-        const ALL_ITEMS = [
-            { id: 'pctPhuKien', label: '% Phụ kiện' },
-            { id: 'pctGiaDung', label: '% Gia dụng' },
-            { id: 'pctMLN',    label: '% MLN' },
-            { id: 'pctSim',    label: '% Sim' },
-            { id: 'pctVAS',    label: '% VAS' },
-            { id: 'pctBaoHiem', label: '% Bảo hiểm' }
-        ];
-
         try {
             const savedSettingsJSON = localStorage.getItem('efficiencyViewSettings');
             if (savedSettingsJSON) {
-                const savedSettings = JSON.parse(savedSettingsJSON);
-
-                // 1. Kiểm tra nếu là định dạng MẢNG ĐỐI TƯỢNG (định dạng mong muốn cho tương lai)
-                if (Array.isArray(savedSettings) && typeof savedSettings[0] === 'object') {
-                    // Đảm bảo tất cả các cột mới có thể được thêm vào nếu người dùng có cài đặt cũ
-                    const savedIds = new Set(savedSettings.map(s => s.id));
-                    const newItems = ALL_ITEMS.filter(item => !savedIds.has(item.id)).map(item => ({ ...item, visible: true }));
-                    return [...savedSettings, ...newItems];
-                }
+                const savedItems = JSON.parse(savedSettingsJSON);
                 
-                // 2. Kiểm tra định dạng MẢNG CHUỖI (có thể là ID hoặc Label)
-                if (Array.isArray(savedSettings) && typeof savedSettings[0] === 'string') {
+                // Đảm bảo dữ liệu lưu là một mảng các đối tượng
+                if (Array.isArray(savedItems) && savedItems.length > 0 && typeof savedItems[0] === 'object') {
+                    const savedIds = new Set(savedItems.map(s => s.id));
+                    // Thêm các cột mới (nếu có trong bản cập nhật) mà người dùng chưa có trong cài đặt
+                    const newItems = ALL_EFFICIENCY_ITEMS
+                        .filter(item => !savedIds.has(item.id))
+                        .map(item => ({ ...item, visible: true }));
                     
-                    // Giả định định dạng lưu mới là mảng các ID: ['pctPhuKien', 'pctGiaDung', ...]
-                    const isNewIdFormat = ALL_ITEMS.some(item => savedSettings.includes(item.id));
-                    
-                    if (isNewIdFormat) {
-                        // Xử lý định dạng mới (mảng ID)
-                        return ALL_ITEMS.map(item => ({
-                            ...item,
-                            visible: savedSettings.includes(item.id) 
-                        }));
-                    }
-                    
-                    // Xử lý định dạng cũ (mảng Label): ['% Phụ kiện', '% Gia dụng', ...]
-                    return ALL_ITEMS.map(item => ({
-                        ...item,
-                        visible: savedSettings.includes(item.label)
-                    }));
+                    return [...savedItems, ...newItems];
                 }
             }
         } catch (e) {
@@ -4553,7 +4691,7 @@ export const settingsService = {
         }
 
         // Trả về giá trị mặc định nếu không có gì được lưu hoặc có lỗi
-        return ALL_ITEMS.map(item => ({ ...item, visible: true }));
+        return ALL_EFFICIENCY_ITEMS.map(item => ({ ...item, visible: true }));
     },
 
     saveQdcViewSettings(settings) {
@@ -4566,14 +4704,13 @@ export const settingsService = {
     },
 
     saveCategoryViewSettings(settings) {
-         if (!Array.isArray(settings)) return;
+        if (!Array.isArray(settings)) return;
         try {
             localStorage.setItem('categoryViewSettings', JSON.stringify(settings));
         } catch (e) {
             console.error("Lỗi khi lưu cài đặt hiển thị Ngành hàng chi tiết:", e);
         }
     },
-    // === END: HÀM ĐƯỢC NÂNG CẤP ===
 
     loadQdcViewSettings(allItems) {
         try {
@@ -6233,7 +6370,7 @@ createSnapshot();
 --- END FILE: ./create_snapshot.js ---
 
 --- START FILE: ./dashboard.css ---
-/* Version 4.7 - Add competition summary styles and fix event delegation */
+/* Version 4.9 - Add styles for column toggles and drag-and-drop UX */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -6314,7 +6451,7 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #
 .sortable.sorted-desc .sort-indicator::before { opacity: 0.4; }
 
 .data-input-group { 
-    border: 1px solid #e5e7eb; 
+    border: 1px solid #e5e7eb;
     border-radius: 0.5rem; 
     padding: 1rem; 
     background-color: #f9fafb; 
@@ -6338,7 +6475,8 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #
 .data-input-group__label--link:hover { text-decoration: underline; color: #2563eb; }
 .data-input-group__label--link > .font-normal { font-weight: 400; }
 .data-input-group__content { display: flex; flex-direction: column; gap: 0.5rem; flex-grow: 1; }
-.data-input-group__file-trigger { cursor: pointer; background-color: #e5e7eb; color: #374151; padding: 0.5rem 1rem; border-radius: 0.375rem; font-size: 0.875em; font-weight: 500; transition: background-color 0.2s ease-in-out; white-space: nowrap; }
+.data-input-group__file-trigger { cursor: pointer; background-color: #e5e7eb; color: #374151; padding: 0.5rem 1rem; border-radius: 0.375rem;
+font-size: 0.875em; font-weight: 500; transition: background-color 0.2s ease-in-out; white-space: nowrap; }
 .data-input-group__file-trigger:hover { background-color: #d1d5db; }
 .data-input-group__file-name { font-size: 0.875em; color: #6b7280; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .data-input-group__link { color: #2563eb; text-decoration: none; font-size: 0.875em; }
@@ -6774,6 +6912,51 @@ details[open] > summary .arrow { transform: rotate(180deg); }
     color: #dc2626 !important; 
 }
 /* === END: STYLES CHO BỘ ĐẾM TIÊU ĐỀ THI ĐUA === */
+
+/* === START: COLUMN TOGGLE & DRAG-DROP STYLES === */
+.column-toggle-btn {
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    user-select: none;
+}
+
+.column-toggle-btn.active {
+    background-color: #3b82f6; /* blue-500 */
+    color: white;
+    border-color: #3b82f6;
+}
+
+.column-toggle-btn:not(.active) {
+    background-color: #e5e7eb; /* gray-200 */
+    color: #374151; /* gray-700 */
+    border-color: #d1d5db; /* gray-300 */
+}
+
+.column-toggle-btn:not(.active):hover {
+    background-color: #d1d5db; /* gray-300 */
+}
+
+/* Styles for SortableJS */
+.draggable-header {
+    cursor: move;
+    cursor: grab;
+}
+.draggable-header:active {
+    cursor: grabbing;
+}
+.sortable-ghost {
+    opacity: 0.4;
+    background-color: #c7d2fe; /* indigo-200 */
+}
+.sortable-drag {
+    opacity: 0.9;
+}
+/* === END: COLUMN TOGGLE & DRAG-DROP STYLES === */
 --- END FILE: ./dashboard.css ---
 
 --- START FILE: ./event-listeners/listeners-actions.js ---
@@ -6939,6 +7122,84 @@ export function initializeCompetitionListeners(appController) {
 }
 --- END FILE: ./event-listeners/listeners-competition.js ---
 
+--- START FILE: ./event-listeners/listeners-dragdrop.js ---
+// Version 1.0 - Initial creation for column drag-and-drop functionality
+// MODULE: LISTENERS - DRAG & DROP
+// Chứa logic khởi tạo và xử lý sự kiện kéo-thả cột bằng SortableJS.
+
+import { settingsService } from '../modules/settings.service.js';
+
+let appController = null;
+
+/**
+ * Khởi tạo SortableJS trên các dòng tiêu đề của bảng hiệu quả.
+ * @param {HTMLElement} container - Phần tử DOM chứa các bảng cần kích hoạt kéo-thả.
+ */
+function activateSortableOnEfficiencyTables(container) {
+    if (!container) return;
+
+    const headerRows = container.querySelectorAll('table[data-table-type="hieu_qua"] thead tr, table[data-table-type="realtime_hieuqua_nhanvien"] thead tr');
+
+    headerRows.forEach(row => {
+        new Sortable(row, {
+            animation: 150, // Hiệu ứng chuyển động mượt mà
+            filter: '.non-draggable', // Không cho phép kéo cột có class này
+            onEnd: (evt) => {
+                // Lấy danh sách các thẻ <th> trong thứ tự mới
+                const newHeaderOrder = Array.from(evt.target.querySelectorAll('th'));
+                
+                // Lấy ra ID của các cột theo thứ tự mới
+                const newColumnIdOrder = newHeaderOrder.map(th => th.dataset.sort).filter(Boolean);
+
+                // Tải cài đặt hiện tại
+                const currentSettings = settingsService.loadEfficiencyViewSettings();
+                
+                // Tạo một Map để truy cập nhanh các đối tượng cài đặt theo ID
+                const settingsMap = new Map(currentSettings.map(s => [s.id, s]));
+
+                // Tạo lại mảng cài đặt theo thứ tự mới
+                const reorderedSettings = newColumnIdOrder.map(id => settingsMap.get(id));
+                
+                // Thêm lại các cột đã bị ẩn (nếu có) vào cuối danh sách để không làm mất chúng
+                currentSettings.forEach(setting => {
+                    if (!reorderedSettings.find(s => s.id === setting.id)) {
+                        reorderedSettings.push(setting);
+                    }
+                });
+
+                // Lưu lại cấu hình mới
+                settingsService.saveEfficiencyViewSettings(reorderedSettings);
+
+                // Vẽ lại toàn bộ tab để đồng bộ header, body, và footer của bảng
+                if (appController) {
+                    appController.updateAndRenderCurrentTab();
+                }
+            }
+        });
+    });
+}
+
+
+export const dragDroplisteners = {
+    /**
+     * Hàm khởi tạo chính, nhận vào controller của ứng dụng.
+     * @param {object} mainAppController - Controller chính của ứng dụng.
+     */
+    init(mainAppController) {
+        appController = mainAppController;
+    },
+    
+    /**
+     * Hàm được gọi sau mỗi lần render để kích hoạt lại tính năng kéo-thả.
+     * @param {string} containerId - ID của container chứa bảng (ví dụ: 'efficiency-report-container').
+     */
+    initializeForContainer(containerId) {
+        const container = document.getElementById(containerId);
+        activateSortableOnEfficiencyTables(container);
+    }
+};
+--- END FILE: ./event-listeners/listeners-dragdrop.js ---
+
 --- START FILE: ./event-listeners/listeners-highlighting.js ---
 // Version 1.0 - Refactored from ui-listeners.js
 // MODULE: LISTENERS - HIGHLIGHTING
@@ -6996,7 +7257,7 @@ export function initializeHighlightingListeners(appController) {
 --- END FILE: ./event-listeners/listeners-highlighting.js ---
 
 --- START FILE: ./event-listeners/listeners-settings.js ---
-// Version 1.2 - Add save handlers for QDC and Category view settings
+// Version 1.3 - Add event listener for efficiency column toggles
 // MODULE: LISTENERS - SETTINGS
 // Chứa logic sự kiện cho các drawers Cài đặt và các Modals.
 
@@ -7062,17 +7323,45 @@ export function initializeSettingsListeners(appController) {
             });
 
             if (settingType === 'efficiencyView') {
-                settingsService.saveEfficiencyViewSettings(selectedItems);
-            } else if (settingType === 'qdcView') { // <<< THÊM LOGIC MỚI
+                // Logic cũ này vẫn có thể được sử dụng bởi modal, nhưng UI mới sẽ dùng logic riêng
+                const allItems = settingsService.loadEfficiencyViewSettings();
+                const updatedItems = allItems.map(item => ({...item, visible: selectedItems.includes(item.id)}));
+                settingsService.saveEfficiencyViewSettings(updatedItems);
+            } else if (settingType === 'qdcView') {
                 settingsService.saveQdcViewSettings(selectedItems);
-            } else if (settingType === 'categoryView') { // <<< THÊM LOGIC MỚI
+            } else if (settingType === 'categoryView') {
                 settingsService.saveCategoryViewSettings(selectedItems);
             }
 
             ui.toggleModal('selection-modal', false);
             ui.showNotification('Đã lưu cài đặt hiển thị!', 'success');
-            appController.updateAndRenderCurrentTab(); // Render lại tab để áp dụng thay đổi
+            appController.updateAndRenderCurrentTab();
         }
+
+        // === BẮT ĐẦU LOGIC MỚI CHO TÙY CHỈNH CỘT ===
+        const columnToggleButton = e.target.closest('.column-toggle-btn');
+        if (columnToggleButton && columnToggleButton.closest('#efficiency-column-toggles')) {
+            e.preventDefault();
+            const columnId = columnToggleButton.dataset.columnId;
+            
+            // 1. Tải cài đặt hiện tại
+            const currentSettings = settingsService.loadEfficiencyViewSettings();
+            
+            // 2. Thay đổi trạng thái của cột được nhấp
+            const newSettings = currentSettings.map(col => {
+                if (col.id === columnId) {
+                    return { ...col, visible: !col.visible };
+                }
+                return col;
+            });
+
+            // 3. Lưu cài đặt mới
+            settingsService.saveEfficiencyViewSettings(newSettings);
+            
+            // 4. Render lại tab để áp dụng thay đổi
+            appController.updateAndRenderCurrentTab();
+        }
+        // === KẾT THÚC LOGIC MỚI ===
     });
 
     const searchInput = document.getElementById('selection-modal-search');
@@ -7835,9 +8124,9 @@ export function initializeEventListeners(mainAppController) {
                                     <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-sknv" data-title="SKNV">SKNV</button>
                                     <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-doanhthu-lk" data-title="DoanhThuLK">Doanh thu LK</button>
                                     <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-thunhap" data-title="ThuNhap">Thu nhập</button>
-                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-khai-thac-luy-ke" data-title="HieuQuaKhaiThacLuyKe">Hiệu quả khai thác LK</button>
+                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-khai-thac-luy-ke" data-title="HieuQuaKhaiThacLuyKe">Hiệu quả NV LK</button>
                                     <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-doanhthu-nganhhang" data-title="DTNganhHang">DT ngành hàng</button>
-                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-thi-dua-lk" data-title="HieuQuaThiDuaLK">Hiệu quả thi đua LK</button>
+                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-thi-dua-lk" data-title="HieuQuaThiDuaLK">Thi đua NV LK</button>
                                 </nav>
                                  <div class="flex items-center gap-x-2">
                                      <button id="compose-sknv-notification-btn" class="action-btn action-btn--composer" title="Nhận xét">
@@ -7943,10 +8232,10 @@ export function initializeEventListeners(mainAppController) {
                             <nav id="realtime-subtabs-nav" class="border-b border-gray-200 -mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs" data-content-container="realtime-subtabs-content">
                                 <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-sieu-thi" data-title="SieuThiRealtime">Siêu thị Realtime</button>
                                 <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-nhan-vien" data-title="DTNVRealtime">DT NV Realtime</button>
-                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-hieu-qua" data-title="HieuQuaKhaiThacRealtime">Hiệu quả khai thác Realtime</button>
+                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-hieu-qua" data-title="HieuQuaKhaiThacRealtime">Hiệu quả NV Realtime</button>
                                 <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-nganh-hang" data-title="NganhHangRealtime">Ngành hàng Realtime</button>
                                 <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-hang" data-title="HangRealtime">DT Hãng Realtime</button>
-                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-thi-dua-realtime" data-title="HieuQuaThiDuaRealtime">Hiệu quả thi đua Realtime</button>
+                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-thi-dua-realtime" data-title="HieuQuaThiDuaRealtime">Thi đua NV Realtime</button>
                             </nav>
                              <div class="flex items-center gap-x-2">
                                 <button id="compose-realtime-notification-btn" class="action-btn action-btn--composer" title="Nhận xét">
@@ -9354,15 +9643,29 @@ export const highlightService = {
 --- END FILE: ./modules/highlight.service.js ---
 
 --- START FILE: ./modules/settings.service.js ---
-// Version 1.4 - Fix: Handle loading efficiency view settings saved as IDs
+// Version 1.5 - Rework efficiency settings to support object-based config
 // MODULE: SETTINGS SERVICE
 // Chứa toàn bộ logic liên quan đến việc quản lý cài đặt (lưu/tải từ localStorage).
 
 import { appState } from '../state.js';
 import { ui } from '../ui.js';
 
+// Hằng số chứa danh sách đầy đủ và chính xác các cột cho bảng Hiệu quả khai thác
+const ALL_EFFICIENCY_ITEMS = [
+    { id: 'dtICT', label: 'DT ICT' },
+    { id: 'dtPhuKien', label: 'DT Phụ kiện' },
+    { id: 'pctPhuKien', label: '% Phụ kiện' },
+    { id: 'dtCE', label: 'DT CE' },
+    { id: 'dtGiaDung', label: 'DT Gia dụng' },
+    { id: 'pctGiaDung', label: '% Gia dụng' },
+    { id: 'pctMLN',    label: '% MLN' },
+    { id: 'pctSim',    label: '% Sim' },
+    { id: 'pctVAS',    label: '% VAS' },
+    { id: 'pctBaoHiem', label: '% Bảo hiểm' }
+];
+
+
 export const settingsService = {
-    // === START: HÀM ĐƯỢC NÂNG CẤP ===
     /**
      * Lưu cài đặt hiển thị cho bảng Hiệu quả khai thác.
      * Cấu trúc mới là một mảng các đối tượng, mỗi đối tượng chứa {id, label, visible}.
@@ -9371,7 +9674,6 @@ export const settingsService = {
     saveEfficiencyViewSettings(settings) {
         if (!Array.isArray(settings)) return;
         try {
-            // Lưu mảng các IDs được chọn (Đây là định dạng mới nhất cho phép lưu)
             localStorage.setItem('efficiencyViewSettings', JSON.stringify(settings));
         } catch (e) {
             console.error("Lỗi khi lưu cài đặt hiển thị Hiệu quả khai thác:", e);
@@ -9383,47 +9685,20 @@ export const settingsService = {
      * @returns {Array<Object>} Mảng cấu hình cột đầy đủ.
      */
     loadEfficiencyViewSettings() {
-        const ALL_ITEMS = [
-            { id: 'pctPhuKien', label: '% Phụ kiện' },
-            { id: 'pctGiaDung', label: '% Gia dụng' },
-            { id: 'pctMLN',    label: '% MLN' },
-            { id: 'pctSim',    label: '% Sim' },
-            { id: 'pctVAS',    label: '% VAS' },
-            { id: 'pctBaoHiem', label: '% Bảo hiểm' }
-        ];
-
         try {
             const savedSettingsJSON = localStorage.getItem('efficiencyViewSettings');
             if (savedSettingsJSON) {
-                const savedSettings = JSON.parse(savedSettingsJSON);
-
-                // 1. Kiểm tra nếu là định dạng MẢNG ĐỐI TƯỢNG (định dạng mong muốn cho tương lai)
-                if (Array.isArray(savedSettings) && typeof savedSettings[0] === 'object') {
-                    // Đảm bảo tất cả các cột mới có thể được thêm vào nếu người dùng có cài đặt cũ
-                    const savedIds = new Set(savedSettings.map(s => s.id));
-                    const newItems = ALL_ITEMS.filter(item => !savedIds.has(item.id)).map(item => ({ ...item, visible: true }));
-                    return [...savedSettings, ...newItems];
-                }
+                const savedItems = JSON.parse(savedSettingsJSON);
                 
-                // 2. Kiểm tra định dạng MẢNG CHUỖI (có thể là ID hoặc Label)
-                if (Array.isArray(savedSettings) && typeof savedSettings[0] === 'string') {
+                // Đảm bảo dữ liệu lưu là một mảng các đối tượng
+                if (Array.isArray(savedItems) && savedItems.length > 0 && typeof savedItems[0] === 'object') {
+                    const savedIds = new Set(savedItems.map(s => s.id));
+                    // Thêm các cột mới (nếu có trong bản cập nhật) mà người dùng chưa có trong cài đặt
+                    const newItems = ALL_EFFICIENCY_ITEMS
+                        .filter(item => !savedIds.has(item.id))
+                        .map(item => ({ ...item, visible: true }));
                     
-                    // Giả định định dạng lưu mới là mảng các ID: ['pctPhuKien', 'pctGiaDung', ...]
-                    const isNewIdFormat = ALL_ITEMS.some(item => savedSettings.includes(item.id));
-                    
-                    if (isNewIdFormat) {
-                        // Xử lý định dạng mới (mảng ID)
-                        return ALL_ITEMS.map(item => ({
-                            ...item,
-                            visible: savedSettings.includes(item.id) 
-                        }));
-                    }
-                    
-                    // Xử lý định dạng cũ (mảng Label): ['% Phụ kiện', '% Gia dụng', ...]
-                    return ALL_ITEMS.map(item => ({
-                        ...item,
-                        visible: savedSettings.includes(item.label)
-                    }));
+                    return [...savedItems, ...newItems];
                 }
             }
         } catch (e) {
@@ -9431,7 +9706,7 @@ export const settingsService = {
         }
 
         // Trả về giá trị mặc định nếu không có gì được lưu hoặc có lỗi
-        return ALL_ITEMS.map(item => ({ ...item, visible: true }));
+        return ALL_EFFICIENCY_ITEMS.map(item => ({ ...item, visible: true }));
     },
 
     saveQdcViewSettings(settings) {
@@ -9444,14 +9719,13 @@ export const settingsService = {
     },
 
     saveCategoryViewSettings(settings) {
-         if (!Array.isArray(settings)) return;
+        if (!Array.isArray(settings)) return;
         try {
             localStorage.setItem('categoryViewSettings', JSON.stringify(settings));
         } catch (e) {
             console.error("Lỗi khi lưu cài đặt hiển thị Ngành hàng chi tiết:", e);
         }
     },
-    // === END: HÀM ĐƯỢC NÂNG CẤP ===
 
     loadQdcViewSettings(allItems) {
         try {
@@ -13159,7 +13433,7 @@ export const uiLuyke = {
 --- END FILE: ./ui-luyke.js ---
 
 --- START FILE: ./ui-realtime.js ---
-// Version 3.2 - Add settings for QDC and Category tables
+// Version 3.4 - Fix efficiency settings modal and rendering logic
 // MODULE: UI REALTIME
 // Chứa các hàm render giao diện cho tab "Doanh thu Realtime".
 
@@ -13174,14 +13448,14 @@ export const uiRealtime = {
         const modal = document.getElementById('selection-modal');
         if (!modal) return;
 
-        const allItems = ['% Phụ kiện', '% Gia dụng', '% MLN', '% Sim', '% VAS', '% Bảo hiểm'];
-        const savedSettings = settingsService.loadEfficiencyViewSettings();
+        // Lấy danh sách đầy đủ các mục từ settings service
+        const allItemsConfig = settingsService.loadEfficiencyViewSettings();
         
         const listContainer = document.getElementById('selection-modal-list');
-        listContainer.innerHTML = allItems.map(item => `
+        listContainer.innerHTML = allItemsConfig.map(item => `
             <div class="selection-item">
-                <input type="checkbox" id="select-item-rt-eff-${item.replace(/[^a-zA-Z0-9]/g, '')}" value="${item}" ${savedSettings.includes(item) ? 'checked' : ''}>
-                <label for="select-item-rt-eff-${item.replace(/[^a-zA-Z0-9]/g, '')}">${item}</label>
+                <input type="checkbox" id="select-item-rt-eff-${item.id}" value="${item.id}" ${item.visible ? 'checked' : ''}>
+                <label for="select-item-rt-eff-${item.id}">${item.label}</label>
             </div>
         `).join('');
 
@@ -13246,7 +13520,6 @@ export const uiRealtime = {
             container.innerHTML = '<p class="text-gray-500">Không có dữ liệu doanh thu cho lựa chọn này.</p>';
             return;
         }
-
         let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden" data-capture-group="1">
             <div class="p-4 header-group-1 text-gray-800">
                 <h3 class="text-xl font-bold uppercase">Doanh thu nhân viên Realtime</h3>
@@ -13297,9 +13570,9 @@ export const uiRealtime = {
         else if (title.includes('Trang Trí')) titleClass = 'department-header-tt';
 
         const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
-
-        let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}">
-                        <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
+        
+        let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="7">
+                         <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                             <tr>
                                 <th class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('doanhThu')} text-right header-group-7" data-sort="doanhThu">Doanh Thu <span class="sort-indicator"></span></th>
@@ -13308,7 +13581,7 @@ export const uiRealtime = {
                                 <th class="${headerClass('doanhThuTraGop')} text-right header-group-8" data-sort="doanhThuTraGop">DT trả chậm <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('tyLeTraCham')} text-right header-group-8" data-sort="tyLeTraCham">% trả chậm <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('doanhThuChuaXuat')} text-right header-group-9" data-sort="doanhThuChuaXuat">DT Chưa Xuất <span class="sort-indicator"></span></th>
-                            </tr>
+                             </tr>
                         </thead><tbody>`;
         sortedData.forEach(item => {
             const { mucTieu } = item;
@@ -13408,7 +13681,7 @@ export const uiRealtime = {
         const container = document.getElementById('realtime-category-details-content');
         const cardHeader = document.getElementById('realtime-category-title');
         if (!container || !cardHeader ||!data || !data.nganhHangChiTiet) { container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; return; }
-
+        
         const { nganhHangChiTiet } = data;
         const allItems = Object.keys(nganhHangChiTiet).sort();
         const visibleItems = settingsService.loadCategoryViewSettings(allItems);
@@ -13462,21 +13735,27 @@ export const uiRealtime = {
         const container = document.getElementById('realtime-efficiency-content');
         const cardHeader = document.getElementById('realtime-efficiency-title');
 
-        if (!container || !cardHeader || !data || !goals) { 
-            if(container) container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; 
-            return; 
+        if (!container || !cardHeader || !data || !goals) {
+            if (container) container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`;
+            return;
         }
 
-        const visibleItems = settingsService.loadEfficiencyViewSettings();
+        const allItemsConfig = settingsService.loadEfficiencyViewSettings();
 
-        const allItems = {
-            '% Phụ kiện': { value: data.pctPhuKien, target: goals.phanTramPhuKien },
-            '% Gia dụng': { value: data.pctGiaDung, target: goals.phanTramGiaDung },
-            '% MLN': { value: data.pctMLN, target: goals.phanTramMLN },
-            '% Sim': { value: data.pctSim, target: goals.phanTramSim },
-            '% VAS': { value: data.pctVAS, target: goals.phanTramVAS },
-            '% Bảo hiểm': { value: data.pctBaoHiem, target: goals.phanTramBaoHiem }
+        const goalKeyMap = {
+            pctPhuKien: 'phanTramPhuKien',
+            pctGiaDung: 'phanTramGiaDung',
+            pctMLN: 'phanTramMLN',
+            pctSim: 'phanTramSim',
+            pctVAS: 'phanTramVAS',
+            pctBaoHiem: 'phanTramBaoHiem'
         };
+
+        const allItems = allItemsConfig.map(config => ({
+            ...config,
+            value: data[config.id],
+            target: goals[goalKeyMap[config.id]]
+        }));
 
         const createRow = (label, value, target) => {
             const isBelow = value < ((target || 0) / 100);
@@ -13509,12 +13788,10 @@ export const uiRealtime = {
                         </tr>
                     </thead>
                     <tbody>
-                        ${Object.keys(allItems)
-                            .filter(key => visibleItems.includes(key))
-                            .map(itemKey => {
-                                const itemData = allItems[itemKey];
-                                return createRow(itemKey, itemData.value, itemData.target);
-                            }).join('')}
+                        ${allItems
+                            .filter(item => item.visible)
+                            .map(item => createRow(item.label, item.value, item.target))
+                            .join('')}
                     </tbody>
                 </table>
             </div>`;
@@ -13645,7 +13922,6 @@ export const uiRealtime = {
             const sortedItems = [...items].sort((a,b) => direction === 'asc' ? (a[key] - b[key]) : (b[key] - a[key]));
 
             const headerClass = (sortKey) => `px-4 py-2 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
-
             return `<div class="overflow-x-auto"><h4 class="text-lg font-semibold text-gray-700 mb-2">${title}</h4>
                 <table class="min-w-full text-sm table-bordered table-striped" data-table-type="${sortStateKey}">
                     <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
@@ -13683,17 +13959,36 @@ export const uiRealtime = {
 --- END FILE: ./ui-realtime.js ---
 
 --- START FILE: ./ui-sknv.js ---
-// Version 2.7 - Fix: Corrected syntax error (removed extra closing brace)
+// Version 2.9 - Fix: Correct variable scope for formatMap in efficiency table
 // MODULE: UI SKNV
 // Chứa các hàm render giao diện cho tab "Sức khỏe nhân viên"
+
 import { appState } from './state.js';
 import { config } from './config.js';
 import { services } from './services.js';
 import { uiComponents } from './ui-components.js';
-import { utils } from './utils.js';
-
+import { settingsService } from './modules/settings.service.js';
 
 export const uiSknv = {
+    /**
+     * Helper private để lấy danh sách bộ phận đã được sắp xếp theo yêu cầu.
+     * 'BP Tư Vấn - ĐM' luôn được ưu tiên lên đầu.
+     * @param {Array} reportData - Dữ liệu báo cáo để trích xuất danh sách bộ phận.
+     * @returns {Array<string>} - Mảng chứa tên các bộ phận đã được sắp xếp.
+     */
+    _getSortedDepartmentList(reportData) {
+        const allDepts = [...new Set(reportData.map(item => item.boPhan).filter(Boolean))];
+        const priorityDept = 'BP Tư Vấn - ĐM';
+
+        allDepts.sort((a, b) => {
+            if (a === priorityDept) return -1;
+            if (b === priorityDept) return 1;
+            return a.localeCompare(b);
+        });
+
+        return allDepts;
+    },
+
     displayEmployeeRevenueReport: (reportData, containerId, sortStateKey) => {
         const container = document.getElementById(containerId);
         if (!container) return;
@@ -13702,6 +13997,7 @@ export const uiSknv = {
             return;
         }
         let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"><div class="p-4 header-group-1 text-gray-800"><h3 class="text-xl font-bold uppercase">Doanh thu nhân viên</h3><p class="text-sm italic text-gray-600">(đơn vị tính: Triệu đồng)</p></div>`;
+        
         const groupedByDept = {};
         reportData.forEach(item => {
             const dept = item.boPhan;
@@ -13709,8 +14005,8 @@ export const uiSknv = {
             groupedByDept[dept].push(item);
         });
         
-        const departmentOrder = [...new Set(reportData.map(item => item.boPhan))].filter(Boolean).sort();
-        
+        const departmentOrder = uiSknv._getSortedDepartmentList(reportData);
+
         departmentOrder.forEach(deptName => {
             if (groupedByDept[deptName]) {
                 finalHTML += uiSknv.renderRevenueTableForDepartment(deptName, groupedByDept[deptName], sortStateKey);
@@ -13744,25 +14040,36 @@ export const uiSknv = {
         if (title.includes('Tư Vấn')) titleClass = 'department-header-tv';
         else if (title.includes('Kho')) titleClass = 'department-header-kho';
         else if (title.includes('Trang Trí')) titleClass = 'department-header-tt';
-        
-        const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
+
+        const isRealtime = sortStateKey === 'realtime_dt_nhanvien';
+        const headerClasses = {
+            hoTen: '',
+            doanhThu: isRealtime ? 'header-group-4' : 'header-bg-blue',
+            doanhThuQuyDoi: isRealtime ? 'header-group-4' : 'header-bg-blue',
+            hieuQuaQuyDoi: isRealtime ? 'header-group-4' : 'header-bg-blue',
+            doanhThuTraGop: isRealtime ? 'header-group-5' : 'header-bg-green',
+            tyLeTraCham: isRealtime ? 'header-group-5' : 'header-bg-green',
+            doanhThuChuaXuat: isRealtime ? 'header-group-6' : 'header-bg-yellow'
+        };
+
+        const headerClass = (sortKey) => `px-4 py-3 sortable ${headerClasses[sortKey] || ''} ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
         
         let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="7">
                         <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                             <tr>
                                 <th class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('doanhThu')} text-right header-group-7" data-sort="doanhThu">Doanh Thu <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('doanhThuQuyDoi')} text-right header-group-7" data-sort="doanhThuQuyDoi">Doanh Thu QĐ <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('hieuQuaQuyDoi')} text-right header-group-7" data-sort="hieuQuaQuyDoi">% QĐ <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('doanhThuTraGop')} text-right header-group-8" data-sort="doanhThuTraGop">DT trả chậm <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('tyLeTraCham')} text-right header-group-8" data-sort="tyLeTraCham">% trả chậm <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('doanhThuChuaXuat')} text-right header-group-9" data-sort="doanhThuChuaXuat">DT Chưa Xuất <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('doanhThu')} text-right" data-sort="doanhThu">Doanh Thu <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('doanhThuQuyDoi')} text-right" data-sort="doanhThuQuyDoi">Doanh Thu QĐ <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('hieuQuaQuyDoi')} text-right" data-sort="hieuQuaQuyDoi">% QĐ <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('doanhThuTraGop')} text-right" data-sort="doanhThuTraGop">DT trả chậm <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('tyLeTraCham')} text-right" data-sort="tyLeTraCham">% trả chậm <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('doanhThuChuaXuat')} text-right" data-sort="doanhThuChuaXuat">DT Chưa Xuất <span class="sort-indicator"></span></th>
                             </tr>
                         </thead><tbody>`;
         sortedData.forEach(item => {
             const { mucTieu } = item;
-            const qdClass = item.hieuQuaQuyDoi < ((mucTieu?.phanTramQD || 0) / 100) ? 'cell-performance is-below' : '';
-            const tcClass = item.tyLeTraCham < ((mucTieu?.phanTramTC || 0) / 100) ? 'cell-performance is-below' : '';
+            const qdClass = item.hieuQuaQuyDoi < (mucTieu.phanTramQD / 100) ? 'cell-performance is-below' : '';
+            const tcClass = item.tyLeTraCham < (mucTieu.phanTramTC / 100) ? 'cell-performance is-below' : '';
             tableHTML += `<tr class="hover:bg-gray-50">
                     <td class="px-4 py-2 font-semibold line-clamp-2">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</td>
                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThu)}</td>
@@ -13794,6 +14101,7 @@ export const uiSknv = {
         }
         placeholder.classList.add('hidden');
         let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"><div class="p-4 header-group-2 text-gray-800"><h3 class="text-xl font-bold uppercase">Thu nhập nhân viên</h3><p class="text-sm italic text-gray-600">(đơn vị tính: Triệu đồng)</p></div>`;
+        
         const groupedByDept = {};
         reportData.forEach(item => {
             const dept = item.boPhan;
@@ -13801,7 +14109,7 @@ export const uiSknv = {
             groupedByDept[dept].push(item);
         });
         
-        const departmentOrder = [...new Set(reportData.map(item => item.boPhan))].filter(Boolean).sort();
+        const departmentOrder = uiSknv._getSortedDepartmentList(reportData);
         
         departmentOrder.forEach(deptName => {
             if (groupedByDept[deptName]) finalHTML += uiSknv.renderIncomeTableForDepartment(deptName, groupedByDept[deptName]);
@@ -13876,11 +14184,36 @@ export const uiSknv = {
     displayEmployeeEfficiencyReport: (reportData, containerId, sortStateKey) => {
         const container = document.getElementById(containerId);
         if (!container) return;
+
         if (!reportData || reportData.length === 0) {
             container.innerHTML = '<p class="text-gray-500">Không có dữ liệu hiệu quả cho lựa chọn này.</p>';
             return;
         }
-        let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"><div class="p-4 header-group-3 text-gray-800"><h3 class="text-xl font-bold uppercase">HIỆU QUẢ KHAI THÁC</h3><p class="text-sm italic text-gray-600">(đơn vị tính: Triệu đồng)</p></div>`;
+
+        const columnSettings = settingsService.loadEfficiencyViewSettings();
+        const visibleColumns = columnSettings.filter(c => c.visible);
+
+        const columnTogglesHTML = `
+            <div id="efficiency-column-toggles" class="p-3 border-b border-gray-200 flex flex-wrap items-center gap-x-3 gap-y-2">
+                <span class="text-sm font-semibold mr-2 text-gray-700">Tùy chỉnh cột:</span>
+                ${columnSettings.map(col => `
+                    <button 
+                        class="column-toggle-btn ${col.visible ? 'active' : ''}" 
+                        data-column-id="${col.id}">
+                        ${col.label}
+                    </button>
+                `).join('')}
+            </div>
+        `;
+
+        let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+                            <div class="p-4 header-group-3 text-gray-800">
+                                <h3 class="text-xl font-bold uppercase">HIỆU QUẢ KHAI THÁC</h3>
+                                <p class="text-sm italic text-gray-600">(đơn vị tính: Triệu đồng)</p>
+                            </div>
+                            ${columnTogglesHTML}
+                        `;
+
         const groupedByDept = {};
         reportData.forEach(item => {
             const dept = item.boPhan;
@@ -13888,17 +14221,19 @@ export const uiSknv = {
             groupedByDept[dept].push(item);
         });
 
-        const departmentOrder = [...new Set(reportData.map(item => item.boPhan))].filter(Boolean).sort();
+        const departmentOrder = uiSknv._getSortedDepartmentList(reportData);
 
         departmentOrder.forEach(deptName => {
-            if (groupedByDept[deptName]) finalHTML += uiSknv.renderEfficiencyTableForDepartment(deptName, groupedByDept[deptName], sortStateKey);
+            if (groupedByDept[deptName]) {
+                finalHTML += uiSknv.renderEfficiencyTableForDepartment(deptName, groupedByDept[deptName], sortStateKey, visibleColumns);
+            }
         });
-        
+
         finalHTML += `</div>`;
         container.innerHTML = finalHTML;
     },
 
-    renderEfficiencyTableForDepartment: (title, data, sortStateKey) => {
+    renderEfficiencyTableForDepartment: (title, data, sortStateKey, visibleColumns) => {
         const sortState = appState.sortState[sortStateKey] || { key: 'dtICT', direction: 'desc' };
         const { key, direction } = sortState;
         const sortedData = [...data].sort((a, b) => {
@@ -13932,59 +14267,69 @@ export const uiSknv = {
         else if (title.includes('Kho')) titleClass = 'department-header-kho';
         else if (title.includes('Trang Trí')) titleClass = 'department-header-tt';
 
-        const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
+        const allHeaders = {
+            dtICT: { label: 'DT ICT', class: 'text-right header-group-10' },
+            dtPhuKien: { label: 'DT Phụ kiện', class: 'text-right header-group-10' },
+            pctPhuKien: { label: '% Phụ kiện', class: 'text-right header-group-10' },
+            dtCE: { label: 'DT CE', class: 'text-right header-group-11' },
+            dtGiaDung: { label: 'DT Gia dụng', class: 'text-right header-group-11' },
+            pctGiaDung: { label: '% Gia dụng', class: 'text-right header-group-11' },
+            pctMLN: { label: '% MLN', class: 'text-right header-group-12' },
+            pctSim: { label: '% Sim', class: 'text-right header-group-12' },
+            pctVAS: { label: '% VAS', class: 'text-right header-group-12' },
+            pctBaoHiem: { label: '% Bảo hiểm', class: 'text-right header-group-12' }
+        };
 
-        let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="11">
-                    <thead class="text-xs text-slate-800 uppercase font-bold">
-                        <tr>
-                            <th class="${headerClass('hoTen')}" data-sort="hoTen">Tên nhân viên <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('dtICT')} text-right header-group-10" data-sort="dtICT">DT ICT <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('dtPhuKien')} text-right header-group-10" data-sort="dtPhuKien">DT Phụ kiện <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('pctPhuKien')} text-right header-group-10" data-sort="pctPhuKien">% Phụ kiện <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('dtCE')} text-right header-group-11" data-sort="dtCE">DT CE <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('dtGiaDung')} text-right header-group-11" data-sort="dtGiaDung">DT Gia dụng <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('pctGiaDung')} text-right header-group-11" data-sort="pctGiaDung">% Gia dụng <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('pctMLN')} text-right header-group-12" data-sort="pctMLN">% MLN <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('pctSim')} text-right header-group-12" data-sort="pctSim">% Sim <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('pctVAS')} text-right header-group-12" data-sort="pctVAS">% VAS <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('pctBaoHiem')} text-right header-group-12" data-sort="pctBaoHiem">% Bảo hiểm <span class="sort-indicator"></span></th>
-                        </tr>
-                    </thead><tbody>`;
+        // *** FIX IS HERE: Moved formatMap declaration to the top of the function ***
+        const formatMap = {
+            dtICT: (val) => uiComponents.formatRevenue(val),
+            dtPhuKien: (val) => uiComponents.formatRevenue(val),
+            dtCE: (val) => uiComponents.formatRevenue(val),
+            dtGiaDung: (val) => uiComponents.formatRevenue(val),
+            defaultPercent: (val) => uiComponents.formatPercentage(val)
+        };
+
+        const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
+        const captureColumnCount = 1 + visibleColumns.length;
+
+        let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="${captureColumnCount}">
+            <thead class="text-xs text-slate-800 uppercase font-bold">
+                <tr>
+                    <th class="${headerClass('hoTen')}" data-sort="hoTen">Tên nhân viên <span class="sort-indicator"></span></th>
+                    ${visibleColumns.map(col => `<th class="${headerClass(col.id)} ${allHeaders[col.id].class}" data-sort="${col.id}">${allHeaders[col.id].label} <span class="sort-indicator"></span></th>`).join('')}
+                </tr>
+            </thead><tbody>`;
+
         sortedData.forEach(item => {
             const { mucTieu } = item;
-            const pkClass = item.pctPhuKien < ((mucTieu?.phanTramPhuKien || 0) / 100) ? 'cell-performance is-below' : '';
-            const gdClass = item.pctGiaDung < ((mucTieu?.phanTramGiaDung || 0) / 100) ? 'cell-performance is-below' : '';
-            const mlnClass = item.pctMLN < ((mucTieu?.phanTramMLN || 0) / 100) ? 'cell-performance is-below' : '';
-            const simClass = item.pctSim < ((mucTieu?.phanTramSim || 0) / 100) ? 'cell-performance is-below' : '';
-            const vasClass = item.pctVAS < ((mucTieu?.phanTramVAS || 0) / 100) ? 'cell-performance is-below' : '';
-            const bhClass = item.pctBaoHiem < ((mucTieu?.phanTramBaoHiem || 0) / 100) ? 'cell-performance is-below' : '';
+            const classMap = {
+                pctPhuKien: item.pctPhuKien < ((mucTieu?.phanTramPhuKien || 0) / 100) ? 'cell-performance is-below' : '',
+                pctGiaDung: item.pctGiaDung < ((mucTieu?.phanTramGiaDung || 0) / 100) ? 'cell-performance is-below' : '',
+                pctMLN: item.pctMLN < ((mucTieu?.phanTramMLN || 0) / 100) ? 'cell-performance is-below' : '',
+                pctSim: item.pctSim < ((mucTieu?.phanTramSim || 0) / 100) ? 'cell-performance is-below' : '',
+                pctVAS: item.pctVAS < ((mucTieu?.phanTramVAS || 0) / 100) ? 'cell-performance is-below' : '',
+                pctBaoHiem: item.pctBaoHiem < ((mucTieu?.phanTramBaoHiem || 0) / 100) ? 'cell-performance is-below' : ''
+            };
 
             tableHTML += `<tr class="hover:bg-gray-50">
                 <td class="px-4 py-2 font-semibold line-clamp-2">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</td>
-                <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.dtICT)}</td>
-                <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.dtPhuKien)}</td>
-                <td class="px-4 py-2 text-right font-bold ${pkClass}">${uiComponents.formatPercentage(item.pctPhuKien)}</td>
-                <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.dtCE)}</td>
-                <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.dtGiaDung)}</td>
-                <td class="px-4 py-2 text-right font-bold ${gdClass}">${uiComponents.formatPercentage(item.pctGiaDung)}</td>
-                <td class="px-4 py-2 text-right font-bold ${mlnClass}">${uiComponents.formatPercentage(item.pctMLN)}</td>
-                <td class="px-4 py-2 text-right font-bold ${simClass}">${uiComponents.formatPercentage(item.pctSim)}</td>
-                <td class="px-4 py-2 text-right font-bold ${vasClass}">${uiComponents.formatPercentage(item.pctVAS)}</td>
-                <td class="px-4 py-2 text-right font-bold ${bhClass}">${uiComponents.formatPercentage(item.pctBaoHiem)}</td></tr>`;
+                ${visibleColumns.map(col => {
+                    const value = item[col.id];
+                    const className = classMap[col.id] || '';
+                    const formatter = formatMap[col.id] || formatMap.defaultPercent;
+                    return `<td class="px-4 py-2 text-right font-bold ${className}">${formatter(value)}</td>`;
+                }).join('')}
+            </tr>`;
         });
+
         tableHTML += `</tbody><tfoot class="table-footer font-bold">
             <tr>
                 <td class="px-4 py-2">Tổng</td>
-                <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.dtICT)}</td>
-                <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.dtPhuKien)}</td>
-                <td class="px-4 py-2 text-right">${uiComponents.formatPercentage(totals.pctPhuKien)}</td>
-                <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.dtCE)}</td>
-                <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.dtGiaDung)}</td>
-                <td class="px-4 py-2 text-right">${uiComponents.formatPercentage(totals.pctGiaDung)}</td>
-                <td class="px-4 py-2 text-right">${uiComponents.formatPercentage(totals.pctMLN)}</td>
-                <td class="px-4 py-2 text-right">${uiComponents.formatPercentage(totals.pctSim)}</td>
-                <td class="px-4 py-2 text-right">${uiComponents.formatPercentage(totals.pctVAS)}</td>
-                <td class="px-4 py-2 text-right">${uiComponents.formatPercentage(totals.pctBaoHiem)}</td>
+                ${visibleColumns.map(col => {
+                    const value = totals[col.id];
+                    const formatter = formatMap[col.id] || formatMap.defaultPercent;
+                     return `<td class="px-4 py-2 text-right">${formatter(value)}</td>`;
+                }).join('')}
             </tr>
         </tfoot></table></div></div>`;
         return tableHTML;
@@ -14266,10 +14611,8 @@ export const uiSknv = {
             return direction === 'asc' ? valA - valB : valB - valA;
         });
         
-        // <<< START FIX #1: Sửa lỗi ReferenceError >>>
         const headerClass = (sortKey) => `px-2 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
-        // <<< END FIX #1 >>>
-        
+       
         let tableHTML = `<div class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200"><h3 class="text-xl font-bold text-gray-800 mb-4 uppercase">Bảng tổng hợp hiệu suất nhân viên</h3><div class="overflow-x-auto"><table class="min-w-full text-sm table-bordered" data-table-type="sknv_summary">
             <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                 <tr>
@@ -14296,11 +14639,9 @@ export const uiSknv = {
             groupedByDept[item.boPhan].push(item);
         });
 
-        // <<< START FIX #2: Lấy danh sách bộ phận động >>>
-        const departmentOrder = [...new Set(summaryData.map(item => item.boPhan))].filter(Boolean).sort();
+        const departmentOrder = uiSknv._getSortedDepartmentList(summaryData);
 
         departmentOrder.forEach(deptName => {
-        // <<< END FIX #2 >>>
             if (groupedByDept[deptName]) {
                 tableHTML += `<tr class="font-bold bg-slate-100"><td colspan="12" class="px-4 py-2">${deptName}</td></tr>`;
                 groupedByDept[deptName].forEach(item => {
@@ -14401,83 +14742,33 @@ export const uiSknv = {
             </tbody></table></div></div>`;
     },
 
-    // --- HÀM ĐƯỢC CẬP NHẬT (FIX BUG 2) ---
-    displayCompetitionReport() {
+    displayCompetitionReport(viewType = 'summary') {
         const container = document.getElementById('employee-competition-container');
         if (!container) return;
     
         const data = appState.thiDuaReportData;
         const activeViewBtn = document.querySelector('#thidua-view-selector .view-switcher__btn.active');
-        const viewType = activeViewBtn ? activeViewBtn.dataset.view : 'summary';
+        const effectiveViewType = activeViewBtn ? activeViewBtn.dataset.view : viewType;
     
-        // Hiển thị thông tin chẩn đoán trước
         uiComponents.displayPastedDebugInfo('thiduanv-pasted');
     
-        // Kiểm tra xem có dữ liệu đã xử lý để hiển thị không
         if (!data || data.length === 0) {
             container.innerHTML = `<p class="text-gray-500">Không có dữ liệu thi đua để hiển thị. Vui lòng dán "Data lũy kế" và "Thi đua nhân viên" ở tab Cập nhật dữ liệu để xử lý báo cáo.</p>`;
             return;
         }
     
-        // Dựa vào viewType để render nội dung phù hợp
         let htmlContent = '';
-        if (viewType === 'summary') {
+        if (effectiveViewType === 'summary') {
             htmlContent = this.renderCompetitionSummary(data);
-        } else if (viewType === 'category') {
+        } else if (effectiveViewType === 'category') {
             htmlContent = this.renderCompetitionByCategory(data);
-        } else if (viewType === 'employee') {
+        } else if (effectiveViewType === 'employee') {
             const selectedMaNV = document.getElementById('thidua-employee-filter')?.value;
             const employeeData = data.find(e => String(e.maNV) === String(selectedMaNV));
             htmlContent = this.renderCompetitionByEmployee(employeeData);
         }
         
         container.innerHTML = htmlContent;
-    },
-
-    // --- HÀM NÀY GIỮ LẠI ĐỂ DỰ PHÒNG, NHƯNG KHÔNG CÒN ĐƯỢC SỬ DỤNG TRỰC TIẾP
-    renderPastedThiDuaTable(data) {
-        if (!data || !data.success) {
-            return `<div class="p-4 bg-red-100 text-red-700 rounded-lg">
-                        <p class="font-bold">Lỗi xử lý dữ liệu!</p>
-                        <p>${data.error || 'Vui lòng kiểm tra lại định dạng dữ liệu đã dán.'}</p>
-                    </div>`;
-        }
-    
-        let tableHTML = '<div class="overflow-x-auto border border-slate-200 rounded-lg"><table class="min-w-full text-sm">';
-        
-        tableHTML += '<thead class="font-semibold text-slate-700">';
-        
-        if (data.mainHeaders.length > 0) {
-            tableHTML += '<tr>';
-            tableHTML += '<th class="p-3 text-left sticky left-0 z-10 bg-slate-200">Nhân viên / Bộ phận</th>';
-            data.mainHeaders.forEach(header => {
-                tableHTML += `<th class="p-3 text-center bg-slate-200">${header}</th>`;
-            });
-            tableHTML += '</tr>';
-        }
-
-        if (data.subHeaders.length > 0) {
-            tableHTML += '<tr>';
-            tableHTML += `<th class="p-3 sticky left-0 z-10 bg-slate-100"></th>`;
-            data.subHeaders.forEach(subHeader => {
-                tableHTML += `<th class="p-3 text-center bg-slate-100">${subHeader}</th>`;
-            });
-            tableHTML += '</tr>';
-        }
-        tableHTML += '</thead>';
-
-        tableHTML += '<tbody class="bg-white">';
-        data.dataRows.forEach(row => {
-            tableHTML += '<tr class="border-t hover:bg-gray-50">';
-            tableHTML += `<td class="p-3 font-semibold text-slate-800 sticky left-0 z-10 bg-white">${row.name}</td>`;
-            row.values.forEach(value => {
-                tableHTML += `<td class="p-3 text-right">${value}</td>`;
-            });
-            tableHTML += '</tr>';
-        });
-        tableHTML += '</tbody></table></div>';
-    
-        return tableHTML;
     },
 
     renderCompetitionSummary(data) {
@@ -14520,6 +14811,7 @@ export const uiSknv = {
                     thucHien: competition.thucHien,
                     mucTieu: competition.mucTieu,
                     percentExpected: competition.percentExpected,
+                    conLai: competition.conLai
                 };
             }).filter(e => e.thucHien > 0 || e.mucTieu > 0);
             
@@ -14528,7 +14820,7 @@ export const uiSknv = {
             const sortedCategoryData = [...categoryData].sort((a,b) => direction === 'asc' ? a[key] - b[key] : b[key] - a[key]);
             
             const headerClass = (sortKey) => `px-4 py-2 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
-            const cleanName = utils.cleanCategoryName(categoryName.replace(/thi đua doanh thu bán hàng|thi đua doanh thu|thi đua số lượng/gi, "").trim());
+            const cleanName = categoryName.replace(/thi đua doanh thu bán hàng|thi đua doanh thu|thi đua số lượng/gi, "").trim();
 
             html += `<div class="infographic-card"><h4 class="infographic-card__header infographic-card__header--completed">${cleanName}</h4>
                 <div class="overflow-x-auto"><table class="min-w-full text-sm table-bordered" data-table-type="sknv_thidua_category">

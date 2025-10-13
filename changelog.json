@@ -1,4 +1,12 @@
 [
+  {
+    "version": "3.3",
+    "date": "13/10/2025",
+    "notes": [
+      "Thêm chức năng tùy chỉnh cột cho tab Hiệu quả khai thác nhân viên : có thể chọn ẩn hoặc hiện cột dữ liệu không liên quan đến TGDD",
+      "Cho phép kéo thả để sắp xếp các cột trong bảng kết quả hiệu quả khai thác nhân viên"
+    ]
+  },  
    {
     "version": "3.2",
     "date": "10/10/2025",

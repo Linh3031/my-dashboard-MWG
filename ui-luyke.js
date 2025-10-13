@@ -1,4 +1,4 @@
-// Version 2.4 - Optimize competition card layout for mobile/capture (3 columns -> 2 columns)
+// Version 2.9 - Filter efficiency table to show only percentages and rename title
 // MODULE: UI LUY KE
 // Chứa các hàm render giao diện cho tab "Sức khỏe Siêu thị (Lũy kế)".
 
@@ -268,7 +268,7 @@ export const uiLuyke = {
         }
     },
     
-    renderChuaXuatTable: (reportData) => { /* ... (Giữ nguyên) ... */
+    renderChuaXuatTable: (reportData) => {
         const container = document.getElementById('luyke-unexported-revenue-content');
         if (!container) return;
         if (!reportData || reportData.length === 0) {
@@ -315,7 +315,7 @@ export const uiLuyke = {
             </tr></tfoot></table></div>`;
     },
 
-    renderLuykeKpiCards: (luykeData, comparisonData, luotKhachData, masterReportDataLuyke, goals, competitionSummary) => { /* ... (Giữ nguyên) ... */
+    renderLuykeKpiCards: (luykeData, comparisonData, luotKhachData, masterReportDataLuyke, goals, competitionSummary) => {
         const { dtThucLK, dtQdLK, dtGop, phanTramQd, phanTramGop, phanTramTargetThuc, phanTramTargetQd, dtThucDuKien, dtQdDuKien } = luykeData;
 
         // --- Thẻ 1: Doanh thu thực ---
@@ -362,7 +362,7 @@ export const uiLuyke = {
         document.getElementById('luyke-kpi-lkck-sub').innerHTML = `Lượt khách: <span class="font-bold">${uiComponents.formatNumber(luotKhachData.value || 0)} | ${formattedLkPercentage}</span>`;
     },
 
-    renderLuykeCategoryDetailsTable: (data, numDays) => { /* ... (Giữ nguyên) ... */
+    renderLuykeCategoryDetailsTable: (data, numDays) => {
         const container = document.getElementById('luyke-category-details-content');
         const cardHeader = container.previousElementSibling;
         if (!container || !cardHeader || !data || !data.nganhHangChiTiet) { container.innerHTML = '<p class="text-gray-500 font-bold">Không có dữ liệu.</p>'; return; }
@@ -423,7 +423,7 @@ export const uiLuyke = {
             </tr></tfoot></table></div>`;
     },
 
-    renderLuykeQdcTable: (data, numDays) => { /* ... (Giữ nguyên) ... */
+    renderLuykeQdcTable: (data, numDays) => {
         const container = document.getElementById('luyke-qdc-content');
         const cardHeader = container.previousElementSibling;
         if (!container || !cardHeader || !data || !data.qdc) { container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; return; }
@@ -467,7 +467,7 @@ export const uiLuyke = {
             </tbody></table></div>`;
     },
     
-    renderLuykeEfficiencyTable: (data, goals) => { /* ... (Giữ nguyên) ... */
+    renderLuykeEfficiencyTable: (data, goals) => {
         const container = document.getElementById('luyke-efficiency-content');
         const cardHeader = container.previousElementSibling;
 
@@ -475,20 +475,28 @@ export const uiLuyke = {
             if(container) container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; 
             return; 
         }
-
-        // Tải cấu hình cột từ settings service
+        
         const allItemsConfig = settingsService.loadEfficiencyViewSettings();
+        
+        const goalKeyMap = {
+            pctPhuKien: 'phanTramPhuKien',
+            pctGiaDung: 'phanTramGiaDung',
+            pctMLN: 'phanTramMLN',
+            pctSim: 'phanTramSim',
+            pctVAS: 'phanTramVAS',
+            pctBaoHiem: 'phanTramBaoHiem'
+        };
 
-        // Ánh xạ dữ liệu vào cấu hình cột
-        const allItems = allItemsConfig.map(config => ({
-            ...config,
-            value: data[config.id],
-            target: goals[config.id]
-        }));
+        const allItems = allItemsConfig
+            .filter(item => item.id.startsWith('pct'))
+            .map(config => ({
+                ...config,
+                value: data[config.id],
+                target: goals[goalKeyMap[config.id]]
+            }));
         
         const createRow = (label, value, target) => {
-            // Target là giá trị số (ví dụ: 20) nên chia 100
-            const isBelow = value < (target / 100); 
+            const isBelow = value < ((target || 0) / 100); 
             
             return `<tr class="border-t">
                 <td class="px-4 py-2 font-semibold text-gray-800">${label}</td>
@@ -499,7 +507,7 @@ export const uiLuyke = {
         
         if (!cardHeader.querySelector('.settings-trigger-btn')) {
             cardHeader.classList.add('flex', 'items-center', 'justify-between');
-            cardHeader.innerHTML = `<span>HIỆU QUẢ KHAI THÁC</span>` + uiComponents.renderSettingsButton('lk-eff');
+            cardHeader.innerHTML = `<span>HIỆU QUẢ KHAI THÁC SIÊU THỊ</span>` + uiComponents.renderSettingsButton('lk-eff');
             
             setTimeout(() => {
                 document.getElementById('settings-btn-lk-eff').addEventListener('click', () => {
@@ -528,7 +536,7 @@ export const uiLuyke = {
             </div>`;
     },
 
-    updateLuykeSupermarketTitle: (warehouse, date) => { /* ... (Giữ nguyên) ... */
+    updateLuykeSupermarketTitle: (warehouse, date) => {
         const titleEl = document.getElementById('luyke-supermarket-title');
         if (titleEl) titleEl.textContent = `Báo cáo lũy kế ${warehouse ? 'kho ' + warehouse : 'toàn bộ'} - Tính đến ${date.toLocaleDateString('vi-VN')}`;
     },
