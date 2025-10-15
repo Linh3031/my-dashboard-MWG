@@ -1,4 +1,4 @@
-// Version 2.8 - Fix: Remove duplicate H3 title in competition tab
+// Version 2.9 - Adjust rendering logic to accommodate new layout in index.html
 // MODULE: Chịu trách nhiệm cho Tab Sức khỏe Siêu thị (Lũy kế)
 
 import { appState } from './state.js';
@@ -15,8 +15,6 @@ const luykeTab = {
         }
         ui.togglePlaceholder('health-section', false);
 
-        // [BUG FIX]: Luôn phân tích dữ liệu thi đua trước để cập nhật appState.
-        // Điều này đảm bảo thẻ KPI "Thi đua" luôn có dữ liệu để hiển thị.
         services.parseCompetitionDataFromLuyKe(document.getElementById('paste-luyke').value);
 
         const activeSubTabBtn = document.querySelector('#luyke-subtabs-nav .sub-tab-btn.active');
@@ -58,28 +56,29 @@ const luykeTab = {
             ui.displayHealthKpiTable(pastedData, goals); 
 
         } else if (activeSubTabId === 'subtab-luyke-thi-dua') {
-            // === START: THAY ĐỔI LOGIC (FIX DUPLICATE H3 & VIEW SWITCHER PLACEMENT) ===
-            const container = document.getElementById('luyke-competition-content');
-            if(container) {
-                // Thêm bộ chuyển đổi view nếu chưa có
-                if (!container.querySelector('#luyke-thidua-view-selector')) {
-                    // Loại bỏ H3 khỏi logic render này để giữ lại tiêu đề bên ngoài (Fix #6)
-                    container.innerHTML = `
-                        <div class="flex flex-wrap items-center justify-end gap-4 mb-4"> 
-                            <div id="luyke-thidua-view-selector" class="view-switcher">
-                                <button data-view="summary" class="view-switcher__btn active">Theo Phân Loại</button>
-                                <button data-view="completion" class="view-switcher__btn">Theo % Hoàn Thành</button>
-                            </div>
-                        </div>
-                        <div id="luyke-competition-infographic-container" class="mt-4"></div>
-                    `;
-                }
+            // === THAY ĐỔI: Tách logic render nút và nội dung ===
+            const switcherPlaceholder = document.getElementById('luyke-thidua-view-selector-placeholder');
+            const contentContainer = document.getElementById('luyke-competition-content');
+            
+            // 1. Chèn các nút chuyển chế độ vào placeholder nếu chưa có
+            if(switcherPlaceholder && !switcherPlaceholder.querySelector('#luyke-thidua-view-selector')) {
+                switcherPlaceholder.innerHTML = `
+                    <div id="luyke-thidua-view-selector" class="view-switcher">
+                        <button data-view="summary" class="view-switcher__btn active">Theo Phân Loại</button>
+                        <button data-view="completion" class="view-switcher__btn">Theo % Hoàn Thành</button>
+                    </div>
+                `;
             }
             
+            // 2. Luôn đảm bảo container cho nội dung báo cáo tồn tại
+            if (contentContainer) {
+                 contentContainer.innerHTML = '<div id="luyke-competition-infographic-container" class="mt-4"></div>';
+            }
+
+            // 3. Render báo cáo vào container đã chuẩn bị
             const activeViewBtn = document.querySelector('#luyke-thidua-view-selector .view-switcher__btn.active');
             const viewType = activeViewBtn ? activeViewBtn.dataset.view : 'summary';
             ui.displayCompetitionResultsFromLuyKe(document.getElementById('paste-luyke').value, viewType);
-            // === END: THAY ĐỔI LOGIC ===
         }
         
         highlightService.populateHighlightFilters('luyke', filteredYCXData, filteredReport);

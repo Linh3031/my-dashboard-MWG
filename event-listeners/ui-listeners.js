@@ -1,4 +1,4 @@
-// Version 3.5 - Import and initialize drag-drop listener module
+// Version 3.8 - Revert to client-side processing as per user request
 // MODULE: EVENT LISTENERS INITIALIZER
 // File này đóng vai trò là điểm khởi đầu, import và khởi chạy tất cả các module listener con.
 
@@ -14,12 +14,13 @@ import { initializeCompetitionListeners } from './listeners-competition.js';
 import { initializeHighlightingListeners } from './listeners-highlighting.js';
 import { initializeSettingsListeners } from './listeners-settings.js';
 import { initializeSortingListeners } from './listeners-sorting.js';
-import { dragDroplisteners } from './listeners-dragdrop.js'; // <<< THÊM DÒNG NÀY
+import { dragDroplisteners } from './listeners-dragdrop.js';
 
 let appController = null;
 
 // --- HELPERS / HANDLERS ---
 
+// === HOÀN TÁC: Quay lại logic xử lý file tại trình duyệt ===
 async function handleFileInputChange(e) {
     const fileInput = e.target;
     const file = fileInput.files[0];
@@ -84,23 +85,19 @@ export function initializeEventListeners(mainAppController) {
 
     // --- Khởi tạo các thư viện UI ---
     try {
-        // Cấu hình chung cho các bộ lọc đa lựa chọn
         const multiSelectConfig = { 
             removeItemButton: true, 
             placeholder: true, 
             placeholderValue: 'Chọn hoặc gõ để tìm...', 
             searchPlaceholderValue: 'Tìm kiếm...' 
         };
-
-        // === START: CẤU HÌNH RIÊNG BIỆT CHO BỘ LỌC THI ĐUA ===
         const competitionMultiSelectConfig = {
             removeItemButton: true,
             placeholder: true,
             placeholderValue: 'Chọn hoặc gõ để tìm...',
             searchPlaceholderValue: 'Tìm kiếm...',
-            closeOnSelect: false, // Cho phép chọn nhiều mục sau khi tìm kiếm
+            closeOnSelect: false,
         };
-        // === END: CẤU HÌNH RIÊNG BIỆT ===
 
         ['luyke', 'sknv', 'realtime'].forEach(prefix => {
             const employeeEl = document.getElementById(`${prefix}-filter-name`);
@@ -116,13 +113,11 @@ export function initializeEventListeners(mainAppController) {
             });
         });
 
-        // === START: ÁP DỤNG CẤU HÌNH RIÊNG CHO BỘ LỌC THI ĐUA ===
         const competitionBrandEl = document.getElementById('competition-brand');
         if (competitionBrandEl) appState.choices['competition_brand'] = new Choices(competitionBrandEl, competitionMultiSelectConfig);
         
         const competitionGroupEl = document.getElementById('competition-group');
         if (competitionGroupEl) appState.choices['competition_group'] = new Choices(competitionGroupEl, competitionMultiSelectConfig);
-        // === END: ÁP DỤNG CẤU HÌNH RIÊNG ===
 
         const singleSelectConfig = { 
             searchEnabled: true, 
@@ -172,7 +167,7 @@ export function initializeEventListeners(mainAppController) {
     initializeCollaborationListeners(appController);
     initializeSortingListeners(appController);
     initializeCompetitionListeners(appController);
-    dragDroplisteners.init(appController); // <<< THÊM DÒNG NÀY
+    dragDroplisteners.init(appController);
 
     // --- Các sự kiện còn lại ---
     document.getElementById('force-reload-btn')?.addEventListener('click', () => window.location.reload());
@@ -217,17 +212,13 @@ export function initializeEventListeners(mainAppController) {
     document.getElementById('sknv-view-selector')?.addEventListener('click', (e) => appController.handleSknvViewChange(e));
     document.getElementById('sknv-employee-filter')?.addEventListener('change', () => sknvTab.render());
     
-    // === START: THAY THẾ SỰ KIỆN CŨ BẰNG UỶ QUYỀN SỰ KIỆN (FIX #1) ===
-    // Loại bỏ: document.getElementById('luyke-thidua-view-selector')?.addEventListener('click', (e) => appController.handleLuykeThiDuaViewChange(e));
     document.body.addEventListener('click', (e) => {
-        // Lắng nghe click trên body và chỉ xử lý nếu click đến từ nút trong view-switcher của tab Thi đua Lũy kế
         const viewSwitcherBtn = e.target.closest('#luyke-thidua-view-selector .view-switcher__btn');
         if (viewSwitcherBtn) {
             e.preventDefault();
             appController.handleLuykeThiDuaViewChange(e);
         }
     });
-    // === END: THAY THẾ SỰ KIỆN CŨ ===
     
     document.getElementById('thidua-view-selector')?.addEventListener('click', (e) => appController.handleThiDuaViewChange(e));
     document.getElementById('thidua-employee-filter')?.addEventListener('change', () => ui.displayCompetitionReport('employee'));

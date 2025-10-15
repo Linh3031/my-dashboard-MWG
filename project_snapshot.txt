@@ -382,6 +382,14 @@ export const auth = {
 
 --- START FILE: ./changelog.json ---
 [
+  {
+    "version": "3.3",
+    "date": "13/10/2025",
+    "notes": [
+      "Thêm chức năng tùy chỉnh cột cho tab Hiệu quả khai thác nhân viên : có thể chọn ẩn hoặc hiện cột dữ liệu không liên quan đến TGDD",
+      "Cho phép kéo thả để sắp xếp các cột trong bảng kết quả hiệu quả khai thác nhân viên"
+    ]
+  },  
    {
     "version": "3.2",
     "date": "10/10/2025",
@@ -1355,7 +1363,7 @@ createSnapshot();
 --- END FILE: ./create_snapshot.js ---
 
 --- START FILE: ./dashboard.css ---
-/* Version 4.9 - Add styles for column toggles and drag-and-drop UX */
+/* Version 5.0 - Add styles for draggable column toggle tags and icons */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -1938,10 +1946,38 @@ details[open] > summary .arrow { transform: rotate(180deg); }
     opacity: 0.4;
     background-color: #c7d2fe; /* indigo-200 */
 }
-.sortable-drag {
-    opacity: 0.9;
-}
 /* === END: COLUMN TOGGLE & DRAG-DROP STYLES === */
+
+/* === START: DRAGGABLE TAG STYLES (NEW) === */
+.column-toggle-btn.draggable-tag {
+    cursor: grab;
+}
+
+.column-toggle-btn.draggable-tag:active {
+    cursor: grabbing;
+}
+
+.column-toggle-btn.draggable-tag:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.drag-handle-icon {
+    color: #6b7280; /* gray-500 for better contrast */
+    transition: color 0.2s ease-in-out;
+}
+
+.column-toggle-btn.draggable-tag:hover .drag-handle-icon {
+    color: #1f2937; /* gray-800 */
+}
+
+/* Style for the item being actively dragged by SortableJS */
+.sortable-drag {
+    opacity: 0.95;
+    transform: rotate(-2deg);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+}
+/* === END: DRAGGABLE TAG STYLES === */
 --- END FILE: ./dashboard.css ---
 
 --- START FILE: ./event-listeners/listeners-actions.js ---
@@ -2108,7 +2144,7 @@ export function initializeCompetitionListeners(appController) {
 --- END FILE: ./event-listeners/listeners-competition.js ---
 
 --- START FILE: ./event-listeners/listeners-dragdrop.js ---
-// Version 1.0 - Initial creation for column drag-and-drop functionality
+// Version 2.1 - Add logging to diagnose re-render issue on drop
 // MODULE: LISTENERS - DRAG & DROP
 // Chứa logic khởi tạo và xử lý sự kiện kéo-thả cột bằng SortableJS.
 
@@ -2117,50 +2153,57 @@ import { settingsService } from '../modules/settings.service.js';
 let appController = null;
 
 /**
- * Khởi tạo SortableJS trên các dòng tiêu đề của bảng hiệu quả.
- * @param {HTMLElement} container - Phần tử DOM chứa các bảng cần kích hoạt kéo-thả.
+ * Khởi tạo SortableJS trên khu vực chứa các thẻ tùy chỉnh cột.
+ * @param {HTMLElement} container - Phần tử DOM chứa bảng và các nút tùy chỉnh.
  */
-function activateSortableOnEfficiencyTables(container) {
+function activateSortableOnColumnToggles(container) {
     if (!container) return;
 
-    const headerRows = container.querySelectorAll('table[data-table-type="hieu_qua"] thead tr, table[data-table-type="realtime_hieuqua_nhanvien"] thead tr');
+    const toggleContainer = container.querySelector('#efficiency-column-toggles');
+    if (!toggleContainer) return;
 
-    headerRows.forEach(row => {
-        new Sortable(row, {
-            animation: 150, // Hiệu ứng chuyển động mượt mà
-            filter: '.non-draggable', // Không cho phép kéo cột có class này
-            onEnd: (evt) => {
-                // Lấy danh sách các thẻ <th> trong thứ tự mới
-                const newHeaderOrder = Array.from(evt.target.querySelectorAll('th'));
-                
-                // Lấy ra ID của các cột theo thứ tự mới
-                const newColumnIdOrder = newHeaderOrder.map(th => th.dataset.sort).filter(Boolean);
+    // Hủy bỏ instance cũ nếu có để tránh lỗi khởi tạo nhiều lần
+    if (toggleContainer.sortable) {
+        toggleContainer.sortable.destroy();
+    }
 
-                // Tải cài đặt hiện tại
-                const currentSettings = settingsService.loadEfficiencyViewSettings();
-                
-                // Tạo một Map để truy cập nhanh các đối tượng cài đặt theo ID
-                const settingsMap = new Map(currentSettings.map(s => [s.id, s]));
+    // Tạo instance mới
+    toggleContainer.sortable = new Sortable(toggleContainer, {
+        animation: 150, // Hiệu ứng chuyển động mượt mà
+        filter: '.non-draggable', // Bỏ qua các phần tử có class này (ví dụ: label "Tùy chỉnh cột:")
+        handle: '.drag-handle-icon', // Chỉ cho phép kéo khi bấm vào icon
+        onEnd: (evt) => {
+            // Lấy danh sách các thẻ <button> theo thứ tự mới
+            const newButtonOrder = Array.from(evt.target.querySelectorAll('button.column-toggle-btn'));
+            
+            // Lấy ra ID của các cột theo thứ tự mới từ thuộc tính data-column-id
+            const newColumnIdOrder = newButtonOrder.map(btn => btn.dataset.columnId).filter(Boolean);
 
-                // Tạo lại mảng cài đặt theo thứ tự mới
-                const reorderedSettings = newColumnIdOrder.map(id => settingsMap.get(id));
-                
-                // Thêm lại các cột đã bị ẩn (nếu có) vào cuối danh sách để không làm mất chúng
-                currentSettings.forEach(setting => {
-                    if (!reorderedSettings.find(s => s.id === setting.id)) {
-                        reorderedSettings.push(setting);
-                    }
-                });
+            // Tải cài đặt hiện tại
+            const currentSettings = settingsService.loadEfficiencyViewSettings();
+             
+            // Tạo một Map để truy cập nhanh các đối tượng cài đặt theo ID
+            const settingsMap = new Map(currentSettings.map(s => [s.id, s]));
 
-                // Lưu lại cấu hình mới
-                settingsService.saveEfficiencyViewSettings(reorderedSettings);
-
-                // Vẽ lại toàn bộ tab để đồng bộ header, body, và footer của bảng
-                if (appController) {
-                    appController.updateAndRenderCurrentTab();
+            // Tạo lại mảng cài đặt theo thứ tự mới
+            const reorderedSettings = newColumnIdOrder.map(id => settingsMap.get(id));
+               
+            // Thêm lại các cột đã bị ẩn (nếu có) vào cuối danh sách để không làm mất chúng
+            currentSettings.forEach(setting => {
+                if (!reorderedSettings.find(s => s.id === setting.id)) {
+                    reorderedSettings.push(setting);
                 }
+            });
+
+            // Lưu lại cấu hình mới
+            settingsService.saveEfficiencyViewSettings(reorderedSettings);
+
+            // Vẽ lại toàn bộ tab để đồng bộ header, body, và footer của bảng
+            if (appController) {
+                console.log("LOG: Yêu cầu render lại tab sau khi kéo thả."); // <<< THÊM DÒNG NÀY ĐỂ GỠ LỖI
+                appController.updateAndRenderCurrentTab();
             }
-        });
+        }
     });
 }
 
@@ -2180,7 +2223,7 @@ export const dragDroplisteners = {
      */
     initializeForContainer(containerId) {
         const container = document.getElementById(containerId);
-        activateSortableOnEfficiencyTables(container);
+        activateSortableOnColumnToggles(container);
     }
 };
 --- END FILE: ./event-listeners/listeners-dragdrop.js ---
@@ -2399,7 +2442,7 @@ export function initializeSortingListeners(appController) {
 --- END FILE: ./event-listeners/listeners-sorting.js ---
 
 --- START FILE: ./event-listeners/ui-listeners.js ---
-// Version 3.4 - Fix: Use event delegation for dynamically replaced view switchers
+// Version 3.5 - Import and initialize drag-drop listener module
 // MODULE: EVENT LISTENERS INITIALIZER
 // File này đóng vai trò là điểm khởi đầu, import và khởi chạy tất cả các module listener con.
 
@@ -2415,6 +2458,7 @@ import { initializeCompetitionListeners } from './listeners-competition.js';
 import { initializeHighlightingListeners } from './listeners-highlighting.js';
 import { initializeSettingsListeners } from './listeners-settings.js';
 import { initializeSortingListeners } from './listeners-sorting.js';
+import { dragDroplisteners } from './listeners-dragdrop.js'; // <<< THÊM DÒNG NÀY
 
 let appController = null;
 
@@ -2572,6 +2616,7 @@ export function initializeEventListeners(mainAppController) {
     initializeCollaborationListeners(appController);
     initializeSortingListeners(appController);
     initializeCompetitionListeners(appController);
+    dragDroplisteners.init(appController); // <<< THÊM DÒNG NÀY
 
     // --- Các sự kiện còn lại ---
     document.getElementById('force-reload-btn')?.addEventListener('click', () => window.location.reload());
@@ -2657,6 +2702,8 @@ export function initializeEventListeners(mainAppController) {
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    
     <link rel="stylesheet" href="./dashboard.css">
     
     <style>
@@ -2719,7 +2766,7 @@ export function initializeEventListeners(mainAppController) {
                             <h2 class="text-2xl font-bold text-gray-800 mb-6">Danh sách góp ý</h2>
                             <div id="feedback-list-container" class="bg-white rounded-xl shadow-md p-6 border border-gray-200 flex-grow">
                                 <div id="feedback-list" class="space-y-6">
-                                     </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -2741,6 +2788,7 @@ export function initializeEventListeners(mainAppController) {
                         <div id="version-marquee-container" class="marquee-container">
                             <p class="marquee-text"></p>
                         </div>
+                        
                         <div class="header-qr-container">
                             <span>THAM GIA THẢO LUẬN - GÓP Ý</span>
                             <img id="header-qr-image" src="" alt="Mã QR" class="header-qr-image">
@@ -3441,10 +3489,11 @@ export function initializeEventListeners(mainAppController) {
             }
         });
     </script>
-    <script type="module" src="./main.js?v=3.2"></script>
+    <script type="module" src="./main.js?v=3.3"></script>
 
 </body>
 </html>
+
 --- END FILE: ./index.html ---
 
 --- START FILE: ./main.js ---
@@ -3477,7 +3526,7 @@ import { settingsService } from './modules/settings.service.js';
 import { highlightService } from './modules/highlight.service.js';
 
 const app = {
-    currentVersion: '3.2',
+    currentVersion: '3.3',
     storage: storage,
 
     async init() {
@@ -4583,7 +4632,7 @@ export const captureService = {
 --- END FILE: ./modules/capture.service.js ---
 
 --- START FILE: ./modules/highlight.service.js ---
-// Version 1.0 - Refactored from utils.js
+// Version 1.1 - Fix incorrect import paths for modules
 // MODULE: HIGHLIGHT SERVICE
 // Chứa logic để quản lý và áp dụng tính năng tô màu (highlight) trên các bảng.
 
@@ -4628,14 +4677,14 @@ export const highlightService = {
 --- END FILE: ./modules/highlight.service.js ---
 
 --- START FILE: ./modules/settings.service.js ---
-// Version 1.5 - Rework efficiency settings to support object-based config
+// Version 2.0 - Revert loading logic to respect user-saved drag-drop order
 // MODULE: SETTINGS SERVICE
 // Chứa toàn bộ logic liên quan đến việc quản lý cài đặt (lưu/tải từ localStorage).
 
 import { appState } from '../state.js';
 import { ui } from '../ui.js';
 
-// Hằng số chứa danh sách đầy đủ và chính xác các cột cho bảng Hiệu quả khai thác
+// Hằng số chứa danh sách đầy đủ và thứ tự cột chính xác cho bảng Hiệu quả khai thác
 const ALL_EFFICIENCY_ITEMS = [
     { id: 'dtICT', label: 'DT ICT' },
     { id: 'dtPhuKien', label: 'DT Phụ kiện' },
@@ -4667,6 +4716,7 @@ export const settingsService = {
     
     /**
      * Tải cài đặt hiển thị cho bảng Hiệu quả khai thác.
+     * Logic mới: Ưu tiên thứ tự đã lưu của người dùng, và thêm các cột mới vào cuối.
      * @returns {Array<Object>} Mảng cấu hình cột đầy đủ.
      */
     loadEfficiencyViewSettings() {
@@ -4683,7 +4733,10 @@ export const settingsService = {
                         .filter(item => !savedIds.has(item.id))
                         .map(item => ({ ...item, visible: true }));
                     
-                    return [...savedItems, ...newItems];
+                    // Lọc ra các mục đã lưu mà không còn tồn tại trong code nữa
+                    const currentItems = savedItems.filter(item => ALL_EFFICIENCY_ITEMS.some(config => config.id === item.id));
+                    
+                    return [...currentItems, ...newItems];
                 }
             }
         } catch (e) {
@@ -5397,6 +5450,14 @@ export const auth = {
 
 --- START FILE: ./changelog.json ---
 [
+  {
+    "version": "3.3",
+    "date": "13/10/2025",
+    "notes": [
+      "Thêm chức năng tùy chỉnh cột cho tab Hiệu quả khai thác nhân viên : có thể chọn ẩn hoặc hiện cột dữ liệu không liên quan đến TGDD",
+      "Cho phép kéo thả để sắp xếp các cột trong bảng kết quả hiệu quả khai thác nhân viên"
+    ]
+  },  
    {
     "version": "3.2",
     "date": "10/10/2025",
@@ -6370,7 +6431,7 @@ createSnapshot();
 --- END FILE: ./create_snapshot.js ---
 
 --- START FILE: ./dashboard.css ---
-/* Version 4.9 - Add styles for column toggles and drag-and-drop UX */
+/* Version 5.0 - Add styles for draggable column toggle tags and icons */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -6953,10 +7014,38 @@ details[open] > summary .arrow { transform: rotate(180deg); }
     opacity: 0.4;
     background-color: #c7d2fe; /* indigo-200 */
 }
-.sortable-drag {
-    opacity: 0.9;
-}
 /* === END: COLUMN TOGGLE & DRAG-DROP STYLES === */
+
+/* === START: DRAGGABLE TAG STYLES (NEW) === */
+.column-toggle-btn.draggable-tag {
+    cursor: grab;
+}
+
+.column-toggle-btn.draggable-tag:active {
+    cursor: grabbing;
+}
+
+.column-toggle-btn.draggable-tag:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.drag-handle-icon {
+    color: #6b7280; /* gray-500 for better contrast */
+    transition: color 0.2s ease-in-out;
+}
+
+.column-toggle-btn.draggable-tag:hover .drag-handle-icon {
+    color: #1f2937; /* gray-800 */
+}
+
+/* Style for the item being actively dragged by SortableJS */
+.sortable-drag {
+    opacity: 0.95;
+    transform: rotate(-2deg);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+}
+/* === END: DRAGGABLE TAG STYLES === */
 --- END FILE: ./dashboard.css ---
 
 --- START FILE: ./event-listeners/listeners-actions.js ---
@@ -7123,7 +7212,7 @@ export function initializeCompetitionListeners(appController) {
 --- END FILE: ./event-listeners/listeners-competition.js ---
 
 --- START FILE: ./event-listeners/listeners-dragdrop.js ---
-// Version 1.0 - Initial creation for column drag-and-drop functionality
+// Version 2.1 - Add logging to diagnose re-render issue on drop
 // MODULE: LISTENERS - DRAG & DROP
 // Chứa logic khởi tạo và xử lý sự kiện kéo-thả cột bằng SortableJS.
 
@@ -7132,50 +7221,57 @@ import { settingsService } from '../modules/settings.service.js';
 let appController = null;
 
 /**
- * Khởi tạo SortableJS trên các dòng tiêu đề của bảng hiệu quả.
- * @param {HTMLElement} container - Phần tử DOM chứa các bảng cần kích hoạt kéo-thả.
+ * Khởi tạo SortableJS trên khu vực chứa các thẻ tùy chỉnh cột.
+ * @param {HTMLElement} container - Phần tử DOM chứa bảng và các nút tùy chỉnh.
  */
-function activateSortableOnEfficiencyTables(container) {
+function activateSortableOnColumnToggles(container) {
     if (!container) return;
 
-    const headerRows = container.querySelectorAll('table[data-table-type="hieu_qua"] thead tr, table[data-table-type="realtime_hieuqua_nhanvien"] thead tr');
+    const toggleContainer = container.querySelector('#efficiency-column-toggles');
+    if (!toggleContainer) return;
 
-    headerRows.forEach(row => {
-        new Sortable(row, {
-            animation: 150, // Hiệu ứng chuyển động mượt mà
-            filter: '.non-draggable', // Không cho phép kéo cột có class này
-            onEnd: (evt) => {
-                // Lấy danh sách các thẻ <th> trong thứ tự mới
-                const newHeaderOrder = Array.from(evt.target.querySelectorAll('th'));
-                
-                // Lấy ra ID của các cột theo thứ tự mới
-                const newColumnIdOrder = newHeaderOrder.map(th => th.dataset.sort).filter(Boolean);
+    // Hủy bỏ instance cũ nếu có để tránh lỗi khởi tạo nhiều lần
+    if (toggleContainer.sortable) {
+        toggleContainer.sortable.destroy();
+    }
 
-                // Tải cài đặt hiện tại
-                const currentSettings = settingsService.loadEfficiencyViewSettings();
-                
-                // Tạo một Map để truy cập nhanh các đối tượng cài đặt theo ID
-                const settingsMap = new Map(currentSettings.map(s => [s.id, s]));
+    // Tạo instance mới
+    toggleContainer.sortable = new Sortable(toggleContainer, {
+        animation: 150, // Hiệu ứng chuyển động mượt mà
+        filter: '.non-draggable', // Bỏ qua các phần tử có class này (ví dụ: label "Tùy chỉnh cột:")
+        handle: '.drag-handle-icon', // Chỉ cho phép kéo khi bấm vào icon
+        onEnd: (evt) => {
+            // Lấy danh sách các thẻ <button> theo thứ tự mới
+            const newButtonOrder = Array.from(evt.target.querySelectorAll('button.column-toggle-btn'));
+            
+            // Lấy ra ID của các cột theo thứ tự mới từ thuộc tính data-column-id
+            const newColumnIdOrder = newButtonOrder.map(btn => btn.dataset.columnId).filter(Boolean);
 
-                // Tạo lại mảng cài đặt theo thứ tự mới
-                const reorderedSettings = newColumnIdOrder.map(id => settingsMap.get(id));
-                
-                // Thêm lại các cột đã bị ẩn (nếu có) vào cuối danh sách để không làm mất chúng
-                currentSettings.forEach(setting => {
-                    if (!reorderedSettings.find(s => s.id === setting.id)) {
-                        reorderedSettings.push(setting);
-                    }
-                });
+            // Tải cài đặt hiện tại
+            const currentSettings = settingsService.loadEfficiencyViewSettings();
+             
+            // Tạo một Map để truy cập nhanh các đối tượng cài đặt theo ID
+            const settingsMap = new Map(currentSettings.map(s => [s.id, s]));
 
-                // Lưu lại cấu hình mới
-                settingsService.saveEfficiencyViewSettings(reorderedSettings);
-
-                // Vẽ lại toàn bộ tab để đồng bộ header, body, và footer của bảng
-                if (appController) {
-                    appController.updateAndRenderCurrentTab();
+            // Tạo lại mảng cài đặt theo thứ tự mới
+            const reorderedSettings = newColumnIdOrder.map(id => settingsMap.get(id));
+               
+            // Thêm lại các cột đã bị ẩn (nếu có) vào cuối danh sách để không làm mất chúng
+            currentSettings.forEach(setting => {
+                if (!reorderedSettings.find(s => s.id === setting.id)) {
+                    reorderedSettings.push(setting);
                 }
+            });
+
+            // Lưu lại cấu hình mới
+            settingsService.saveEfficiencyViewSettings(reorderedSettings);
+
+            // Vẽ lại toàn bộ tab để đồng bộ header, body, và footer của bảng
+            if (appController) {
+                console.log("LOG: Yêu cầu render lại tab sau khi kéo thả."); // <<< THÊM DÒNG NÀY ĐỂ GỠ LỖI
+                appController.updateAndRenderCurrentTab();
             }
-        });
+        }
     });
 }
 
@@ -7195,7 +7291,7 @@ export const dragDroplisteners = {
      */
     initializeForContainer(containerId) {
         const container = document.getElementById(containerId);
-        activateSortableOnEfficiencyTables(container);
+        activateSortableOnColumnToggles(container);
     }
 };
 --- END FILE: ./event-listeners/listeners-dragdrop.js ---
@@ -7414,7 +7510,7 @@ export function initializeSortingListeners(appController) {
 --- END FILE: ./event-listeners/listeners-sorting.js ---
 
 --- START FILE: ./event-listeners/ui-listeners.js ---
-// Version 3.4 - Fix: Use event delegation for dynamically replaced view switchers
+// Version 3.5 - Import and initialize drag-drop listener module
 // MODULE: EVENT LISTENERS INITIALIZER
 // File này đóng vai trò là điểm khởi đầu, import và khởi chạy tất cả các module listener con.
 
@@ -7430,6 +7526,7 @@ import { initializeCompetitionListeners } from './listeners-competition.js';
 import { initializeHighlightingListeners } from './listeners-highlighting.js';
 import { initializeSettingsListeners } from './listeners-settings.js';
 import { initializeSortingListeners } from './listeners-sorting.js';
+import { dragDroplisteners } from './listeners-dragdrop.js'; // <<< THÊM DÒNG NÀY
 
 let appController = null;
 
@@ -7587,6 +7684,7 @@ export function initializeEventListeners(mainAppController) {
     initializeCollaborationListeners(appController);
     initializeSortingListeners(appController);
     initializeCompetitionListeners(appController);
+    dragDroplisteners.init(appController); // <<< THÊM DÒNG NÀY
 
     // --- Các sự kiện còn lại ---
     document.getElementById('force-reload-btn')?.addEventListener('click', () => window.location.reload());
@@ -7672,6 +7770,8 @@ export function initializeEventListeners(mainAppController) {
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    
     <link rel="stylesheet" href="./dashboard.css">
     
     <style>
@@ -7734,7 +7834,7 @@ export function initializeEventListeners(mainAppController) {
                             <h2 class="text-2xl font-bold text-gray-800 mb-6">Danh sách góp ý</h2>
                             <div id="feedback-list-container" class="bg-white rounded-xl shadow-md p-6 border border-gray-200 flex-grow">
                                 <div id="feedback-list" class="space-y-6">
-                                     </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -7756,6 +7856,7 @@ export function initializeEventListeners(mainAppController) {
                         <div id="version-marquee-container" class="marquee-container">
                             <p class="marquee-text"></p>
                         </div>
+                        
                         <div class="header-qr-container">
                             <span>THAM GIA THẢO LUẬN - GÓP Ý</span>
                             <img id="header-qr-image" src="" alt="Mã QR" class="header-qr-image">
@@ -8456,10 +8557,11 @@ export function initializeEventListeners(mainAppController) {
             }
         });
     </script>
-    <script type="module" src="./main.js?v=3.2"></script>
+    <script type="module" src="./main.js?v=3.3"></script>
 
 </body>
 </html>
+
 --- END FILE: ./index.html ---
 
 --- START FILE: ./main.js ---
@@ -8492,7 +8594,7 @@ import { settingsService } from './modules/settings.service.js';
 import { highlightService } from './modules/highlight.service.js';
 
 const app = {
-    currentVersion: '3.2',
+    currentVersion: '3.3',
     storage: storage,
 
     async init() {
@@ -9598,7 +9700,7 @@ export const captureService = {
 --- END FILE: ./modules/capture.service.js ---
 
 --- START FILE: ./modules/highlight.service.js ---
-// Version 1.0 - Refactored from utils.js
+// Version 1.1 - Fix incorrect import paths for modules
 // MODULE: HIGHLIGHT SERVICE
 // Chứa logic để quản lý và áp dụng tính năng tô màu (highlight) trên các bảng.
 
@@ -9643,14 +9745,14 @@ export const highlightService = {
 --- END FILE: ./modules/highlight.service.js ---
 
 --- START FILE: ./modules/settings.service.js ---
-// Version 1.5 - Rework efficiency settings to support object-based config
+// Version 2.0 - Revert loading logic to respect user-saved drag-drop order
 // MODULE: SETTINGS SERVICE
 // Chứa toàn bộ logic liên quan đến việc quản lý cài đặt (lưu/tải từ localStorage).
 
 import { appState } from '../state.js';
 import { ui } from '../ui.js';
 
-// Hằng số chứa danh sách đầy đủ và chính xác các cột cho bảng Hiệu quả khai thác
+// Hằng số chứa danh sách đầy đủ và thứ tự cột chính xác cho bảng Hiệu quả khai thác
 const ALL_EFFICIENCY_ITEMS = [
     { id: 'dtICT', label: 'DT ICT' },
     { id: 'dtPhuKien', label: 'DT Phụ kiện' },
@@ -9682,6 +9784,7 @@ export const settingsService = {
     
     /**
      * Tải cài đặt hiển thị cho bảng Hiệu quả khai thác.
+     * Logic mới: Ưu tiên thứ tự đã lưu của người dùng, và thêm các cột mới vào cuối.
      * @returns {Array<Object>} Mảng cấu hình cột đầy đủ.
      */
     loadEfficiencyViewSettings() {
@@ -9698,7 +9801,10 @@ export const settingsService = {
                         .filter(item => !savedIds.has(item.id))
                         .map(item => ({ ...item, visible: true }));
                     
-                    return [...savedItems, ...newItems];
+                    // Lọc ra các mục đã lưu mà không còn tồn tại trong code nữa
+                    const currentItems = savedItems.filter(item => ALL_EFFICIENCY_ITEMS.some(config => config.id === item.id));
+                    
+                    return [...currentItems, ...newItems];
                 }
             }
         } catch (e) {
@@ -11722,7 +11828,7 @@ export { luykeTab };
 --- END FILE: ./tab-luyke.js ---
 
 --- START FILE: ./tab-realtime.js ---
-// Version 3.0 - Fix: Use flexible regex for employee ID matching
+// Version 3.3 - Add initializer call for drag-and-drop functionality
 // MODULE: Chịu trách nhiệm cho Tab Doanh thu Realtime
 
 import { appState } from './state.js';
@@ -11730,8 +11836,9 @@ import { ui } from './ui.js';
 import { services } from './services.js';
 import { settingsService } from './modules/settings.service.js';
 import { highlightService } from './modules/highlight.service.js';
+import { dragDroplisteners } from './event-listeners/listeners-dragdrop.js';
 
-const realtimeTab = {
+export const realtimeTab = {
     render() {
         if (appState.danhSachNhanVien.length === 0) {
             ui.togglePlaceholder('realtime-section', true);
@@ -11772,9 +11879,7 @@ const realtimeTab = {
 
         const visibleEmployees = new Set(filteredReport.map(nv => String(nv.maNV)));
         const filteredRealtimeYCX = appState.realtimeYCXData.filter(row => {
-            // <<< START FIX: Use flexible regex for matching employee ID >>>
             const msnvMatch = String(row.nguoiTao || '').match(/(\d+)/);
-            // <<< END FIX >>>
             return msnvMatch && visibleEmployees.has(msnvMatch[1].trim());
         });
         
@@ -11804,13 +11909,13 @@ const realtimeTab = {
             
             const employeeSelectorContainer = document.getElementById('dtnv-realtime-employee-selector-container');
             employeeSelectorContainer.classList.toggle('hidden', dtnvViewType !== 'infographic');
-
+            
             if (dtnvViewType === 'infographic') {
                 this.handleEmployeeDetailChange();
             } else {
                 document.getElementById('realtime-revenue-report-container').classList.remove('hidden');
                 document.getElementById('realtime-employee-detail-container').classList.add('hidden');
-                ui.displayRealtimeEmployeeRevenueReport(filteredReport, 'realtime-revenue-report-container', 'realtime_dt_nhanvien');
+                ui.displayEmployeeRevenueReport(filteredReport, 'realtime-revenue-report-container', 'realtime_dt_nhanvien');
             }
 
             ui.displayEmployeeEfficiencyReport(filteredReport, 'realtime-efficiency-report-container', 'realtime_hieuqua_nhanvien');
@@ -11821,6 +11926,12 @@ const realtimeTab = {
         
         highlightService.populateHighlightFilters('realtime', filteredRealtimeYCX, filteredReport);
         highlightService.applyHighlights('realtime');
+        
+        // Kích hoạt lại tính năng kéo thả cho các cột hiệu quả sau khi render
+        const efficiencyReportContainer = document.getElementById('realtime-efficiency-report-container');
+        if (efficiencyReportContainer) {
+            dragDroplisteners.initializeForContainer('realtime-efficiency-report-container');
+        }
     },
 
     handleEmployeeDetailChange() {
@@ -11869,19 +11980,19 @@ const realtimeTab = {
         ui.renderRealtimeBrandReport(reportData, dthangViewType);
     }
 };
-
-export { realtimeTab };
 --- END FILE: ./tab-realtime.js ---
 
 --- START FILE: ./tab-sknv.js ---
-// Version 2.5 - Fix: Use settingsService instead of utils
+// Version 2.6 - Add initializer call for drag-and-drop functionality
 // MODULE: TAB SKNV
 // Chịu trách nhiệm render và xử lý logic cho tab "Sức khỏe nhân viên"
+
 import { appState } from './state.js';
 import { services } from './services.js';
 import { ui } from './ui.js';
-import { settingsService } from './modules/settings.service.js'; // <<< THÊM DÒNG NÀY
-import { highlightService } from './modules/highlight.service.js'; // <<< THÊM DÒNG NÀY
+import { settingsService } from './modules/settings.service.js';
+import { highlightService } from './modules/highlight.service.js';
+import { dragDroplisteners } from './event-listeners/listeners-dragdrop.js';
 
 export const sknvTab = {
     render() {
@@ -11903,7 +12014,7 @@ export const sknvTab = {
             filteredYCXData = appState.ycxData.filter(row => row.ngayTao instanceof Date && !isNaN(row.ngayTao) && selectedDateSet.has(startOfDay(row.ngayTao)));
         }
         
-        const goals = settingsService.getLuykeGoalSettings(selectedWarehouse).goals; // <<< CẬP NHẬT DÒNG NÀY
+        const goals = settingsService.getLuykeGoalSettings(selectedWarehouse).goals;
         appState.masterReportData.sknv = services.generateMasterReportData(filteredYCXData, goals, false);
         
         let filteredReport = appState.masterReportData.sknv;
@@ -11932,8 +12043,14 @@ export const sknvTab = {
             ui.displaySknvReport(filteredReport);
         }
 
-        highlightService.populateHighlightFilters('sknv', filteredYCXData, filteredReport); // Sửa lỗi tiềm tàng
-        highlightService.applyHighlights('sknv'); // Sửa lỗi tiềm tàng
+        highlightService.populateHighlightFilters('sknv', filteredYCXData, filteredReport);
+        highlightService.applyHighlights('sknv');
+
+        // Kích hoạt lại tính năng kéo thả cho các cột hiệu quả sau khi render
+        const efficiencyReportContainer = document.getElementById('efficiency-report-container');
+        if (efficiencyReportContainer) {
+            dragDroplisteners.initializeForContainer('efficiency-report-container');
+        }
     }
 };
 --- END FILE: ./tab-sknv.js ---
@@ -12895,7 +13012,7 @@ export const uiComponents = {
 --- END FILE: ./ui-components.js ---
 
 --- START FILE: ./ui-luyke.js ---
-// Version 2.4 - Optimize competition card layout for mobile/capture (3 columns -> 2 columns)
+// Version 2.9 - Filter efficiency table to show only percentages and rename title
 // MODULE: UI LUY KE
 // Chứa các hàm render giao diện cho tab "Sức khỏe Siêu thị (Lũy kế)".
 
@@ -13165,7 +13282,7 @@ export const uiLuyke = {
         }
     },
     
-    renderChuaXuatTable: (reportData) => { /* ... (Giữ nguyên) ... */
+    renderChuaXuatTable: (reportData) => {
         const container = document.getElementById('luyke-unexported-revenue-content');
         if (!container) return;
         if (!reportData || reportData.length === 0) {
@@ -13212,7 +13329,7 @@ export const uiLuyke = {
             </tr></tfoot></table></div>`;
     },
 
-    renderLuykeKpiCards: (luykeData, comparisonData, luotKhachData, masterReportDataLuyke, goals, competitionSummary) => { /* ... (Giữ nguyên) ... */
+    renderLuykeKpiCards: (luykeData, comparisonData, luotKhachData, masterReportDataLuyke, goals, competitionSummary) => {
         const { dtThucLK, dtQdLK, dtGop, phanTramQd, phanTramGop, phanTramTargetThuc, phanTramTargetQd, dtThucDuKien, dtQdDuKien } = luykeData;
 
         // --- Thẻ 1: Doanh thu thực ---
@@ -13259,7 +13376,7 @@ export const uiLuyke = {
         document.getElementById('luyke-kpi-lkck-sub').innerHTML = `Lượt khách: <span class="font-bold">${uiComponents.formatNumber(luotKhachData.value || 0)} | ${formattedLkPercentage}</span>`;
     },
 
-    renderLuykeCategoryDetailsTable: (data, numDays) => { /* ... (Giữ nguyên) ... */
+    renderLuykeCategoryDetailsTable: (data, numDays) => {
         const container = document.getElementById('luyke-category-details-content');
         const cardHeader = container.previousElementSibling;
         if (!container || !cardHeader || !data || !data.nganhHangChiTiet) { container.innerHTML = '<p class="text-gray-500 font-bold">Không có dữ liệu.</p>'; return; }
@@ -13320,7 +13437,7 @@ export const uiLuyke = {
             </tr></tfoot></table></div>`;
     },
 
-    renderLuykeQdcTable: (data, numDays) => { /* ... (Giữ nguyên) ... */
+    renderLuykeQdcTable: (data, numDays) => {
         const container = document.getElementById('luyke-qdc-content');
         const cardHeader = container.previousElementSibling;
         if (!container || !cardHeader || !data || !data.qdc) { container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; return; }
@@ -13364,7 +13481,7 @@ export const uiLuyke = {
             </tbody></table></div>`;
     },
     
-    renderLuykeEfficiencyTable: (data, goals) => { /* ... (Giữ nguyên) ... */
+    renderLuykeEfficiencyTable: (data, goals) => {
         const container = document.getElementById('luyke-efficiency-content');
         const cardHeader = container.previousElementSibling;
 
@@ -13372,20 +13489,28 @@ export const uiLuyke = {
             if(container) container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; 
             return; 
         }
-
-        // Tải cấu hình cột từ settings service
+        
         const allItemsConfig = settingsService.loadEfficiencyViewSettings();
+        
+        const goalKeyMap = {
+            pctPhuKien: 'phanTramPhuKien',
+            pctGiaDung: 'phanTramGiaDung',
+            pctMLN: 'phanTramMLN',
+            pctSim: 'phanTramSim',
+            pctVAS: 'phanTramVAS',
+            pctBaoHiem: 'phanTramBaoHiem'
+        };
 
-        // Ánh xạ dữ liệu vào cấu hình cột
-        const allItems = allItemsConfig.map(config => ({
-            ...config,
-            value: data[config.id],
-            target: goals[config.id]
-        }));
+        const allItems = allItemsConfig
+            .filter(item => item.id.startsWith('pct'))
+            .map(config => ({
+                ...config,
+                value: data[config.id],
+                target: goals[goalKeyMap[config.id]]
+            }));
         
         const createRow = (label, value, target) => {
-            // Target là giá trị số (ví dụ: 20) nên chia 100
-            const isBelow = value < (target / 100); 
+            const isBelow = value < ((target || 0) / 100); 
             
             return `<tr class="border-t">
                 <td class="px-4 py-2 font-semibold text-gray-800">${label}</td>
@@ -13396,7 +13521,7 @@ export const uiLuyke = {
         
         if (!cardHeader.querySelector('.settings-trigger-btn')) {
             cardHeader.classList.add('flex', 'items-center', 'justify-between');
-            cardHeader.innerHTML = `<span>HIỆU QUẢ KHAI THÁC</span>` + uiComponents.renderSettingsButton('lk-eff');
+            cardHeader.innerHTML = `<span>HIỆU QUẢ KHAI THÁC SIÊU THỊ</span>` + uiComponents.renderSettingsButton('lk-eff');
             
             setTimeout(() => {
                 document.getElementById('settings-btn-lk-eff').addEventListener('click', () => {
@@ -13425,7 +13550,7 @@ export const uiLuyke = {
             </div>`;
     },
 
-    updateLuykeSupermarketTitle: (warehouse, date) => { /* ... (Giữ nguyên) ... */
+    updateLuykeSupermarketTitle: (warehouse, date) => {
         const titleEl = document.getElementById('luyke-supermarket-title');
         if (titleEl) titleEl.textContent = `Báo cáo lũy kế ${warehouse ? 'kho ' + warehouse : 'toàn bộ'} - Tính đến ${date.toLocaleDateString('vi-VN')}`;
     },
@@ -13433,7 +13558,7 @@ export const uiLuyke = {
 --- END FILE: ./ui-luyke.js ---
 
 --- START FILE: ./ui-realtime.js ---
-// Version 3.4 - Fix efficiency settings modal and rendering logic
+// Version 3.5 - Fix dependency error by importing uiSknv
 // MODULE: UI REALTIME
 // Chứa các hàm render giao diện cho tab "Doanh thu Realtime".
 
@@ -13442,6 +13567,7 @@ import { services } from './services.js';
 import { utils } from './utils.js';
 import { uiComponents } from './ui-components.js';
 import { settingsService } from './modules/settings.service.js';
+import { uiSknv } from './ui-sknv.js'; // <<< THÊM DÒNG NÀY ĐỂ SỬA LỖI
 
 export const uiRealtime = {
     _showEfficiencySettingsModal() {
@@ -13533,79 +13659,16 @@ export const uiRealtime = {
             groupedByDept[dept].push(item);
         });
 
-        const departmentOrder = appState.danhSachNhanVien ? [...new Set(appState.danhSachNhanVien.map(nv => nv.boPhan))] : Object.keys(groupedByDept);
+        const departmentOrder = uiSknv._getSortedDepartmentList(reportData);
 
         departmentOrder.forEach(deptName => {
             if (groupedByDept[deptName]) {
-                finalHTML += uiRealtime.renderRealtimeRevenueTableForDepartment(deptName, groupedByDept[deptName], sortStateKey);
+                finalHTML += uiSknv.renderRevenueTableForDepartment(deptName, groupedByDept[deptName], sortStateKey);
             }
         });
 
         finalHTML += `</div>`;
         container.innerHTML = finalHTML;
-    },
-
-    renderRealtimeRevenueTableForDepartment: (title, data, sortStateKey) => {
-        const sortState = appState.sortState[sortStateKey] || { key: 'doanhThu', direction: 'desc' };
-        const { key, direction } = sortState;
-        const sortedData = [...data].sort((a, b) => {
-            const valA = a[key] || 0; const valB = b[key] || 0;
-            return direction === 'asc' ? valA - valB : valB - valA;
-        });
-
-        const totals = data.reduce((acc, item) => {
-            acc.doanhThu += item.doanhThu;
-            acc.doanhThuQuyDoi += item.doanhThuQuyDoi;
-            acc.doanhThuTraGop += item.doanhThuTraGop;
-            acc.doanhThuChuaXuat += item.doanhThuChuaXuat;
-            return acc;
-        }, { doanhThu: 0, doanhThuQuyDoi: 0, doanhThuTraGop: 0, doanhThuChuaXuat: 0 });
-
-        totals.hieuQuaQuyDoi = totals.doanhThu > 0 ? (totals.doanhThuQuyDoi / totals.doanhThu) - 1 : 0;
-        totals.tyLeTraCham = totals.doanhThu > 0 ? totals.doanhThuTraGop / totals.doanhThu : 0;
-
-        let titleClass = '';
-        if (title.includes('Tư Vấn')) titleClass = 'department-header-tv';
-        else if (title.includes('Kho')) titleClass = 'department-header-kho';
-        else if (title.includes('Trang Trí')) titleClass = 'department-header-tt';
-
-        const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
-        
-        let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="7">
-                         <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
-                            <tr>
-                                <th class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('doanhThu')} text-right header-group-7" data-sort="doanhThu">Doanh Thu <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('doanhThuQuyDoi')} text-right header-group-7" data-sort="doanhThuQuyDoi">Doanh Thu QĐ <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('hieuQuaQuyDoi')} text-right header-group-7" data-sort="hieuQuaQuyDoi">% QĐ <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('doanhThuTraGop')} text-right header-group-8" data-sort="doanhThuTraGop">DT trả chậm <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('tyLeTraCham')} text-right header-group-8" data-sort="tyLeTraCham">% trả chậm <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('doanhThuChuaXuat')} text-right header-group-9" data-sort="doanhThuChuaXuat">DT Chưa Xuất <span class="sort-indicator"></span></th>
-                             </tr>
-                        </thead><tbody>`;
-        sortedData.forEach(item => {
-            const { mucTieu } = item;
-            const qdClass = item.hieuQuaQuyDoi < ((mucTieu?.phanTramQD || 0) / 100) ? 'cell-performance is-below' : '';
-            const tcClass = item.tyLeTraCham < ((mucTieu?.phanTramTC || 0) / 100) ? 'cell-performance is-below' : '';
-            tableHTML += `<tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2 font-semibold line-clamp-2">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</td>
-                    <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThu)}</td>
-                    <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThuQuyDoi)}</td>
-                    <td class="px-4 py-2 text-right font-bold ${qdClass}">${uiComponents.formatPercentage(item.hieuQuaQuyDoi)}</td>
-                    <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThuTraGop)}</td>
-                    <td class="px-4 py-2 text-right font-bold ${tcClass}">${uiComponents.formatPercentage(item.tyLeTraCham)}</td>
-                    <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThuChuaXuat)}</td></tr>`;
-        });
-         tableHTML += `</tbody><tfoot class="table-footer font-bold"><tr>
-                    <td class="px-4 py-2">Tổng</td>
-                    <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThu)}</td>
-                    <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuQuyDoi)}</td>
-                    <td class="px-4 py-2 text-right">${uiComponents.formatPercentage(totals.hieuQuaQuyDoi)}</td>
-                    <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuTraGop)}</td>
-                    <td class="px-4 py-2 text-right">${uiComponents.formatPercentage(totals.tyLeTraCham)}</td>
-                    <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuChuaXuat)}</td>
-                </tr></tfoot></table></div></div>`;
-        return tableHTML;
     },
 
     renderRealtimeKpiCards: (data, settings) => {
@@ -13756,7 +13819,7 @@ export const uiRealtime = {
             value: data[config.id],
             target: goals[goalKeyMap[config.id]]
         }));
-
+        
         const createRow = (label, value, target) => {
             const isBelow = value < ((target || 0) / 100);
             return `<tr class="border-t">
@@ -13765,7 +13828,7 @@ export const uiRealtime = {
                 <td class="px-4 py-2 text-right text-gray-600">${target || 0}%</td>
             </tr>`;
         };
-
+        
         if (!cardHeader.querySelector('.settings-trigger-btn')) {
             cardHeader.classList.add('flex', 'items-center', 'justify-between');
             cardHeader.innerHTML = `<span>HIỆU QUẢ KHAI THÁC</span>` + uiComponents.renderSettingsButton('rt-eff');
@@ -13959,7 +14022,7 @@ export const uiRealtime = {
 --- END FILE: ./ui-realtime.js ---
 
 --- START FILE: ./ui-sknv.js ---
-// Version 2.9 - Fix: Correct variable scope for formatMap in efficiency table
+// Version 3.1 - Rename title, move toggles, add drag handles, and restructure for capture
 // MODULE: UI SKNV
 // Chứa các hàm render giao diện cho tab "Sức khỏe nhân viên"
 
@@ -14068,8 +14131,8 @@ export const uiSknv = {
                         </thead><tbody>`;
         sortedData.forEach(item => {
             const { mucTieu } = item;
-            const qdClass = item.hieuQuaQuyDoi < (mucTieu.phanTramQD / 100) ? 'cell-performance is-below' : '';
-            const tcClass = item.tyLeTraCham < (mucTieu.phanTramTC / 100) ? 'cell-performance is-below' : '';
+            const qdClass = (mucTieu && item.hieuQuaQuyDoi < (mucTieu.phanTramQD / 100)) ? 'cell-performance is-below' : '';
+            const tcClass = (mucTieu && item.tyLeTraCham < (mucTieu.phanTramTC / 100)) ? 'cell-performance is-below' : '';
             tableHTML += `<tr class="hover:bg-gray-50">
                     <td class="px-4 py-2 font-semibold line-clamp-2">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</td>
                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThu)}</td>
@@ -14194,25 +14257,26 @@ export const uiSknv = {
         const visibleColumns = columnSettings.filter(c => c.visible);
 
         const columnTogglesHTML = `
-            <div id="efficiency-column-toggles" class="p-3 border-b border-gray-200 flex flex-wrap items-center gap-x-3 gap-y-2">
-                <span class="text-sm font-semibold mr-2 text-gray-700">Tùy chỉnh cột:</span>
+            <div id="efficiency-column-toggles" class="p-3 border-b border-gray-200 flex flex-wrap items-center gap-x-2 gap-y-2">
+                <span class="text-sm font-semibold mr-2 text-gray-700 non-draggable">Tùy chỉnh cột:</span>
                 ${columnSettings.map(col => `
                     <button 
-                        class="column-toggle-btn ${col.visible ? 'active' : ''}" 
+                        class="column-toggle-btn draggable-tag flex items-center ${col.visible ? 'active' : ''}" 
                         data-column-id="${col.id}">
-                        ${col.label}
+                        <svg class="drag-handle-icon mr-2 cursor-grab" width="12" height="12" viewBox="0 0 10 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M4 2a1 1 0 10-2 0 1 1 0 002 0zM2 9a1 1 0 110-2 1 1 0 010 2zm0 5a1 1 0 110-2 1 1 0 010 2zm5-12a1 1 0 10-2 0 1 1 0 002 0zM7 9a1 1 0 110-2 1 1 0 010 2zm0 5a1 1 0 110-2 1 1 0 010 2z" fill="currentColor"></path></svg>
+                        <span>${col.label}</span>
                     </button>
                 `).join('')}
             </div>
         `;
 
         let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-                            <div class="p-4 header-group-3 text-gray-800">
-                                <h3 class="text-xl font-bold uppercase">HIỆU QUẢ KHAI THÁC</h3>
-                                <p class="text-sm italic text-gray-600">(đơn vị tính: Triệu đồng)</p>
-                            </div>
                             ${columnTogglesHTML}
-                        `;
+                            <div data-capture-group="efficiency-table">
+                                <div class="p-4 header-group-3 text-gray-800">
+                                    <h3 class="text-xl font-bold uppercase">HIỆU QUẢ KHAI THÁC THEO NHÂN VIÊN</h3>
+                                    <p class="text-sm italic text-gray-600">(đơn vị tính: Triệu đồng)</p>
+                                </div>`;
 
         const groupedByDept = {};
         reportData.forEach(item => {
@@ -14229,7 +14293,8 @@ export const uiSknv = {
             }
         });
 
-        finalHTML += `</div>`;
+        finalHTML += `    </div> 
+                      </div>`;
         container.innerHTML = finalHTML;
     },
 
@@ -14240,6 +14305,14 @@ export const uiSknv = {
             const valA = a[key] || 0; const valB = b[key] || 0;
             return direction === 'asc' ? valA - valB : valB - valA;
         });
+
+        const formatMap = {
+            dtICT: (val) => uiComponents.formatRevenue(val),
+            dtPhuKien: (val) => uiComponents.formatRevenue(val),
+            dtCE: (val) => uiComponents.formatRevenue(val),
+            dtGiaDung: (val) => uiComponents.formatRevenue(val),
+            defaultPercent: (val) => uiComponents.formatPercentage(val)
+        };
 
         const totals = data.reduce((acc, item) => {
             acc.dtICT += item.dtICT;
@@ -14280,16 +14353,7 @@ export const uiSknv = {
             pctBaoHiem: { label: '% Bảo hiểm', class: 'text-right header-group-12' }
         };
 
-        // *** FIX IS HERE: Moved formatMap declaration to the top of the function ***
-        const formatMap = {
-            dtICT: (val) => uiComponents.formatRevenue(val),
-            dtPhuKien: (val) => uiComponents.formatRevenue(val),
-            dtCE: (val) => uiComponents.formatRevenue(val),
-            dtGiaDung: (val) => uiComponents.formatRevenue(val),
-            defaultPercent: (val) => uiComponents.formatPercentage(val)
-        };
-
-        const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
+        const headerClass = (sortKey) => `px-4 py-3 sortable draggable-header ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
         const captureColumnCount = 1 + visibleColumns.length;
 
         let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="${captureColumnCount}">
@@ -14303,12 +14367,12 @@ export const uiSknv = {
         sortedData.forEach(item => {
             const { mucTieu } = item;
             const classMap = {
-                pctPhuKien: item.pctPhuKien < ((mucTieu?.phanTramPhuKien || 0) / 100) ? 'cell-performance is-below' : '',
-                pctGiaDung: item.pctGiaDung < ((mucTieu?.phanTramGiaDung || 0) / 100) ? 'cell-performance is-below' : '',
-                pctMLN: item.pctMLN < ((mucTieu?.phanTramMLN || 0) / 100) ? 'cell-performance is-below' : '',
-                pctSim: item.pctSim < ((mucTieu?.phanTramSim || 0) / 100) ? 'cell-performance is-below' : '',
-                pctVAS: item.pctVAS < ((mucTieu?.phanTramVAS || 0) / 100) ? 'cell-performance is-below' : '',
-                pctBaoHiem: item.pctBaoHiem < ((mucTieu?.phanTramBaoHiem || 0) / 100) ? 'cell-performance is-below' : ''
+                pctPhuKien: (mucTieu && item.pctPhuKien < (mucTieu.phanTramPhuKien / 100)) ? 'cell-performance is-below' : '',
+                pctGiaDung: (mucTieu && item.pctGiaDung < (mucTieu.phanTramGiaDung / 100)) ? 'cell-performance is-below' : '',
+                pctMLN: (mucTieu && item.pctMLN < (mucTieu.phanTramMLN / 100)) ? 'cell-performance is-below' : '',
+                pctSim: (mucTieu && item.pctSim < (mucTieu.phanTramSim / 100)) ? 'cell-performance is-below' : '',
+                pctVAS: (mucTieu && item.pctVAS < (mucTieu.phanTramVAS / 100)) ? 'cell-performance is-below' : '',
+                pctBaoHiem: (mucTieu && item.pctBaoHiem < (mucTieu.phanTramBaoHiem / 100)) ? 'cell-performance is-below' : ''
             };
 
             tableHTML += `<tr class="hover:bg-gray-50">
@@ -14473,11 +14537,11 @@ export const uiSknv = {
         const doanhThuData = [
             { label: 'Doanh thu thực', value: uiComponents.formatRevenue(employeeData.doanhThu), average: uiComponents.formatRevenue(departmentAverages.doanhThu || 0), rawValue: employeeData.doanhThu, rawAverage: departmentAverages.doanhThu },
             { label: 'Doanh thu quy đổi', value: uiComponents.formatRevenue(employeeData.doanhThuQuyDoi), average: uiComponents.formatRevenue(departmentAverages.doanhThuQuyDoi || 0), rawValue: employeeData.doanhThuQuyDoi, rawAverage: departmentAverages.doanhThuQuyDoi },
-            { label: '% Quy đổi', value: uiComponents.formatPercentage(employeeData.hieuQuaQuyDoi), valueClass: employeeData.hieuQuaQuyDoi < ((mucTieu?.phanTramQD || 0) /100) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.hieuQuaQuyDoi), rawValue: employeeData.hieuQuaQuyDoi, rawAverage: departmentAverages.hieuQuaQuyDoi },
+            { label: '% Quy đổi', value: uiComponents.formatPercentage(employeeData.hieuQuaQuyDoi), valueClass: (mucTieu && employeeData.hieuQuaQuyDoi < (mucTieu.phanTramQD / 100)) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.hieuQuaQuyDoi), rawValue: employeeData.hieuQuaQuyDoi, rawAverage: departmentAverages.hieuQuaQuyDoi },
             { label: 'Doanh thu CE', value: uiComponents.formatRevenue(employeeData.dtCE), average: uiComponents.formatRevenue(departmentAverages.dtCE || 0), rawValue: employeeData.dtCE, rawAverage: departmentAverages.dtCE },
             { label: 'Doanh thu ICT', value: uiComponents.formatRevenue(employeeData.dtICT), average: uiComponents.formatRevenue(departmentAverages.dtICT || 0), rawValue: employeeData.dtICT, rawAverage: departmentAverages.dtICT },
             { label: 'Doanh thu trả chậm', value: uiComponents.formatRevenue(employeeData.doanhThuTraGop), average: uiComponents.formatRevenue(departmentAverages.doanhThuTraGop || 0), rawValue: employeeData.doanhThuTraGop, rawAverage: departmentAverages.doanhThuTraGop },
-            { label: '% Trả chậm', value: uiComponents.formatPercentage(employeeData.tyLeTraCham), valueClass: employeeData.tyLeTraCham < ((mucTieu?.phanTramTC || 0) /100) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.tyLeTraCham), rawValue: employeeData.tyLeTraCham, rawAverage: departmentAverages.tyLeTraCham }
+            { label: '% Trả chậm', value: uiComponents.formatPercentage(employeeData.tyLeTraCham), valueClass: (mucTieu && employeeData.tyLeTraCham < (mucTieu.phanTramTC / 100)) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.tyLeTraCham), rawValue: employeeData.tyLeTraCham, rawAverage: departmentAverages.tyLeTraCham }
         ];
         doanhThuData.forEach(d => countEvaluation('doanhthu', d.rawValue, d.rawAverage));
 
@@ -14493,12 +14557,12 @@ export const uiSknv = {
         nangSuatData.forEach(d => countEvaluation('nangsuat', d.rawValue, d.rawAverage));
 
         const hieuQuaData = [
-            { label: '% PK', value: uiComponents.formatPercentage(employeeData.pctPhuKien), valueClass: employeeData.pctPhuKien < ((mucTieu?.phanTramPhuKien || 0)/100) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctPhuKien), rawValue: employeeData.pctPhuKien, rawAverage: departmentAverages.pctPhuKien },
-            { label: '% Gia dụng', value: uiComponents.formatPercentage(employeeData.pctGiaDung), valueClass: employeeData.pctGiaDung < ((mucTieu?.phanTramGiaDung || 0)/100) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctGiaDung), rawValue: employeeData.pctGiaDung, rawAverage: departmentAverages.pctGiaDung },
-            { label: '% MLN', value: uiComponents.formatPercentage(employeeData.pctMLN), valueClass: employeeData.pctMLN < ((mucTieu?.phanTramMLN || 0)/100) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctMLN), rawValue: employeeData.pctMLN, rawAverage: departmentAverages.pctMLN },
-            { label: '% Sim', value: uiComponents.formatPercentage(employeeData.pctSim), valueClass: employeeData.pctSim < ((mucTieu?.phanTramSim || 0)/100) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctSim), rawValue: employeeData.pctSim, rawAverage: departmentAverages.pctSim },
-            { label: '% VAS', value: uiComponents.formatPercentage(employeeData.pctVAS), valueClass: employeeData.pctVAS < ((mucTieu?.phanTramVAS || 0)/100) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctVAS), rawValue: employeeData.pctVAS, rawAverage: departmentAverages.pctVAS },
-            { label: '% Bảo hiểm', value: uiComponents.formatPercentage(employeeData.pctBaoHiem), valueClass: employeeData.pctBaoHiem < ((mucTieu?.phanTramBaoHiem || 0)/100) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctBaoHiem), rawValue: employeeData.pctBaoHiem, rawAverage: departmentAverages.pctBaoHiem },
+            { label: '% PK', value: uiComponents.formatPercentage(employeeData.pctPhuKien), valueClass: (mucTieu && employeeData.pctPhuKien < (mucTieu.phanTramPhuKien / 100)) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctPhuKien), rawValue: employeeData.pctPhuKien, rawAverage: departmentAverages.pctPhuKien },
+            { label: '% Gia dụng', value: uiComponents.formatPercentage(employeeData.pctGiaDung), valueClass: (mucTieu && employeeData.pctGiaDung < (mucTieu.phanTramGiaDung / 100)) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctGiaDung), rawValue: employeeData.pctGiaDung, rawAverage: departmentAverages.pctGiaDung },
+            { label: '% MLN', value: uiComponents.formatPercentage(employeeData.pctMLN), valueClass: (mucTieu && employeeData.pctMLN < (mucTieu.phanTramMLN / 100)) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctMLN), rawValue: employeeData.pctMLN, rawAverage: departmentAverages.pctMLN },
+            { label: '% Sim', value: uiComponents.formatPercentage(employeeData.pctSim), valueClass: (mucTieu && employeeData.pctSim < (mucTieu.phanTramSim / 100)) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctSim), rawValue: employeeData.pctSim, rawAverage: departmentAverages.pctSim },
+            { label: '% VAS', value: uiComponents.formatPercentage(employeeData.pctVAS), valueClass: (mucTieu && employeeData.pctVAS < (mucTieu.phanTramVAS / 100)) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctVAS), rawValue: employeeData.pctVAS, rawAverage: departmentAverages.pctVAS },
+            { label: '% Bảo hiểm', value: uiComponents.formatPercentage(employeeData.pctBaoHiem), valueClass: (mucTieu && employeeData.pctBaoHiem < (mucTieu.phanTramBaoHiem / 100)) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctBaoHiem), rawValue: employeeData.pctBaoHiem, rawAverage: departmentAverages.pctBaoHiem },
         ];
         hieuQuaData.forEach(d => countEvaluation('hieuqua', d.rawValue, d.rawAverage));
 
@@ -15118,7 +15182,7 @@ export const utils = {
 
 --- START FILE: ./version.json ---
 {
-  "version": "3.2"
+  "version": "3.3"
 }
 
 --- END FILE: ./version.json ---

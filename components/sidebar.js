@@ -1,4 +1,4 @@
-// Version 1.0 - Component: Sidebar
+// Version 1.1 - Update icons for Data and Declaration sections
 // Chứa mã HTML và logic cho thanh điều hướng bên.
 
 const sidebarHTML = `
@@ -11,7 +11,13 @@ const sidebarHTML = `
         <ul class="space-y-2">
             <li>
                 <a href="#data-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
                     <span class="menu-text ml-4">Cập nhật dữ liệu</span>
                 </a>
             </li>
@@ -51,7 +57,12 @@ const sidebarHTML = `
             </li>
             <li>
                 <button id="admin-access-btn" class="w-full flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0">
+                        <path d="M8 17.929H6c-1.105 0-2-.895-2-2V5c0-1.105.895-2 2-2h8c1.105 0 2 .895 2 2v5.828"></path>
+                        <polyline points="14 3 14 8 19 8"></polyline>
+                        <path d="M10.42 16.22a2.121 2.121 0 102.122 2.121"></path>
+                        <path d="M16 12.016v4.414m-3.003.015 9.008 2.502-2.502-9.008-3.5 3.504-3-3-3.504 3.5"></path>
+                    </svg>
                     <span class="menu-text ml-4">Khai báo</span>
                 </button>
             </li>
@@ -67,5 +78,4 @@ export const sidebar = {
             container.innerHTML = sidebarHTML;
         }
     }
-    // Đã xóa hàm attachEventListeners ở đây
 };
