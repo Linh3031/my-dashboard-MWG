@@ -1,6 +1,6 @@
 --- START FILE: ./.vscode/settings.json ---
 {
-    "liveServer.settings.port": 5502
+    "liveServer.settings.port": 5503
 }
 --- END FILE: ./.vscode/settings.json ---
 
@@ -669,7 +669,7 @@ export const drawerGoal = {
 --- END FILE: ./components/drawer-goal.js ---
 
 --- START FILE: ./components/drawer-interface.js ---
-// Version 1.0 - Component: Interface Drawer
+// Version 1.1 - Update font size slider range and default value
 // Chứa mã HTML cho drawer cài đặt giao diện.
 
 const drawerInterfaceHTML = `
@@ -693,9 +693,9 @@ const drawerInterfaceHTML = `
         <div>
             <label for="global-font-size-slider" class="flex justify-between text-sm font-medium text-gray-700 mb-2">
                 <span>Cỡ chữ toàn trang</span>
-                <span id="global-font-size-value" class="font-bold text-blue-600">14px</span>
+                <span id="global-font-size-value" class="font-bold text-blue-600">18px</span>
             </label>
-            <input type="range" id="global-font-size-slider" min="12" max="18" step="1" value="14" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+            <input type="range" id="global-font-size-slider" min="12" max="25" step="1" value="18" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
         </div>
         <div>
              <label for="kpi-font-size-slider" class="flex justify-between text-sm font-medium text-gray-700 mb-2">
@@ -1108,7 +1108,7 @@ export const modalSelection = {
 --- END FILE: ./components/modal-selection.js ---
 
 --- START FILE: ./components/sidebar.js ---
-// Version 1.0 - Component: Sidebar
+// Version 1.1 - Update icons for Data and Declaration sections
 // Chứa mã HTML và logic cho thanh điều hướng bên.
 
 const sidebarHTML = `
@@ -1121,7 +1121,13 @@ const sidebarHTML = `
         <ul class="space-y-2">
             <li>
                 <a href="#data-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
                     <span class="menu-text ml-4">Cập nhật dữ liệu</span>
                 </a>
             </li>
@@ -1161,7 +1167,12 @@ const sidebarHTML = `
             </li>
             <li>
                 <button id="admin-access-btn" class="w-full flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0">
+                        <path d="M8 17.929H6c-1.105 0-2-.895-2-2V5c0-1.105.895-2 2-2h8c1.105 0 2 .895 2 2v5.828"></path>
+                        <polyline points="14 3 14 8 19 8"></polyline>
+                        <path d="M10.42 16.22a2.121 2.121 0 102.122 2.121"></path>
+                        <path d="M16 12.016v4.414m-3.003.015 9.008 2.502-2.502-9.008-3.5 3.504-3-3-3.504 3.5"></path>
+                    </svg>
                     <span class="menu-text ml-4">Khai báo</span>
                 </button>
             </li>
@@ -1177,7 +1188,6 @@ export const sidebar = {
             container.innerHTML = sidebarHTML;
         }
     }
-    // Đã xóa hàm attachEventListeners ở đây
 };
 --- END FILE: ./components/sidebar.js ---
 
@@ -1363,11 +1373,12 @@ createSnapshot();
 --- END FILE: ./create_snapshot.js ---
 
 --- START FILE: ./dashboard.css ---
-/* Version 5.0 - Add styles for draggable column toggle tags and icons */
+/* Version 5.2 - Fix distorted icons, add global icon styles */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-    --global-font-size: 14px;
+    /* === THAY ĐỔI: Cỡ chữ mặc định mới là 18px === */
+    --global-font-size: 18px;
     --kpi-main-font-size: 36px;
     --bg-lightness-1: 98%; --header-lightness-1: 96%; --header-text-lightness-1: 25%; --special-header-lightness-1: 92%; --below-target-lightness-1: 96%;
     --bg-lightness-2: 96%; --header-lightness-2: 94%; --header-text-lightness-2: 22%; --special-header-lightness-2: 88%; --below-target-lightness-2: 94%;
@@ -1384,8 +1395,8 @@ createSnapshot();
     --kpi-sub-color: #ffffff;
 }
 
-body { 
-    font-family: 'Inter', sans-serif; 
+body {
+    font-family: 'Inter', sans-serif;
     background-color: #f3f4f6;
     font-size: var(--global-font-size);
 }
@@ -1412,6 +1423,48 @@ html[data-contrast="6"] { --bg-lightness: var(--bg-lightness-6); --header-lightn
 #main-content { transition: margin-left 0.3s ease-in-out; margin-left: 68px; }
 #sidebar .nav-link { white-space: nowrap; }
 
+/* === BẮT ĐẦU: HIỆU ỨNG TƯƠNG TÁC MỚI === */
+.nav-link,
+.sub-tab-btn,
+.action-btn,
+.kpi-card,
+.content-card,
+.tdv-item-card,
+.data-input-group,
+.toggle-filters-btn,
+.page-header__help-btn,
+.column-toggle-btn {
+    transition: all 0.2s ease-in-out;
+}
+
+.nav-link:hover,
+.action-btn:hover,
+.kpi-card:hover,
+.content-card:hover,
+.data-input-group:hover,
+.toggle-filters-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Ghi đè hiệu ứng hover cũ để đồng bộ */
+.tdv-item-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+.sub-tab-btn:not(.active):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    background-color: #f9fafb;
+    color: #1f2937;
+}
+.page-header__help-btn:hover {
+    transform: scale(1.1) translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+/* === KẾT THÚC: HIỆU ỨNG TƯƠNG TÁC MỚI === */
+
+
 .settings-drawer { width: 400px; max-width: 90vw; transform: translateX(-100%); transition: transform 0.3s ease-in-out; }
 .settings-drawer.open { transform: translateX(0); }
 .close-drawer-btn { font-size: 2rem; line-height: 1; }
@@ -1431,7 +1484,7 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #
 .placeholder-message { border: 2px dashed #f59e0b; background-color: #fffbeb; color: #b45309; padding: 2rem; border-radius: 0.75rem; text-align: center; font-weight: 600; }
 
 [id$='-subtabs-nav'] { flex-wrap: wrap; }
-.sub-tab-btn { transition: all 0.2s ease-in-out; border-bottom: 2px solid transparent; }
+.sub-tab-btn { border-bottom: 2px solid transparent; }
 .sub-tab-btn.active { border-color: #3b82f6; color: #3b82f6; background-color: #eff6ff; }
 .sortable { cursor: pointer; position: relative; user-select: none; }
 .sort-indicator { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; width: 1em; height: 1em; margin-left: 4px; vertical-align: middle; color: #9ca3af; transition: color 0.2s ease-in-out; }
@@ -1443,33 +1496,24 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #
 .sortable.sorted-desc .sort-indicator::after { opacity: 1; color: #3b82f6; }
 .sortable.sorted-desc .sort-indicator::before { opacity: 0.4; }
 
-.data-input-group { 
+.data-input-group {
     border: 1px solid #e5e7eb;
-    border-radius: 0.5rem; 
-    padding: 1rem; 
-    background-color: #f9fafb; 
-    display: flex; 
-    flex-direction: column; 
-    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    background-color: #f9fafb;
+    display: flex;
+    flex-direction: column;
     border-top: 4px solid #9ca3af;
 }
-.data-input-group:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-#data-section > .content-card:nth-of-type(1) .data-input-group {
-    border-top-color: #3b82f6; /* blue-500 */
-}
-#data-section > .content-card:nth-of-type(3) .data-input-group {
-    border-top-color: #8b5cf6; /* violet-500 */
-}
+
+#data-section > .content-card:nth-of-type(1) .data-input-group { border-top-color: #3b82f6; }
+#data-section > .content-card:nth-of-type(3) .data-input-group { border-top-color: #8b5cf6; }
 .data-input-group__label { font-weight: 600; color: #4b5563; margin-bottom: 0.75rem; }
-.data-input-group__label--link { text-decoration: none; display: inline-block; transition: color 0.2s ease-in-out; }
+.data-input-group__label--link { text-decoration: none; display: inline-block; }
 .data-input-group__label--link:hover { text-decoration: underline; color: #2563eb; }
 .data-input-group__label--link > .font-normal { font-weight: 400; }
 .data-input-group__content { display: flex; flex-direction: column; gap: 0.5rem; flex-grow: 1; }
-.data-input-group__file-trigger { cursor: pointer; background-color: #e5e7eb; color: #374151; padding: 0.5rem 1rem; border-radius: 0.375rem;
-font-size: 0.875em; font-weight: 500; transition: background-color 0.2s ease-in-out; white-space: nowrap; }
+.data-input-group__file-trigger { cursor: pointer; background-color: #e5e7eb; color: #374151; padding: 0.5rem 1rem; border-radius: 0.375rem; font-size: 0.875em; font-weight: 500; white-space: nowrap; }
 .data-input-group__file-trigger:hover { background-color: #d1d5db; }
 .data-input-group__file-name { font-size: 0.875em; color: #6b7280; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .data-input-group__link { color: #2563eb; text-decoration: none; font-size: 0.875em; }
@@ -1479,8 +1523,7 @@ font-size: 0.875em; font-weight: 500; transition: background-color 0.2s ease-in-
 .data-input-group__status-text--default { color: #6b7280; }
 .data-input-group__status-text--success { color: #16a34a; }
 .data-input-group__status-text--error { color: #dc2626; }
-.data-textarea { 
-    width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875em; font-family: 'Inter', sans-serif; }
+.data-textarea { width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875em; font-family: 'Inter', sans-serif; }
 .data-textarea:focus { outline: 2px solid transparent; outline-offset: 2px; border-color: #3b82f6; box-shadow: 0 0 0 1px #3b82f6; }
 .progress-bar-container { overflow: hidden; }
 .progress-bar { background-image: linear-gradient(45deg, rgba(255, 255, 255, .15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, .15) 50%, rgba(255, 255, 255, .15) 75%, transparent 75%, transparent); background-size: 1rem 1rem; animation: progress-bar-stripes 1s linear infinite; }
@@ -1501,12 +1544,12 @@ font-size: 0.875em; font-weight: 500; transition: background-color 0.2s ease-in-
 .header-group-4 { background-color: hsl(240, 90%, var(--header-lightness)); }
 .header-group-5 { background-color: hsl(300, 90%, var(--header-lightness)); }
 .header-group-6 { background-color: hsl(0, 90%, var(--header-lightness)); }
-.header-group-7 { background-color: hsl(160, 80%, var(--header-lightness)) !important; } /* Teal */
-.header-group-8 { background-color: hsl(280, 80%, var(--header-lightness)) !important; } /* Purple */
-.header-group-9 { background-color: hsl(70, 80%, var(--header-lightness)) !important; }  /* Lime */
-.header-group-10 { background-color: hsl(190, 80%, var(--header-lightness)) !important; } /* Cyan */
-.header-group-11 { background-color: hsl(340, 80%, var(--header-lightness)) !important; } /* Pink */
-.header-group-12 { background-color: hsl(20, 80%, var(--header-lightness)) !important; }  /* Orange */
+.header-group-7 { background-color: hsl(160, 80%, var(--header-lightness)) !important; }
+.header-group-8 { background-color: hsl(280, 80%, var(--header-lightness)) !important; }
+.header-group-9 { background-color: hsl(70, 80%, var(--header-lightness)) !important; }
+.header-group-10 { background-color: hsl(190, 80%, var(--header-lightness)) !important; }
+.header-group-11 { background-color: hsl(340, 80%, var(--header-lightness)) !important; }
+.header-group-12 { background-color: hsl(20, 80%, var(--header-lightness)) !important; }
 
 .income-positive { color: #16a34a; }
 .income-negative { color: #dc2626; }
@@ -1536,20 +1579,9 @@ font-size: 0.875em; font-weight: 500; transition: background-color 0.2s ease-in-
 #dtnv-realtime-employee-selector-container .choices__inner { min-width: 300px; }
 #dtnv-realtime-employee-selector-container .choices__list--single { min-width: 300px; }
 
-.kpi-card-title {
-    color: var(--kpi-title-color);
-    opacity: 0.8;
-    font-size: 1em;
-}
-.kpi-card p[id$="-main"] {
-    color: var(--kpi-main-color);
-    font-size: var(--kpi-main-font-size);
-    transition: font-size 0.2s ease-in-out;
-}
-.kpi-card p[id$="-sub"], .kpi-card p[id$="-sub1"], .kpi-card p[id$="-sub2"] {
-    color: var(--kpi-sub-color);
-    font-size: 1em;
-}
+.kpi-card-title { color: var(--kpi-title-color); opacity: 0.8; font-size: 1em; }
+.kpi-card p[id$="-main"] { color: var(--kpi-main-color); font-size: var(--kpi-main-font-size); transition: font-size 0.2s ease-in-out; }
+.kpi-card p[id$="-sub"], .kpi-card p[id$="-sub1"], .kpi-card p[id$="-sub2"] { color: var(--kpi-sub-color); font-size: 1em; }
 
 .kpi-percentage, .kpi-percentage-value { font-weight: 700; }
 .kpi-sub-value { opacity: 0.9; }
@@ -1565,8 +1597,7 @@ font-size: 0.875em; font-weight: 500; transition: background-color 0.2s ease-in-
 #sknv-details-container .sknv-subtable-header th { font-size: 0.875em; font-weight: 600; background-color: #f3f4f6; }
 .choices__inner { min-height: 42px; }
 .choices__list--multiple .choices__item { background-color: #3b82f6; border-color: #2563eb; }
-.toggle-filters-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 0.5rem; background-color: #f3f4f6; color: #4b5563; font-weight: 500; font-size: 0.875em; cursor: pointer; transition: background-color 0.2s ease-in-out; margin-bottom: 1rem; border: 1px solid #e5e7eb; }
-.toggle-filters-btn:hover { background-color: #e5e7eb; }
+.toggle-filters-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 0.5rem; background-color: #f3f4f6; color: #4b5563; font-weight: 500; font-size: 0.875em; cursor: pointer; margin-bottom: 1rem; border: 1px solid #e5e7eb; }
 .toggle-filters-btn .icon { width: 1rem; height: 1rem; transition: transform 0.3s ease-in-out; }
 .toggle-filters-btn.active .icon { transform: rotate(180deg); }
 .highlight-trigger { background: none; border: none; cursor: pointer; color: #6b7280; }
@@ -1574,8 +1605,7 @@ font-size: 0.875em; font-weight: 500; transition: background-color 0.2s ease-in-
 .highlighted-row td { animation: pulse-bg 2s infinite; }
 @keyframes pulse-bg { 0% { background-color: var(--highlight-color, #ffff99); } 50% { background-color: var(--highlight-color-light, #ffffcc); } 100% { background-color: var(--highlight-color, #ffff99); } }
 
-.action-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 500; font-size: 0.875em; cursor: pointer; transition: all 0.2s ease-in-out; border: 1px solid transparent; }
-.action-btn:hover { transform: translateY(-1px); box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1); }
+.action-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 500; font-size: 0.875em; cursor: pointer; border: 1px solid transparent; }
 .action-btn--composer { background-color: #ede9fe; color: #5b21b6; border-color: #c4b5fd; }
 .action-btn--composer:hover { background-color: #d8b4fe; }
 .action-btn--export { background-color: #dcfce7; color: #166534; border-color: #86efac; }
@@ -1586,17 +1616,14 @@ font-size: 0.875em; font-weight: 500; transition: background-color 0.2s ease-in-
 .action-btn--save:hover { background-color: #15803d; }
 .action-btn--copy { background-color: #2563eb; color: white; }
 .action-btn--copy:hover { background-color: #1d4ed8; }
-.page-header__help-btn { background-color: #fee2e2; color: #991b1b; border-radius: 9999px; width: 2rem; height: 2rem; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s ease-in-out; border: none; }
-.page-header__help-btn:hover { background-color: #fecaca; transform: scale(1.1); }
+.page-header__help-btn { background-color: #fee2e2; color: #991b1b; border-radius: 9999px; width: 2rem; height: 2rem; display: inline-flex; align-items: center; justify-content: center; border: none; }
 
 .modal { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; }
 .modal.hidden { display: none; }
 .modal__overlay { position: absolute; inset: 0; background-color: rgba(17, 24, 39, 0.6); backdrop-filter: blur(4px); cursor: pointer; }
 .modal__container { position: relative; z-index: 1001; background-color: white; border-radius: 0.75rem; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); width: 90%; max-width: 600px; max-height: 90vh; display: flex; flex-direction: column; }
 
-#force-update-modal .modal__overlay {
-    cursor: not-allowed;
-}
+#force-update-modal .modal__overlay { cursor: not-allowed; }
 
 .modal__container--large { max-width: 900px; }
 .modal__header { padding: 1rem 1.5rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
@@ -1610,44 +1637,28 @@ font-size: 0.875em; font-weight: 500; transition: background-color 0.2s ease-in-
 .modal__content ul > * + * { margin-top: 0.5rem; }
 .modal__footer { padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb; background-color: #f9fafb; display: flex; justify-content: flex-end; gap: 0.75rem; flex-shrink: 0; }
 
-/* --- NEW COMPOSER STYLES --- */
 .composer { display: flex; flex-direction: column; gap: 1.5rem; }
 .composer__editor { flex-grow: 1; }
 .composer__tags { width: 100%; }
-
 .composer__label { display: block; font-weight: 500; color: #374151; margin-bottom: 0.5rem; }
 .composer__textarea { width: 100%; border: 1px solid #d1d5db; border-radius: 0.5rem; padding: 0.75rem; font-size: 0.875em; resize: vertical; }
 .composer__textarea:focus { border-color: #3b82f6; box-shadow: 0 0 0 1px #3b82f6; outline: none; }
-
 .composer__nav { display: flex; border-bottom: 1px solid #e5e7eb; margin-bottom: 1rem; }
-.composer__tab-btn { padding: 0.5rem 1rem; border: none; background-color: transparent; cursor: pointer; font-weight: 500; color: #6b7280; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.2s ease-in-out; font-size: 0.875em; }
-.composer__tab-btn:hover { background-color: #f9fafb; color: #1f2937; }
+.composer__tab-btn { padding: 0.5rem 1rem; border: none; background-color: transparent; cursor: pointer; font-weight: 500; color: #6b7280; border-bottom: 2px solid transparent; margin-bottom: -1px; font-size: 0.875em; }
 .composer__tab-btn.active { color: #3b82f6; border-bottom-color: #3b82f6; }
-
 .composer__tab-pane { display: none; }
 .composer__tab-pane.active { display: block; }
-
 .composer__tag-group { margin-bottom: 1rem; }
 .composer__tag-group:last-child { margin-bottom: 0; }
 .composer__tag-group-title { font-weight: 600; font-size: 0.875em; color: #4b5563; margin-bottom: 0.75rem; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.5rem; }
-.composer__tag-btn { background-color: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; border-radius: 9999px; padding: 0.25rem 0.75rem; font-size: 0.8rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease-in-out; margin: 0.25rem; }
-.composer__tag-btn:hover { background-color: #c7d2fe; transform: translateY(-1px); }
-
-.composer__icon-btn { background-color: #f3f4f6; color: #1f2937; border: 1px solid #d1d5db; border-radius: 9999px; padding: 0.25rem 0.75rem; font-size: 1.1rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease-in-out; margin: 0.25rem; line-height: 1; }
-.composer__icon-btn:hover { background-color: #e5e7eb; transform: translateY(-1px); }
-
+.composer__tag-btn { background-color: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; border-radius: 9999px; padding: 0.25rem 0.75rem; font-size: 0.8rem; font-weight: 500; cursor: pointer; margin: 0.25rem; }
+.composer__icon-btn { background-color: #f3f4f6; color: #1f2937; border: 1px solid #d1d5db; border-radius: 9999px; padding: 0.25rem 0.75rem; font-size: 1.1rem; font-weight: 500; cursor: pointer; margin: 0.25rem; line-height: 1; }
 .composer__filter-group { margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #e5e7eb; }
 .composer__select { width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; background-color: white; }
-
-@media (min-width: 768px) { 
-    .composer { flex-direction: row; } 
-    .composer__tags { width: 350px; flex-shrink: 0; border-left: 1px solid #e5e7eb; padding-left: 1.5rem; } 
-}
-
-/* --- END NEW COMPOSER STYLES --- */
+@media (min-width: 768px) { .composer { flex-direction: row; } .composer__tags { width: 350px; flex-shrink: 0; border-left: 1px solid #e5e7eb; padding-left: 1.5rem; } }
 
 .view-switcher { display: flex; align-items: center; padding: 0.25rem; background-color: #e5e7eb; border-radius: 0.5rem; }
-.view-switcher__btn { padding: 0.5rem 1rem; border: none; background-color: transparent; border-radius: 0.375rem; font-weight: 500; color: #4b5563; cursor: pointer; transition: all 0.2s ease-in-out; }
+.view-switcher__btn { padding: 0.5rem 1rem; border: none; background-color: transparent; border-radius: 0.375rem; font-weight: 500; color: #4b5563; cursor: pointer; }
 .view-switcher__btn.active { background-color: white; color: #3b82f6; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1); }
 .infographic-card { border: 1px solid #e5e7eb; border-radius: 0.5rem; overflow: hidden; }
 .infographic-card__header { padding: 0.75rem 1rem; font-weight: 700; }
@@ -1720,8 +1731,7 @@ details[open] > summary .arrow { transform: rotate(180deg); }
 .tdv-row-body { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
 .tdv-row-body--effort { display: block; }
 
-.tdv-item-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; }
-.tdv-item-card:hover { transform: translateY(-3px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+.tdv-item-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden; }
 .tdv-item-card__title { font-weight: bold; margin: 0 0 10px 0; color: #333; }
 .tdv-progress-bar-container { 
     width: 100%; 
@@ -1978,6 +1988,17 @@ details[open] > summary .arrow { transform: rotate(180deg); }
     box-shadow: 0 8px 16px rgba(0,0,0,0.2);
 }
 /* === END: DRAGGABLE TAG STYLES === */
+
+/* === START: ICON SIZING FIX (NEW) === */
+.action-btn svg,
+.sub-tab-btn svg,
+.nav-link svg,
+.view-switcher__btn svg {
+    width: 1.25rem; /* 20px */
+    height: 1.25rem; /* 20px */
+    flex-shrink: 0; /* Ngăn icon bị co lại khi không đủ không gian */
+}
+/* === END: ICON SIZING FIX === */
 --- END FILE: ./dashboard.css ---
 
 --- START FILE: ./event-listeners/listeners-actions.js ---
@@ -2442,7 +2463,7 @@ export function initializeSortingListeners(appController) {
 --- END FILE: ./event-listeners/listeners-sorting.js ---
 
 --- START FILE: ./event-listeners/ui-listeners.js ---
-// Version 3.5 - Import and initialize drag-drop listener module
+// Version 3.8 - Revert to client-side processing as per user request
 // MODULE: EVENT LISTENERS INITIALIZER
 // File này đóng vai trò là điểm khởi đầu, import và khởi chạy tất cả các module listener con.
 
@@ -2458,12 +2479,13 @@ import { initializeCompetitionListeners } from './listeners-competition.js';
 import { initializeHighlightingListeners } from './listeners-highlighting.js';
 import { initializeSettingsListeners } from './listeners-settings.js';
 import { initializeSortingListeners } from './listeners-sorting.js';
-import { dragDroplisteners } from './listeners-dragdrop.js'; // <<< THÊM DÒNG NÀY
+import { dragDroplisteners } from './listeners-dragdrop.js';
 
 let appController = null;
 
 // --- HELPERS / HANDLERS ---
 
+// === HOÀN TÁC: Quay lại logic xử lý file tại trình duyệt ===
 async function handleFileInputChange(e) {
     const fileInput = e.target;
     const file = fileInput.files[0];
@@ -2528,23 +2550,19 @@ export function initializeEventListeners(mainAppController) {
 
     // --- Khởi tạo các thư viện UI ---
     try {
-        // Cấu hình chung cho các bộ lọc đa lựa chọn
         const multiSelectConfig = { 
             removeItemButton: true, 
             placeholder: true, 
             placeholderValue: 'Chọn hoặc gõ để tìm...', 
             searchPlaceholderValue: 'Tìm kiếm...' 
         };
-
-        // === START: CẤU HÌNH RIÊNG BIỆT CHO BỘ LỌC THI ĐUA ===
         const competitionMultiSelectConfig = {
             removeItemButton: true,
             placeholder: true,
             placeholderValue: 'Chọn hoặc gõ để tìm...',
             searchPlaceholderValue: 'Tìm kiếm...',
-            closeOnSelect: false, // Cho phép chọn nhiều mục sau khi tìm kiếm
+            closeOnSelect: false,
         };
-        // === END: CẤU HÌNH RIÊNG BIỆT ===
 
         ['luyke', 'sknv', 'realtime'].forEach(prefix => {
             const employeeEl = document.getElementById(`${prefix}-filter-name`);
@@ -2560,13 +2578,11 @@ export function initializeEventListeners(mainAppController) {
             });
         });
 
-        // === START: ÁP DỤNG CẤU HÌNH RIÊNG CHO BỘ LỌC THI ĐUA ===
         const competitionBrandEl = document.getElementById('competition-brand');
         if (competitionBrandEl) appState.choices['competition_brand'] = new Choices(competitionBrandEl, competitionMultiSelectConfig);
         
         const competitionGroupEl = document.getElementById('competition-group');
         if (competitionGroupEl) appState.choices['competition_group'] = new Choices(competitionGroupEl, competitionMultiSelectConfig);
-        // === END: ÁP DỤNG CẤU HÌNH RIÊNG ===
 
         const singleSelectConfig = { 
             searchEnabled: true, 
@@ -2616,7 +2632,7 @@ export function initializeEventListeners(mainAppController) {
     initializeCollaborationListeners(appController);
     initializeSortingListeners(appController);
     initializeCompetitionListeners(appController);
-    dragDroplisteners.init(appController); // <<< THÊM DÒNG NÀY
+    dragDroplisteners.init(appController);
 
     // --- Các sự kiện còn lại ---
     document.getElementById('force-reload-btn')?.addEventListener('click', () => window.location.reload());
@@ -2661,17 +2677,13 @@ export function initializeEventListeners(mainAppController) {
     document.getElementById('sknv-view-selector')?.addEventListener('click', (e) => appController.handleSknvViewChange(e));
     document.getElementById('sknv-employee-filter')?.addEventListener('change', () => sknvTab.render());
     
-    // === START: THAY THẾ SỰ KIỆN CŨ BẰNG UỶ QUYỀN SỰ KIỆN (FIX #1) ===
-    // Loại bỏ: document.getElementById('luyke-thidua-view-selector')?.addEventListener('click', (e) => appController.handleLuykeThiDuaViewChange(e));
     document.body.addEventListener('click', (e) => {
-        // Lắng nghe click trên body và chỉ xử lý nếu click đến từ nút trong view-switcher của tab Thi đua Lũy kế
         const viewSwitcherBtn = e.target.closest('#luyke-thidua-view-selector .view-switcher__btn');
         if (viewSwitcherBtn) {
             e.preventDefault();
             appController.handleLuykeThiDuaViewChange(e);
         }
     });
-    // === END: THAY THẾ SỰ KIỆN CŨ ===
     
     document.getElementById('thidua-view-selector')?.addEventListener('click', (e) => appController.handleThiDuaViewChange(e));
     document.getElementById('thidua-employee-filter')?.addEventListener('change', () => ui.displayCompetitionReport('employee'));
@@ -2710,6 +2722,12 @@ export function initializeEventListeners(mainAppController) {
         #luyke-category-details-content td:first-child,
         #luyke-unexported-revenue-content td:first-child {
             text-transform: capitalize;
+        }
+        /* Căn chỉnh icon và text trong các nút */
+        .sub-tab-btn, .action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem; /* 8px */
         }
     </style>
     </head>
@@ -2993,21 +3011,38 @@ export function initializeEventListeners(mainAppController) {
 
                         <div class="flex justify-between items-center mb-8">
                             <nav id="luyke-subtabs-nav" class="border-b border-gray-200 -mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs" data-content-container="luyke-subtabs-content">
-                                <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-luyke-sieu-thi" data-title="SieuThiLuyKe">Siêu thị Lũy kế</button>
-                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-luyke-thi-dua" data-title="ThiDuaLuyKe">Thi đua Lũy kế</button>
-                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-luyke-thidua-vung" data-title="ThiDuaVung">Thi đua Vùng</button>
+                                <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-luyke-sieu-thi" data-title="SieuThiLuyKe">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13.293 2.293a1 1 0 011.414 0l7 7A1 1 0 0121 11v8a2 2 0 01-2 2H5a2 2 0 01-2-2v-8a1 1 0 01.293-.707l7-7z"></path></svg>
+                                    <span>Siêu thị Lũy kế</span>
+                                </button>
+                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-luyke-thi-dua" data-title="ThiDuaLuyKe">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"></path></svg>
+                                    <span>Thi đua Lũy kế</span>
+                                </button>
+                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-luyke-thidua-vung" data-title="ThiDuaVung">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13V7m0 13l6-3m-6 3l6-3m0 0l5.447-2.724A1 1 0 0021 10.382V5.618a1 1 0 00-.553-.894L15 2m0 11v6m0-6V2"></path></svg>
+                                    <span>Thi đua Vùng</span>
+                                </button>
                             </nav>
                              <div class="flex items-center gap-x-2">
                                 <button id="compose-luyke-notification-btn" class="action-btn action-btn--composer" title="Nhận xét">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"></path>
+                                    </svg>
                                     <span>Nhận xét</span>
                                 </button>
                                 <button id="export-luyke-btn" class="action-btn action-btn--export" title="Xuất Excel tab hiện tại">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L6.354 8.146a.5.5 0 1 0-.708.708l2 2z"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"></path>
+                                    </svg>
                                     <span>Xuất Excel</span>
                                 </button>
                                 <button id="capture-luyke-btn" class="action-btn action-btn--capture" title="Chụp ảnh tab hiện tại">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15 12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1.172a3 3 0 0 0 2.12-.879l.83-.828A1 1 0 0 1 6.827 3h2.344a1 1 0 0 1 .707.293l.828.828A3 3 0 0 0 12.828 5H14a1 1 0 0 1 1 1v6zM2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828-.828A2 2 0 0 1 3.172 4H2z"/><path d="M8 11a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5zm0 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM3 6.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M6.828 6.172a4 4 0 015.656 0L14.25 7.939l-1.06-1.061a3 3 0 00-4.243 0L6.43 9.394a4 4 0 010-5.656z"></path>
+                                        <path d="M12.75 16.606l-1.061 1.061a3 3 0 01-4.243 0l-2.475-2.475a4 4 0 010-5.656L7.939 7.75l1.06 1.06-1.59 1.59a.75.75 0 001.06 1.061l2.25-2.25zM15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
                                     <span>Chụp màn hình</span>
                                 </button>
                             </div>
@@ -3076,9 +3111,9 @@ export function initializeEventListeners(mainAppController) {
                                 </div>
                             </div>
                              <div id="subtab-luyke-thi-dua" class="sub-tab-content hidden space-y-4">
-                                <div class="flex flex-wrap items-center gap-4">
+                                <div class="flex flex-wrap items-center justify-between gap-4">
                                     <h3 class="text-xl font-bold text-gray-800 uppercase">Thi đua lũy kế <span id="luyke-competition-summary" class="text-sm font-normal"></span></h3>
-                                </div>
+                                    <div id="luyke-thidua-view-selector-placeholder"></div> </div>
                                 <div id="luyke-competition-content"></div>
                              </div>
                             <div id="subtab-luyke-thidua-vung" class="sub-tab-content hidden">
@@ -3154,24 +3189,50 @@ export function initializeEventListeners(mainAppController) {
                         <div class="content-card">
                             <div class="flex justify-between items-center mb-8">
                                 <nav id="employee-subtabs-nav" class="border-b border-gray-200 -mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs" data-content-container="employee-subtabs-content">
-                                    <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-sknv" data-title="SKNV">SKNV</button>
-                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-doanhthu-lk" data-title="DoanhThuLK">Doanh thu LK</button>
-                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-thunhap" data-title="ThuNhap">Thu nhập</button>
-                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-khai-thac-luy-ke" data-title="HieuQuaKhaiThacLuyKe">Hiệu quả NV LK</button>
-                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-doanhthu-nganhhang" data-title="DTNganhHang">DT ngành hàng</button>
-                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-thi-dua-lk" data-title="HieuQuaThiDuaLK">Thi đua NV LK</button>
+                                    <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-sknv" data-title="SKNV">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 00-3-3.87"></path><path d="M16 3.13a4 4 0 010 7.75"></path></svg>
+                                        <span>SKNV</span>
+                                    </button>
+                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-doanhthu-lk" data-title="DoanhThuLK">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M2.5 8.5a1 1 0 011-1h17a1 1 0 011 1v10a1 1 0 01-1 1h-17a1 1 0 01-1-1V8.5zM12 4v4m-4-2h8"></path></svg>
+                                        <span>Doanh thu LK</span>
+                                    </button>
+                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-thunhap" data-title="ThuNhap">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 6v12m-6-6h12"></path></svg>
+                                        <span>Thu nhập</span>
+                                    </button>
+                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-khai-thac-luy-ke" data-title="HieuQuaKhaiThacLuyKe">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 13v6a2 2 0 002 2h14a2 2 0 002-2v-6M3 13l6-6 4 4 8-8"></path></svg>
+                                        <span>Hiệu quả NV LK</span>
+                                    </button>
+                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-doanhthu-nganhhang" data-title="DTNganhHang">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"></path></svg>
+                                        <span>DT ngành hàng</span>
+                                    </button>
+                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-thi-dua-lk" data-title="HieuQuaThiDuaLK">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM18 21.75l.259-1.035a3.375 3.375 0 00-2.456-2.456L14.25 18l1.035-.259a3.375 3.375 0 002.456-2.456L18 14.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 18l-1.035.259a3.375 3.375 0 00-2.456 2.456L18 21.75z"></path></svg>
+                                        <span>Thi đua NV LK</span>
+                                    </button>
                                 </nav>
                                  <div class="flex items-center gap-x-2">
                                      <button id="compose-sknv-notification-btn" class="action-btn action-btn--composer" title="Nhận xét">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"></path>
+                                        </svg>
                                         <span>Nhận xét</span>
                                     </button>
                                     <button id="export-sknv-btn" class="action-btn action-btn--export" title="Xuất Excel tab hiện tại">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L6.354 8.146a.5.5 0 1 0-.708.708l2 2z"/></svg>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"></path>
+                                        </svg>
                                         <span>Xuất Excel</span>
                                     </button>
                                     <button id="capture-sknv-btn" class="action-btn action-btn--capture" title="Chụp ảnh tab hiện tại">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15 12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1.172a3 3 0 0 0 2.12-.879l.83-.828A1 1 0 0 1 6.827 3h2.344a1 1 0 0 1 .707.293l.828.828A3 3 0 0 0 12.828 5H14a1 1 0 0 1 1 1v6zM2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828-.828A2 2 0 0 1 3.172 4H2z"/><path d="M8 11a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5zm0 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM3 6.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/></svg>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M6.828 6.172a4 4 0 015.656 0L14.25 7.939l-1.06-1.061a3 3 0 00-4.243 0L6.43 9.394a4 4 0 010-5.656z"></path>
+                                            <path d="M12.75 16.606l-1.061 1.061a3 3 0 01-4.243 0l-2.475-2.475a4 4 0 010-5.656L7.939 7.75l1.06 1.06-1.59 1.59a.75.75 0 001.06 1.061l2.25-2.25zM15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
                                         <span>Chụp màn hình</span>
                                     </button>
                                 </div>
@@ -3263,24 +3324,51 @@ export function initializeEventListeners(mainAppController) {
 
                         <div class="flex justify-between items-center mb-8">
                             <nav id="realtime-subtabs-nav" class="border-b border-gray-200 -mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs" data-content-container="realtime-subtabs-content">
-                                <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-sieu-thi" data-title="SieuThiRealtime">Siêu thị Realtime</button>
-                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-nhan-vien" data-title="DTNVRealtime">DT NV Realtime</button>
-                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-hieu-qua" data-title="HieuQuaKhaiThacRealtime">Hiệu quả NV Realtime</button>
-                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-nganh-hang" data-title="NganhHangRealtime">Ngành hàng Realtime</button>
-                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-hang" data-title="HangRealtime">DT Hãng Realtime</button>
-                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-thi-dua-realtime" data-title="HieuQuaThiDuaRealtime">Thi đua NV Realtime</button>
+                                <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-sieu-thi" data-title="SieuThiRealtime">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"></path></svg>
+                                    <span>Siêu thị Realtime</span>
+                                </button>
+                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-nhan-vien" data-title="DTNVRealtime">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-4.67c.12-.24.232-.483.335-.722M6.75 12.75a8.966 8.966 0 011.586-5.228 8.966 8.966 0 014.126-3.223 8.966 8.966 0 015.228 1.586 8.966 8.966 0 013.223 4.126A8.966 8.966 0 0112.75 18c-2.098 0-4.04-.73-5.54-1.99z"></path></svg>
+                                    <span>DT NV Realtime</span>
+                                </button>
+                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-hieu-qua" data-title="HieuQuaKhaiThacRealtime">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 13v6a2 2 0 002 2h14a2 2 0 002-2v-6M3 13l6-6 4 4 8-8"></path></svg>
+                                    <span>Hiệu quả NV Realtime</span>
+                                </button>
+                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-nganh-hang" data-title="NganhHangRealtime">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z"></path><path d="M6 9h.008v.008H6V9z"></path></svg>
+                                    <span>Ngành hàng Realtime</span>
+                                </button>
+                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-hang" data-title="HangRealtime">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h6.375a.375.375 0 01.375.375v1.5a.375.375 0 01-.375.375H9a.375.375 0 01-.375-.375v-1.5A.375.375 0 019 6.75zM9 12.75h6.375a.375.375 0 01.375.375v1.5a.375.375 0 01-.375.375H9a.375.375 0 01-.375-.375v-1.5A.375.375 0 019 12.75z"></path></svg>
+                                    <span>DT Hãng Realtime</span>
+                                </button>
+                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-thi-dua-realtime" data-title="HieuQuaThiDuaRealtime">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM18 21.75l.259-1.035a3.375 3.375 0 00-2.456-2.456L14.25 18l1.035-.259a3.375 3.375 0 002.456-2.456L18 14.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 18l-1.035.259a3.375 3.375 0 00-2.456 2.456L18 21.75z"></path></svg>
+                                    <span>Thi đua NV Realtime</span>
+                                </button>
                             </nav>
                              <div class="flex items-center gap-x-2">
                                 <button id="compose-realtime-notification-btn" class="action-btn action-btn--composer" title="Nhận xét">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"></path>
+                                        <path d="M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"></path>
+                                    </svg>
                                     <span>Nhận xét</span>
                                 </button>
                                 <button id="export-realtime-btn" class="action-btn action-btn--export" title="Xuất Excel tab hiện tại">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L6.354 8.146a.5.5 0 1 0-.708.708l2 2z"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"></path>
+                                    </svg>
                                     <span>Xuất Excel</span>
                                 </button>
                                 <button id="capture-realtime-btn" class="action-btn action-btn--capture" title="Chụp ảnh tab hiện tại">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15 12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1.172a3 3 0 0 0 2.12-.879l.83-.828A1 1 0 0 1 6.827 3h2.344a1 1 0 0 1 .707.293l.828.828A3 3 0 0 0 12.828 5H14a1 1 0 0 1 1 1v6zM2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828-.828A2 2 0 0 1 3.172 4H2z"/><path d="M8 11a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5zm0 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM3 6.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M6.828 6.172a4 4 0 015.656 0L14.25 7.939l-1.06-1.061a3 3 0 00-4.243 0L6.43 9.394a4 4 0 010-5.656z"></path>
+                                        <path d="M12.75 16.606l-1.061 1.061a3 3 0 01-4.243 0l-2.475-2.475a4 4 0 010-5.656L7.939 7.75l1.06 1.06-1.59 1.59a.75.75 0 001.06 1.061l2.25-2.25zM15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
                                     <span>Chụp màn hình</span>
                                 </button>
                             </div>
@@ -3493,7 +3581,6 @@ export function initializeEventListeners(mainAppController) {
 
 </body>
 </html>
-
 --- END FILE: ./index.html ---
 
 --- START FILE: ./main.js ---
@@ -4630,6 +4717,83 @@ export const captureService = {
     },
 };
 --- END FILE: ./modules/capture.service.js ---
+
+--- START FILE: ./modules/file-upload.service.js ---
+// Version 1.0 - Initial Upload Service
+// MODULE: FILE UPLOAD SERVICE
+// Chứa logic để tải file lên Firebase Storage và lắng nghe kết quả xử lý từ Firestore.
+
+import { appState } from '../state.js';
+import { ui } from '../ui.js';
+import { ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+export const fileUploadService = {
+    /**
+     * Tải file lên Firebase Storage, sau đó lắng nghe kết quả xử lý từ Firestore.
+     * @param {File} file - Đối tượng file người dùng đã chọn.
+     * @param {string} fileType - Loại file (ví dụ: 'ycx', 'danhsachnv').
+     * @returns {Promise<Object>} - Promise sẽ resolve với dữ liệu đã được xử lý hoặc reject với lỗi.
+     */
+    uploadAndProcessFile(file, fileType) {
+        return new Promise((resolve, reject) => {
+            if (!appState.storage || !appState.db) {
+                return reject(new Error("Firebase chưa được khởi tạo."));
+            }
+
+            // 1. Tạo một ID độc nhất cho file để theo dõi
+            const uniqueFileId = `${fileType}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+            const fileName = `${uniqueFileId}${file.name.substring(file.name.lastIndexOf('.'))}`;
+            const storagePath = `uploads/${fileName}`;
+            const storageRef = ref(appState.storage, storagePath);
+
+            // 2. Bắt đầu quá trình tải file lên Storage
+            const uploadTask = uploadBytesResumable(storageRef, file);
+            let unsubscribeSnapshot = null; // Biến để lưu hàm hủy listener
+
+            // Tạo listener trong Firestore để chờ kết quả
+            const resultDocRef = doc(appState.db, "file_results", uniqueFileId);
+            unsubscribeSnapshot = onSnapshot(resultDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const result = docSnap.data();
+                    // Hủy listener ngay khi nhận được kết quả để tránh rò rỉ bộ nhớ
+                    if (unsubscribeSnapshot) unsubscribeSnapshot();
+                    clearTimeout(timeout); // Hủy timeout
+
+                    if (result.status === 'success') {
+                        resolve(result.data); // Trả về dữ liệu đã xử lý
+                    } else {
+                        reject(new Error(result.message || 'Lỗi không xác định từ máy chủ.'));
+                    }
+                }
+            });
+
+            // Cập nhật giao diện với tiến trình tải lên
+            uploadTask.on('state_changed',
+                (snapshot) => {
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    ui.updateFileStatus(fileType, file.name, `Đang tải lên... ${Math.round(progress)}%`);
+                },
+                (error) => { // Xử lý lỗi tải lên
+                    if (unsubscribeSnapshot) unsubscribeSnapshot();
+                    clearTimeout(timeout);
+                    console.error("Lỗi khi tải file lên Storage:", error);
+                    reject(new Error("Không thể tải file lên máy chủ."));
+                },
+                () => { // Tải lên thành công, chuyển sang chờ xử lý
+                    ui.updateFileStatus(fileType, file.name, 'Tải lên hoàn tất, đang chờ máy chủ xử lý...');
+                }
+            );
+
+            // 3. Đặt một khoảng thời gian chờ tối đa (ví dụ: 60 giây)
+            const timeout = setTimeout(() => {
+                if (unsubscribeSnapshot) unsubscribeSnapshot();
+                reject(new Error("Máy chủ xử lý quá lâu, vui lòng thử lại."));
+            }, 60000); // 60 giây
+        });
+    }
+};
+--- END FILE: ./modules/file-upload.service.js ---
 
 --- START FILE: ./modules/highlight.service.js ---
 // Version 1.1 - Fix incorrect import paths for modules
@@ -5068,7 +5232,7 @@ export const storage = {
 --- START FILE: ./project_snapshot.txt ---
 --- START FILE: ./.vscode/settings.json ---
 {
-    "liveServer.settings.port": 5502
+    "liveServer.settings.port": 5503
 }
 --- END FILE: ./.vscode/settings.json ---
 
@@ -5737,7 +5901,7 @@ export const drawerGoal = {
 --- END FILE: ./components/drawer-goal.js ---
 
 --- START FILE: ./components/drawer-interface.js ---
-// Version 1.0 - Component: Interface Drawer
+// Version 1.1 - Update font size slider range and default value
 // Chứa mã HTML cho drawer cài đặt giao diện.
 
 const drawerInterfaceHTML = `
@@ -5761,9 +5925,9 @@ const drawerInterfaceHTML = `
         <div>
             <label for="global-font-size-slider" class="flex justify-between text-sm font-medium text-gray-700 mb-2">
                 <span>Cỡ chữ toàn trang</span>
-                <span id="global-font-size-value" class="font-bold text-blue-600">14px</span>
+                <span id="global-font-size-value" class="font-bold text-blue-600">18px</span>
             </label>
-            <input type="range" id="global-font-size-slider" min="12" max="18" step="1" value="14" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+            <input type="range" id="global-font-size-slider" min="12" max="25" step="1" value="18" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
         </div>
         <div>
              <label for="kpi-font-size-slider" class="flex justify-between text-sm font-medium text-gray-700 mb-2">
@@ -6176,7 +6340,7 @@ export const modalSelection = {
 --- END FILE: ./components/modal-selection.js ---
 
 --- START FILE: ./components/sidebar.js ---
-// Version 1.0 - Component: Sidebar
+// Version 1.1 - Update icons for Data and Declaration sections
 // Chứa mã HTML và logic cho thanh điều hướng bên.
 
 const sidebarHTML = `
@@ -6189,7 +6353,13 @@ const sidebarHTML = `
         <ul class="space-y-2">
             <li>
                 <a href="#data-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
                     <span class="menu-text ml-4">Cập nhật dữ liệu</span>
                 </a>
             </li>
@@ -6229,7 +6399,12 @@ const sidebarHTML = `
             </li>
             <li>
                 <button id="admin-access-btn" class="w-full flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0">
+                        <path d="M8 17.929H6c-1.105 0-2-.895-2-2V5c0-1.105.895-2 2-2h8c1.105 0 2 .895 2 2v5.828"></path>
+                        <polyline points="14 3 14 8 19 8"></polyline>
+                        <path d="M10.42 16.22a2.121 2.121 0 102.122 2.121"></path>
+                        <path d="M16 12.016v4.414m-3.003.015 9.008 2.502-2.502-9.008-3.5 3.504-3-3-3.504 3.5"></path>
+                    </svg>
                     <span class="menu-text ml-4">Khai báo</span>
                 </button>
             </li>
@@ -6245,7 +6420,6 @@ export const sidebar = {
             container.innerHTML = sidebarHTML;
         }
     }
-    // Đã xóa hàm attachEventListeners ở đây
 };
 --- END FILE: ./components/sidebar.js ---
 
@@ -6431,11 +6605,12 @@ createSnapshot();
 --- END FILE: ./create_snapshot.js ---
 
 --- START FILE: ./dashboard.css ---
-/* Version 5.0 - Add styles for draggable column toggle tags and icons */
+/* Version 5.2 - Fix distorted icons, add global icon styles */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-    --global-font-size: 14px;
+    /* === THAY ĐỔI: Cỡ chữ mặc định mới là 18px === */
+    --global-font-size: 18px;
     --kpi-main-font-size: 36px;
     --bg-lightness-1: 98%; --header-lightness-1: 96%; --header-text-lightness-1: 25%; --special-header-lightness-1: 92%; --below-target-lightness-1: 96%;
     --bg-lightness-2: 96%; --header-lightness-2: 94%; --header-text-lightness-2: 22%; --special-header-lightness-2: 88%; --below-target-lightness-2: 94%;
@@ -6452,8 +6627,8 @@ createSnapshot();
     --kpi-sub-color: #ffffff;
 }
 
-body { 
-    font-family: 'Inter', sans-serif; 
+body {
+    font-family: 'Inter', sans-serif;
     background-color: #f3f4f6;
     font-size: var(--global-font-size);
 }
@@ -6480,6 +6655,48 @@ html[data-contrast="6"] { --bg-lightness: var(--bg-lightness-6); --header-lightn
 #main-content { transition: margin-left 0.3s ease-in-out; margin-left: 68px; }
 #sidebar .nav-link { white-space: nowrap; }
 
+/* === BẮT ĐẦU: HIỆU ỨNG TƯƠNG TÁC MỚI === */
+.nav-link,
+.sub-tab-btn,
+.action-btn,
+.kpi-card,
+.content-card,
+.tdv-item-card,
+.data-input-group,
+.toggle-filters-btn,
+.page-header__help-btn,
+.column-toggle-btn {
+    transition: all 0.2s ease-in-out;
+}
+
+.nav-link:hover,
+.action-btn:hover,
+.kpi-card:hover,
+.content-card:hover,
+.data-input-group:hover,
+.toggle-filters-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Ghi đè hiệu ứng hover cũ để đồng bộ */
+.tdv-item-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+.sub-tab-btn:not(.active):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    background-color: #f9fafb;
+    color: #1f2937;
+}
+.page-header__help-btn:hover {
+    transform: scale(1.1) translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+/* === KẾT THÚC: HIỆU ỨNG TƯƠNG TÁC MỚI === */
+
+
 .settings-drawer { width: 400px; max-width: 90vw; transform: translateX(-100%); transition: transform 0.3s ease-in-out; }
 .settings-drawer.open { transform: translateX(0); }
 .close-drawer-btn { font-size: 2rem; line-height: 1; }
@@ -6499,7 +6716,7 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #
 .placeholder-message { border: 2px dashed #f59e0b; background-color: #fffbeb; color: #b45309; padding: 2rem; border-radius: 0.75rem; text-align: center; font-weight: 600; }
 
 [id$='-subtabs-nav'] { flex-wrap: wrap; }
-.sub-tab-btn { transition: all 0.2s ease-in-out; border-bottom: 2px solid transparent; }
+.sub-tab-btn { border-bottom: 2px solid transparent; }
 .sub-tab-btn.active { border-color: #3b82f6; color: #3b82f6; background-color: #eff6ff; }
 .sortable { cursor: pointer; position: relative; user-select: none; }
 .sort-indicator { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; width: 1em; height: 1em; margin-left: 4px; vertical-align: middle; color: #9ca3af; transition: color 0.2s ease-in-out; }
@@ -6511,33 +6728,24 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #
 .sortable.sorted-desc .sort-indicator::after { opacity: 1; color: #3b82f6; }
 .sortable.sorted-desc .sort-indicator::before { opacity: 0.4; }
 
-.data-input-group { 
+.data-input-group {
     border: 1px solid #e5e7eb;
-    border-radius: 0.5rem; 
-    padding: 1rem; 
-    background-color: #f9fafb; 
-    display: flex; 
-    flex-direction: column; 
-    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    background-color: #f9fafb;
+    display: flex;
+    flex-direction: column;
     border-top: 4px solid #9ca3af;
 }
-.data-input-group:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-#data-section > .content-card:nth-of-type(1) .data-input-group {
-    border-top-color: #3b82f6; /* blue-500 */
-}
-#data-section > .content-card:nth-of-type(3) .data-input-group {
-    border-top-color: #8b5cf6; /* violet-500 */
-}
+
+#data-section > .content-card:nth-of-type(1) .data-input-group { border-top-color: #3b82f6; }
+#data-section > .content-card:nth-of-type(3) .data-input-group { border-top-color: #8b5cf6; }
 .data-input-group__label { font-weight: 600; color: #4b5563; margin-bottom: 0.75rem; }
-.data-input-group__label--link { text-decoration: none; display: inline-block; transition: color 0.2s ease-in-out; }
+.data-input-group__label--link { text-decoration: none; display: inline-block; }
 .data-input-group__label--link:hover { text-decoration: underline; color: #2563eb; }
 .data-input-group__label--link > .font-normal { font-weight: 400; }
 .data-input-group__content { display: flex; flex-direction: column; gap: 0.5rem; flex-grow: 1; }
-.data-input-group__file-trigger { cursor: pointer; background-color: #e5e7eb; color: #374151; padding: 0.5rem 1rem; border-radius: 0.375rem;
-font-size: 0.875em; font-weight: 500; transition: background-color 0.2s ease-in-out; white-space: nowrap; }
+.data-input-group__file-trigger { cursor: pointer; background-color: #e5e7eb; color: #374151; padding: 0.5rem 1rem; border-radius: 0.375rem; font-size: 0.875em; font-weight: 500; white-space: nowrap; }
 .data-input-group__file-trigger:hover { background-color: #d1d5db; }
 .data-input-group__file-name { font-size: 0.875em; color: #6b7280; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .data-input-group__link { color: #2563eb; text-decoration: none; font-size: 0.875em; }
@@ -6547,8 +6755,7 @@ font-size: 0.875em; font-weight: 500; transition: background-color 0.2s ease-in-
 .data-input-group__status-text--default { color: #6b7280; }
 .data-input-group__status-text--success { color: #16a34a; }
 .data-input-group__status-text--error { color: #dc2626; }
-.data-textarea { 
-    width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875em; font-family: 'Inter', sans-serif; }
+.data-textarea { width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875em; font-family: 'Inter', sans-serif; }
 .data-textarea:focus { outline: 2px solid transparent; outline-offset: 2px; border-color: #3b82f6; box-shadow: 0 0 0 1px #3b82f6; }
 .progress-bar-container { overflow: hidden; }
 .progress-bar { background-image: linear-gradient(45deg, rgba(255, 255, 255, .15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, .15) 50%, rgba(255, 255, 255, .15) 75%, transparent 75%, transparent); background-size: 1rem 1rem; animation: progress-bar-stripes 1s linear infinite; }
@@ -6569,12 +6776,12 @@ font-size: 0.875em; font-weight: 500; transition: background-color 0.2s ease-in-
 .header-group-4 { background-color: hsl(240, 90%, var(--header-lightness)); }
 .header-group-5 { background-color: hsl(300, 90%, var(--header-lightness)); }
 .header-group-6 { background-color: hsl(0, 90%, var(--header-lightness)); }
-.header-group-7 { background-color: hsl(160, 80%, var(--header-lightness)) !important; } /* Teal */
-.header-group-8 { background-color: hsl(280, 80%, var(--header-lightness)) !important; } /* Purple */
-.header-group-9 { background-color: hsl(70, 80%, var(--header-lightness)) !important; }  /* Lime */
-.header-group-10 { background-color: hsl(190, 80%, var(--header-lightness)) !important; } /* Cyan */
-.header-group-11 { background-color: hsl(340, 80%, var(--header-lightness)) !important; } /* Pink */
-.header-group-12 { background-color: hsl(20, 80%, var(--header-lightness)) !important; }  /* Orange */
+.header-group-7 { background-color: hsl(160, 80%, var(--header-lightness)) !important; }
+.header-group-8 { background-color: hsl(280, 80%, var(--header-lightness)) !important; }
+.header-group-9 { background-color: hsl(70, 80%, var(--header-lightness)) !important; }
+.header-group-10 { background-color: hsl(190, 80%, var(--header-lightness)) !important; }
+.header-group-11 { background-color: hsl(340, 80%, var(--header-lightness)) !important; }
+.header-group-12 { background-color: hsl(20, 80%, var(--header-lightness)) !important; }
 
 .income-positive { color: #16a34a; }
 .income-negative { color: #dc2626; }
@@ -6604,20 +6811,9 @@ font-size: 0.875em; font-weight: 500; transition: background-color 0.2s ease-in-
 #dtnv-realtime-employee-selector-container .choices__inner { min-width: 300px; }
 #dtnv-realtime-employee-selector-container .choices__list--single { min-width: 300px; }
 
-.kpi-card-title {
-    color: var(--kpi-title-color);
-    opacity: 0.8;
-    font-size: 1em;
-}
-.kpi-card p[id$="-main"] {
-    color: var(--kpi-main-color);
-    font-size: var(--kpi-main-font-size);
-    transition: font-size 0.2s ease-in-out;
-}
-.kpi-card p[id$="-sub"], .kpi-card p[id$="-sub1"], .kpi-card p[id$="-sub2"] {
-    color: var(--kpi-sub-color);
-    font-size: 1em;
-}
+.kpi-card-title { color: var(--kpi-title-color); opacity: 0.8; font-size: 1em; }
+.kpi-card p[id$="-main"] { color: var(--kpi-main-color); font-size: var(--kpi-main-font-size); transition: font-size 0.2s ease-in-out; }
+.kpi-card p[id$="-sub"], .kpi-card p[id$="-sub1"], .kpi-card p[id$="-sub2"] { color: var(--kpi-sub-color); font-size: 1em; }
 
 .kpi-percentage, .kpi-percentage-value { font-weight: 700; }
 .kpi-sub-value { opacity: 0.9; }
@@ -6633,8 +6829,7 @@ font-size: 0.875em; font-weight: 500; transition: background-color 0.2s ease-in-
 #sknv-details-container .sknv-subtable-header th { font-size: 0.875em; font-weight: 600; background-color: #f3f4f6; }
 .choices__inner { min-height: 42px; }
 .choices__list--multiple .choices__item { background-color: #3b82f6; border-color: #2563eb; }
-.toggle-filters-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 0.5rem; background-color: #f3f4f6; color: #4b5563; font-weight: 500; font-size: 0.875em; cursor: pointer; transition: background-color 0.2s ease-in-out; margin-bottom: 1rem; border: 1px solid #e5e7eb; }
-.toggle-filters-btn:hover { background-color: #e5e7eb; }
+.toggle-filters-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 0.5rem; background-color: #f3f4f6; color: #4b5563; font-weight: 500; font-size: 0.875em; cursor: pointer; margin-bottom: 1rem; border: 1px solid #e5e7eb; }
 .toggle-filters-btn .icon { width: 1rem; height: 1rem; transition: transform 0.3s ease-in-out; }
 .toggle-filters-btn.active .icon { transform: rotate(180deg); }
 .highlight-trigger { background: none; border: none; cursor: pointer; color: #6b7280; }
@@ -6642,8 +6837,7 @@ font-size: 0.875em; font-weight: 500; transition: background-color 0.2s ease-in-
 .highlighted-row td { animation: pulse-bg 2s infinite; }
 @keyframes pulse-bg { 0% { background-color: var(--highlight-color, #ffff99); } 50% { background-color: var(--highlight-color-light, #ffffcc); } 100% { background-color: var(--highlight-color, #ffff99); } }
 
-.action-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 500; font-size: 0.875em; cursor: pointer; transition: all 0.2s ease-in-out; border: 1px solid transparent; }
-.action-btn:hover { transform: translateY(-1px); box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1); }
+.action-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 500; font-size: 0.875em; cursor: pointer; border: 1px solid transparent; }
 .action-btn--composer { background-color: #ede9fe; color: #5b21b6; border-color: #c4b5fd; }
 .action-btn--composer:hover { background-color: #d8b4fe; }
 .action-btn--export { background-color: #dcfce7; color: #166534; border-color: #86efac; }
@@ -6654,17 +6848,14 @@ font-size: 0.875em; font-weight: 500; transition: background-color 0.2s ease-in-
 .action-btn--save:hover { background-color: #15803d; }
 .action-btn--copy { background-color: #2563eb; color: white; }
 .action-btn--copy:hover { background-color: #1d4ed8; }
-.page-header__help-btn { background-color: #fee2e2; color: #991b1b; border-radius: 9999px; width: 2rem; height: 2rem; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s ease-in-out; border: none; }
-.page-header__help-btn:hover { background-color: #fecaca; transform: scale(1.1); }
+.page-header__help-btn { background-color: #fee2e2; color: #991b1b; border-radius: 9999px; width: 2rem; height: 2rem; display: inline-flex; align-items: center; justify-content: center; border: none; }
 
 .modal { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; }
 .modal.hidden { display: none; }
 .modal__overlay { position: absolute; inset: 0; background-color: rgba(17, 24, 39, 0.6); backdrop-filter: blur(4px); cursor: pointer; }
 .modal__container { position: relative; z-index: 1001; background-color: white; border-radius: 0.75rem; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); width: 90%; max-width: 600px; max-height: 90vh; display: flex; flex-direction: column; }
 
-#force-update-modal .modal__overlay {
-    cursor: not-allowed;
-}
+#force-update-modal .modal__overlay { cursor: not-allowed; }
 
 .modal__container--large { max-width: 900px; }
 .modal__header { padding: 1rem 1.5rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
@@ -6678,44 +6869,28 @@ font-size: 0.875em; font-weight: 500; transition: background-color 0.2s ease-in-
 .modal__content ul > * + * { margin-top: 0.5rem; }
 .modal__footer { padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb; background-color: #f9fafb; display: flex; justify-content: flex-end; gap: 0.75rem; flex-shrink: 0; }
 
-/* --- NEW COMPOSER STYLES --- */
 .composer { display: flex; flex-direction: column; gap: 1.5rem; }
 .composer__editor { flex-grow: 1; }
 .composer__tags { width: 100%; }
-
 .composer__label { display: block; font-weight: 500; color: #374151; margin-bottom: 0.5rem; }
 .composer__textarea { width: 100%; border: 1px solid #d1d5db; border-radius: 0.5rem; padding: 0.75rem; font-size: 0.875em; resize: vertical; }
 .composer__textarea:focus { border-color: #3b82f6; box-shadow: 0 0 0 1px #3b82f6; outline: none; }
-
 .composer__nav { display: flex; border-bottom: 1px solid #e5e7eb; margin-bottom: 1rem; }
-.composer__tab-btn { padding: 0.5rem 1rem; border: none; background-color: transparent; cursor: pointer; font-weight: 500; color: #6b7280; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.2s ease-in-out; font-size: 0.875em; }
-.composer__tab-btn:hover { background-color: #f9fafb; color: #1f2937; }
+.composer__tab-btn { padding: 0.5rem 1rem; border: none; background-color: transparent; cursor: pointer; font-weight: 500; color: #6b7280; border-bottom: 2px solid transparent; margin-bottom: -1px; font-size: 0.875em; }
 .composer__tab-btn.active { color: #3b82f6; border-bottom-color: #3b82f6; }
-
 .composer__tab-pane { display: none; }
 .composer__tab-pane.active { display: block; }
-
 .composer__tag-group { margin-bottom: 1rem; }
 .composer__tag-group:last-child { margin-bottom: 0; }
 .composer__tag-group-title { font-weight: 600; font-size: 0.875em; color: #4b5563; margin-bottom: 0.75rem; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.5rem; }
-.composer__tag-btn { background-color: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; border-radius: 9999px; padding: 0.25rem 0.75rem; font-size: 0.8rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease-in-out; margin: 0.25rem; }
-.composer__tag-btn:hover { background-color: #c7d2fe; transform: translateY(-1px); }
-
-.composer__icon-btn { background-color: #f3f4f6; color: #1f2937; border: 1px solid #d1d5db; border-radius: 9999px; padding: 0.25rem 0.75rem; font-size: 1.1rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease-in-out; margin: 0.25rem; line-height: 1; }
-.composer__icon-btn:hover { background-color: #e5e7eb; transform: translateY(-1px); }
-
+.composer__tag-btn { background-color: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; border-radius: 9999px; padding: 0.25rem 0.75rem; font-size: 0.8rem; font-weight: 500; cursor: pointer; margin: 0.25rem; }
+.composer__icon-btn { background-color: #f3f4f6; color: #1f2937; border: 1px solid #d1d5db; border-radius: 9999px; padding: 0.25rem 0.75rem; font-size: 1.1rem; font-weight: 500; cursor: pointer; margin: 0.25rem; line-height: 1; }
 .composer__filter-group { margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #e5e7eb; }
 .composer__select { width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; background-color: white; }
-
-@media (min-width: 768px) { 
-    .composer { flex-direction: row; } 
-    .composer__tags { width: 350px; flex-shrink: 0; border-left: 1px solid #e5e7eb; padding-left: 1.5rem; } 
-}
-
-/* --- END NEW COMPOSER STYLES --- */
+@media (min-width: 768px) { .composer { flex-direction: row; } .composer__tags { width: 350px; flex-shrink: 0; border-left: 1px solid #e5e7eb; padding-left: 1.5rem; } }
 
 .view-switcher { display: flex; align-items: center; padding: 0.25rem; background-color: #e5e7eb; border-radius: 0.5rem; }
-.view-switcher__btn { padding: 0.5rem 1rem; border: none; background-color: transparent; border-radius: 0.375rem; font-weight: 500; color: #4b5563; cursor: pointer; transition: all 0.2s ease-in-out; }
+.view-switcher__btn { padding: 0.5rem 1rem; border: none; background-color: transparent; border-radius: 0.375rem; font-weight: 500; color: #4b5563; cursor: pointer; }
 .view-switcher__btn.active { background-color: white; color: #3b82f6; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1); }
 .infographic-card { border: 1px solid #e5e7eb; border-radius: 0.5rem; overflow: hidden; }
 .infographic-card__header { padding: 0.75rem 1rem; font-weight: 700; }
@@ -6788,8 +6963,7 @@ details[open] > summary .arrow { transform: rotate(180deg); }
 .tdv-row-body { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
 .tdv-row-body--effort { display: block; }
 
-.tdv-item-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; }
-.tdv-item-card:hover { transform: translateY(-3px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+.tdv-item-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden; }
 .tdv-item-card__title { font-weight: bold; margin: 0 0 10px 0; color: #333; }
 .tdv-progress-bar-container { 
     width: 100%; 
@@ -7046,6 +7220,17 @@ details[open] > summary .arrow { transform: rotate(180deg); }
     box-shadow: 0 8px 16px rgba(0,0,0,0.2);
 }
 /* === END: DRAGGABLE TAG STYLES === */
+
+/* === START: ICON SIZING FIX (NEW) === */
+.action-btn svg,
+.sub-tab-btn svg,
+.nav-link svg,
+.view-switcher__btn svg {
+    width: 1.25rem; /* 20px */
+    height: 1.25rem; /* 20px */
+    flex-shrink: 0; /* Ngăn icon bị co lại khi không đủ không gian */
+}
+/* === END: ICON SIZING FIX === */
 --- END FILE: ./dashboard.css ---
 
 --- START FILE: ./event-listeners/listeners-actions.js ---
@@ -7510,7 +7695,7 @@ export function initializeSortingListeners(appController) {
 --- END FILE: ./event-listeners/listeners-sorting.js ---
 
 --- START FILE: ./event-listeners/ui-listeners.js ---
-// Version 3.5 - Import and initialize drag-drop listener module
+// Version 3.8 - Revert to client-side processing as per user request
 // MODULE: EVENT LISTENERS INITIALIZER
 // File này đóng vai trò là điểm khởi đầu, import và khởi chạy tất cả các module listener con.
 
@@ -7526,12 +7711,13 @@ import { initializeCompetitionListeners } from './listeners-competition.js';
 import { initializeHighlightingListeners } from './listeners-highlighting.js';
 import { initializeSettingsListeners } from './listeners-settings.js';
 import { initializeSortingListeners } from './listeners-sorting.js';
-import { dragDroplisteners } from './listeners-dragdrop.js'; // <<< THÊM DÒNG NÀY
+import { dragDroplisteners } from './listeners-dragdrop.js';
 
 let appController = null;
 
 // --- HELPERS / HANDLERS ---
 
+// === HOÀN TÁC: Quay lại logic xử lý file tại trình duyệt ===
 async function handleFileInputChange(e) {
     const fileInput = e.target;
     const file = fileInput.files[0];
@@ -7596,23 +7782,19 @@ export function initializeEventListeners(mainAppController) {
 
     // --- Khởi tạo các thư viện UI ---
     try {
-        // Cấu hình chung cho các bộ lọc đa lựa chọn
         const multiSelectConfig = { 
             removeItemButton: true, 
             placeholder: true, 
             placeholderValue: 'Chọn hoặc gõ để tìm...', 
             searchPlaceholderValue: 'Tìm kiếm...' 
         };
-
-        // === START: CẤU HÌNH RIÊNG BIỆT CHO BỘ LỌC THI ĐUA ===
         const competitionMultiSelectConfig = {
             removeItemButton: true,
             placeholder: true,
             placeholderValue: 'Chọn hoặc gõ để tìm...',
             searchPlaceholderValue: 'Tìm kiếm...',
-            closeOnSelect: false, // Cho phép chọn nhiều mục sau khi tìm kiếm
+            closeOnSelect: false,
         };
-        // === END: CẤU HÌNH RIÊNG BIỆT ===
 
         ['luyke', 'sknv', 'realtime'].forEach(prefix => {
             const employeeEl = document.getElementById(`${prefix}-filter-name`);
@@ -7628,13 +7810,11 @@ export function initializeEventListeners(mainAppController) {
             });
         });
 
-        // === START: ÁP DỤNG CẤU HÌNH RIÊNG CHO BỘ LỌC THI ĐUA ===
         const competitionBrandEl = document.getElementById('competition-brand');
         if (competitionBrandEl) appState.choices['competition_brand'] = new Choices(competitionBrandEl, competitionMultiSelectConfig);
         
         const competitionGroupEl = document.getElementById('competition-group');
         if (competitionGroupEl) appState.choices['competition_group'] = new Choices(competitionGroupEl, competitionMultiSelectConfig);
-        // === END: ÁP DỤNG CẤU HÌNH RIÊNG ===
 
         const singleSelectConfig = { 
             searchEnabled: true, 
@@ -7684,7 +7864,7 @@ export function initializeEventListeners(mainAppController) {
     initializeCollaborationListeners(appController);
     initializeSortingListeners(appController);
     initializeCompetitionListeners(appController);
-    dragDroplisteners.init(appController); // <<< THÊM DÒNG NÀY
+    dragDroplisteners.init(appController);
 
     // --- Các sự kiện còn lại ---
     document.getElementById('force-reload-btn')?.addEventListener('click', () => window.location.reload());
@@ -7729,17 +7909,13 @@ export function initializeEventListeners(mainAppController) {
     document.getElementById('sknv-view-selector')?.addEventListener('click', (e) => appController.handleSknvViewChange(e));
     document.getElementById('sknv-employee-filter')?.addEventListener('change', () => sknvTab.render());
     
-    // === START: THAY THẾ SỰ KIỆN CŨ BẰNG UỶ QUYỀN SỰ KIỆN (FIX #1) ===
-    // Loại bỏ: document.getElementById('luyke-thidua-view-selector')?.addEventListener('click', (e) => appController.handleLuykeThiDuaViewChange(e));
     document.body.addEventListener('click', (e) => {
-        // Lắng nghe click trên body và chỉ xử lý nếu click đến từ nút trong view-switcher của tab Thi đua Lũy kế
         const viewSwitcherBtn = e.target.closest('#luyke-thidua-view-selector .view-switcher__btn');
         if (viewSwitcherBtn) {
             e.preventDefault();
             appController.handleLuykeThiDuaViewChange(e);
         }
     });
-    // === END: THAY THẾ SỰ KIỆN CŨ ===
     
     document.getElementById('thidua-view-selector')?.addEventListener('click', (e) => appController.handleThiDuaViewChange(e));
     document.getElementById('thidua-employee-filter')?.addEventListener('change', () => ui.displayCompetitionReport('employee'));
@@ -7778,6 +7954,12 @@ export function initializeEventListeners(mainAppController) {
         #luyke-category-details-content td:first-child,
         #luyke-unexported-revenue-content td:first-child {
             text-transform: capitalize;
+        }
+        /* Căn chỉnh icon và text trong các nút */
+        .sub-tab-btn, .action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem; /* 8px */
         }
     </style>
     </head>
@@ -8061,21 +8243,38 @@ export function initializeEventListeners(mainAppController) {
 
                         <div class="flex justify-between items-center mb-8">
                             <nav id="luyke-subtabs-nav" class="border-b border-gray-200 -mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs" data-content-container="luyke-subtabs-content">
-                                <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-luyke-sieu-thi" data-title="SieuThiLuyKe">Siêu thị Lũy kế</button>
-                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-luyke-thi-dua" data-title="ThiDuaLuyKe">Thi đua Lũy kế</button>
-                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-luyke-thidua-vung" data-title="ThiDuaVung">Thi đua Vùng</button>
+                                <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-luyke-sieu-thi" data-title="SieuThiLuyKe">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13.293 2.293a1 1 0 011.414 0l7 7A1 1 0 0121 11v8a2 2 0 01-2 2H5a2 2 0 01-2-2v-8a1 1 0 01.293-.707l7-7z"></path></svg>
+                                    <span>Siêu thị Lũy kế</span>
+                                </button>
+                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-luyke-thi-dua" data-title="ThiDuaLuyKe">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"></path></svg>
+                                    <span>Thi đua Lũy kế</span>
+                                </button>
+                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-luyke-thidua-vung" data-title="ThiDuaVung">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13V7m0 13l6-3m-6 3l6-3m0 0l5.447-2.724A1 1 0 0021 10.382V5.618a1 1 0 00-.553-.894L15 2m0 11v6m0-6V2"></path></svg>
+                                    <span>Thi đua Vùng</span>
+                                </button>
                             </nav>
                              <div class="flex items-center gap-x-2">
                                 <button id="compose-luyke-notification-btn" class="action-btn action-btn--composer" title="Nhận xét">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"></path>
+                                    </svg>
                                     <span>Nhận xét</span>
                                 </button>
                                 <button id="export-luyke-btn" class="action-btn action-btn--export" title="Xuất Excel tab hiện tại">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L6.354 8.146a.5.5 0 1 0-.708.708l2 2z"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"></path>
+                                    </svg>
                                     <span>Xuất Excel</span>
                                 </button>
                                 <button id="capture-luyke-btn" class="action-btn action-btn--capture" title="Chụp ảnh tab hiện tại">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15 12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1.172a3 3 0 0 0 2.12-.879l.83-.828A1 1 0 0 1 6.827 3h2.344a1 1 0 0 1 .707.293l.828.828A3 3 0 0 0 12.828 5H14a1 1 0 0 1 1 1v6zM2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828-.828A2 2 0 0 1 3.172 4H2z"/><path d="M8 11a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5zm0 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM3 6.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M6.828 6.172a4 4 0 015.656 0L14.25 7.939l-1.06-1.061a3 3 0 00-4.243 0L6.43 9.394a4 4 0 010-5.656z"></path>
+                                        <path d="M12.75 16.606l-1.061 1.061a3 3 0 01-4.243 0l-2.475-2.475a4 4 0 010-5.656L7.939 7.75l1.06 1.06-1.59 1.59a.75.75 0 001.06 1.061l2.25-2.25zM15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
                                     <span>Chụp màn hình</span>
                                 </button>
                             </div>
@@ -8144,9 +8343,9 @@ export function initializeEventListeners(mainAppController) {
                                 </div>
                             </div>
                              <div id="subtab-luyke-thi-dua" class="sub-tab-content hidden space-y-4">
-                                <div class="flex flex-wrap items-center gap-4">
+                                <div class="flex flex-wrap items-center justify-between gap-4">
                                     <h3 class="text-xl font-bold text-gray-800 uppercase">Thi đua lũy kế <span id="luyke-competition-summary" class="text-sm font-normal"></span></h3>
-                                </div>
+                                    <div id="luyke-thidua-view-selector-placeholder"></div> </div>
                                 <div id="luyke-competition-content"></div>
                              </div>
                             <div id="subtab-luyke-thidua-vung" class="sub-tab-content hidden">
@@ -8222,24 +8421,50 @@ export function initializeEventListeners(mainAppController) {
                         <div class="content-card">
                             <div class="flex justify-between items-center mb-8">
                                 <nav id="employee-subtabs-nav" class="border-b border-gray-200 -mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs" data-content-container="employee-subtabs-content">
-                                    <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-sknv" data-title="SKNV">SKNV</button>
-                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-doanhthu-lk" data-title="DoanhThuLK">Doanh thu LK</button>
-                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-thunhap" data-title="ThuNhap">Thu nhập</button>
-                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-khai-thac-luy-ke" data-title="HieuQuaKhaiThacLuyKe">Hiệu quả NV LK</button>
-                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-doanhthu-nganhhang" data-title="DTNganhHang">DT ngành hàng</button>
-                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-thi-dua-lk" data-title="HieuQuaThiDuaLK">Thi đua NV LK</button>
+                                    <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-sknv" data-title="SKNV">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 00-3-3.87"></path><path d="M16 3.13a4 4 0 010 7.75"></path></svg>
+                                        <span>SKNV</span>
+                                    </button>
+                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-doanhthu-lk" data-title="DoanhThuLK">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M2.5 8.5a1 1 0 011-1h17a1 1 0 011 1v10a1 1 0 01-1 1h-17a1 1 0 01-1-1V8.5zM12 4v4m-4-2h8"></path></svg>
+                                        <span>Doanh thu LK</span>
+                                    </button>
+                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-thunhap" data-title="ThuNhap">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 6v12m-6-6h12"></path></svg>
+                                        <span>Thu nhập</span>
+                                    </button>
+                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-khai-thac-luy-ke" data-title="HieuQuaKhaiThacLuyKe">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 13v6a2 2 0 002 2h14a2 2 0 002-2v-6M3 13l6-6 4 4 8-8"></path></svg>
+                                        <span>Hiệu quả NV LK</span>
+                                    </button>
+                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-doanhthu-nganhhang" data-title="DTNganhHang">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"></path></svg>
+                                        <span>DT ngành hàng</span>
+                                    </button>
+                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-thi-dua-lk" data-title="HieuQuaThiDuaLK">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM18 21.75l.259-1.035a3.375 3.375 0 00-2.456-2.456L14.25 18l1.035-.259a3.375 3.375 0 002.456-2.456L18 14.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 18l-1.035.259a3.375 3.375 0 00-2.456 2.456L18 21.75z"></path></svg>
+                                        <span>Thi đua NV LK</span>
+                                    </button>
                                 </nav>
                                  <div class="flex items-center gap-x-2">
                                      <button id="compose-sknv-notification-btn" class="action-btn action-btn--composer" title="Nhận xét">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"></path>
+                                        </svg>
                                         <span>Nhận xét</span>
                                     </button>
                                     <button id="export-sknv-btn" class="action-btn action-btn--export" title="Xuất Excel tab hiện tại">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L6.354 8.146a.5.5 0 1 0-.708.708l2 2z"/></svg>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"></path>
+                                        </svg>
                                         <span>Xuất Excel</span>
                                     </button>
                                     <button id="capture-sknv-btn" class="action-btn action-btn--capture" title="Chụp ảnh tab hiện tại">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15 12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1.172a3 3 0 0 0 2.12-.879l.83-.828A1 1 0 0 1 6.827 3h2.344a1 1 0 0 1 .707.293l.828.828A3 3 0 0 0 12.828 5H14a1 1 0 0 1 1 1v6zM2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828-.828A2 2 0 0 1 3.172 4H2z"/><path d="M8 11a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5zm0 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM3 6.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/></svg>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M6.828 6.172a4 4 0 015.656 0L14.25 7.939l-1.06-1.061a3 3 0 00-4.243 0L6.43 9.394a4 4 0 010-5.656z"></path>
+                                            <path d="M12.75 16.606l-1.061 1.061a3 3 0 01-4.243 0l-2.475-2.475a4 4 0 010-5.656L7.939 7.75l1.06 1.06-1.59 1.59a.75.75 0 001.06 1.061l2.25-2.25zM15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
                                         <span>Chụp màn hình</span>
                                     </button>
                                 </div>
@@ -8331,24 +8556,51 @@ export function initializeEventListeners(mainAppController) {
 
                         <div class="flex justify-between items-center mb-8">
                             <nav id="realtime-subtabs-nav" class="border-b border-gray-200 -mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs" data-content-container="realtime-subtabs-content">
-                                <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-sieu-thi" data-title="SieuThiRealtime">Siêu thị Realtime</button>
-                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-nhan-vien" data-title="DTNVRealtime">DT NV Realtime</button>
-                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-hieu-qua" data-title="HieuQuaKhaiThacRealtime">Hiệu quả NV Realtime</button>
-                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-nganh-hang" data-title="NganhHangRealtime">Ngành hàng Realtime</button>
-                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-hang" data-title="HangRealtime">DT Hãng Realtime</button>
-                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-thi-dua-realtime" data-title="HieuQuaThiDuaRealtime">Thi đua NV Realtime</button>
+                                <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-sieu-thi" data-title="SieuThiRealtime">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"></path></svg>
+                                    <span>Siêu thị Realtime</span>
+                                </button>
+                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-nhan-vien" data-title="DTNVRealtime">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-4.67c.12-.24.232-.483.335-.722M6.75 12.75a8.966 8.966 0 011.586-5.228 8.966 8.966 0 014.126-3.223 8.966 8.966 0 015.228 1.586 8.966 8.966 0 013.223 4.126A8.966 8.966 0 0112.75 18c-2.098 0-4.04-.73-5.54-1.99z"></path></svg>
+                                    <span>DT NV Realtime</span>
+                                </button>
+                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-hieu-qua" data-title="HieuQuaKhaiThacRealtime">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 13v6a2 2 0 002 2h14a2 2 0 002-2v-6M3 13l6-6 4 4 8-8"></path></svg>
+                                    <span>Hiệu quả NV Realtime</span>
+                                </button>
+                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-nganh-hang" data-title="NganhHangRealtime">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z"></path><path d="M6 9h.008v.008H6V9z"></path></svg>
+                                    <span>Ngành hàng Realtime</span>
+                                </button>
+                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-hang" data-title="HangRealtime">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h6.375a.375.375 0 01.375.375v1.5a.375.375 0 01-.375.375H9a.375.375 0 01-.375-.375v-1.5A.375.375 0 019 6.75zM9 12.75h6.375a.375.375 0 01.375.375v1.5a.375.375 0 01-.375.375H9a.375.375 0 01-.375-.375v-1.5A.375.375 0 019 12.75z"></path></svg>
+                                    <span>DT Hãng Realtime</span>
+                                </button>
+                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-thi-dua-realtime" data-title="HieuQuaThiDuaRealtime">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM18 21.75l.259-1.035a3.375 3.375 0 00-2.456-2.456L14.25 18l1.035-.259a3.375 3.375 0 002.456-2.456L18 14.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 18l-1.035.259a3.375 3.375 0 00-2.456 2.456L18 21.75z"></path></svg>
+                                    <span>Thi đua NV Realtime</span>
+                                </button>
                             </nav>
                              <div class="flex items-center gap-x-2">
                                 <button id="compose-realtime-notification-btn" class="action-btn action-btn--composer" title="Nhận xét">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"></path>
+                                        <path d="M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"></path>
+                                    </svg>
                                     <span>Nhận xét</span>
                                 </button>
                                 <button id="export-realtime-btn" class="action-btn action-btn--export" title="Xuất Excel tab hiện tại">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L6.354 8.146a.5.5 0 1 0-.708.708l2 2z"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"></path>
+                                    </svg>
                                     <span>Xuất Excel</span>
                                 </button>
                                 <button id="capture-realtime-btn" class="action-btn action-btn--capture" title="Chụp ảnh tab hiện tại">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15 12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1.172a3 3 0 0 0 2.12-.879l.83-.828A1 1 0 0 1 6.827 3h2.344a1 1 0 0 1 .707.293l.828.828A3 3 0 0 0 12.828 5H14a1 1 0 0 1 1 1v6zM2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828-.828A2 2 0 0 1 3.172 4H2z"/><path d="M8 11a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5zm0 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM3 6.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M6.828 6.172a4 4 0 015.656 0L14.25 7.939l-1.06-1.061a3 3 0 00-4.243 0L6.43 9.394a4 4 0 010-5.656z"></path>
+                                        <path d="M12.75 16.606l-1.061 1.061a3 3 0 01-4.243 0l-2.475-2.475a4 4 0 010-5.656L7.939 7.75l1.06 1.06-1.59 1.59a.75.75 0 001.06 1.061l2.25-2.25zM15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
                                     <span>Chụp màn hình</span>
                                 </button>
                             </div>
@@ -8561,7 +8813,6 @@ export function initializeEventListeners(mainAppController) {
 
 </body>
 </html>
-
 --- END FILE: ./index.html ---
 
 --- START FILE: ./main.js ---
@@ -9698,6 +9949,83 @@ export const captureService = {
     },
 };
 --- END FILE: ./modules/capture.service.js ---
+
+--- START FILE: ./modules/file-upload.service.js ---
+// Version 1.0 - Initial Upload Service
+// MODULE: FILE UPLOAD SERVICE
+// Chứa logic để tải file lên Firebase Storage và lắng nghe kết quả xử lý từ Firestore.
+
+import { appState } from '../state.js';
+import { ui } from '../ui.js';
+import { ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+export const fileUploadService = {
+    /**
+     * Tải file lên Firebase Storage, sau đó lắng nghe kết quả xử lý từ Firestore.
+     * @param {File} file - Đối tượng file người dùng đã chọn.
+     * @param {string} fileType - Loại file (ví dụ: 'ycx', 'danhsachnv').
+     * @returns {Promise<Object>} - Promise sẽ resolve với dữ liệu đã được xử lý hoặc reject với lỗi.
+     */
+    uploadAndProcessFile(file, fileType) {
+        return new Promise((resolve, reject) => {
+            if (!appState.storage || !appState.db) {
+                return reject(new Error("Firebase chưa được khởi tạo."));
+            }
+
+            // 1. Tạo một ID độc nhất cho file để theo dõi
+            const uniqueFileId = `${fileType}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+            const fileName = `${uniqueFileId}${file.name.substring(file.name.lastIndexOf('.'))}`;
+            const storagePath = `uploads/${fileName}`;
+            const storageRef = ref(appState.storage, storagePath);
+
+            // 2. Bắt đầu quá trình tải file lên Storage
+            const uploadTask = uploadBytesResumable(storageRef, file);
+            let unsubscribeSnapshot = null; // Biến để lưu hàm hủy listener
+
+            // Tạo listener trong Firestore để chờ kết quả
+            const resultDocRef = doc(appState.db, "file_results", uniqueFileId);
+            unsubscribeSnapshot = onSnapshot(resultDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const result = docSnap.data();
+                    // Hủy listener ngay khi nhận được kết quả để tránh rò rỉ bộ nhớ
+                    if (unsubscribeSnapshot) unsubscribeSnapshot();
+                    clearTimeout(timeout); // Hủy timeout
+
+                    if (result.status === 'success') {
+                        resolve(result.data); // Trả về dữ liệu đã xử lý
+                    } else {
+                        reject(new Error(result.message || 'Lỗi không xác định từ máy chủ.'));
+                    }
+                }
+            });
+
+            // Cập nhật giao diện với tiến trình tải lên
+            uploadTask.on('state_changed',
+                (snapshot) => {
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    ui.updateFileStatus(fileType, file.name, `Đang tải lên... ${Math.round(progress)}%`);
+                },
+                (error) => { // Xử lý lỗi tải lên
+                    if (unsubscribeSnapshot) unsubscribeSnapshot();
+                    clearTimeout(timeout);
+                    console.error("Lỗi khi tải file lên Storage:", error);
+                    reject(new Error("Không thể tải file lên máy chủ."));
+                },
+                () => { // Tải lên thành công, chuyển sang chờ xử lý
+                    ui.updateFileStatus(fileType, file.name, 'Tải lên hoàn tất, đang chờ máy chủ xử lý...');
+                }
+            );
+
+            // 3. Đặt một khoảng thời gian chờ tối đa (ví dụ: 60 giây)
+            const timeout = setTimeout(() => {
+                if (unsubscribeSnapshot) unsubscribeSnapshot();
+                reject(new Error("Máy chủ xử lý quá lâu, vui lòng thử lại."));
+            }, 60000); // 60 giây
+        });
+    }
+};
+--- END FILE: ./modules/file-upload.service.js ---
 
 --- START FILE: ./modules/highlight.service.js ---
 // Version 1.1 - Fix incorrect import paths for modules
@@ -11735,7 +12063,7 @@ export { appState };
 --- END FILE: ./state.js ---
 
 --- START FILE: ./tab-luyke.js ---
-// Version 2.8 - Fix: Remove duplicate H3 title in competition tab
+// Version 2.9 - Adjust rendering logic to accommodate new layout in index.html
 // MODULE: Chịu trách nhiệm cho Tab Sức khỏe Siêu thị (Lũy kế)
 
 import { appState } from './state.js';
@@ -11752,8 +12080,6 @@ const luykeTab = {
         }
         ui.togglePlaceholder('health-section', false);
 
-        // [BUG FIX]: Luôn phân tích dữ liệu thi đua trước để cập nhật appState.
-        // Điều này đảm bảo thẻ KPI "Thi đua" luôn có dữ liệu để hiển thị.
         services.parseCompetitionDataFromLuyKe(document.getElementById('paste-luyke').value);
 
         const activeSubTabBtn = document.querySelector('#luyke-subtabs-nav .sub-tab-btn.active');
@@ -11795,28 +12121,29 @@ const luykeTab = {
             ui.displayHealthKpiTable(pastedData, goals); 
 
         } else if (activeSubTabId === 'subtab-luyke-thi-dua') {
-            // === START: THAY ĐỔI LOGIC (FIX DUPLICATE H3 & VIEW SWITCHER PLACEMENT) ===
-            const container = document.getElementById('luyke-competition-content');
-            if(container) {
-                // Thêm bộ chuyển đổi view nếu chưa có
-                if (!container.querySelector('#luyke-thidua-view-selector')) {
-                    // Loại bỏ H3 khỏi logic render này để giữ lại tiêu đề bên ngoài (Fix #6)
-                    container.innerHTML = `
-                        <div class="flex flex-wrap items-center justify-end gap-4 mb-4"> 
-                            <div id="luyke-thidua-view-selector" class="view-switcher">
-                                <button data-view="summary" class="view-switcher__btn active">Theo Phân Loại</button>
-                                <button data-view="completion" class="view-switcher__btn">Theo % Hoàn Thành</button>
-                            </div>
-                        </div>
-                        <div id="luyke-competition-infographic-container" class="mt-4"></div>
-                    `;
-                }
+            // === THAY ĐỔI: Tách logic render nút và nội dung ===
+            const switcherPlaceholder = document.getElementById('luyke-thidua-view-selector-placeholder');
+            const contentContainer = document.getElementById('luyke-competition-content');
+            
+            // 1. Chèn các nút chuyển chế độ vào placeholder nếu chưa có
+            if(switcherPlaceholder && !switcherPlaceholder.querySelector('#luyke-thidua-view-selector')) {
+                switcherPlaceholder.innerHTML = `
+                    <div id="luyke-thidua-view-selector" class="view-switcher">
+                        <button data-view="summary" class="view-switcher__btn active">Theo Phân Loại</button>
+                        <button data-view="completion" class="view-switcher__btn">Theo % Hoàn Thành</button>
+                    </div>
+                `;
             }
             
+            // 2. Luôn đảm bảo container cho nội dung báo cáo tồn tại
+            if (contentContainer) {
+                 contentContainer.innerHTML = '<div id="luyke-competition-infographic-container" class="mt-4"></div>';
+            }
+
+            // 3. Render báo cáo vào container đã chuẩn bị
             const activeViewBtn = document.querySelector('#luyke-thidua-view-selector .view-switcher__btn.active');
             const viewType = activeViewBtn ? activeViewBtn.dataset.view : 'summary';
             ui.displayCompetitionResultsFromLuyKe(document.getElementById('paste-luyke').value, viewType);
-            // === END: THAY ĐỔI LOGIC ===
         }
         
         highlightService.populateHighlightFilters('luyke', filteredYCXData, filteredReport);

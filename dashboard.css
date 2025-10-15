@@ -1,4 +1,4 @@
-/* Version 5.1 - Implement new default font size and global hover effects */
+/* Version 5.5 - Unify sidebar icon sizes */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -46,7 +46,7 @@ html[data-contrast="6"] { --bg-lightness: var(--bg-lightness-6); --header-lightn
 #sidebar:hover .menu-text { opacity: 1; transition-delay: 0.1s; }
 #sidebar.menu-locked:hover .menu-text { opacity: 0; }
 #main-content { transition: margin-left 0.3s ease-in-out; margin-left: 68px; }
-#sidebar .nav-link { white-space: nowrap; }
+#sidebar .nav-link, #sidebar button { white-space: nowrap; }
 
 /* === BẮT ĐẦU: HIỆU ỨNG TƯƠNG TÁC MỚI === */
 .nav-link,
@@ -230,7 +230,18 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #
 .highlighted-row td { animation: pulse-bg 2s infinite; }
 @keyframes pulse-bg { 0% { background-color: var(--highlight-color, #ffff99); } 50% { background-color: var(--highlight-color-light, #ffffcc); } 100% { background-color: var(--highlight-color, #ffff99); } }
 
-.action-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 500; font-size: 0.875em; cursor: pointer; border: 1px solid transparent; }
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    font-size: 0.875em;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
 .action-btn--composer { background-color: #ede9fe; color: #5b21b6; border-color: #c4b5fd; }
 .action-btn--composer:hover { background-color: #d8b4fe; }
 .action-btn--export { background-color: #dcfce7; color: #166534; border-color: #86efac; }
@@ -613,3 +624,39 @@ details[open] > summary .arrow { transform: rotate(180deg); }
     box-shadow: 0 8px 16px rgba(0,0,0,0.2);
 }
 /* === END: DRAGGABLE TAG STYLES === */
+
+/* === START: ICON SIZING & ALIGNMENT FIX (V5.5) === */
+/* General alignment for all buttons containing icons */
+.action-btn,
+.sub-tab-btn,
+.nav-link,
+.view-switcher__btn,
+.toggle-filters-btn,
+.page-header__help-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+/* Default size for all Feather icons */
+.feather {
+    width: 1.1rem; 
+    height: 1.1rem;
+    stroke-width: 2.5; 
+    flex-shrink: 0;
+}
+
+/* UNIFIED size for ALL icons inside the sidebar */
+#sidebar .feather {
+    width: 1.5rem; /* 24px */
+    height: 1.5rem; /* 24px */
+    stroke-width: 2;
+}
+
+/* Specific size for help buttons in page headers */
+.page-header__help-btn .feather {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+/* === END: ICON SIZING & ALIGNMENT FIX === */

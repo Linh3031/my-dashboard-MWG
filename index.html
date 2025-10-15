@@ -18,6 +18,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     
+    <script src="https://unpkg.com/feather-icons"></script>
+
     <link rel="stylesheet" href="./dashboard.css">
     
     <style>
@@ -25,14 +27,8 @@
         #luyke-unexported-revenue-content td:first-child {
             text-transform: capitalize;
         }
-        /* Căn chỉnh icon và text trong các nút */
-        .sub-tab-btn, .action-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem; /* 8px */
-        }
     </style>
-    </head>
+</head>
 <body class="overflow-x-hidden">
 
     <div id="update-notification" class="hidden fixed bottom-5 right-5 bg-blue-600 text-white py-3 px-5 rounded-lg shadow-lg z-[1001] flex items-center gap-4">
@@ -102,7 +98,7 @@
                         <div class="flex items-center gap-x-3">
                             <h2 class="page-header__title">Cập nhật dữ liệu</h2>
                             <button class="page-header__help-btn" data-help-id="data" title="Xem hướng dẫn">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                                <i data-feather="help-circle"></i>
                             </button>
                         </div>
                         <div id="version-marquee-container" class="marquee-container">
@@ -199,7 +195,7 @@
                             <div id="debug-results-container" class="space-y-4">
                                  <p class="text-gray-500">Chưa có file nào được tải lên để kiểm tra.</p>
                             </div>
-                             <div id="pasted-debug-results-container" class="space-y-4 mt-4"></div>
+                            <div id="pasted-debug-results-container" class="space-y-4 mt-4"></div>
                         </div>
                     </div>
                     
@@ -276,12 +272,12 @@
                             <div class="page-header border-b pb-4 mb-6">
                                 <h2 class="page-header__title">Sức khỏe siêu thị</h2>
                                 <button class="page-header__help-btn" data-help-id="luyke" title="Xem hướng dẫn">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                                    <i data-feather="help-circle"></i>
                                 </button>
                             </div>
-                             <button class="toggle-filters-btn" data-target="luyke-filter-container">
+                            <button class="toggle-filters-btn" data-target="luyke-filter-container">
                                 <span class="text">Hiện bộ lọc nâng cao</span>
-                                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                <i data-feather="chevron-down" class="icon"></i>
                             </button>
                              <div id="luyke-filter-container" class="advanced-filters hidden">
                                 <div id="luyke-filter-bar" class="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-4">
@@ -314,37 +310,29 @@
                         <div class="flex justify-between items-center mb-8">
                             <nav id="luyke-subtabs-nav" class="border-b border-gray-200 -mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs" data-content-container="luyke-subtabs-content">
                                 <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-luyke-sieu-thi" data-title="SieuThiLuyKe">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5A.75.75 0 0114.25 12h.01a.75.75 0 01.75.75V21m-4.5 0v-7.5A.75.75 0 0110.5 12h.01a.75.75 0 01.75.75V21m-4.5 0v-2.25A.75.75 0 016.75 18h.01a.75.75 0 01.75.75V21m-4.5 0v-6.75A.75.75 0 013 13.5h.01a.75.75 0 01.75.75V21m-4.5 0v-8.25A.75.75 0 012.25 12h.01a.75.75 0 01.75.75V21m6.75-18L5.25 6m7.5-3l-4.498 3.748" /></svg>
+                                    <i data-feather="home"></i>
                                     <span>Siêu thị Lũy kế</span>
                                 </button>
                                 <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-luyke-thi-dua" data-title="ThiDuaLuyKe">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9a2.25 2.25 0 01-2.25-2.25v-9A2.25 2.25 0 017.5 5.25h9a2.25 2.25 0 012.25 2.25v9A2.25 2.25 0 0116.5 18.75z" /><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 12h7.5" /></svg>
+                                    <i data-feather="edit-3"></i>
                                     <span>Thi đua Lũy kế</span>
                                 </button>
                                 <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-luyke-thidua-vung" data-title="ThiDuaVung">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.5-11.492l-9.5 3.393m9.5-3.393v11.492l-9.5-3.393m0-8.099l-4.5-1.607m9.5 3.393l4.5 1.607m-4.5-1.607L9 15m0 0l-4.5 1.607m4.5-1.607l-4.5 1.607" /></svg>
+                                    <i data-feather="map"></i>
                                     <span>Thi đua Vùng</span>
                                 </button>
                             </nav>
                              <div class="flex items-center gap-x-2">
                                 <button id="compose-luyke-notification-btn" class="action-btn action-btn--composer" title="Nhận xét">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"></path>
-                                    </svg>
+                                    <i data-feather="pen-tool"></i>
                                     <span>Nhận xét</span>
                                 </button>
                                 <button id="export-luyke-btn" class="action-btn action-btn--export" title="Xuất Excel tab hiện tại">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"></path>
-                                    </svg>
+                                    <i data-feather="download"></i>
                                     <span>Xuất Excel</span>
                                 </button>
                                 <button id="capture-luyke-btn" class="action-btn action-btn--capture" title="Chụp ảnh tab hiện tại">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.828 6.172a4 4 0 015.656 0L14.25 7.939l-1.06-1.061a3 3 0 00-4.243 0L6.43 9.394a4 4 0 010-5.656z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12.75 16.606l-1.061 1.061a3 3 0 01-4.243 0l-2.475-2.475a4 4 0 010-5.656L7.939 7.75l1.06 1.06-1.59 1.59a.75.75 0 001.06 1.061l2.25-2.25zM15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
+                                    <i data-feather="camera"></i>
                                     <span>Chụp màn hình</span>
                                 </button>
                             </div>
@@ -412,13 +400,13 @@
                                     <div data-capture-group="2" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200"><h3 class="text-xl font-bold uppercase mb-4">Doanh thu chưa xuất</h3><div id="luyke-unexported-revenue-content"></div></div>
                                 </div>
                             </div>
-                             <div id="subtab-luyke-thi-dua" class="sub-tab-content hidden space-y-4">
+                            <div id="subtab-luyke-thi-dua" class="sub-tab-content hidden space-y-4">
                                 <div class="flex flex-wrap items-center justify-between gap-4">
                                     <h3 class="text-xl font-bold text-gray-800 uppercase">Thi đua lũy kế <span id="luyke-competition-summary" class="text-sm font-normal"></span></h3>
-                                    <div id="luyke-thidua-view-selector-placeholder"></div>
-                                </div>
+                                    <div id="luyke-thidua-view-selector-placeholder"></div> </div>
                                 <div id="luyke-competition-content"></div>
                              </div>
+                            
                             <div id="subtab-luyke-thidua-vung" class="sub-tab-content hidden">
                                 <div class="content-card">
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
@@ -450,16 +438,16 @@
                     <div id="health-employee-section-placeholder" class="placeholder-message hidden">Vui lòng cập nhật danh sách nhân viên để xem kết quả.</div>
                     <div id="health-employee-section-content">
                         <div class="content-card">
-                             <div class="page-header border-b pb-4 mb-6">
+                            <div class="page-header border-b pb-4 mb-6">
                                 <h2 class="page-header__title">Sức khỏe nhân viên</h2>
                                 <button class="page-header__help-btn" data-help-id="sknv" title="Xem hướng dẫn">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                                    <i data-feather="help-circle"></i>
                                 </button>
                             </div>
 
                             <button class="toggle-filters-btn" data-target="sknv-filter-container">
                                 <span class="text">Hiện bộ lọc nâng cao</span>
-                                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                <i data-feather="chevron-down" class="icon"></i>
                             </button>
                             <div id="sknv-filter-container" class="advanced-filters hidden">
                                 <div id="sknv-filter-bar" class="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-4">
@@ -493,49 +481,41 @@
                             <div class="flex justify-between items-center mb-8">
                                 <nav id="employee-subtabs-nav" class="border-b border-gray-200 -mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs" data-content-container="employee-subtabs-content">
                                     <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-sknv" data-title="SKNV">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m-7.5-2.28a4.5 4.5 0 00-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 001.13-1.897L16.863 4.487zm0 0L19.5 7.125" /></svg>
+                                        <i data-feather="users"></i>
                                         <span>SKNV</span>
                                     </button>
                                     <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-doanhthu-lk" data-title="DoanhThuLK">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15A2.25 2.25 0 002.25 6.75v10.5A2.25 2.25 0 004.5 19.5z" /></svg>
+                                        <i data-feather="dollar-sign"></i>
                                         <span>Doanh thu LK</span>
                                     </button>
                                     <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-thunhap" data-title="ThuNhap">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        <i data-feather="briefcase"></i>
                                         <span>Thu nhập</span>
                                     </button>
                                     <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-khai-thac-luy-ke" data-title="HieuQuaKhaiThacLuyKe">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.5l6.75-6.75 5.25 5.25 6-6.75" /></svg>
+                                        <i data-feather="bar-chart-2"></i>
                                         <span>Hiệu quả NV LK</span>
                                     </button>
                                     <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-doanhthu-nganhhang" data-title="DTNganhHang">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
+                                        <i data-feather="layers"></i>
                                         <span>DT ngành hàng</span>
                                     </button>
                                     <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-thi-dua-lk" data-title="HieuQuaThiDuaLK">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM18 21.75l.259-1.035a3.375 3.375 0 00-2.456-2.456L14.25 18l1.035-.259a3.375 3.375 0 002.456-2.456L18 14.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 18l-1.035.259a3.375 3.375 0 00-2.456 2.456L18 21.75z" /></svg>
+                                        <i data-feather="award"></i>
                                         <span>Thi đua NV LK</span>
                                     </button>
                                 </nav>
                                  <div class="flex items-center gap-x-2">
                                      <button id="compose-sknv-notification-btn" class="action-btn action-btn--composer" title="Nhận xét">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"></path>
-                                        </svg>
+                                        <i data-feather="pen-tool"></i>
                                         <span>Nhận xét</span>
                                     </button>
                                     <button id="export-sknv-btn" class="action-btn action-btn--export" title="Xuất Excel tab hiện tại">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"></path>
-                                        </svg>
+                                        <i data-feather="download"></i>
                                         <span>Xuất Excel</span>
                                     </button>
                                     <button id="capture-sknv-btn" class="action-btn action-btn--capture" title="Chụp ảnh tab hiện tại">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M6.828 6.172a4 4 0 015.656 0L14.25 7.939l-1.06-1.061a3 3 0 00-4.243 0L6.43 9.394a4 4 0 010-5.656z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12.75 16.606l-1.061 1.061a3 3 0 01-4.243 0l-2.475-2.475a4 4 0 010-5.656L7.939 7.75l1.06 1.06-1.59 1.59a.75.75 0 001.06 1.061l2.25-2.25zM15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
+                                        <i data-feather="camera"></i>
                                         <span>Chụp màn hình</span>
                                     </button>
                                 </div>
@@ -590,9 +570,8 @@
                                 <div class="flex items-center gap-x-3">
                                     <h2 class="page-header__title">Phân Tích Doanh Thu Realtime</h2>
                                     <button class="page-header__help-btn" data-help-id="realtime" title="Xem hướng dẫn">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                                        <i data-feather="help-circle"></i>
                                     </button>
-                                    <span class="text-sm italic text-gray-500 font-normal hidden md:inline">Hướng dẫn sử dụng</span>
                                 </div>
                                 <div class="flex-shrink-0 flex items-center gap-x-4 ml-auto">
                                     <label for="realtime-file-input" class="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium whitespace-nowrap">Thêm file Realtime</label>
@@ -603,7 +582,7 @@
 
                             <button class="toggle-filters-btn" data-target="realtime-filter-container">
                                 <span class="text">Hiện bộ lọc nâng cao</span>
-                                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                <i data-feather="chevron-down" class="icon"></i>
                             </button>
                             <div id="realtime-filter-container" class="advanced-filters hidden">
                                  <div id="realtime-filter-bar" class="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-4">
@@ -628,49 +607,41 @@
                         <div class="flex justify-between items-center mb-8">
                             <nav id="realtime-subtabs-nav" class="border-b border-gray-200 -mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs" data-content-container="realtime-subtabs-content">
                                 <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-sieu-thi" data-title="SieuThiRealtime">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>
+                                    <i data-feather="zap"></i>
                                     <span>Siêu thị Realtime</span>
                                 </button>
                                 <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-nhan-vien" data-title="DTNVRealtime">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-4.67c.12-.24.232-.483.335-.722M6.75 12.75a8.966 8.966 0 011.586-5.228 8.966 8.966 0 014.126-3.223 8.966 8.966 0 015.228 1.586 8.966 8.966 0 013.223 4.126A8.966 8.966 0 0112.75 18c-2.098 0-4.04-.73-5.54-1.99z" /></svg>
+                                    <i data-feather="pie-chart"></i>
                                     <span>DT NV Realtime</span>
                                 </button>
                                 <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-hieu-qua" data-title="HieuQuaKhaiThacRealtime">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.5l6.75-6.75 5.25 5.25 6-6.75" /></svg>
+                                    <i data-feather="bar-chart-2"></i>
                                     <span>Hiệu quả NV Realtime</span>
                                 </button>
                                 <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-nganh-hang" data-title="NganhHangRealtime">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" /><path stroke-linecap="round" stroke-linejoin="round" d="M6 9h.008v.008H6V9z" /></svg>
+                                    <i data-feather="tag"></i>
                                     <span>Ngành hàng Realtime</span>
                                 </button>
                                 <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-hang" data-title="HangRealtime">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h6.375a.375.375 0 01.375.375v1.5a.375.375 0 01-.375.375H9a.375.375 0 01-.375-.375v-1.5A.375.375 0 019 6.75zM9 12.75h6.375a.375.375 0 01.375.375v1.5a.375.375 0 01-.375.375H9a.375.375 0 01-.375-.375v-1.5A.375.375 0 019 12.75z" /></svg>
+                                    <i data-feather="globe"></i>
                                     <span>DT Hãng Realtime</span>
                                 </button>
                                 <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-thi-dua-realtime" data-title="HieuQuaThiDuaRealtime">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM18 21.75l.259-1.035a3.375 3.375 0 00-2.456-2.456L14.25 18l1.035-.259a3.375 3.375 0 002.456-2.456L18 14.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 18l-1.035.259a3.375 3.375 0 00-2.456 2.456L18 21.75z" /></svg>
+                                    <i data-feather="award"></i>
                                     <span>Thi đua NV Realtime</span>
                                 </button>
                             </nav>
                              <div class="flex items-center gap-x-2">
                                 <button id="compose-realtime-notification-btn" class="action-btn action-btn--composer" title="Nhận xét">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"></path>
-                                    </svg>
+                                    <i data-feather="pen-tool"></i>
                                     <span>Nhận xét</span>
                                 </button>
                                 <button id="export-realtime-btn" class="action-btn action-btn--export" title="Xuất Excel tab hiện tại">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"></path>
-                                    </svg>
+                                    <i data-feather="download"></i>
                                     <span>Xuất Excel</span>
                                 </button>
                                 <button id="capture-realtime-btn" class="action-btn action-btn--capture" title="Chụp ảnh tab hiện tại">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.828 6.172a4 4 0 015.656 0L14.25 7.939l-1.06-1.061a3 3 0 00-4.243 0L6.43 9.394a4 4 0 010-5.656z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12.75 16.606l-1.061 1.061a3 3 0 01-4.243 0l-2.475-2.475a4 4 0 010-5.656L7.939 7.75l1.06 1.06-1.59 1.59a.75.75 0 001.06 1.061l2.25-2.25zM15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
+                                    <i data-feather="camera"></i>
                                     <span>Chụp màn hình</span>
                                 </button>
                             </div>
@@ -871,6 +842,7 @@
     <div id="modal-composer-container"></div>
     <div id="modal-preview-container"></div>
     <div id="modal-selection-container"></div>
+    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const tailwindScript = document.querySelector('script[src="https://cdn.tailwindcss.com"]');

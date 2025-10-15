@@ -1,4 +1,4 @@
-// Version 3.3 - Add handler for Luy Ke Competition view switcher
+// Version 3.4 - Add feather.replace() calls to correctly render icons
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -49,9 +49,12 @@ const app = {
             modalPreview.render('#modal-preview-container');
             modalSelection.render('#modal-selection-container');
 
+            // === GỌI LỆNH VẼ ICON SAU KHI RENDER COMPONENT ===
+            feather.replace();
+
             this.loadAndApplyBookmarkLink();
             this.loadAndDisplayQrCode(); 
-            this.setupMarquee(); // <<< GỌI HÀM MỚI
+            this.setupMarquee();
 
             await this.storage.openDB();
 
@@ -71,7 +74,6 @@ const app = {
             // === END: TẢI TẤT CẢ DỮ LIỆU TỪ FIRESTORE ===
 
             initializeEventListeners(this);
-
             await this.loadDataFromStorage();
 
             settingsService.loadInterfaceSettings();
@@ -93,7 +95,6 @@ const app = {
         }
     },
 
-    // === START: HÀM MỚI ĐỂ XỬ LÝ DÒNG CHỮ CHẠY ===
     async setupMarquee() {
         const marqueeContainer = document.getElementById('version-marquee-container');
         const marqueeText = marqueeContainer?.querySelector('.marquee-text');
@@ -101,13 +102,11 @@ const app = {
         if (!marqueeContainer || !marqueeText) return;
 
         try {
-            // Lấy số phiên bản
             const versionRes = await fetch(`./version.json?v=${new Date().getTime()}`);
             const versionInfo = await versionRes.json();
             const currentVersion = versionInfo.version || this.currentVersion;
             marqueeText.textContent = `🔥 Chi tiết bản cập nhật - Phiên bản ${currentVersion}`;
 
-            // Gắn sự kiện click
             marqueeContainer.addEventListener('click', async () => {
                 try {
                     const changelogRes = await fetch(`./changelog.json?v=${new Date().getTime()}`);
@@ -148,8 +147,7 @@ const app = {
             </div>
         `).join('');
     },
-    // === END: HÀM MỚI ===
-
+    
     async checkForUpdates() {
         try {
             const response = await fetch(`./version.json?v=${new Date().getTime()}`);
@@ -316,6 +314,8 @@ const app = {
                 realtimeTab.render();
                 break;
         }
+        // === GỌI LỆNH VẼ ICON SAU KHI RENDER LẠI TAB ===
+        feather.replace();
     },
 
     switchTab(targetId) {
@@ -331,6 +331,9 @@ const app = {
         else if (targetId === 'health-employee-section') sknvTab.render();
         else if (targetId === 'realtime-section') realtimeTab.render();
         else if (targetId === 'declaration-section' && appState.isAdmin) ui.renderAdminHelpEditors();
+
+        // === GỌI LỆNH VẼ ICON SAU KHI CHUYỂN TAB ===
+        feather.replace();
     },
 
     async loadAndApplyBookmarkLink() {
