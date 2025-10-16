@@ -1,4 +1,4 @@
-// Version 3.3 - Add initializer call for drag-and-drop functionality
+// Version 3.4 - Refactor: Render detail/summary view based on appState.viewingDetailFor
 // MODULE: Chịu trách nhiệm cho Tab Doanh thu Realtime
 
 import { appState } from './state.js';
@@ -53,84 +53,69 @@ export const realtimeTab = {
             return msnvMatch && visibleEmployees.has(msnvMatch[1].trim());
         });
         
-        if (activeSubTabId === 'subtab-hieu-qua-thi-dua-realtime') {
-            const competitionReportData = services.calculateCompetitionFocusReport(
-                appState.realtimeYCXData,
-                appState.competitionConfigs
-            );
-
-            ui.renderCompetitionUI(
-                'competition-report-container-rt',
-                competitionReportData
-            );
-        } else { 
-            const supermarketReport = services.aggregateReport(filteredReport, selectedWarehouse);
-            
-            ui.renderRealtimeKpiCards(supermarketReport, settings);
-            ui.renderRealtimeCategoryDetailsTable(supermarketReport);
-            ui.renderRealtimeEfficiencyTable(supermarketReport, settings.goals);
-            ui.renderRealtimeQdcTable(supermarketReport);
-            
-            const realtimeChuaXuatReport = services.generateRealtimeChuaXuatReport(filteredRealtimeYCX);
-            ui.renderRealtimeChuaXuatTable(realtimeChuaXuatReport);
-
-            const activeDtnvViewBtn = document.querySelector('#dtnv-realtime-view-selector .view-switcher__btn.active');
-            const dtnvViewType = activeDtnvViewBtn ? activeDtnvViewBtn.dataset.view : 'summary';
-            
-            const employeeSelectorContainer = document.getElementById('dtnv-realtime-employee-selector-container');
-            employeeSelectorContainer.classList.toggle('hidden', dtnvViewType !== 'infographic');
-            
-            if (dtnvViewType === 'infographic') {
-                this.handleEmployeeDetailChange();
+        const detailInfo = appState.viewingDetailFor;
+        const isViewingDetail = detailInfo && detailInfo.sourceTab === 'dtnv-rt';
+        
+        // Render tab DT NV Realtime first if it's the active one
+        if (activeSubTabId === 'subtab-realtime-nhan-vien') {
+            if (isViewingDetail) {
+                this.handleEmployeeDetailChange(detailInfo.employeeId);
             } else {
-                document.getElementById('realtime-revenue-report-container').classList.remove('hidden');
-                document.getElementById('realtime-employee-detail-container').classList.add('hidden');
-                ui.displayEmployeeRevenueReport(filteredReport, 'realtime-revenue-report-container', 'realtime_dt_nhanvien');
+                ui.displayRealtimeEmployeeRevenueReport(filteredReport, 'realtime-revenue-report-container', 'realtime_dt_nhanvien');
+                this.handleEmployeeDetailChange(null); // Clear detail view
             }
-
-            ui.displayEmployeeEfficiencyReport(filteredReport, 'realtime-efficiency-report-container', 'realtime_hieuqua_nhanvien');
-            ui.displayCategoryRevenueReport(filteredReport, 'realtime-category-revenue-report-container', 'realtime');
-            
-            this.handleBrandFilterChange();
         }
+
+        // Render other tabs
+        const supermarketReport = services.aggregateReport(filteredReport, selectedWarehouse);
+        ui.renderRealtimeKpiCards(supermarketReport, settings);
+        ui.renderRealtimeCategoryDetailsTable(supermarketReport);
+        ui.renderRealtimeEfficiencyTable(supermarketReport, settings.goals);
+        ui.renderRealtimeQdcTable(supermarketReport);
+        const realtimeChuaXuatReport = services.generateRealtimeChuaXuatReport(filteredRealtimeYCX);
+        ui.renderRealtimeChuaXuatTable(realtimeChuaXuatReport);
+        ui.displayEmployeeEfficiencyReport(filteredReport, 'realtime-efficiency-report-container', 'realtime_hieuqua_nhanvien');
+        ui.displayCategoryRevenueReport(filteredReport, 'realtime-category-revenue-report-container', 'realtime');
+        this.handleBrandFilterChange();
+        
+        const competitionReportData = services.calculateCompetitionFocusReport(
+            appState.realtimeYCXData,
+            appState.competitionConfigs
+        );
+        ui.renderCompetitionUI('competition-report-container-rt', competitionReportData);
         
         highlightService.populateHighlightFilters('realtime', filteredRealtimeYCX, filteredReport);
         highlightService.applyHighlights('realtime');
         
-        // Kích hoạt lại tính năng kéo thả cho các cột hiệu quả sau khi render
-        const efficiencyReportContainer = document.getElementById('realtime-efficiency-report-container');
-        if (efficiencyReportContainer) {
-            dragDroplisteners.initializeForContainer('realtime-efficiency-report-container');
+        if (!isViewingDetail) {
+            const efficiencyReportContainer = document.getElementById('realtime-efficiency-report-container');
+            if (efficiencyReportContainer) {
+                dragDroplisteners.initializeForContainer('realtime-efficiency-report-container');
+            }
         }
     },
 
-    handleEmployeeDetailChange() {
-        const filterEl = document.getElementById('realtime-employee-detail-filter');
+    handleEmployeeDetailChange(employeeId) {
         const revenueContainer = document.getElementById('realtime-revenue-report-container');
         const detailContainer = document.getElementById('realtime-employee-detail-container');
         
-        if (!filterEl || !revenueContainer || !detailContainer) return;
+        if (!revenueContainer || !detailContainer) return;
         
-        const activeDtnvViewBtn = document.querySelector('#dtnv-realtime-view-selector .view-switcher__btn.active');
-        const dtnvViewType = activeDtnvViewBtn ? activeDtnvViewBtn.dataset.view : 'summary';
-        
-        if (dtnvViewType === 'summary') {
+        if (!employeeId) {
             revenueContainer.classList.remove('hidden');
             detailContainer.classList.add('hidden');
+            detailContainer.innerHTML = '';
             return;
         }
 
-        const employeeId = filterEl.value;
         revenueContainer.classList.add('hidden');
         detailContainer.classList.remove('hidden');
 
-        if (!employeeId) {
-            detailContainer.innerHTML = '<div class="rt-infographic-container"><p class="text-center text-gray-500 font-semibold">Vui lòng chọn một nhân viên để xem chi tiết.</p></div>';
-        } else {
-            const employeeName = filterEl.options[filterEl.selectedIndex].text;
-            const detailData = services.generateRealtimeEmployeeDetailReport(employeeId, appState.realtimeYCXData);
-            ui.renderRealtimeEmployeeDetail(detailData, employeeName);
-        }
+        const employeeInfo = appState.employeeMaNVMap.get(String(employeeId));
+        const employeeName = employeeInfo ? ui.getShortEmployeeName(employeeInfo.hoTen, employeeInfo.maNV) : `NV ${employeeId}`;
+        const detailData = services.generateRealtimeEmployeeDetailReport(employeeId, appState.realtimeYCXData);
+        
+        ui.renderRealtimeEmployeeDetail(detailData, employeeName);
     },
 
     handleBrandFilterChange() {

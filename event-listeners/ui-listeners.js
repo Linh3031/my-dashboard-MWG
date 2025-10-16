@@ -1,4 +1,4 @@
-// Version 3.5 - Import and initialize drag-drop listener module
+// Version 3.6 - Refactor: Replace view switchers with direct click-to-view-detail listeners
 // MODULE: EVENT LISTENERS INITIALIZER
 // File này đóng vai trò là điểm khởi đầu, import và khởi chạy tất cả các module listener con.
 
@@ -14,7 +14,7 @@ import { initializeCompetitionListeners } from './listeners-competition.js';
 import { initializeHighlightingListeners } from './listeners-highlighting.js';
 import { initializeSettingsListeners } from './listeners-settings.js';
 import { initializeSortingListeners } from './listeners-sorting.js';
-import { dragDroplisteners } from './listeners-dragdrop.js'; // <<< THÊM DÒNG NÀY
+import { dragDroplisteners } from './listeners-dragdrop.js';
 
 let appController = null;
 
@@ -73,6 +73,8 @@ async function handleFileInputChange(e) {
 }
 
 function handleFilterChange(prefix) {
+    // Mỗi khi bộ lọc thay đổi, chúng ta cần đảm bảo quay về màn hình tổng hợp
+    appState.viewingDetailFor = null;
     ui.updateEmployeeFilter(prefix);
     appController.updateAndRenderCurrentTab();
 }
@@ -84,7 +86,6 @@ export function initializeEventListeners(mainAppController) {
 
     // --- Khởi tạo các thư viện UI ---
     try {
-        // Cấu hình chung cho các bộ lọc đa lựa chọn
         const multiSelectConfig = { 
             removeItemButton: true, 
             placeholder: true, 
@@ -92,15 +93,13 @@ export function initializeEventListeners(mainAppController) {
             searchPlaceholderValue: 'Tìm kiếm...' 
         };
 
-        // === START: CẤU HÌNH RIÊNG BIỆT CHO BỘ LỌC THI ĐUA ===
         const competitionMultiSelectConfig = {
             removeItemButton: true,
             placeholder: true,
             placeholderValue: 'Chọn hoặc gõ để tìm...',
             searchPlaceholderValue: 'Tìm kiếm...',
-            closeOnSelect: false, // Cho phép chọn nhiều mục sau khi tìm kiếm
+            closeOnSelect: false,
         };
-        // === END: CẤU HÌNH RIÊNG BIỆT ===
 
         ['luyke', 'sknv', 'realtime'].forEach(prefix => {
             const employeeEl = document.getElementById(`${prefix}-filter-name`);
@@ -116,13 +115,11 @@ export function initializeEventListeners(mainAppController) {
             });
         });
 
-        // === START: ÁP DỤNG CẤU HÌNH RIÊNG CHO BỘ LỌC THI ĐUA ===
         const competitionBrandEl = document.getElementById('competition-brand');
         if (competitionBrandEl) appState.choices['competition_brand'] = new Choices(competitionBrandEl, competitionMultiSelectConfig);
         
         const competitionGroupEl = document.getElementById('competition-group');
         if (competitionGroupEl) appState.choices['competition_group'] = new Choices(competitionGroupEl, competitionMultiSelectConfig);
-        // === END: ÁP DỤNG CẤU HÌNH RIÊNG ===
 
         const singleSelectConfig = { 
             searchEnabled: true, 
@@ -131,9 +128,7 @@ export function initializeEventListeners(mainAppController) {
             searchPlaceholderValue: 'Tìm kiếm...' 
         };
         const singleSelects = {
-            'sknv-employee-filter': 'sknv_employee_detail',
             'thidua-employee-filter': 'thidua_employee_detail',
-            'realtime-employee-detail-filter': 'realtime_employee_detail',
             'thidua-vung-filter-supermarket': 'thiDuaVung_sieuThi',
         };
         for (const [id, key] of Object.entries(singleSelects)) {
@@ -155,6 +150,7 @@ export function initializeEventListeners(mainAppController) {
                         instance.setDate(dateRange, false);
                     }
                     ui.updateDateSummary(document.getElementById(`${prefix}-date-summary`), instance);
+                    appState.viewingDetailFor = null; // Reset detail view when changing date
                     renderFunc();
                 }
             });
@@ -172,14 +168,15 @@ export function initializeEventListeners(mainAppController) {
     initializeCollaborationListeners(appController);
     initializeSortingListeners(appController);
     initializeCompetitionListeners(appController);
-    dragDroplisteners.init(appController); // <<< THÊM DÒNG NÀY
+    dragDroplisteners.init(appController);
 
-    // --- Các sự kiện còn lại ---
+    // --- Các sự kiện chính & Tương tác đặc thù ---
     document.getElementById('force-reload-btn')?.addEventListener('click', () => window.location.reload());
     document.querySelectorAll('a.nav-link').forEach(link => link.addEventListener('click', (e) => { e.preventDefault(); appController.switchTab(link.getAttribute('href').substring(1)); }));
     
     document.querySelectorAll('.sub-tab-btn').forEach(btn => btn.addEventListener('click', (e) => {
         ui.handleSubTabClick(e.currentTarget);
+        appState.viewingDetailFor = null; // Reset detail view when changing tabs
         const mainTabId = e.currentTarget.closest('.page-section')?.id || e.currentTarget.closest('.settings-drawer')?.id;
         
         if (mainTabId === 'health-section') luykeTab.render();
@@ -214,26 +211,68 @@ export function initializeEventListeners(mainAppController) {
         document.getElementById(`${prefix}-filter-name`)?.addEventListener('change', () => handleFilterChange(prefix));
     });
     
-    document.getElementById('sknv-view-selector')?.addEventListener('click', (e) => appController.handleSknvViewChange(e));
-    document.getElementById('sknv-employee-filter')?.addEventListener('change', () => sknvTab.render());
-    
-    // === START: THAY THẾ SỰ KIỆN CŨ BẰNG UỶ QUYỀN SỰ KIỆN (FIX #1) ===
-    // Loại bỏ: document.getElementById('luyke-thidua-view-selector')?.addEventListener('click', (e) => appController.handleLuykeThiDuaViewChange(e));
+    // === START: BỘ LẮNG NGHE SỰ KIỆN TẬP TRUNG CHO CÁC CLICK QUAN TRỌNG ===
     document.body.addEventListener('click', (e) => {
-        // Lắng nghe click trên body và chỉ xử lý nếu click đến từ nút trong view-switcher của tab Thi đua Lũy kế
-        const viewSwitcherBtn = e.target.closest('#luyke-thidua-view-selector .view-switcher__btn');
-        if (viewSwitcherBtn) {
+        // Xử lý click để xem chi tiết nhân viên
+        const employeeCell = e.target.closest('.employee-name-cell');
+        if (employeeCell && employeeCell.dataset.employeeId) {
+            e.preventDefault();
+            appState.viewingDetailFor = {
+                employeeId: employeeCell.dataset.employeeId,
+                sourceTab: employeeCell.dataset.sourceTab
+            };
+            appController.updateAndRenderCurrentTab();
+            return;
+        }
+
+        // Xử lý click nút "Quay lại" từ màn hình chi tiết
+        const backButton = e.target.closest('.back-to-summary-btn');
+        if (backButton) {
+            e.preventDefault();
+            appState.viewingDetailFor = null;
+            appController.updateAndRenderCurrentTab();
+            return;
+        }
+
+        // Xử lý nút Chụp Ảnh trên màn hình chi tiết (được tạo động)
+        const captureDetailBtn = e.target.closest('#capture-sknv-detail-btn, #capture-dtnv-lk-detail-btn, #capture-dtnv-rt-detail-btn');
+        if (captureDetailBtn) {
+            e.preventDefault();
+            const areaToCapture = captureDetailBtn.closest('.sub-tab-content')?.querySelector('[id$="-capture-area"]');
+            const title = appState.viewingDetailFor?.employeeId || 'ChiTietNV';
+            if (areaToCapture) {
+                ui.captureDashboardInParts(areaToCapture, title);
+            }
+            return;
+        }
+        
+        // Listener cho luyke-thidua-view-selector
+        const luykeViewSwitcherBtn = e.target.closest('#luyke-thidua-view-selector .view-switcher__btn');
+        if (luykeViewSwitcherBtn) {
             e.preventDefault();
             appController.handleLuykeThiDuaViewChange(e);
+            return;
+        }
+
+        // Listener cho thidua-view-selector
+        const thiDuaViewSwitcherBtn = e.target.closest('#thidua-view-selector .view-switcher__btn');
+        if (thiDuaViewSwitcherBtn) {
+            e.preventDefault();
+            appController.handleThiDuaViewChange(e);
+            return;
+        }
+        
+        // Listener cho dthang-realtime-view-selector
+        const dtHangViewSwitcherBtn = e.target.closest('#dthang-realtime-view-selector .view-switcher__btn');
+        if (dtHangViewSwitcherBtn) {
+            e.preventDefault();
+            appController.handleDthangRealtimeViewChange(e);
+            return;
         }
     });
-    // === END: THAY THẾ SỰ KIỆN CŨ ===
+    // === END: BỘ LẮNG NGHE SỰ KIỆN TẬP TRUNG ===
     
-    document.getElementById('thidua-view-selector')?.addEventListener('click', (e) => appController.handleThiDuaViewChange(e));
     document.getElementById('thidua-employee-filter')?.addEventListener('change', () => ui.displayCompetitionReport('employee'));
-    document.getElementById('dtnv-realtime-view-selector')?.addEventListener('click', (e) => appController.handleDtnvRealtimeViewChange(e));
-    document.getElementById('realtime-employee-detail-filter')?.addEventListener('change', () => realtimeTab.handleEmployeeDetailChange());
-    document.getElementById('dthang-realtime-view-selector')?.addEventListener('click', (e) => appController.handleDthangRealtimeViewChange(e));
     document.getElementById('realtime-brand-category-filter')?.addEventListener('change', () => realtimeTab.handleBrandFilterChange());
     document.getElementById('realtime-brand-filter')?.addEventListener('change', () => realtimeTab.handleBrandFilterChange());
 }

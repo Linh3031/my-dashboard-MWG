@@ -1,4 +1,4 @@
-// Version 3.3 - Add handler for Luy Ke Competition view switcher
+// Version 3.4 - Add state for detail view and remove obsolete handlers
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -33,6 +33,7 @@ const app = {
     async init() {
         try {
             appState.competitionConfigs = [];
+            appState.viewingDetailFor = null; // <<< THÊM TRẠNG THÁI MỚI
 
             await firebase.init();
             auth.init();
@@ -51,7 +52,7 @@ const app = {
 
             this.loadAndApplyBookmarkLink();
             this.loadAndDisplayQrCode(); 
-            this.setupMarquee(); // <<< GỌI HÀM MỚI
+            this.setupMarquee(); 
 
             await this.storage.openDB();
 
@@ -475,27 +476,10 @@ const app = {
         }
     },
 
-    handleSknvViewChange(e) {
-        const button = e.target.closest('.view-switcher__btn');
-        if (button) {
-            document.querySelectorAll('#sknv-view-selector .view-switcher__btn').forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
-            const view = button.dataset.view;
-            document.getElementById('sknv-employee-selector-container').classList.toggle('hidden', view !== 'detail');
-            sknvTab.render();
-        }
-    },
-
-    handleDtnvRealtimeViewChange(e) {
-        const button = e.target.closest('.view-switcher__btn');
-        if (button) {
-            document.querySelectorAll('#dtnv-realtime-view-selector .view-switcher__btn').forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
-            const view = button.dataset.view;
-            document.getElementById('dtnv-realtime-employee-selector-container').classList.toggle('hidden', view !== 'infographic');
-            realtimeTab.render();
-        }
-    },
+    // <<< START: CÁC HÀM BỊ XÓA >>>
+    // handleSknvViewChange(e) { ... }
+    // handleDtnvRealtimeViewChange(e) { ... }
+    // <<< END: CÁC HÀM BỊ XÓA >>>
 
     handleDthangRealtimeViewChange(e) {
         const button = e.target.closest('.view-switcher__btn');

@@ -1,4 +1,4 @@
-/* Version 5.0 - Add styles for draggable column toggle tags and icons */
+/* Version 5.3 - Add styles for Luy Ke employee detail chart and tables */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -129,6 +129,30 @@ font-size: 0.875em; font-weight: 500; transition: background-color 0.2s ease-in-
 .header-bg-blue { background-color: hsl(217, 95%, var(--special-header-lightness)) !important; color: hsl(217, 80%, var(--header-text-lightness)) !important; }
 .header-bg-green { background-color: hsl(145, 80%, var(--special-header-lightness)) !important; color: hsl(145, 70%, var(--header-text-lightness)) !important; }
 .header-bg-yellow { background-color: hsl(45, 95%, var(--special-header-lightness)) !important; color: hsl(45, 80%, var(--header-text-lightness)) !important; }
+
+/* === START: NEW INTERACTIVE ROW STYLES === */
+.interactive-row {
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+}
+
+.interactive-row:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    background-color: #eff6ff; /* blue-50 */
+}
+
+/* Make the first cell (employee name) the clickable target */
+.interactive-row .employee-name-cell {
+    cursor: pointer;
+    color: #2563eb; /* blue-600 */
+    transition: color 0.2s ease-out;
+}
+
+.interactive-row:hover .employee-name-cell {
+    text-decoration: underline;
+    color: #1d4ed8; /* blue-700 */
+}
+/* === END: NEW INTERACTIVE ROW STYLES === */
 
 .header-group-1 { background-color: hsl(30, 90%, var(--header-lightness)); }
 .header-group-2 { background-color: hsl(90, 90%, var(--header-lightness)); }
@@ -613,3 +637,125 @@ details[open] > summary .arrow { transform: rotate(180deg); }
     box-shadow: 0 8px 16px rgba(0,0,0,0.2);
 }
 /* === END: DRAGGABLE TAG STYLES === */
+
+/* === START: NEW STYLES FOR LUY KE EMPLOYEE DETAIL (v3.6) === */
+.luyke-detail-header h3 {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #2563eb; /* blue-600 */
+    text-align: center;
+}
+
+.top-groups-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+.top-groups-list li {
+    font-size: 1rem;
+    font-weight: 500;
+    padding: 0.5rem 0;
+    border-bottom: 1px dashed #e5e7eb; /* gray-200 */
+    text-transform: capitalize;
+}
+.top-groups-list li:last-child {
+    border-bottom: none;
+}
+
+.customer-accordion details {
+    transition: background-color 0.2s ease-in-out;
+}
+
+.customer-accordion summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    list-style: none;
+}
+.customer-accordion summary::-webkit-details-marker {
+    display: none;
+}
+
+.customer-accordion summary:hover {
+    background-color: #f9fafb; /* gray-50 */
+}
+
+.customer-accordion .customer-name {
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #1f2937; /* gray-800 */
+    flex-grow: 1;
+    min-width: 150px;
+}
+
+.customer-accordion .order-metrics {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-shrink: 0;
+    font-size: 0.875rem;
+}
+
+.customer-accordion .order-metrics span {
+    white-space: nowrap;
+}
+
+.customer-accordion .qd-below-target {
+    color: #b91c1c; /* red-700 */
+}
+.customer-accordion .qd-above-target {
+    color: #1d4ed8; /* blue-700 */
+}
+
+.customer-accordion .accordion-arrow {
+    margin-left: auto;
+    color: #9ca3af; /* gray-400 */
+    transition: transform 0.2s ease-in-out;
+}
+
+.customer-accordion details[open] > summary .accordion-arrow {
+    transform: rotate(180deg);
+}
+    
+.customer-accordion .product-list-table {
+    border-collapse: collapse;
+}
+
+.customer-accordion .product-list-table tr:last-child td {
+    border-bottom: none;
+}
+/* === END: NEW STYLES === */
+
+/* === START: NEW STYLES FOR LUY KE EMPLOYEE DETAIL (v3.9 additions) === */
+.detail-chart-container {
+    max-width: 450px;
+    max-height: 450px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.top-groups-table {
+    width: 100%;
+}
+
+.top-groups-table th,
+.top-groups-table td {
+    padding: 0.5rem 0.25rem;
+    text-align: right;
+    border-bottom: 1px dashed #e5e7eb; /* gray-200 */
+}
+
+.top-groups-table tr:last-child td {
+    border-bottom: none;
+}
+
+.top-groups-table th:first-child,
+.top-groups-table td:first-child {
+    text-align: left;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+/* === END: NEW STYLES === */

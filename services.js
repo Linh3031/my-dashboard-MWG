@@ -1,4 +1,4 @@
-// Version 34.0 - Fix: Improve regex for employee ID matching in realtime data
+// Version 37.0 - Add: Calculate summary KPIs for Luy Ke employee detail report
 // MODULE: SERVICES FACADE
 // File này đóng vai trò điều phối, nhập khẩu các module logic con và export chúng ra ngoài.
 
@@ -153,9 +153,7 @@ const reportGeneration = {
             for (const key in PG.QDC_GROUPS) data.qdc[key] = { sl: 0, dt: 0, dtqd: 0, name: PG.QDC_GROUPS[key].name };
 
             sourceData.forEach(row => {
-                // <<< START FIX: Use flexible regex for matching employee ID >>>
                 const msnvMatch = String(row.nguoiTao || '').match(/(\d+)/);
-                // <<< END FIX >>>
                 if (msnvMatch && msnvMatch[1].trim() === employee.maNV) {
                     const isDoanhThuHTX = hinhThucXuatTinhDoanhThu.has(row.hinhThucXuat);
                     const isBaseValid = (row.trangThaiThuTien || "").trim() === 'Đã thu' && (row.trangThaiHuy || "").trim() === 'Chưa hủy' && (row.tinhTrangTra || "").trim() === 'Chưa trả';
@@ -409,9 +407,7 @@ const reportGeneration = {
         if (!employeeMaNV || !realtimeYCXData || realtimeYCXData.length === 0) return null;
     
         const employeeData = realtimeYCXData.filter(row => {
-            // <<< START FIX: Use flexible regex for matching employee ID >>>
             const msnvMatch = String(row.nguoiTao || '').match(/(\d+)/);
-            // <<< END FIX >>>
             return msnvMatch && msnvMatch[1].trim() === String(employeeMaNV);
         });
     
@@ -477,6 +473,92 @@ const reportGeneration = {
             byCustomer: Object.values(byCustomer)
         };
     },
+
+    // === START: NEW FUNCTION FOR LUY KE EMPLOYEE DETAIL ===
+    generateLuyKeEmployeeDetailReport(employeeMaNV, luykeYCXData) {
+        if (!employeeMaNV || !luykeYCXData || luykeYCXData.length === 0) {
+            return null;
+        }
+    
+        const employeeData = luykeYCXData.filter(row => {
+            const msnvMatch = String(row.nguoiTao || '').match(/(\d+)/);
+            return msnvMatch && msnvMatch[1].trim() === String(employeeMaNV);
+        });
+    
+        if (employeeData.length === 0) {
+            return null;
+        }
+    
+        const hinhThucXuatTinhDoanhThu = dataProcessing.getHinhThucXuatTinhDoanhThu();
+        const heSoQuyDoi = dataProcessing.getHeSoQuyDoi();
+        
+        const byProductGroup = {};
+        const byCustomer = {};
+        const categoryChartDataMap = {};
+    
+        employeeData.forEach(row => {
+            const isDoanhThuHTX = hinhThucXuatTinhDoanhThu.has(row.hinhThucXuat);
+            const isBaseValid = (row.trangThaiThuTien || "").trim() === 'Đã thu' &&
+                                (row.trangThaiHuy || "").trim() === 'Chưa hủy' &&
+                                (row.tinhTrangTra || "").trim() === 'Chưa trả' &&
+                                (row.trangThaiXuat || "").trim() === 'Đã xuất';
+    
+            if (isDoanhThuHTX && isBaseValid) {
+                const realRevenue = parseFloat(String(row.thanhTien || "0").replace(/,/g, '')) || 0;
+                const quantity = parseInt(String(row.soLuong || "0"), 10) || 0;
+                if(isNaN(realRevenue) || isNaN(quantity)) return;
+
+                const heSo = heSoQuyDoi[row.nhomHang] || 1;
+                const convertedRevenue = realRevenue * heSo;
+                const groupName = utils.cleanCategoryName(row.nhomHang || 'Khác');
+                const customerName = row.tenKhachHang || 'Khách lẻ';
+                const categoryName = utils.cleanCategoryName(row.nganhHang || 'Khác');
+
+                // For Top 8 Product Groups
+                if (!byProductGroup[groupName]) {
+                    byProductGroup[groupName] = { name: groupName, realRevenue: 0 };
+                }
+                byProductGroup[groupName].realRevenue += realRevenue;
+
+                // For Chart Data
+                if (!categoryChartDataMap[categoryName]) {
+                    categoryChartDataMap[categoryName] = { name: categoryName, revenue: 0 };
+                }
+                categoryChartDataMap[categoryName].revenue += realRevenue;
+
+                // For Customer Accordion
+                if (!byCustomer[customerName]) {
+                    byCustomer[customerName] = { name: customerName, products: [], totalQuantity: 0, totalRealRevenue: 0, totalConvertedRevenue: 0 };
+                }
+                byCustomer[customerName].products.push({
+                    productName: row.tenSanPham,
+                    quantity: quantity,
+                    realRevenue: realRevenue,
+                    convertedRevenue: convertedRevenue,
+                });
+                byCustomer[customerName].totalQuantity += quantity;
+                byCustomer[customerName].totalRealRevenue += realRevenue;
+                byCustomer[customerName].totalConvertedRevenue += convertedRevenue;
+            }
+        });
+    
+        // Calculate conversion rate for each customer
+        for (const customerName in byCustomer) {
+            const customer = byCustomer[customerName];
+            customer.conversionRate = customer.totalRealRevenue > 0 ? (customer.totalConvertedRevenue / customer.totalRealRevenue) - 1 : 0;
+        }
+    
+        return {
+            topProductGroups: Object.values(byProductGroup)
+                .sort((a, b) => b.realRevenue - a.realRevenue)
+                .map(g => g.name)
+                .slice(0, 8),
+            categoryChartData: Object.values(categoryChartDataMap),
+            byCustomer: Object.values(byCustomer)
+                .sort((a,b) => b.totalRealRevenue - a.totalRealRevenue)
+        };
+    },
+    // === END: NEW FUNCTION ===
     
     generateRealtimeBrandReport(realtimeYCXData, selectedCategory, selectedBrand) {
         if (!realtimeYCXData || realtimeYCXData.length === 0) return { byBrand: [], byEmployee: [] };
@@ -495,9 +577,7 @@ const reportGeneration = {
     
         filteredData.forEach(row => {
             const brand = row.nhaSanXuat || 'Hãng khác';
-            // <<< START FIX: Use flexible regex for matching employee ID >>>
             const msnvMatch = String(row.nguoiTao || '').match(/(\d+)/);
-            // <<< END FIX >>>
             const employeeId = msnvMatch ? msnvMatch[1].trim() : 'Unknown';
             const realRevenue = parseFloat(String(row.thanhTien || "0").replace(/,/g, '')) || 0;
             const quantity = parseInt(String(row.soLuong || "0"), 10) || 0;

@@ -1,4 +1,4 @@
-// Version 2.6 - Add initializer call for drag-and-drop functionality
+// Version 3.0 - Fix: Render DT NV LK detail view in the correct container
 // MODULE: TAB SKNV
 // Chịu trách nhiệm render và xử lý logic cho tab "Sức khỏe nhân viên"
 
@@ -15,6 +15,7 @@ export const sknvTab = {
             ui.togglePlaceholder('health-employee-section', true);
             return;
         }
+        
         ui.togglePlaceholder('health-employee-section', false);
         
         const selectedWarehouse = document.getElementById('sknv-filter-warehouse').value;
@@ -40,31 +41,52 @@ export const sknvTab = {
         const activeSubTabBtn = document.querySelector('#employee-subtabs-nav .sub-tab-btn.active');
         const activeSubTabId = activeSubTabBtn ? activeSubTabBtn.dataset.target : 'subtab-sknv';
 
-        if (activeSubTabId === 'subtab-hieu-qua-thi-dua-lk') {
-            const competitionReportData = services.calculateCompetitionFocusReport(
-                filteredYCXData,
-                appState.competitionConfigs
-            );
-            
-            ui.renderCompetitionUI(
-                'competition-report-container-lk',
-                competitionReportData
-            );
+        const detailInfo = appState.viewingDetailFor;
+        const isViewingDetail = detailInfo && (detailInfo.sourceTab === 'sknv' || detailInfo.sourceTab === 'dtnv-lk');
+
+        if (isViewingDetail) {
+            const employeeData = appState.masterReportData.sknv.find(nv => String(nv.maNV) === String(detailInfo.employeeId));
+            if (activeSubTabId === 'subtab-sknv' && detailInfo.sourceTab === 'sknv') {
+                ui.displaySknvReport(filteredReport, true); // Force detail view
+            } else if (activeSubTabId === 'subtab-doanhthu-lk' && detailInfo.sourceTab === 'dtnv-lk') {
+                const luykeDetailData = services.generateLuyKeEmployeeDetailReport(detailInfo.employeeId, filteredYCXData);
+                // === START: THAY ĐỔI CỐT LÕI ===
+                // Truyền vào ID của container mới để render chi tiết đúng chỗ.
+                ui.renderLuykeEmployeeDetail(luykeDetailData, employeeData, 'dtnv-lk-details-container');
+                // === END: THAY ĐỔI CỐT LÕI ===
+            } else {
+                this.renderSummaryViews(activeSubTabId, filteredReport, filteredYCXData);
+            }
         } else {
-            ui.displayEmployeeRevenueReport(filteredReport, 'revenue-report-container-lk', 'doanhthu_lk');
-            ui.displayEmployeeIncomeReport(filteredReport);
-            ui.displayEmployeeEfficiencyReport(filteredReport, 'efficiency-report-container', 'hieu_qua');
-            ui.displayCategoryRevenueReport(filteredReport, 'category-revenue-report-container', 'sknv');
-            ui.displaySknvReport(filteredReport);
+            this.renderSummaryViews(activeSubTabId, filteredReport, filteredYCXData);
         }
 
         highlightService.populateHighlightFilters('sknv', filteredYCXData, filteredReport);
         highlightService.applyHighlights('sknv');
 
-        // Kích hoạt lại tính năng kéo thả cho các cột hiệu quả sau khi render
         const efficiencyReportContainer = document.getElementById('efficiency-report-container');
-        if (efficiencyReportContainer) {
+        if (efficiencyReportContainer && !isViewingDetail) {
             dragDroplisteners.initializeForContainer('efficiency-report-container');
+        }
+    },
+
+    renderSummaryViews(activeSubTabId, filteredReport, filteredYCXData) {
+        if (activeSubTabId === 'subtab-hieu-qua-thi-dua-lk') {
+            const competitionReportData = services.calculateCompetitionFocusReport(
+                filteredYCXData,
+                appState.competitionConfigs
+            );
+            ui.renderCompetitionUI('competition-report-container-lk', competitionReportData);
+        } else if (activeSubTabId === 'subtab-sknv') {
+            ui.displaySknvReport(filteredReport, false); // Force summary view
+        } else if (activeSubTabId === 'subtab-doanhthu-lk') {
+            ui.displayEmployeeRevenueReport(filteredReport, 'revenue-report-container-lk', 'doanhthu_lk');
+        } else if (activeSubTabId === 'subtab-thunhap') {
+            ui.displayEmployeeIncomeReport(filteredReport);
+        } else if (activeSubTabId === 'subtab-hieu-qua-khai-thac-luy-ke') {
+            ui.displayEmployeeEfficiencyReport(filteredReport, 'efficiency-report-container', 'hieu_qua');
+        } else if (activeSubTabId === 'subtab-doanhthu-nganhhang') {
+            ui.displayCategoryRevenueReport(filteredReport, 'category-revenue-report-container', 'sknv');
         }
     }
 };
