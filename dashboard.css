@@ -1,4 +1,4 @@
-/* Version 5.3 - Add styles for Luy Ke employee detail chart and tables */
+/* Version 5.5 - Add styles for new Luy Ke employee detail layout */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -10,7 +10,8 @@
     --bg-lightness-4: 92%; --header-lightness-4: 88%; --header-text-lightness-4: 15%; --special-header-lightness-4: 80%; --below-target-lightness-4: 88%;
     --bg-lightness-5: 90%; --header-lightness-5: 84%; --header-text-lightness-5: 12%; --special-header-lightness-5: 75%; --below-target-lightness-5: 84%;
     --bg-lightness-6: 88%; --header-lightness-6: 80%; --header-text-lightness-6: 10%; --special-header-lightness-6: 70%; --below-target-lightness-6: 80%;
-    --kpi-card-1-bg: #38bdf8; --kpi-card-2-bg: #34d399; --kpi-card-3-bg: #fbbf24;
+    --kpi-card-1-bg: #38bdf8;
+    --kpi-card-2-bg: #34d399; --kpi-card-3-bg: #fbbf24;
     --kpi-card-4-bg: #2dd4bf; --kpi-card-5-bg: #a78bfa; --kpi-card-6-bg: #f472b6;
     --kpi-card-7-bg: #818cf8;
     --kpi-card-8-bg: #f87171;
@@ -638,124 +639,106 @@ details[open] > summary .arrow { transform: rotate(180deg); }
 }
 /* === END: DRAGGABLE TAG STYLES === */
 
-/* === START: NEW STYLES FOR LUY KE EMPLOYEE DETAIL (v3.6) === */
-.luyke-detail-header h3 {
-    font-size: 1.75rem;
-    font-weight: 800;
-    color: #2563eb; /* blue-600 */
-    text-align: center;
-}
-
+/* === START: OLD STYLES FOR LUY KE EMPLOYEE DETAIL (v3.9 and before) === */
 .top-groups-list {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
+    list-style-type: none; padding: 0; margin: 0;
 }
 .top-groups-list li {
-    font-size: 1rem;
-    font-weight: 500;
-    padding: 0.5rem 0;
-    border-bottom: 1px dashed #e5e7eb; /* gray-200 */
-    text-transform: capitalize;
+    font-size: 1rem; font-weight: 500; padding: 0.5rem 0; border-bottom: 1px dashed #e5e7eb; text-transform: capitalize;
 }
 .top-groups-list li:last-child {
     border-bottom: none;
 }
-
 .customer-accordion details {
     transition: background-color 0.2s ease-in-out;
 }
-
 .customer-accordion summary {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 1rem;
-    padding: 0.75rem 1rem;
-    cursor: pointer;
-    list-style: none;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; padding: 0.75rem 1rem; cursor: pointer; list-style: none;
 }
 .customer-accordion summary::-webkit-details-marker {
     display: none;
 }
-
 .customer-accordion summary:hover {
     background-color: #f9fafb; /* gray-50 */
 }
-
 .customer-accordion .customer-name {
-    font-weight: 700;
-    text-transform: uppercase;
-    color: #1f2937; /* gray-800 */
-    flex-grow: 1;
-    min-width: 150px;
+    font-weight: 700; text-transform: uppercase; color: #1f2937; flex-grow: 1; min-width: 150px;
 }
-
 .customer-accordion .order-metrics {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    flex-shrink: 0;
-    font-size: 0.875rem;
+    display: flex; align-items: center; gap: 1rem; flex-shrink: 0; font-size: 0.875rem;
 }
-
 .customer-accordion .order-metrics span {
     white-space: nowrap;
 }
-
-.customer-accordion .qd-below-target {
-    color: #b91c1c; /* red-700 */
-}
-.customer-accordion .qd-above-target {
-    color: #1d4ed8; /* blue-700 */
-}
-
+.customer-accordion .qd-below-target { color: #b91c1c; }
+.customer-accordion .qd-above-target { color: #1d4ed8; }
 .customer-accordion .accordion-arrow {
-    margin-left: auto;
-    color: #9ca3af; /* gray-400 */
-    transition: transform 0.2s ease-in-out;
+    margin-left: auto; color: #9ca3af; transition: transform 0.2s ease-in-out;
 }
-
 .customer-accordion details[open] > summary .accordion-arrow {
     transform: rotate(180deg);
 }
-    
 .customer-accordion .product-list-table {
     border-collapse: collapse;
 }
-
 .customer-accordion .product-list-table tr:last-child td {
     border-bottom: none;
 }
-/* === END: NEW STYLES === */
+.top-groups-table { width: 100%; }
+.top-groups-table th, .top-groups-table td {
+    padding: 0.5rem 0.25rem; text-align: right; border-bottom: 1px dashed #e5e7eb;
+}
+.top-groups-table tr:last-child td { border-bottom: none; }
+.top-groups-table th:first-child, .top-groups-table td:first-child {
+    text-align: left; font-weight: 600; text-transform: capitalize;
+}
+/* === END: OLD STYLES === */
 
-/* === START: NEW STYLES FOR LUY KE EMPLOYEE DETAIL (v3.9 additions) === */
-.detail-chart-container {
-    max-width: 450px;
-    max-height: 450px;
-    margin: 0 auto;
-    position: relative;
+/* === START: NEW STYLES FOR LUY KE EMPLOYEE DETAIL (v4.1 additions) === */
+.luyke-detail-header h3 {
+    font-size: 1.75rem; font-weight: 800; color: #111827; text-align: center;
 }
 
-.top-groups-table {
+.luyke-detail-progress-item {
+    display: flex; flex-direction: column; gap: 4px;
+}
+.luyke-detail-progress-label {
+    display: flex; justify-content: space-between; align-items: baseline; font-size: 0.875rem;
+}
+.luyke-detail-progress-values {
+    display: flex; justify-content: space-between; font-size: 0.75rem; color: #4b5563;
+}
+.luyke-detail-chart-container {
+    position: relative; height: 350px; width: 100%;
+}
+
+.customer-accordion-luyke summary {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; padding: 0.5rem 1rem; cursor: pointer; list-style: none;
+}
+.customer-accordion-luyke summary:hover {
+    background-color: #f9fafb;
+}
+.customer-accordion-luyke .customer-name-small {
+    font-weight: 600; font-size: 0.9rem; color: #1f2937; flex-grow: 1; min-width: 120px;
+}
+.customer-accordion-luyke .order-metrics {
+    display: flex; align-items: center; gap: 1rem; flex-shrink: 0; font-size: 0.75rem;
+}
+.customer-accordion-luyke .order-metrics span {
+    white-space: nowrap;
+}
+.customer-accordion-luyke .accordion-arrow {
+    margin-left: auto; color: #9ca3af; transition: transform 0.2s ease-in-out;
+}
+.customer-accordion-luyke details[open] > summary .accordion-arrow {
+    transform: rotate(180deg);
+}
+.customer-accordion-luyke .product-list-scrollable {
+    display: block;
+    max-height: 200px; /* 8 rows * ~25px/row */
+    overflow-y: auto;
+}
+.customer-accordion-luyke .product-list-table {
     width: 100%;
-}
-
-.top-groups-table th,
-.top-groups-table td {
-    padding: 0.5rem 0.25rem;
-    text-align: right;
-    border-bottom: 1px dashed #e5e7eb; /* gray-200 */
-}
-
-.top-groups-table tr:last-child td {
-    border-bottom: none;
-}
-
-.top-groups-table th:first-child,
-.top-groups-table td:first-child {
-    text-align: left;
-    font-weight: 600;
-    text-transform: capitalize;
 }
 /* === END: NEW STYLES === */

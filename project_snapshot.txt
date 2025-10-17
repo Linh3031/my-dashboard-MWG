@@ -1363,7 +1363,7 @@ createSnapshot();
 --- END FILE: ./create_snapshot.js ---
 
 --- START FILE: ./dashboard.css ---
-/* Version 5.3 - Add styles for Luy Ke employee detail chart and tables */
+/* Version 5.5 - Add styles for new Luy Ke employee detail layout */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -1375,7 +1375,8 @@ createSnapshot();
     --bg-lightness-4: 92%; --header-lightness-4: 88%; --header-text-lightness-4: 15%; --special-header-lightness-4: 80%; --below-target-lightness-4: 88%;
     --bg-lightness-5: 90%; --header-lightness-5: 84%; --header-text-lightness-5: 12%; --special-header-lightness-5: 75%; --below-target-lightness-5: 84%;
     --bg-lightness-6: 88%; --header-lightness-6: 80%; --header-text-lightness-6: 10%; --special-header-lightness-6: 70%; --below-target-lightness-6: 80%;
-    --kpi-card-1-bg: #38bdf8; --kpi-card-2-bg: #34d399; --kpi-card-3-bg: #fbbf24;
+    --kpi-card-1-bg: #38bdf8;
+    --kpi-card-2-bg: #34d399; --kpi-card-3-bg: #fbbf24;
     --kpi-card-4-bg: #2dd4bf; --kpi-card-5-bg: #a78bfa; --kpi-card-6-bg: #f472b6;
     --kpi-card-7-bg: #818cf8;
     --kpi-card-8-bg: #f87171;
@@ -2003,125 +2004,107 @@ details[open] > summary .arrow { transform: rotate(180deg); }
 }
 /* === END: DRAGGABLE TAG STYLES === */
 
-/* === START: NEW STYLES FOR LUY KE EMPLOYEE DETAIL (v3.6) === */
-.luyke-detail-header h3 {
-    font-size: 1.75rem;
-    font-weight: 800;
-    color: #2563eb; /* blue-600 */
-    text-align: center;
-}
-
+/* === START: OLD STYLES FOR LUY KE EMPLOYEE DETAIL (v3.9 and before) === */
 .top-groups-list {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
+    list-style-type: none; padding: 0; margin: 0;
 }
 .top-groups-list li {
-    font-size: 1rem;
-    font-weight: 500;
-    padding: 0.5rem 0;
-    border-bottom: 1px dashed #e5e7eb; /* gray-200 */
-    text-transform: capitalize;
+    font-size: 1rem; font-weight: 500; padding: 0.5rem 0; border-bottom: 1px dashed #e5e7eb; text-transform: capitalize;
 }
 .top-groups-list li:last-child {
     border-bottom: none;
 }
-
 .customer-accordion details {
     transition: background-color 0.2s ease-in-out;
 }
-
 .customer-accordion summary {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 1rem;
-    padding: 0.75rem 1rem;
-    cursor: pointer;
-    list-style: none;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; padding: 0.75rem 1rem; cursor: pointer; list-style: none;
 }
 .customer-accordion summary::-webkit-details-marker {
     display: none;
 }
-
 .customer-accordion summary:hover {
     background-color: #f9fafb; /* gray-50 */
 }
-
 .customer-accordion .customer-name {
-    font-weight: 700;
-    text-transform: uppercase;
-    color: #1f2937; /* gray-800 */
-    flex-grow: 1;
-    min-width: 150px;
+    font-weight: 700; text-transform: uppercase; color: #1f2937; flex-grow: 1; min-width: 150px;
 }
-
 .customer-accordion .order-metrics {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    flex-shrink: 0;
-    font-size: 0.875rem;
+    display: flex; align-items: center; gap: 1rem; flex-shrink: 0; font-size: 0.875rem;
 }
-
 .customer-accordion .order-metrics span {
     white-space: nowrap;
 }
-
-.customer-accordion .qd-below-target {
-    color: #b91c1c; /* red-700 */
-}
-.customer-accordion .qd-above-target {
-    color: #1d4ed8; /* blue-700 */
-}
-
+.customer-accordion .qd-below-target { color: #b91c1c; }
+.customer-accordion .qd-above-target { color: #1d4ed8; }
 .customer-accordion .accordion-arrow {
-    margin-left: auto;
-    color: #9ca3af; /* gray-400 */
-    transition: transform 0.2s ease-in-out;
+    margin-left: auto; color: #9ca3af; transition: transform 0.2s ease-in-out;
 }
-
 .customer-accordion details[open] > summary .accordion-arrow {
     transform: rotate(180deg);
 }
-    
 .customer-accordion .product-list-table {
     border-collapse: collapse;
 }
-
 .customer-accordion .product-list-table tr:last-child td {
     border-bottom: none;
 }
-/* === END: NEW STYLES === */
+.top-groups-table { width: 100%; }
+.top-groups-table th, .top-groups-table td {
+    padding: 0.5rem 0.25rem; text-align: right; border-bottom: 1px dashed #e5e7eb;
+}
+.top-groups-table tr:last-child td { border-bottom: none; }
+.top-groups-table th:first-child, .top-groups-table td:first-child {
+    text-align: left; font-weight: 600; text-transform: capitalize;
+}
+/* === END: OLD STYLES === */
 
-/* === START: NEW STYLES FOR LUY KE EMPLOYEE DETAIL (v3.9 additions) === */
-.detail-chart-container {
-    max-width: 450px;
-    max-height: 450px;
-    margin: 0 auto;
-    position: relative;
+/* === START: NEW STYLES FOR LUY KE EMPLOYEE DETAIL (v4.1 additions) === */
+.luyke-detail-header h3 {
+    font-size: 1.75rem; font-weight: 800; color: #111827; text-align: center;
 }
 
-.top-groups-table {
+.luyke-detail-progress-item {
+    display: flex; flex-direction: column; gap: 4px;
+}
+.luyke-detail-progress-label {
+    display: flex; justify-content: space-between; align-items: baseline; font-size: 0.875rem;
+}
+.luyke-detail-progress-values {
+    display: flex; justify-content: space-between; font-size: 0.75rem; color: #4b5563;
+}
+.luyke-detail-chart-container {
+    position: relative; height: 350px; width: 100%;
+}
+
+.customer-accordion-luyke summary {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; padding: 0.5rem 1rem; cursor: pointer; list-style: none;
+}
+.customer-accordion-luyke summary:hover {
+    background-color: #f9fafb;
+}
+.customer-accordion-luyke .customer-name-small {
+    font-weight: 600; font-size: 0.9rem; color: #1f2937; flex-grow: 1; min-width: 120px;
+}
+.customer-accordion-luyke .order-metrics {
+    display: flex; align-items: center; gap: 1rem; flex-shrink: 0; font-size: 0.75rem;
+}
+.customer-accordion-luyke .order-metrics span {
+    white-space: nowrap;
+}
+.customer-accordion-luyke .accordion-arrow {
+    margin-left: auto; color: #9ca3af; transition: transform 0.2s ease-in-out;
+}
+.customer-accordion-luyke details[open] > summary .accordion-arrow {
+    transform: rotate(180deg);
+}
+.customer-accordion-luyke .product-list-scrollable {
+    display: block;
+    max-height: 200px; /* 8 rows * ~25px/row */
+    overflow-y: auto;
+}
+.customer-accordion-luyke .product-list-table {
     width: 100%;
-}
-
-.top-groups-table th,
-.top-groups-table td {
-    padding: 0.5rem 0.25rem;
-    text-align: right;
-    border-bottom: 1px dashed #e5e7eb; /* gray-200 */
-}
-
-.top-groups-table tr:last-child td {
-    border-bottom: none;
-}
-
-.top-groups-table th:first-child,
-.top-groups-table td:first-child {
-    text-align: left;
-    font-weight: 600;
-    text-transform: capitalize;
 }
 /* === END: NEW STYLES === */
 --- END FILE: ./dashboard.css ---
@@ -2874,11 +2857,11 @@ export function initializeEventListeners(mainAppController) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Công cụ phân tích số cho QLST MWG 4.7</title>
+    <title>Công cụ phân tích số cho QLST MWG 4.8</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    [cite_start]<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script> [cite: 253]
+    [cite_start]<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script> [cite: 253]
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css"/>
     <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
     
@@ -2886,7 +2869,7 @@ export function initializeEventListeners(mainAppController) {
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     
     <link rel="stylesheet" href="./dashboard.css">
@@ -2903,7 +2886,7 @@ export function initializeEventListeners(mainAppController) {
     <div id="update-notification" class="hidden fixed bottom-5 right-5 bg-blue-600 text-white py-3 px-5 rounded-lg shadow-lg z-[1001] flex items-center gap-4">
         <p class="font-semibold">Đã có phiên bản mới! Xem chi tiết nội dung cập nhật ở tab "Hướng Dẫn & Góp Ý"</p>
         <button onclick="window.location.reload()" class="bg-white text-blue-600 font-bold py-1 px-3 rounded-md hover:bg-blue-100 transition">Tải lại trang</button>
-    </div>
+    [cite_start]</div> [cite: 254]
 
     <div id="interface-drawer-container"></div>
     <div id="goal-drawer-container"></div>
@@ -2919,14 +2902,14 @@ export function initializeEventListeners(mainAppController) {
                         <h2 class="page-header__title">Hướng Dẫn & Góp Ý</h2>
                         <div id="usage-counter-display" class="text-sm font-semibold">
                             <span class="text-blue-600">Người dùng:</span>
-                            <span id="user-count" class="text-red-600 font-bold">-</span>
+                            [cite_start]<span id="user-count" class="text-red-600 font-bold">-</span> [cite: 256]
                             <span class="text-blue-600 ml-4">Lượt truy cập:</span>
-                            <span id="visitor-count" class="text-red-600 font-bold">-</span>
+                            [cite_start]<span id="visitor-count" class="text-red-600 font-bold">-</span> [cite: 256]
                             <span class="text-blue-600 ml-4">Lượt sử dụng:</span>
-                            <span id="action-count" class="text-red-600 font-bold">-</span>
+                            [cite_start]<span id="action-count" class="text-red-600 font-bold">-</span> [cite: 257]
                         </div>
                     </div>
-                    
+                  
                     <div class="content-card">
                          <h3 class="content-card__header">Video Hướng Dẫn Sử Dụng Nhanh</h3>
                          <div id="video-container" class="bg-gray-200 rounded-lg">
@@ -2938,7 +2921,7 @@ export function initializeEventListeners(mainAppController) {
                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                                 allowfullscreen>
                             </iframe>
-                         </div>
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
@@ -2973,7 +2956,7 @@ export function initializeEventListeners(mainAppController) {
                         <div id="version-marquee-container" class="marquee-container">
                             <p class="marquee-text"></p>
                         </div>
-                        
+                    
                         <div class="header-qr-container">
                              <span>THAM GIA THẢO LUẬN - GÓP Ý</span>
                             <img id="header-qr-image" src="" alt="Mã QR" class="header-qr-image">
@@ -3008,7 +2991,7 @@ export function initializeEventListeners(mainAppController) {
                                             <label for="file-giocong" class="data-input-group__file-trigger">Thêm file</label>
                                             <span id="file-name-giocong" class="data-input-group__file-name">Chưa thêm file</span>
                                         </div>
-                                        <input type="file" id="file-giocong" class="hidden file-input" data-name="Giờ công" data-state-key="rawGioCongData" data-save-key="saved_giocong" accept=".xlsx, .xls, .csv">
+                                        [cite_start]<input type="file" id="file-giocong" class="hidden file-input" data-name="Giờ công" data-state-key="rawGioCongData" data-save-key="saved_giocong" accept=".xlsx, .xls, .csv"> [cite: 280]
                                         <div class="data-input-group__status-wrapper">
                                             <span id="file-status-giocong" class="data-input-group__status-text"></span>
                                         </div>
@@ -3022,7 +3005,7 @@ export function initializeEventListeners(mainAppController) {
                                             <label for="file-thuongnong" class="data-input-group__file-trigger">Thêm file</label>
                                             <span id="file-name-thuongnong" class="data-input-group__file-name">Chưa thêm file</span>
                                         </div>
-                                        <input type="file" id="file-thuongnong" class="hidden file-input" data-name="Thưởng nóng" data-state-key="thuongNongData" data-save-key="saved_thuongnong" accept=".xlsx, .xls, .csv">
+                                        [cite_start]<input type="file" id="file-thuongnong" class="hidden file-input" data-name="Thưởng nóng" data-state-key="thuongNongData" data-save-key="saved_thuongnong" accept=".xlsx, .xls, .csv"> [cite: 285]
                                         <div class="data-input-group__status-wrapper">
                                             <span id="file-status-thuongnong" class="data-input-group__status-text"></span>
                                         </div>
@@ -3112,7 +3095,7 @@ export function initializeEventListeners(mainAppController) {
                                             <label for="file-thuongnong-thangtruoc" class="data-input-group__file-trigger">Thêm file</label>
                                             <span id="file-name-thuongnong-thangtruoc" class="data-input-group__file-name">Chưa thêm file</span>
                                         </div>
-                                        <input type="file" id="file-thuongnong-thangtruoc" class="hidden file-input" data-name="Thưởng nóng tháng trước" data-state-key="thuongNongDataThangTruoc" data-save-key="saved_thuongnong_thangtruoc" accept=".xlsx, .xls, .csv">
+                                        [cite_start]<input type="file" id="file-thuongnong-thangtruoc" class="hidden file-input" data-name="Thưởng nóng tháng trước" data-state-key="thuongNongDataThangTruoc" data-save-key="saved_thuongnong_thangtruoc" accept=".xlsx, .xls, .csv"> [cite: 314]
                                         <div class="data-input-group__status-wrapper">
                                             <span id="file-status-thuongnong-thangtruoc" class="data-input-group__status-text"></span>
                                         </div>
@@ -3130,7 +3113,7 @@ export function initializeEventListeners(mainAppController) {
                                         </div>
                                     </div>
                                 </div>
-                             </div>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -3214,7 +3197,7 @@ export function initializeEventListeners(mainAppController) {
                                         <p id="luyke-kpi-dt-qd-main" class="font-bold mt-2 mb-3">0</p>
                                         <p id="luyke-kpi-dt-qd-sub1" class="text-sm">DK: 0 / Target: 0</p>
                                     </div>
-                                    
+                        
                                     <div class="kpi-card p-6 rounded-2xl shadow-lg">
                                         <h4 class="kpi-card-title">Tỷ lệ hoàn thành Target</h4>
                                         <p id="luyke-kpi-ht-target-qd-main" class="font-bold mt-2 mb-3">0%</p>
@@ -3226,7 +3209,7 @@ export function initializeEventListeners(mainAppController) {
                                         <p id="luyke-kpi-tl-qd-main" class="font-bold mt-2 mb-3">0%</p>
                                         <p id="luyke-kpi-tl-qd-sub" class="text-sm">Mục tiêu: 0%</p>
                                     </div>
-                                
+                                    
                                     <div class="kpi-card p-6 rounded-2xl shadow-lg">
                                         <h4 class="kpi-card-title">Doanh thu trả chậm</h4>
                                         <p id="luyke-kpi-dt-tc-main" class="font-bold mt-2 mb-3">0</p>
@@ -3260,7 +3243,7 @@ export function initializeEventListeners(mainAppController) {
                                     <div data-capture-group="2" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200"><h3 class="text-xl font-bold uppercase mb-4">Doanh thu chưa xuất</h3><div id="luyke-unexported-revenue-content"></div></div>
                                 </div>
                             </div>
-                             <div id="subtab-luyke-thi-dua" class="sub-tab-content hidden space-y-4">
+                            <div id="subtab-luyke-thi-dua" class="sub-tab-content hidden space-y-4">
                                 <div class="flex flex-wrap items-center gap-4">
                                     <h3 class="text-xl font-bold text-gray-800 uppercase">Thi đua lũy kế <span id="luyke-competition-summary" class="text-sm font-normal"></span></h3>
                                 </div>
@@ -3297,7 +3280,7 @@ export function initializeEventListeners(mainAppController) {
                     <div id="health-employee-section-placeholder" class="placeholder-message hidden">Vui lòng cập nhật danh sách nhân viên để xem kết quả.</div>
                     <div id="health-employee-section-content">
                         <div class="content-card">
-                             <div class="page-header border-b pb-4 mb-6">
+                            <div class="page-header border-b pb-4 mb-6">
                                 <h2 class="page-header__title">Sức khỏe nhân viên</h2>
                                 <button class="page-header__help-btn" data-help-id="sknv" title="Xem hướng dẫn">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
@@ -3509,7 +3492,7 @@ export function initializeEventListeners(mainAppController) {
                                     </div>
                                     <div id="realtime-unexported-revenue-panel" data-capture-group="2" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200 flex flex-col">
                                          <h3 class="text-xl font-bold uppercase mb-4 bg-red-100 text-red-800 p-2 rounded-md">DOANH THU CHƯA XUẤT</h3>
-                                         <div id="realtime-unexported-revenue-content" class="flex-grow"><p class="text-gray-500 font-bold text-center">Vui lòng tải file realtime để xem chi tiết.</p></div>
+                                        <div id="realtime-unexported-revenue-content" class="flex-grow"><p class="text-gray-500 font-bold text-center">Vui lòng tải file realtime để xem chi tiết.</p></div>
                                     </div>
                                 </div>
                             </div>
@@ -3611,7 +3594,7 @@ export function initializeEventListeners(mainAppController) {
                             <div class="border-t pt-8">
                                 <h3 class="text-lg font-bold text-gray-700 mb-2 border-b pb-2">Nội dung Hướng dẫn</h3>
                                 <div class="grid md:grid-cols-1 gap-6 mt-4">
-                                     <div>
+                                    <div>
                                         <label for="edit-help-data" class="block text-md font-semibold text-gray-700 mb-2">Hướng dẫn Tab Cập nhật dữ liệu</label>
                                         <textarea id="edit-help-data" rows="6" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" placeholder="Nhập nội dung hướng dẫn cho tab Cập nhật dữ liệu..."></textarea>
                                     </div>
@@ -6581,7 +6564,7 @@ createSnapshot();
 --- END FILE: ./create_snapshot.js ---
 
 --- START FILE: ./dashboard.css ---
-/* Version 5.3 - Add styles for Luy Ke employee detail chart and tables */
+/* Version 5.5 - Add styles for new Luy Ke employee detail layout */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -6593,7 +6576,8 @@ createSnapshot();
     --bg-lightness-4: 92%; --header-lightness-4: 88%; --header-text-lightness-4: 15%; --special-header-lightness-4: 80%; --below-target-lightness-4: 88%;
     --bg-lightness-5: 90%; --header-lightness-5: 84%; --header-text-lightness-5: 12%; --special-header-lightness-5: 75%; --below-target-lightness-5: 84%;
     --bg-lightness-6: 88%; --header-lightness-6: 80%; --header-text-lightness-6: 10%; --special-header-lightness-6: 70%; --below-target-lightness-6: 80%;
-    --kpi-card-1-bg: #38bdf8; --kpi-card-2-bg: #34d399; --kpi-card-3-bg: #fbbf24;
+    --kpi-card-1-bg: #38bdf8;
+    --kpi-card-2-bg: #34d399; --kpi-card-3-bg: #fbbf24;
     --kpi-card-4-bg: #2dd4bf; --kpi-card-5-bg: #a78bfa; --kpi-card-6-bg: #f472b6;
     --kpi-card-7-bg: #818cf8;
     --kpi-card-8-bg: #f87171;
@@ -7221,125 +7205,107 @@ details[open] > summary .arrow { transform: rotate(180deg); }
 }
 /* === END: DRAGGABLE TAG STYLES === */
 
-/* === START: NEW STYLES FOR LUY KE EMPLOYEE DETAIL (v3.6) === */
-.luyke-detail-header h3 {
-    font-size: 1.75rem;
-    font-weight: 800;
-    color: #2563eb; /* blue-600 */
-    text-align: center;
-}
-
+/* === START: OLD STYLES FOR LUY KE EMPLOYEE DETAIL (v3.9 and before) === */
 .top-groups-list {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
+    list-style-type: none; padding: 0; margin: 0;
 }
 .top-groups-list li {
-    font-size: 1rem;
-    font-weight: 500;
-    padding: 0.5rem 0;
-    border-bottom: 1px dashed #e5e7eb; /* gray-200 */
-    text-transform: capitalize;
+    font-size: 1rem; font-weight: 500; padding: 0.5rem 0; border-bottom: 1px dashed #e5e7eb; text-transform: capitalize;
 }
 .top-groups-list li:last-child {
     border-bottom: none;
 }
-
 .customer-accordion details {
     transition: background-color 0.2s ease-in-out;
 }
-
 .customer-accordion summary {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 1rem;
-    padding: 0.75rem 1rem;
-    cursor: pointer;
-    list-style: none;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; padding: 0.75rem 1rem; cursor: pointer; list-style: none;
 }
 .customer-accordion summary::-webkit-details-marker {
     display: none;
 }
-
 .customer-accordion summary:hover {
     background-color: #f9fafb; /* gray-50 */
 }
-
 .customer-accordion .customer-name {
-    font-weight: 700;
-    text-transform: uppercase;
-    color: #1f2937; /* gray-800 */
-    flex-grow: 1;
-    min-width: 150px;
+    font-weight: 700; text-transform: uppercase; color: #1f2937; flex-grow: 1; min-width: 150px;
 }
-
 .customer-accordion .order-metrics {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    flex-shrink: 0;
-    font-size: 0.875rem;
+    display: flex; align-items: center; gap: 1rem; flex-shrink: 0; font-size: 0.875rem;
 }
-
 .customer-accordion .order-metrics span {
     white-space: nowrap;
 }
-
-.customer-accordion .qd-below-target {
-    color: #b91c1c; /* red-700 */
-}
-.customer-accordion .qd-above-target {
-    color: #1d4ed8; /* blue-700 */
-}
-
+.customer-accordion .qd-below-target { color: #b91c1c; }
+.customer-accordion .qd-above-target { color: #1d4ed8; }
 .customer-accordion .accordion-arrow {
-    margin-left: auto;
-    color: #9ca3af; /* gray-400 */
-    transition: transform 0.2s ease-in-out;
+    margin-left: auto; color: #9ca3af; transition: transform 0.2s ease-in-out;
 }
-
 .customer-accordion details[open] > summary .accordion-arrow {
     transform: rotate(180deg);
 }
-    
 .customer-accordion .product-list-table {
     border-collapse: collapse;
 }
-
 .customer-accordion .product-list-table tr:last-child td {
     border-bottom: none;
 }
-/* === END: NEW STYLES === */
+.top-groups-table { width: 100%; }
+.top-groups-table th, .top-groups-table td {
+    padding: 0.5rem 0.25rem; text-align: right; border-bottom: 1px dashed #e5e7eb;
+}
+.top-groups-table tr:last-child td { border-bottom: none; }
+.top-groups-table th:first-child, .top-groups-table td:first-child {
+    text-align: left; font-weight: 600; text-transform: capitalize;
+}
+/* === END: OLD STYLES === */
 
-/* === START: NEW STYLES FOR LUY KE EMPLOYEE DETAIL (v3.9 additions) === */
-.detail-chart-container {
-    max-width: 450px;
-    max-height: 450px;
-    margin: 0 auto;
-    position: relative;
+/* === START: NEW STYLES FOR LUY KE EMPLOYEE DETAIL (v4.1 additions) === */
+.luyke-detail-header h3 {
+    font-size: 1.75rem; font-weight: 800; color: #111827; text-align: center;
 }
 
-.top-groups-table {
+.luyke-detail-progress-item {
+    display: flex; flex-direction: column; gap: 4px;
+}
+.luyke-detail-progress-label {
+    display: flex; justify-content: space-between; align-items: baseline; font-size: 0.875rem;
+}
+.luyke-detail-progress-values {
+    display: flex; justify-content: space-between; font-size: 0.75rem; color: #4b5563;
+}
+.luyke-detail-chart-container {
+    position: relative; height: 350px; width: 100%;
+}
+
+.customer-accordion-luyke summary {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; padding: 0.5rem 1rem; cursor: pointer; list-style: none;
+}
+.customer-accordion-luyke summary:hover {
+    background-color: #f9fafb;
+}
+.customer-accordion-luyke .customer-name-small {
+    font-weight: 600; font-size: 0.9rem; color: #1f2937; flex-grow: 1; min-width: 120px;
+}
+.customer-accordion-luyke .order-metrics {
+    display: flex; align-items: center; gap: 1rem; flex-shrink: 0; font-size: 0.75rem;
+}
+.customer-accordion-luyke .order-metrics span {
+    white-space: nowrap;
+}
+.customer-accordion-luyke .accordion-arrow {
+    margin-left: auto; color: #9ca3af; transition: transform 0.2s ease-in-out;
+}
+.customer-accordion-luyke details[open] > summary .accordion-arrow {
+    transform: rotate(180deg);
+}
+.customer-accordion-luyke .product-list-scrollable {
+    display: block;
+    max-height: 200px; /* 8 rows * ~25px/row */
+    overflow-y: auto;
+}
+.customer-accordion-luyke .product-list-table {
     width: 100%;
-}
-
-.top-groups-table th,
-.top-groups-table td {
-    padding: 0.5rem 0.25rem;
-    text-align: right;
-    border-bottom: 1px dashed #e5e7eb; /* gray-200 */
-}
-
-.top-groups-table tr:last-child td {
-    border-bottom: none;
-}
-
-.top-groups-table th:first-child,
-.top-groups-table td:first-child {
-    text-align: left;
-    font-weight: 600;
-    text-transform: capitalize;
 }
 /* === END: NEW STYLES === */
 --- END FILE: ./dashboard.css ---
@@ -8092,11 +8058,11 @@ export function initializeEventListeners(mainAppController) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Công cụ phân tích số cho QLST MWG 4.7</title>
+    <title>Công cụ phân tích số cho QLST MWG 4.8</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    [cite_start]<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script> [cite: 253]
+    [cite_start]<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script> [cite: 253]
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css"/>
     <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
     
@@ -8104,7 +8070,7 @@ export function initializeEventListeners(mainAppController) {
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     
     <link rel="stylesheet" href="./dashboard.css">
@@ -8121,7 +8087,7 @@ export function initializeEventListeners(mainAppController) {
     <div id="update-notification" class="hidden fixed bottom-5 right-5 bg-blue-600 text-white py-3 px-5 rounded-lg shadow-lg z-[1001] flex items-center gap-4">
         <p class="font-semibold">Đã có phiên bản mới! Xem chi tiết nội dung cập nhật ở tab "Hướng Dẫn & Góp Ý"</p>
         <button onclick="window.location.reload()" class="bg-white text-blue-600 font-bold py-1 px-3 rounded-md hover:bg-blue-100 transition">Tải lại trang</button>
-    </div>
+    [cite_start]</div> [cite: 254]
 
     <div id="interface-drawer-container"></div>
     <div id="goal-drawer-container"></div>
@@ -8137,14 +8103,14 @@ export function initializeEventListeners(mainAppController) {
                         <h2 class="page-header__title">Hướng Dẫn & Góp Ý</h2>
                         <div id="usage-counter-display" class="text-sm font-semibold">
                             <span class="text-blue-600">Người dùng:</span>
-                            <span id="user-count" class="text-red-600 font-bold">-</span>
+                            [cite_start]<span id="user-count" class="text-red-600 font-bold">-</span> [cite: 256]
                             <span class="text-blue-600 ml-4">Lượt truy cập:</span>
-                            <span id="visitor-count" class="text-red-600 font-bold">-</span>
+                            [cite_start]<span id="visitor-count" class="text-red-600 font-bold">-</span> [cite: 256]
                             <span class="text-blue-600 ml-4">Lượt sử dụng:</span>
-                            <span id="action-count" class="text-red-600 font-bold">-</span>
+                            [cite_start]<span id="action-count" class="text-red-600 font-bold">-</span> [cite: 257]
                         </div>
                     </div>
-                    
+                  
                     <div class="content-card">
                          <h3 class="content-card__header">Video Hướng Dẫn Sử Dụng Nhanh</h3>
                          <div id="video-container" class="bg-gray-200 rounded-lg">
@@ -8156,7 +8122,7 @@ export function initializeEventListeners(mainAppController) {
                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                                 allowfullscreen>
                             </iframe>
-                         </div>
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
@@ -8191,7 +8157,7 @@ export function initializeEventListeners(mainAppController) {
                         <div id="version-marquee-container" class="marquee-container">
                             <p class="marquee-text"></p>
                         </div>
-                        
+                    
                         <div class="header-qr-container">
                              <span>THAM GIA THẢO LUẬN - GÓP Ý</span>
                             <img id="header-qr-image" src="" alt="Mã QR" class="header-qr-image">
@@ -8226,7 +8192,7 @@ export function initializeEventListeners(mainAppController) {
                                             <label for="file-giocong" class="data-input-group__file-trigger">Thêm file</label>
                                             <span id="file-name-giocong" class="data-input-group__file-name">Chưa thêm file</span>
                                         </div>
-                                        <input type="file" id="file-giocong" class="hidden file-input" data-name="Giờ công" data-state-key="rawGioCongData" data-save-key="saved_giocong" accept=".xlsx, .xls, .csv">
+                                        [cite_start]<input type="file" id="file-giocong" class="hidden file-input" data-name="Giờ công" data-state-key="rawGioCongData" data-save-key="saved_giocong" accept=".xlsx, .xls, .csv"> [cite: 280]
                                         <div class="data-input-group__status-wrapper">
                                             <span id="file-status-giocong" class="data-input-group__status-text"></span>
                                         </div>
@@ -8240,7 +8206,7 @@ export function initializeEventListeners(mainAppController) {
                                             <label for="file-thuongnong" class="data-input-group__file-trigger">Thêm file</label>
                                             <span id="file-name-thuongnong" class="data-input-group__file-name">Chưa thêm file</span>
                                         </div>
-                                        <input type="file" id="file-thuongnong" class="hidden file-input" data-name="Thưởng nóng" data-state-key="thuongNongData" data-save-key="saved_thuongnong" accept=".xlsx, .xls, .csv">
+                                        [cite_start]<input type="file" id="file-thuongnong" class="hidden file-input" data-name="Thưởng nóng" data-state-key="thuongNongData" data-save-key="saved_thuongnong" accept=".xlsx, .xls, .csv"> [cite: 285]
                                         <div class="data-input-group__status-wrapper">
                                             <span id="file-status-thuongnong" class="data-input-group__status-text"></span>
                                         </div>
@@ -8330,7 +8296,7 @@ export function initializeEventListeners(mainAppController) {
                                             <label for="file-thuongnong-thangtruoc" class="data-input-group__file-trigger">Thêm file</label>
                                             <span id="file-name-thuongnong-thangtruoc" class="data-input-group__file-name">Chưa thêm file</span>
                                         </div>
-                                        <input type="file" id="file-thuongnong-thangtruoc" class="hidden file-input" data-name="Thưởng nóng tháng trước" data-state-key="thuongNongDataThangTruoc" data-save-key="saved_thuongnong_thangtruoc" accept=".xlsx, .xls, .csv">
+                                        [cite_start]<input type="file" id="file-thuongnong-thangtruoc" class="hidden file-input" data-name="Thưởng nóng tháng trước" data-state-key="thuongNongDataThangTruoc" data-save-key="saved_thuongnong_thangtruoc" accept=".xlsx, .xls, .csv"> [cite: 314]
                                         <div class="data-input-group__status-wrapper">
                                             <span id="file-status-thuongnong-thangtruoc" class="data-input-group__status-text"></span>
                                         </div>
@@ -8348,7 +8314,7 @@ export function initializeEventListeners(mainAppController) {
                                         </div>
                                     </div>
                                 </div>
-                             </div>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -8432,7 +8398,7 @@ export function initializeEventListeners(mainAppController) {
                                         <p id="luyke-kpi-dt-qd-main" class="font-bold mt-2 mb-3">0</p>
                                         <p id="luyke-kpi-dt-qd-sub1" class="text-sm">DK: 0 / Target: 0</p>
                                     </div>
-                                    
+                        
                                     <div class="kpi-card p-6 rounded-2xl shadow-lg">
                                         <h4 class="kpi-card-title">Tỷ lệ hoàn thành Target</h4>
                                         <p id="luyke-kpi-ht-target-qd-main" class="font-bold mt-2 mb-3">0%</p>
@@ -8444,7 +8410,7 @@ export function initializeEventListeners(mainAppController) {
                                         <p id="luyke-kpi-tl-qd-main" class="font-bold mt-2 mb-3">0%</p>
                                         <p id="luyke-kpi-tl-qd-sub" class="text-sm">Mục tiêu: 0%</p>
                                     </div>
-                                
+                                    
                                     <div class="kpi-card p-6 rounded-2xl shadow-lg">
                                         <h4 class="kpi-card-title">Doanh thu trả chậm</h4>
                                         <p id="luyke-kpi-dt-tc-main" class="font-bold mt-2 mb-3">0</p>
@@ -8478,7 +8444,7 @@ export function initializeEventListeners(mainAppController) {
                                     <div data-capture-group="2" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200"><h3 class="text-xl font-bold uppercase mb-4">Doanh thu chưa xuất</h3><div id="luyke-unexported-revenue-content"></div></div>
                                 </div>
                             </div>
-                             <div id="subtab-luyke-thi-dua" class="sub-tab-content hidden space-y-4">
+                            <div id="subtab-luyke-thi-dua" class="sub-tab-content hidden space-y-4">
                                 <div class="flex flex-wrap items-center gap-4">
                                     <h3 class="text-xl font-bold text-gray-800 uppercase">Thi đua lũy kế <span id="luyke-competition-summary" class="text-sm font-normal"></span></h3>
                                 </div>
@@ -8515,7 +8481,7 @@ export function initializeEventListeners(mainAppController) {
                     <div id="health-employee-section-placeholder" class="placeholder-message hidden">Vui lòng cập nhật danh sách nhân viên để xem kết quả.</div>
                     <div id="health-employee-section-content">
                         <div class="content-card">
-                             <div class="page-header border-b pb-4 mb-6">
+                            <div class="page-header border-b pb-4 mb-6">
                                 <h2 class="page-header__title">Sức khỏe nhân viên</h2>
                                 <button class="page-header__help-btn" data-help-id="sknv" title="Xem hướng dẫn">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
@@ -8727,7 +8693,7 @@ export function initializeEventListeners(mainAppController) {
                                     </div>
                                     <div id="realtime-unexported-revenue-panel" data-capture-group="2" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200 flex flex-col">
                                          <h3 class="text-xl font-bold uppercase mb-4 bg-red-100 text-red-800 p-2 rounded-md">DOANH THU CHƯA XUẤT</h3>
-                                         <div id="realtime-unexported-revenue-content" class="flex-grow"><p class="text-gray-500 font-bold text-center">Vui lòng tải file realtime để xem chi tiết.</p></div>
+                                        <div id="realtime-unexported-revenue-content" class="flex-grow"><p class="text-gray-500 font-bold text-center">Vui lòng tải file realtime để xem chi tiết.</p></div>
                                     </div>
                                 </div>
                             </div>
@@ -8829,7 +8795,7 @@ export function initializeEventListeners(mainAppController) {
                             <div class="border-t pt-8">
                                 <h3 class="text-lg font-bold text-gray-700 mb-2 border-b pb-2">Nội dung Hướng dẫn</h3>
                                 <div class="grid md:grid-cols-1 gap-6 mt-4">
-                                     <div>
+                                    <div>
                                         <label for="edit-help-data" class="block text-md font-semibold text-gray-700 mb-2">Hướng dẫn Tab Cập nhật dữ liệu</label>
                                         <textarea id="edit-help-data" rows="6" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" placeholder="Nhập nội dung hướng dẫn cho tab Cập nhật dữ liệu..."></textarea>
                                     </div>
@@ -11031,7 +10997,7 @@ export const dataProcessing = {
 --- END FILE: ./services/data-processing.js ---
 
 --- START FILE: ./services.js ---
-// Version 37.0 - Add: Calculate summary KPIs for Luy Ke employee detail report
+// Version 38.0 - Refactor: Rework generateLuyKeEmployeeDetailReport to support new UI
 // MODULE: SERVICES FACADE
 // File này đóng vai trò điều phối, nhập khẩu các module logic con và export chúng ra ngoài.
 
@@ -11088,9 +11054,7 @@ const reportGeneration = {
                 let baseCategoryQuantity = 0;
                 
                 baseSalesData.forEach(row => {
-                    // <<< START FIX: Use flexible regex for matching employee ID >>>
                     const msnvMatch = String(row.nguoiTao || '').match(/(\d+)/);
-                    // <<< END FIX >>>
                     if (msnvMatch && msnvMatch[1].trim() === employee.maNV) {
                         const revenueValue = (parseFloat(String(row.thanhTien || "0").replace(/,/g, '')) || 0);
                         const quantityValue = (parseInt(String(row.soLuong || "0"), 10) || 0);
@@ -11331,7 +11295,7 @@ const reportGeneration = {
         sourceYcxData.forEach(row => {
             const isDoanhThuHTX = hinhThucXuatTinhDoanhThu.has(row.hinhThucXuat);
             const isBaseValid = (row.trangThaiThuTien || "").trim() === 'Đã thu' &&
-                                (row.trangThaiHuy || "").trim() === 'Chưa hủy' &&
+                                 (row.trangThaiHuy || "").trim() === 'Chưa hủy' &&
                                 (row.tinhTrangTra || "").trim() === 'Chưa trả' &&
                                 (row.trangThaiXuat || "").trim() === 'Chưa xuất';
 
@@ -11491,7 +11455,7 @@ const reportGeneration = {
                     });
                     byCustomer[customerName].totalQuantity += quantity;
                 } else if ((row.trangThaiXuat || "").trim() === 'Chưa xuất') {
-                    summary.unexportedRevenue += realRevenue;
+                    summary.unexportedRevenue += convertedRevenue;
                 }
             }
         });
@@ -11507,7 +11471,7 @@ const reportGeneration = {
         };
     },
 
-    // === START: NEW FUNCTION FOR LUY KE EMPLOYEE DETAIL ===
+    // === START: REFACTORED FUNCTION FOR LUY KE EMPLOYEE DETAIL (v38.0) ===
     generateLuyKeEmployeeDetailReport(employeeMaNV, luykeYCXData) {
         if (!employeeMaNV || !luykeYCXData || luykeYCXData.length === 0) {
             return null;
@@ -11525,9 +11489,19 @@ const reportGeneration = {
         const hinhThucXuatTinhDoanhThu = dataProcessing.getHinhThucXuatTinhDoanhThu();
         const heSoQuyDoi = dataProcessing.getHeSoQuyDoi();
         
+        const summary = {
+            totalRealRevenue: 0,
+            totalConvertedRevenue: 0,
+            unexportedRevenue: 0, // Calculated from master data
+        };
         const byProductGroup = {};
         const byCustomer = {};
         const categoryChartDataMap = {};
+
+        const employeeMasterData = appState.masterReportData.sknv.find(e => String(e.maNV) === String(employeeMaNV));
+        if (employeeMasterData) {
+            summary.unexportedRevenue = employeeMasterData.doanhThuChuaXuat || 0;
+        }
     
         employeeData.forEach(row => {
             const isDoanhThuHTX = hinhThucXuatTinhDoanhThu.has(row.hinhThucXuat);
@@ -11544,14 +11518,20 @@ const reportGeneration = {
                 const heSo = heSoQuyDoi[row.nhomHang] || 1;
                 const convertedRevenue = realRevenue * heSo;
                 const groupName = utils.cleanCategoryName(row.nhomHang || 'Khác');
-                const customerName = row.tenKhachHang || 'Khách lẻ';
+                const customerName = row.tenKhachHang || 'Khách Lẻ';
                 const categoryName = utils.cleanCategoryName(row.nganhHang || 'Khác');
+
+                // For Summary KPIs
+                summary.totalRealRevenue += realRevenue;
+                summary.totalConvertedRevenue += convertedRevenue;
 
                 // For Top 8 Product Groups
                 if (!byProductGroup[groupName]) {
-                    byProductGroup[groupName] = { name: groupName, realRevenue: 0 };
+                    byProductGroup[groupName] = { name: groupName, quantity: 0, realRevenue: 0, convertedRevenue: 0 };
                 }
+                byProductGroup[groupName].quantity += quantity;
                 byProductGroup[groupName].realRevenue += realRevenue;
+                byProductGroup[groupName].convertedRevenue += convertedRevenue;
 
                 // For Chart Data
                 if (!categoryChartDataMap[categoryName]) {
@@ -11575,23 +11555,32 @@ const reportGeneration = {
             }
         });
     
-        // Calculate conversion rate for each customer
+        // Final calculations for summary
+        summary.totalOrders = Object.keys(byCustomer).length;
+        summary.bundledOrderCount = Object.values(byCustomer).filter(c => c.products.length > 1).length;
+        summary.conversionRate = summary.totalRealRevenue > 0 ? (summary.totalConvertedRevenue / summary.totalRealRevenue) - 1 : 0;
+    
+        // Final calculations for customers and product groups
         for (const customerName in byCustomer) {
             const customer = byCustomer[customerName];
             customer.conversionRate = customer.totalRealRevenue > 0 ? (customer.totalConvertedRevenue / customer.totalRealRevenue) - 1 : 0;
         }
+        for (const groupName in byProductGroup) {
+            const group = byProductGroup[groupName];
+            group.conversionRate = group.realRevenue > 0 ? (group.convertedRevenue / group.realRevenue) - 1 : 0;
+        }
     
         return {
+            summary,
             topProductGroups: Object.values(byProductGroup)
                 .sort((a, b) => b.realRevenue - a.realRevenue)
-                .map(g => g.name)
                 .slice(0, 8),
             categoryChartData: Object.values(categoryChartDataMap),
             byCustomer: Object.values(byCustomer)
                 .sort((a,b) => b.totalRealRevenue - a.totalRealRevenue)
         };
     },
-    // === END: NEW FUNCTION ===
+    // === END: REFACTORED FUNCTION ===
     
     generateRealtimeBrandReport(realtimeYCXData, selectedCategory, selectedBrand) {
         if (!realtimeYCXData || realtimeYCXData.length === 0) return { byBrand: [], byEmployee: [] };
@@ -14439,7 +14428,7 @@ export const uiRealtime = {
 --- END FILE: ./ui-realtime.js ---
 
 --- START FILE: ./ui-sknv.js ---
-// Version 3.9 - Add KPI cards, detailed tables, and chart resizing to LK employee detail view
+// Version 4.1 - Rework Luy Ke employee detail view with new layout, KPIs, chart, and progress bars
 // MODULE: UI SKNV
 // Chứa các hàm render giao diện cho tab "Sức khỏe nhân viên"
 
@@ -14471,8 +14460,6 @@ export const uiSknv = {
 
         container.innerHTML = '';
         
-        // === START: THAY ĐỔI CỐT LÕI ===
-        // Xác định đúng container chi tiết cần ẩn dựa trên tab hiện tại
         let detailContainerId;
         if (sortStateKey === 'doanhthu_lk') {
             detailContainerId = 'dtnv-lk-details-container';
@@ -14484,11 +14471,10 @@ export const uiSknv = {
     
         const detailContainer = document.getElementById(detailContainerId);
         if (detailContainer) {
-            detailContainer.innerHTML = ''; // Xóa nội dung chi tiết cũ
+            detailContainer.innerHTML = ''; 
             detailContainer.classList.add('hidden');
         }
         container.classList.remove('hidden');
-        // === END: THAY ĐỔI CỐT LÕI ===
 
 
         if (!reportData || reportData.length === 0) {
@@ -14509,7 +14495,6 @@ export const uiSknv = {
         });
         
         const departmentOrder = uiSknv._getSortedDepartmentList(reportData);
-
         departmentOrder.forEach(deptName => {
             if (groupedByDept[deptName]) {
                 finalHTML += uiSknv.renderRevenueTableForDepartment(deptName, groupedByDept[deptName], sortStateKey);
@@ -14657,7 +14642,7 @@ export const uiSknv = {
         const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
         let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title} <span class="text-sm font-normal text-gray-500">(Thu nhập DK TB: ${uiComponents.formatRevenue(averageProjectedIncome)})</span></h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="thunhap" data-capture-columns="8">
             <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
-                            <tr>
+                <tr>
                                 <th class="${headerClass('hoTen')}" data-sort="hoTen">Họ Tên <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('gioCong')} text-right" data-sort="gioCong">Giờ công <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('tongThuNhap')} text-right" data-sort="tongThuNhap">Tổng thu nhập <span class="sort-indicator"></span></th>
@@ -14892,16 +14877,13 @@ export const uiSknv = {
         }
     },
     
-    // === START: CHỈNH SỬA TẠI ĐÂY ===
+    // === START: REWORKED FUNCTION (v4.1) ===
     renderLuykeEmployeeDetail(detailData, employeeData, detailContainerId) {
-        // Xác định container tóm tắt và chi tiết
-        const summaryContainerId = 'revenue-report-container-lk';
-        const summaryContainer = document.getElementById(summaryContainerId);
+        const summaryContainer = document.getElementById('revenue-report-container-lk');
         const detailContainer = document.getElementById(detailContainerId);
 
         if (!summaryContainer || !detailContainer) return;
 
-        // Ẩn bảng tóm tắt, hiển thị vùng chi tiết
         summaryContainer.classList.add('hidden');
         detailContainer.classList.remove('hidden');
         
@@ -14915,65 +14897,76 @@ export const uiSknv = {
             return;
         }
 
-        // === START: LOGIC MỚI ===
         const { summary, topProductGroups, categoryChartData, byCustomer } = detailData;
         const { mucTieu } = employeeData;
         const conversionRateTarget = (mucTieu?.phanTramQD || 0) / 100;
 
         const renderKpiCards = () => {
-            if (!summary) return '';
             const conversionRateClass = summary.conversionRate >= conversionRateTarget ? 'is-positive' : 'is-negative';
-            
-            // Thẻ "DT Chưa Xuất" không áp dụng cho Lũy kế, nên ta sẽ ẩn đi hoặc thay thế
-            // Trong trường hợp này, ta sẽ hiển thị 5 thẻ như Realtime (bỏ thẻ Chưa Xuất)
             return `
             <div class="rt-infographic-summary mb-6">
                 <div class="rt-infographic-summary-card"><div class="label">Tổng DT Thực</div><div class="value">${uiComponents.formatRevenue(summary.totalRealRevenue, 1)}</div></div>
                 <div class="rt-infographic-summary-card"><div class="label">Tổng DTQĐ</div><div class="value">${uiComponents.formatRevenue(summary.totalConvertedRevenue, 1)}</div></div>
                 <div class="rt-infographic-summary-card"><div class="label">Tỷ lệ QĐ</div><div class="value ${conversionRateClass}">${uiComponents.formatPercentage(summary.conversionRate)}</div></div>
+                <div class="rt-infographic-summary-card"><div class="label">DT Chưa Xuất</div><div class="value">${uiComponents.formatRevenue(summary.unexportedRevenue, 1)}</div></div>
                 <div class="rt-infographic-summary-card"><div class="label">Tổng Đơn Hàng</div><div class="value">${summary.totalOrders}</div></div>
                 <div class="rt-infographic-summary-card"><div class="label">SL Đơn Bán Kèm</div><div class="value">${summary.bundledOrderCount}</div></div>
             </div>
             `;
         };
 
-        const renderTopGroups = () => {
+        const renderTopGroupsAsProgressBars = () => {
             if (!topProductGroups || topProductGroups.length === 0) return '<p class="text-sm text-gray-500">Không có doanh thu.</p>';
-            return `
-                <table class="w-full text-sm top-groups-table">
-                    <thead>
-                        <tr class="border-b">
-                            <th class="py-1 font-semibold text-left">Nhóm Hàng</th>
-                            <th class="py-1 font-semibold">SL</th>
-                            <th class="py-1 font-semibold">DT Thực</th>
-                            <th class="py-1 font-semibold">DT QĐ</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    ${topProductGroups.map(group => `
-                        <tr class="border-b last:border-b-0">
-                            <td class="py-2 font-medium text-left capitalize">${group.name}</td>
-                            <td class="py-2">${uiComponents.formatNumber(group.quantity)}</td>
-                            <td class="py-2">${uiComponents.formatRevenue(group.realRevenue)}</td>
-                            <td class="py-2 text-blue-600 font-semibold">${uiComponents.formatRevenue(group.convertedRevenue)}</td>
-                        </tr>
-                    `).join('')}
-                    </tbody>
-                </table>
-            `;
+            
+            const maxRevenue = topProductGroups[0]?.realRevenue || 0;
+            
+            return topProductGroups.map(group => {
+                const percentage = maxRevenue > 0 ? (group.realRevenue / maxRevenue) * 100 : 0;
+                return `
+                <div class="luyke-detail-progress-item">
+                    <div class="luyke-detail-progress-label">
+                        <span class="font-semibold">${group.name}</span>
+                        <span class="text-xs">SL: ${uiComponents.formatNumber(group.quantity)} | %QĐ: ${uiComponents.formatPercentage(group.conversionRate)}</span>
+                    </div>
+                    <div class="rt-progress-bar-container">
+                        <div class="rt-progress-bar" style="width: ${percentage}%;"></div>
+                    </div>
+                    <div class="luyke-detail-progress-values">
+                        <span>DT Thực: <strong>${uiComponents.formatRevenue(group.realRevenue)}</strong></span>
+                        <span>DTQĐ: <strong>${uiComponents.formatRevenue(group.convertedRevenue)}</strong></span>
+                    </div>
+                </div>
+                `;
+            }).join('');
         };
 
         const renderCustomerAccordion = () => {
             if (!byCustomer || byCustomer.length === 0) return '<p class="text-sm text-gray-500 mt-4">Không có đơn hàng nào.</p>';
             
-            return byCustomer.map(customer => {
-                const qdClass = customer.conversionRate < conversionRateTarget ? 'qd-below-target' : 'qd-above-target';
+            return byCustomer.map((customer, index) => {
+                const qdClass = customer.conversionRate >= conversionRateTarget ? 'is-positive' : 'is-negative';
+                
+                const productListHtml = customer.products.map(p => `
+                    <tr class="border-b last:border-b-0">
+                        <td class="py-1 pr-2">${p.productName}</td>
+                        <td class="py-1 px-2 text-right">SL: <strong>${p.quantity}</strong></td>
+                        <td class="py-1 px-2 text-right">DT: <strong>${uiComponents.formatRevenue(p.realRevenue, 1)}</strong></td>
+                        <td class="py-1 pl-2 text-right">DTQĐ: <strong>${uiComponents.formatRevenue(p.convertedRevenue, 1)}</strong></td>
+                    </tr>
+                `).join('');
+                
+                const tableContent = `<table class="min-w-full text-xs product-list-table"><tbody>${productListHtml}</tbody></table>`;
+                
+                const detailContent = customer.products.length > 8
+                    ? `<div class="product-list-scrollable">${tableContent}</div>`
+                    : tableContent;
+
                 return `
                 <details class="bg-white rounded-lg shadow-sm border border-gray-200 mb-2">
                     <summary>
-                        <span class="customer-name">${customer.name}</span>
+                        <span class="customer-name-small">${index + 1}. ${customer.name}</span>
                         <div class="order-metrics">
-                            <span>SL Sản phẩm: <strong>${customer.totalQuantity}</strong></span>
+                            <span>SL: <strong>${customer.totalQuantity}</strong></span>
                             <span>DT Thực: <strong class="text-gray-900">${uiComponents.formatRevenue(customer.totalRealRevenue, 1)} Tr</strong></span>
                             <span>DTQĐ: <strong class="text-blue-600">${uiComponents.formatRevenue(customer.totalConvertedRevenue, 1)} Tr</strong></span>
                             <span>%QĐ: <strong class="${qdClass}">${uiComponents.formatPercentage(customer.conversionRate)}</strong></span>
@@ -14981,18 +14974,7 @@ export const uiSknv = {
                         <span class="accordion-arrow">▼</span>
                     </summary>
                     <div class="border-t border-gray-200 p-3 bg-gray-50">
-                        <table class="min-w-full text-xs product-list-table">
-                            <tbody>
-                                ${customer.products.map(p => `
-                                    <tr class="border-b last:border-b-0">
-                                        <td class="py-1 pr-2">${p.productName}</td>
-                                        <td class="py-1 px-2 text-right">SL: <strong>${p.quantity}</strong></td>
-                                        <td class="py-1 px-2 text-right">DT: <strong>${uiComponents.formatRevenue(p.realRevenue, 1)}</strong></td>
-                                        <td class="py-1 pl-2 text-right">DTQĐ: <strong>${uiComponents.formatRevenue(p.convertedRevenue, 1)}</strong></td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
+                        ${detailContent}
                     </div>
                 </details>
                 `;
@@ -15014,18 +14996,22 @@ export const uiSknv = {
                 
                 ${renderKpiCards()}
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                    <div class="md:col-span-1 bg-white p-4 rounded-lg shadow-md border">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white p-4 rounded-lg shadow-md border">
                         <h4 class="text-md font-bold text-gray-700 border-b pb-2 mb-3">Top 8 Nhóm Hàng Doanh Thu Cao</h4>
-                        ${renderTopGroups()}
+                        <div class="space-y-3">
+                            ${renderTopGroupsAsProgressBars()}
+                        </div>
                     </div>
                     
-                    <div class="md:col-span-2 bg-white p-4 rounded-lg shadow-md border detail-chart-container">
+                    <div class="bg-white p-4 rounded-lg shadow-md border">
                         <h4 class="text-md font-bold text-gray-700 mb-2">Tỷ Trọng Doanh Thu Ngành Hàng</h4>
-                        <canvas id="luyke-employee-chart"></canvas>
+                        <div class="luyke-detail-chart-container">
+                             <canvas id="luyke-employee-chart"></canvas>
+                        </div>
                     </div>
                 </div>
-                <div class="customer-accordion">
+                <div class="customer-accordion-luyke">
                     <h4 class="text-lg font-bold text-gray-800 mb-3">Chi Tiết Theo Khách Hàng</h4>
                     ${renderCustomerAccordion()}
                 </div>
@@ -15033,50 +15019,53 @@ export const uiSknv = {
 
         detailContainer.innerHTML = headerHtml;
 
-        // Render Chart
         const ctx = document.getElementById('luyke-employee-chart')?.getContext('2d');
         if (ctx && categoryChartData && categoryChartData.length > 0) {
             if (appState.charts['luyke-employee-chart']) {
                 appState.charts['luyke-employee-chart'].destroy();
             }
             const sortedChartData = [...categoryChartData].sort((a,b) => b.revenue - a.revenue);
-            const topData = sortedChartData.slice(0, 8);
-            const otherRevenue = sortedChartData.slice(8).reduce((sum, item) => sum + item.revenue, 0);
-            if(otherRevenue > 0) topData.push({name: 'Other', revenue: otherRevenue});
-
+            const topData = sortedChartData.slice(0, 10);
+            
             appState.charts['luyke-employee-chart'] = new Chart(ctx, {
-                type: 'doughnut',
+                type: 'bar',
                 data: {
                     labels: topData.map(d => d.name),
                     datasets: [{
-                        data: topData.map(d => d.revenue),
-                        backgroundColor: ['#3b82f6', '#8b5cf6', '#10b981', '#f97316', '#06b6d4', '#d946ef', '#ef4444', '#eab308', '#6b7280'],
-                        borderColor: '#ffffff',
-                        borderWidth: 2,
+                        label: 'Doanh thu',
+                        data: topData.map(d => d.revenue / 1000000),
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 4,
                     }]
                 },
                 options: {
+                    indexAxis: 'x',
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
-                        legend: { position: 'right' },
+                        legend: { display: false },
                         tooltip: {
                             callbacks: {
-                                label: function(context) {
-                                    let label = context.label || '';
-                                    if (label) label += ': ';
-                                    if (context.parsed !== null) {
-                                        label += uiComponents.formatRevenue(context.parsed) + ' Tr';
-                                    }
-                                    return label;
-                                }
+                                label: context => `${context.label}: ${uiComponents.formatRevenue(context.raw * 1000000)} Tr`
                             }
+                        },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'end',
+                            formatter: (value) => uiComponents.formatRevenue(value * 1000000),
+                            color: '#4b5563',
+                            font: { weight: 'bold', size: 10 }
                         }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
                     }
-                }
+                },
+                plugins: [ChartDataLabels]
             });
         }
     },
-    // === END: THAY ĐỔI CỐT LÕI ===
+    // === END: REWORKED FUNCTION ===
     
     renderSknvDetailForEmployee(employeeData, filteredReport) {
         const detailsContainer = document.getElementById('sknv-details-container');
@@ -15589,7 +15578,7 @@ export { ui };
 --- END FILE: ./ui.js ---
 
 --- START FILE: ./utils.js ---
-// Version 3.0 - Refactored: Extracted services to separate modules
+// Version 3.1 - Refactor cleanCategoryName to capitalize words
 // MODULE: UTILITIES
 // Chứa các hàm tiện ích chung không thuộc về logic hay giao diện cụ thể.
 import { ui } from './ui.js';
@@ -15615,8 +15604,15 @@ export const utils = {
 
     cleanCategoryName(name) {
         if (!name || typeof name !== 'string') return '';
-        // Chuẩn hóa: 1. Bỏ mã số đầu, 2. Bỏ khoảng trắng thừa đầu/cuối, 3. Thay thế nhiều khoảng trắng bên trong bằng 1, 4. Chuyển thành chữ thường.
-        return name.replace(/^\d+\s*-\s*/, '').trim().replace(/\s+/g, ' ').toLowerCase();
+        // Bỏ mã số, khoảng trắng thừa, và viết hoa chữ cái đầu mỗi từ.
+        return name
+            .replace(/^\d+\s*-\s*/, '')
+            .trim()
+            .replace(/\s+/g, ' ')
+            .toLowerCase()
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
     },
 
     exportTableToExcel(activeTabContent, fileName) {

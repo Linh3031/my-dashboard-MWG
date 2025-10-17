@@ -1,4 +1,4 @@
-// Version 3.0 - Refactored: Extracted services to separate modules
+// Version 3.1 - Refactor cleanCategoryName to capitalize words
 // MODULE: UTILITIES
 // Chứa các hàm tiện ích chung không thuộc về logic hay giao diện cụ thể.
 import { ui } from './ui.js';
@@ -24,8 +24,15 @@ export const utils = {
 
     cleanCategoryName(name) {
         if (!name || typeof name !== 'string') return '';
-        // Chuẩn hóa: 1. Bỏ mã số đầu, 2. Bỏ khoảng trắng thừa đầu/cuối, 3. Thay thế nhiều khoảng trắng bên trong bằng 1, 4. Chuyển thành chữ thường.
-        return name.replace(/^\d+\s*-\s*/, '').trim().replace(/\s+/g, ' ').toLowerCase();
+        // Bỏ mã số, khoảng trắng thừa, và viết hoa chữ cái đầu mỗi từ.
+        return name
+            .replace(/^\d+\s*-\s*/, '')
+            .trim()
+            .replace(/\s+/g, ' ')
+            .toLowerCase()
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
     },
 
     exportTableToExcel(activeTabContent, fileName) {

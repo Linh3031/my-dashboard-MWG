@@ -1,4 +1,4 @@
-// Version 37.0 - Add: Calculate summary KPIs for Luy Ke employee detail report
+// Version 38.0 - Refactor: Rework generateLuyKeEmployeeDetailReport to support new UI
 // MODULE: SERVICES FACADE
 // File này đóng vai trò điều phối, nhập khẩu các module logic con và export chúng ra ngoài.
 
@@ -55,9 +55,7 @@ const reportGeneration = {
                 let baseCategoryQuantity = 0;
                 
                 baseSalesData.forEach(row => {
-                    // <<< START FIX: Use flexible regex for matching employee ID >>>
                     const msnvMatch = String(row.nguoiTao || '').match(/(\d+)/);
-                    // <<< END FIX >>>
                     if (msnvMatch && msnvMatch[1].trim() === employee.maNV) {
                         const revenueValue = (parseFloat(String(row.thanhTien || "0").replace(/,/g, '')) || 0);
                         const quantityValue = (parseInt(String(row.soLuong || "0"), 10) || 0);
@@ -298,7 +296,7 @@ const reportGeneration = {
         sourceYcxData.forEach(row => {
             const isDoanhThuHTX = hinhThucXuatTinhDoanhThu.has(row.hinhThucXuat);
             const isBaseValid = (row.trangThaiThuTien || "").trim() === 'Đã thu' &&
-                                (row.trangThaiHuy || "").trim() === 'Chưa hủy' &&
+                                 (row.trangThaiHuy || "").trim() === 'Chưa hủy' &&
                                 (row.tinhTrangTra || "").trim() === 'Chưa trả' &&
                                 (row.trangThaiXuat || "").trim() === 'Chưa xuất';
 
@@ -458,7 +456,7 @@ const reportGeneration = {
                     });
                     byCustomer[customerName].totalQuantity += quantity;
                 } else if ((row.trangThaiXuat || "").trim() === 'Chưa xuất') {
-                    summary.unexportedRevenue += realRevenue;
+                    summary.unexportedRevenue += convertedRevenue;
                 }
             }
         });
@@ -474,7 +472,7 @@ const reportGeneration = {
         };
     },
 
-    // === START: NEW FUNCTION FOR LUY KE EMPLOYEE DETAIL ===
+    // === START: REFACTORED FUNCTION FOR LUY KE EMPLOYEE DETAIL (v38.0) ===
     generateLuyKeEmployeeDetailReport(employeeMaNV, luykeYCXData) {
         if (!employeeMaNV || !luykeYCXData || luykeYCXData.length === 0) {
             return null;
@@ -492,9 +490,19 @@ const reportGeneration = {
         const hinhThucXuatTinhDoanhThu = dataProcessing.getHinhThucXuatTinhDoanhThu();
         const heSoQuyDoi = dataProcessing.getHeSoQuyDoi();
         
+        const summary = {
+            totalRealRevenue: 0,
+            totalConvertedRevenue: 0,
+            unexportedRevenue: 0, // Calculated from master data
+        };
         const byProductGroup = {};
         const byCustomer = {};
         const categoryChartDataMap = {};
+
+        const employeeMasterData = appState.masterReportData.sknv.find(e => String(e.maNV) === String(employeeMaNV));
+        if (employeeMasterData) {
+            summary.unexportedRevenue = employeeMasterData.doanhThuChuaXuat || 0;
+        }
     
         employeeData.forEach(row => {
             const isDoanhThuHTX = hinhThucXuatTinhDoanhThu.has(row.hinhThucXuat);
@@ -511,14 +519,20 @@ const reportGeneration = {
                 const heSo = heSoQuyDoi[row.nhomHang] || 1;
                 const convertedRevenue = realRevenue * heSo;
                 const groupName = utils.cleanCategoryName(row.nhomHang || 'Khác');
-                const customerName = row.tenKhachHang || 'Khách lẻ';
+                const customerName = row.tenKhachHang || 'Khách Lẻ';
                 const categoryName = utils.cleanCategoryName(row.nganhHang || 'Khác');
+
+                // For Summary KPIs
+                summary.totalRealRevenue += realRevenue;
+                summary.totalConvertedRevenue += convertedRevenue;
 
                 // For Top 8 Product Groups
                 if (!byProductGroup[groupName]) {
-                    byProductGroup[groupName] = { name: groupName, realRevenue: 0 };
+                    byProductGroup[groupName] = { name: groupName, quantity: 0, realRevenue: 0, convertedRevenue: 0 };
                 }
+                byProductGroup[groupName].quantity += quantity;
                 byProductGroup[groupName].realRevenue += realRevenue;
+                byProductGroup[groupName].convertedRevenue += convertedRevenue;
 
                 // For Chart Data
                 if (!categoryChartDataMap[categoryName]) {
@@ -542,23 +556,32 @@ const reportGeneration = {
             }
         });
     
-        // Calculate conversion rate for each customer
+        // Final calculations for summary
+        summary.totalOrders = Object.keys(byCustomer).length;
+        summary.bundledOrderCount = Object.values(byCustomer).filter(c => c.products.length > 1).length;
+        summary.conversionRate = summary.totalRealRevenue > 0 ? (summary.totalConvertedRevenue / summary.totalRealRevenue) - 1 : 0;
+    
+        // Final calculations for customers and product groups
         for (const customerName in byCustomer) {
             const customer = byCustomer[customerName];
             customer.conversionRate = customer.totalRealRevenue > 0 ? (customer.totalConvertedRevenue / customer.totalRealRevenue) - 1 : 0;
         }
+        for (const groupName in byProductGroup) {
+            const group = byProductGroup[groupName];
+            group.conversionRate = group.realRevenue > 0 ? (group.convertedRevenue / group.realRevenue) - 1 : 0;
+        }
     
         return {
+            summary,
             topProductGroups: Object.values(byProductGroup)
                 .sort((a, b) => b.realRevenue - a.realRevenue)
-                .map(g => g.name)
                 .slice(0, 8),
             categoryChartData: Object.values(categoryChartDataMap),
             byCustomer: Object.values(byCustomer)
                 .sort((a,b) => b.totalRealRevenue - a.totalRealRevenue)
         };
     },
-    // === END: NEW FUNCTION ===
+    // === END: REFACTORED FUNCTION ===
     
     generateRealtimeBrandReport(realtimeYCXData, selectedCategory, selectedBrand) {
         if (!realtimeYCXData || realtimeYCXData.length === 0) return { byBrand: [], byEmployee: [] };
