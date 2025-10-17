@@ -1,4 +1,4 @@
-// Version 1.0 - Component: Interface Drawer
+// Version 1.1 - Update font size slider range and default value
 // Chứa mã HTML cho drawer cài đặt giao diện.
 
 const drawerInterfaceHTML = `
@@ -22,9 +22,9 @@ const drawerInterfaceHTML = `
         <div>
             <label for="global-font-size-slider" class="flex justify-between text-sm font-medium text-gray-700 mb-2">
                 <span>Cỡ chữ toàn trang</span>
-                <span id="global-font-size-value" class="font-bold text-blue-600">14px</span>
+                <span id="global-font-size-value" class="font-bold text-blue-600">18px</span>
             </label>
-            <input type="range" id="global-font-size-slider" min="12" max="18" step="1" value="14" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+            <input type="range" id="global-font-size-slider" min="12" max="25" step="1" value="18" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
         </div>
         <div>
              <label for="kpi-font-size-slider" class="flex justify-between text-sm font-medium text-gray-700 mb-2">

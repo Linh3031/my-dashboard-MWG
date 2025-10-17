@@ -1,4 +1,4 @@
-// Version 34.0 - Fix: Improve regex for employee ID matching in realtime data
+// Version 38.0 - Refactor: Rework generateLuyKeEmployeeDetailReport to support new UI
 // MODULE: SERVICES FACADE
 // File này đóng vai trò điều phối, nhập khẩu các module logic con và export chúng ra ngoài.
 
@@ -55,9 +55,7 @@ const reportGeneration = {
                 let baseCategoryQuantity = 0;
                 
                 baseSalesData.forEach(row => {
-                    // <<< START FIX: Use flexible regex for matching employee ID >>>
                     const msnvMatch = String(row.nguoiTao || '').match(/(\d+)/);
-                    // <<< END FIX >>>
                     if (msnvMatch && msnvMatch[1].trim() === employee.maNV) {
                         const revenueValue = (parseFloat(String(row.thanhTien || "0").replace(/,/g, '')) || 0);
                         const quantityValue = (parseInt(String(row.soLuong || "0"), 10) || 0);
@@ -153,9 +151,7 @@ const reportGeneration = {
             for (const key in PG.QDC_GROUPS) data.qdc[key] = { sl: 0, dt: 0, dtqd: 0, name: PG.QDC_GROUPS[key].name };
 
             sourceData.forEach(row => {
-                // <<< START FIX: Use flexible regex for matching employee ID >>>
                 const msnvMatch = String(row.nguoiTao || '').match(/(\d+)/);
-                // <<< END FIX >>>
                 if (msnvMatch && msnvMatch[1].trim() === employee.maNV) {
                     const isDoanhThuHTX = hinhThucXuatTinhDoanhThu.has(row.hinhThucXuat);
                     const isBaseValid = (row.trangThaiThuTien || "").trim() === 'Đã thu' && (row.trangThaiHuy || "").trim() === 'Chưa hủy' && (row.tinhTrangTra || "").trim() === 'Chưa trả';
@@ -300,7 +296,7 @@ const reportGeneration = {
         sourceYcxData.forEach(row => {
             const isDoanhThuHTX = hinhThucXuatTinhDoanhThu.has(row.hinhThucXuat);
             const isBaseValid = (row.trangThaiThuTien || "").trim() === 'Đã thu' &&
-                                (row.trangThaiHuy || "").trim() === 'Chưa hủy' &&
+                                 (row.trangThaiHuy || "").trim() === 'Chưa hủy' &&
                                 (row.tinhTrangTra || "").trim() === 'Chưa trả' &&
                                 (row.trangThaiXuat || "").trim() === 'Chưa xuất';
 
@@ -409,9 +405,7 @@ const reportGeneration = {
         if (!employeeMaNV || !realtimeYCXData || realtimeYCXData.length === 0) return null;
     
         const employeeData = realtimeYCXData.filter(row => {
-            // <<< START FIX: Use flexible regex for matching employee ID >>>
             const msnvMatch = String(row.nguoiTao || '').match(/(\d+)/);
-            // <<< END FIX >>>
             return msnvMatch && msnvMatch[1].trim() === String(employeeMaNV);
         });
     
@@ -462,7 +456,7 @@ const reportGeneration = {
                     });
                     byCustomer[customerName].totalQuantity += quantity;
                 } else if ((row.trangThaiXuat || "").trim() === 'Chưa xuất') {
-                    summary.unexportedRevenue += realRevenue;
+                    summary.unexportedRevenue += convertedRevenue;
                 }
             }
         });
@@ -477,6 +471,117 @@ const reportGeneration = {
             byCustomer: Object.values(byCustomer)
         };
     },
+
+    // === START: REFACTORED FUNCTION FOR LUY KE EMPLOYEE DETAIL (v38.0) ===
+    generateLuyKeEmployeeDetailReport(employeeMaNV, luykeYCXData) {
+        if (!employeeMaNV || !luykeYCXData || luykeYCXData.length === 0) {
+            return null;
+        }
+    
+        const employeeData = luykeYCXData.filter(row => {
+            const msnvMatch = String(row.nguoiTao || '').match(/(\d+)/);
+            return msnvMatch && msnvMatch[1].trim() === String(employeeMaNV);
+        });
+    
+        if (employeeData.length === 0) {
+            return null;
+        }
+    
+        const hinhThucXuatTinhDoanhThu = dataProcessing.getHinhThucXuatTinhDoanhThu();
+        const heSoQuyDoi = dataProcessing.getHeSoQuyDoi();
+        
+        const summary = {
+            totalRealRevenue: 0,
+            totalConvertedRevenue: 0,
+            unexportedRevenue: 0, // Calculated from master data
+        };
+        const byProductGroup = {};
+        const byCustomer = {};
+        const categoryChartDataMap = {};
+
+        const employeeMasterData = appState.masterReportData.sknv.find(e => String(e.maNV) === String(employeeMaNV));
+        if (employeeMasterData) {
+            summary.unexportedRevenue = employeeMasterData.doanhThuChuaXuat || 0;
+        }
+    
+        employeeData.forEach(row => {
+            const isDoanhThuHTX = hinhThucXuatTinhDoanhThu.has(row.hinhThucXuat);
+            const isBaseValid = (row.trangThaiThuTien || "").trim() === 'Đã thu' &&
+                                (row.trangThaiHuy || "").trim() === 'Chưa hủy' &&
+                                (row.tinhTrangTra || "").trim() === 'Chưa trả' &&
+                                (row.trangThaiXuat || "").trim() === 'Đã xuất';
+    
+            if (isDoanhThuHTX && isBaseValid) {
+                const realRevenue = parseFloat(String(row.thanhTien || "0").replace(/,/g, '')) || 0;
+                const quantity = parseInt(String(row.soLuong || "0"), 10) || 0;
+                if(isNaN(realRevenue) || isNaN(quantity)) return;
+
+                const heSo = heSoQuyDoi[row.nhomHang] || 1;
+                const convertedRevenue = realRevenue * heSo;
+                const groupName = utils.cleanCategoryName(row.nhomHang || 'Khác');
+                const customerName = row.tenKhachHang || 'Khách Lẻ';
+                const categoryName = utils.cleanCategoryName(row.nganhHang || 'Khác');
+
+                // For Summary KPIs
+                summary.totalRealRevenue += realRevenue;
+                summary.totalConvertedRevenue += convertedRevenue;
+
+                // For Top 8 Product Groups
+                if (!byProductGroup[groupName]) {
+                    byProductGroup[groupName] = { name: groupName, quantity: 0, realRevenue: 0, convertedRevenue: 0 };
+                }
+                byProductGroup[groupName].quantity += quantity;
+                byProductGroup[groupName].realRevenue += realRevenue;
+                byProductGroup[groupName].convertedRevenue += convertedRevenue;
+
+                // For Chart Data
+                if (!categoryChartDataMap[categoryName]) {
+                    categoryChartDataMap[categoryName] = { name: categoryName, revenue: 0 };
+                }
+                categoryChartDataMap[categoryName].revenue += realRevenue;
+
+                // For Customer Accordion
+                if (!byCustomer[customerName]) {
+                    byCustomer[customerName] = { name: customerName, products: [], totalQuantity: 0, totalRealRevenue: 0, totalConvertedRevenue: 0 };
+                }
+                byCustomer[customerName].products.push({
+                    productName: row.tenSanPham,
+                    quantity: quantity,
+                    realRevenue: realRevenue,
+                    convertedRevenue: convertedRevenue,
+                });
+                byCustomer[customerName].totalQuantity += quantity;
+                byCustomer[customerName].totalRealRevenue += realRevenue;
+                byCustomer[customerName].totalConvertedRevenue += convertedRevenue;
+            }
+        });
+    
+        // Final calculations for summary
+        summary.totalOrders = Object.keys(byCustomer).length;
+        summary.bundledOrderCount = Object.values(byCustomer).filter(c => c.products.length > 1).length;
+        summary.conversionRate = summary.totalRealRevenue > 0 ? (summary.totalConvertedRevenue / summary.totalRealRevenue) - 1 : 0;
+    
+        // Final calculations for customers and product groups
+        for (const customerName in byCustomer) {
+            const customer = byCustomer[customerName];
+            customer.conversionRate = customer.totalRealRevenue > 0 ? (customer.totalConvertedRevenue / customer.totalRealRevenue) - 1 : 0;
+        }
+        for (const groupName in byProductGroup) {
+            const group = byProductGroup[groupName];
+            group.conversionRate = group.realRevenue > 0 ? (group.convertedRevenue / group.realRevenue) - 1 : 0;
+        }
+    
+        return {
+            summary,
+            topProductGroups: Object.values(byProductGroup)
+                .sort((a, b) => b.realRevenue - a.realRevenue)
+                .slice(0, 8),
+            categoryChartData: Object.values(categoryChartDataMap),
+            byCustomer: Object.values(byCustomer)
+                .sort((a,b) => b.totalRealRevenue - a.totalRealRevenue)
+        };
+    },
+    // === END: REFACTORED FUNCTION ===
     
     generateRealtimeBrandReport(realtimeYCXData, selectedCategory, selectedBrand) {
         if (!realtimeYCXData || realtimeYCXData.length === 0) return { byBrand: [], byEmployee: [] };
@@ -495,9 +600,7 @@ const reportGeneration = {
     
         filteredData.forEach(row => {
             const brand = row.nhaSanXuat || 'Hãng khác';
-            // <<< START FIX: Use flexible regex for matching employee ID >>>
             const msnvMatch = String(row.nguoiTao || '').match(/(\d+)/);
-            // <<< END FIX >>>
             const employeeId = msnvMatch ? msnvMatch[1].trim() : 'Unknown';
             const realRevenue = parseFloat(String(row.thanhTien || "0").replace(/,/g, '')) || 0;
             const quantity = parseInt(String(row.soLuong || "0"), 10) || 0;

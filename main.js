@@ -1,4 +1,4 @@
-// Version 3.3 - Add handler for Luy Ke Competition view switcher
+// Version 3.5 - Resolve merge conflicts by removing duplicate function call
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -27,12 +27,13 @@ import { settingsService } from './modules/settings.service.js';
 import { highlightService } from './modules/highlight.service.js';
 
 const app = {
-    currentVersion: '3.3',
+    currentVersion: '3.4',
     storage: storage,
 
     async init() {
         try {
             appState.competitionConfigs = [];
+            appState.viewingDetailFor = null; // <<< THÊM TRẠNG THÁI MỚI
 
             await firebase.init();
             auth.init();
@@ -49,9 +50,12 @@ const app = {
             modalPreview.render('#modal-preview-container');
             modalSelection.render('#modal-selection-container');
 
+            // === GỌI LỆNH VẼ ICON SAU KHI RENDER COMPONENT ===
+            feather.replace();
+
             this.loadAndApplyBookmarkLink();
             this.loadAndDisplayQrCode(); 
-            this.setupMarquee(); // <<< GỌI HÀM MỚI
+            this.setupMarquee();
 
             await this.storage.openDB();
 
@@ -71,7 +75,6 @@ const app = {
             // === END: TẢI TẤT CẢ DỮ LIỆU TỪ FIRESTORE ===
 
             initializeEventListeners(this);
-
             await this.loadDataFromStorage();
 
             settingsService.loadInterfaceSettings();
@@ -93,7 +96,6 @@ const app = {
         }
     },
 
-    // === START: HÀM MỚI ĐỂ XỬ LÝ DÒNG CHỮ CHẠY ===
     async setupMarquee() {
         const marqueeContainer = document.getElementById('version-marquee-container');
         const marqueeText = marqueeContainer?.querySelector('.marquee-text');
@@ -101,13 +103,11 @@ const app = {
         if (!marqueeContainer || !marqueeText) return;
 
         try {
-            // Lấy số phiên bản
             const versionRes = await fetch(`./version.json?v=${new Date().getTime()}`);
             const versionInfo = await versionRes.json();
             const currentVersion = versionInfo.version || this.currentVersion;
             marqueeText.textContent = `🔥 Chi tiết bản cập nhật - Phiên bản ${currentVersion}`;
 
-            // Gắn sự kiện click
             marqueeContainer.addEventListener('click', async () => {
                 try {
                     const changelogRes = await fetch(`./changelog.json?v=${new Date().getTime()}`);
@@ -120,7 +120,7 @@ const app = {
                     if (modalContent) {
                         modalContent.innerHTML = this._formatChangelogForModal(changelogData);
                     }
-                    
+                   
                     ui.toggleModal('help-modal', true);
 
                 } catch (error) {
@@ -148,8 +148,7 @@ const app = {
             </div>
         `).join('');
     },
-    // === END: HÀM MỚI ===
-
+    
     async checkForUpdates() {
         try {
             const response = await fetch(`./version.json?v=${new Date().getTime()}`);
@@ -316,6 +315,8 @@ const app = {
                 realtimeTab.render();
                 break;
         }
+        // === GỌI LỆNH VẼ ICON SAU KHI RENDER LẠI TAB ===
+        feather.replace();
     },
 
     switchTab(targetId) {
@@ -331,6 +332,9 @@ const app = {
         else if (targetId === 'health-employee-section') sknvTab.render();
         else if (targetId === 'realtime-section') realtimeTab.render();
         else if (targetId === 'declaration-section' && appState.isAdmin) ui.renderAdminHelpEditors();
+
+        // === GỌI LỆNH VẼ ICON SAU KHI CHUYỂN TAB ===
+        feather.replace();
     },
 
     async loadAndApplyBookmarkLink() {
@@ -475,27 +479,10 @@ const app = {
         }
     },
 
-    handleSknvViewChange(e) {
-        const button = e.target.closest('.view-switcher__btn');
-        if (button) {
-            document.querySelectorAll('#sknv-view-selector .view-switcher__btn').forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
-            const view = button.dataset.view;
-            document.getElementById('sknv-employee-selector-container').classList.toggle('hidden', view !== 'detail');
-            sknvTab.render();
-        }
-    },
-
-    handleDtnvRealtimeViewChange(e) {
-        const button = e.target.closest('.view-switcher__btn');
-        if (button) {
-            document.querySelectorAll('#dtnv-realtime-view-selector .view-switcher__btn').forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
-            const view = button.dataset.view;
-            document.getElementById('dtnv-realtime-employee-selector-container').classList.toggle('hidden', view !== 'infographic');
-            realtimeTab.render();
-        }
-    },
+    // <<< START: CÁC HÀM BỊ XÓA >>>
+    // handleSknvViewChange(e) { ... }
+    // handleDtnvRealtimeViewChange(e) { ... }
+    // <<< END: CÁC HÀM BỊ XÓA >>>
 
     handleDthangRealtimeViewChange(e) {
         const button = e.target.closest('.view-switcher__btn');
@@ -787,7 +774,6 @@ const app = {
         const mainViewNav = document.getElementById(navIdMap[sectionId]);
         const contextTabsContainer = document.getElementById('composer-context-tabs');
         const contextContentContainer = document.getElementById('composer-context-content');
-        
         contextTabsContainer.innerHTML = '';
         contextContentContainer.innerHTML = '';
 
@@ -799,13 +785,15 @@ const app = {
 
                 const newTabBtn = document.createElement('button');
                 newTabBtn.className = `composer__tab-btn ${isActive ? 'active' : ''}`;
-                newTabBtn.dataset.target = `context-pane-${subTabId}`;
+             
+newTabBtn.dataset.target = `context-pane-${subTabId}`;
                 newTabBtn.textContent = btn.textContent.trim();
                 newTabBtn.addEventListener('click', () => {
                     contextTabsContainer.querySelectorAll('.composer__tab-btn').forEach(t => t.classList.remove('active'));
                     contextContentContainer.querySelectorAll('.composer__context-pane').forEach(c => c.classList.add('hidden'));
                     newTabBtn.classList.add('active');
-                    document.getElementById(`context-pane-${subTabId}`).classList.remove('hidden');
+             
+document.getElementById(`context-pane-${subTabId}`).classList.remove('hidden');
                 });
                 contextTabsContainer.appendChild(newTabBtn);
 
@@ -821,7 +809,8 @@ const app = {
                 if (!appState.composerTemplates[sectionId]) {
                     appState.composerTemplates[sectionId] = {};
                 }
-                textarea.value = appState.composerTemplates[sectionId][subTabId] || '';
+     
+textarea.value = appState.composerTemplates[sectionId][subTabId] || '';
                 
                 newContentPane.appendChild(textarea);
                 contextContentContainer.appendChild(newContentPane);
@@ -846,7 +835,8 @@ const app = {
              const nav = e.target.closest('.composer__nav');
             const content = nav.nextElementSibling;
             if (nav && content) {
-                nav.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
+             
+nav.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
                 content.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
                 e.target.classList.add('active');
                 const targetId = e.target.dataset.tab;
@@ -861,7 +851,6 @@ const app = {
         if (e.target.matches('.composer__icon-btn, .composer__tag-btn')) {
              if (!activeTextarea) {
                 ui.showNotification("Vui lòng chọn một tab nội dung để chèn thẻ.", "error");
-                return;
             }
             let tagToInsert = e.target.dataset.tag;
             if (e.target.dataset.tagTemplate) {
@@ -877,7 +866,8 @@ const app = {
             const activeContextTab = modal.querySelector('#composer-context-tabs .composer__tab-btn.active');
             const subTabId = activeContextTab?.dataset.target.replace('context-pane-', '');
             if (subTabId) {
-                if (!appState.composerTemplates[sectionId]) appState.composerTemplates[sectionId] = {};
+                if (!appState.composerTemplates[sectionId]) appState.composerTemplates[sectionId] =
+{};
                 appState.composerTemplates[sectionId][subTabId] = activeTextarea.value;
                 localStorage.setItem('composerTemplates', JSON.stringify(appState.composerTemplates));
                 ui.showNotification(`Đã lưu mẫu cho tab con!`, 'success');
@@ -892,7 +882,8 @@ const app = {
                 return;
             }
 
-            const template = activeTextarea.value;
+         
+const template = activeTextarea.value;
             
             const filteredReportData = this._getFilteredReportData(sectionId);
             const supermarketReport = services.aggregateReport(filteredReportData);
@@ -915,7 +906,8 @@ const app = {
             if (imgEl) {
                 imgEl.src = qrUrl;
             }
-        } catch (error) {
+        }
+catch (error) {
             console.error("Không thể tải mã QR:", error);
             const container = document.querySelector('.header-qr-container');
             if (container) {
