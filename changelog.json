@@ -1,4 +1,12 @@
 [
+   {
+    "version": "3.4",
+    "date": "17/10/2025",
+    "notes": [
+      "Có thể bấm trực tiếp tên nhân viên để xem chi tiết",
+      "Thêm icon vào menu cho sinh động"
+    ]
+  },  
   {
     "version": "3.3",
     "date": "13/10/2025",

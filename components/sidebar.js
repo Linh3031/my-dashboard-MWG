@@ -1,3 +1,4 @@
+// Version 1.4 - Add font-semibold to all nav links for consistency
 // Version 1.3 - Optimize HTML for better icon/text alignment
 // Chứa mã HTML và logic cho thanh điều hướng bên.
 
@@ -16,19 +17,19 @@ const sidebarHTML = `
                 </a>
             </li>
             <li>
-                <a href="#health-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200">
+                <a href="#health-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
                     <i data-feather="activity"></i>
                     <span class="menu-text">Sức khỏe siêu thị</span>
                 </a>
             </li>
             <li>
-                <a href="#health-employee-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200">
+                <a href="#health-employee-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
                     <i data-feather="users"></i>
                     <span class="menu-text">Sức khỏe nhân viên</span>
                 </a>
             </li>
             <li>
-                <a href="#realtime-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200">
+                <a href="#realtime-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
                     <i data-feather="trending-up"></i>
                     <span class="menu-text">Doanh thu realtime</span>
                 </a>
