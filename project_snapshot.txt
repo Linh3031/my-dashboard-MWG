@@ -1108,44 +1108,38 @@ export const modalSelection = {
 --- END FILE: ./components/modal-selection.js ---
 
 --- START FILE: ./components/sidebar.js ---
-// Version 1.1 - Update icons for Data and Declaration sections
+// Version 1.2 - Replace all inline SVGs with Feather Icons
 // Chứa mã HTML và logic cho thanh điều hướng bên.
 
 const sidebarHTML = `
 <nav id="sidebar" class="bg-white/80 backdrop-blur-sm shadow-lg fixed top-0 left-0 h-full z-30 p-3 flex flex-col justify-between">
     <div>
          <a href="#home-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            <i data-feather="home"></i>
             <span class="menu-text ml-4">Hướng Dẫn & Góp Ý</span>
         </a>
         <ul class="space-y-2">
             <li>
                 <a href="#data-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                        <line x1="16" y1="17" x2="8" y2="17"></line>
-                        <polyline points="10 9 9 9 8 9"></polyline>
-                    </svg>
+                    <i data-feather="file-text"></i>
                     <span class="menu-text ml-4">Cập nhật dữ liệu</span>
                 </a>
             </li>
             <li>
                 <a href="#health-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+                    <i data-feather="activity"></i>
                     <span class="menu-text ml-4">Sức khỏe siêu thị</span>
                 </a>
             </li>
             <li>
                 <a href="#health-employee-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200">
-                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    <i data-feather="users"></i>
                     <span class="menu-text ml-4">Sức khỏe nhân viên</span>
                 </a>
             </li>
             <li>
                 <a href="#realtime-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                    <i data-feather="trending-up"></i>
                     <span class="menu-text ml-4">Doanh thu realtime</span>
                 </a>
             </li>
@@ -1155,24 +1149,19 @@ const sidebarHTML = `
         <ul class="space-y-2">
             <li>
                 <button id="interface-settings-btn" class="w-full flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    <i data-feather="settings"></i>
                     <span class="menu-text ml-4">Cài đặt giao diện</span>
                 </button>
             </li>
-             <li>
+            <li>
                 <button id="goal-settings-btn" class="w-full flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+                    <i data-feather="target"></i>
                     <span class="menu-text ml-4">Thiết lập mục tiêu</span>
                 </button>
             </li>
             <li>
                 <button id="admin-access-btn" class="w-full flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0">
-                        <path d="M8 17.929H6c-1.105 0-2-.895-2-2V5c0-1.105.895-2 2-2h8c1.105 0 2 .895 2 2v5.828"></path>
-                        <polyline points="14 3 14 8 19 8"></polyline>
-                        <path d="M10.42 16.22a2.121 2.121 0 102.122 2.121"></path>
-                        <path d="M16 12.016v4.414m-3.003.015 9.008 2.502-2.502-9.008-3.5 3.504-3-3-3.504 3.5"></path>
-                    </svg>
+                    <i data-feather="edit"></i>
                     <span class="menu-text ml-4">Khai báo</span>
                 </button>
             </li>
@@ -1373,7 +1362,7 @@ createSnapshot();
 --- END FILE: ./create_snapshot.js ---
 
 --- START FILE: ./dashboard.css ---
-/* Version 5.2 - Fix distorted icons, add global icon styles */
+/* Version 5.5 - Unify sidebar icon sizes */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -1421,7 +1410,7 @@ html[data-contrast="6"] { --bg-lightness: var(--bg-lightness-6); --header-lightn
 #sidebar:hover .menu-text { opacity: 1; transition-delay: 0.1s; }
 #sidebar.menu-locked:hover .menu-text { opacity: 0; }
 #main-content { transition: margin-left 0.3s ease-in-out; margin-left: 68px; }
-#sidebar .nav-link { white-space: nowrap; }
+#sidebar .nav-link, #sidebar button { white-space: nowrap; }
 
 /* === BẮT ĐẦU: HIỆU ỨNG TƯƠNG TÁC MỚI === */
 .nav-link,
@@ -1605,7 +1594,18 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #
 .highlighted-row td { animation: pulse-bg 2s infinite; }
 @keyframes pulse-bg { 0% { background-color: var(--highlight-color, #ffff99); } 50% { background-color: var(--highlight-color-light, #ffffcc); } 100% { background-color: var(--highlight-color, #ffff99); } }
 
-.action-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 500; font-size: 0.875em; cursor: pointer; border: 1px solid transparent; }
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    font-size: 0.875em;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
 .action-btn--composer { background-color: #ede9fe; color: #5b21b6; border-color: #c4b5fd; }
 .action-btn--composer:hover { background-color: #d8b4fe; }
 .action-btn--export { background-color: #dcfce7; color: #166534; border-color: #86efac; }
@@ -1989,16 +1989,41 @@ details[open] > summary .arrow { transform: rotate(180deg); }
 }
 /* === END: DRAGGABLE TAG STYLES === */
 
-/* === START: ICON SIZING FIX (NEW) === */
-.action-btn svg,
-.sub-tab-btn svg,
-.nav-link svg,
-.view-switcher__btn svg {
-    width: 1.25rem; /* 20px */
-    height: 1.25rem; /* 20px */
-    flex-shrink: 0; /* Ngăn icon bị co lại khi không đủ không gian */
+/* === START: ICON SIZING & ALIGNMENT FIX (V5.5) === */
+/* General alignment for all buttons containing icons */
+.action-btn,
+.sub-tab-btn,
+.nav-link,
+.view-switcher__btn,
+.toggle-filters-btn,
+.page-header__help-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
 }
-/* === END: ICON SIZING FIX === */
+
+/* Default size for all Feather icons */
+.feather {
+    width: 1.1rem; 
+    height: 1.1rem;
+    stroke-width: 2.5; 
+    flex-shrink: 0;
+}
+
+/* UNIFIED size for ALL icons inside the sidebar */
+#sidebar .feather {
+    width: 1.5rem; /* 24px */
+    height: 1.5rem; /* 24px */
+    stroke-width: 2;
+}
+
+/* Specific size for help buttons in page headers */
+.page-header__help-btn .feather {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+/* === END: ICON SIZING & ALIGNMENT FIX === */
 --- END FILE: ./dashboard.css ---
 
 --- START FILE: ./event-listeners/listeners-actions.js ---
@@ -2716,6 +2741,8 @@ export function initializeEventListeners(mainAppController) {
 
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     
+    <script src="https://unpkg.com/feather-icons"></script>
+
     <link rel="stylesheet" href="./dashboard.css">
     
     <style>
@@ -2723,14 +2750,8 @@ export function initializeEventListeners(mainAppController) {
         #luyke-unexported-revenue-content td:first-child {
             text-transform: capitalize;
         }
-        /* Căn chỉnh icon và text trong các nút */
-        .sub-tab-btn, .action-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem; /* 8px */
-        }
     </style>
-    </head>
+</head>
 <body class="overflow-x-hidden">
 
     <div id="update-notification" class="hidden fixed bottom-5 right-5 bg-blue-600 text-white py-3 px-5 rounded-lg shadow-lg z-[1001] flex items-center gap-4">
@@ -2800,7 +2821,7 @@ export function initializeEventListeners(mainAppController) {
                         <div class="flex items-center gap-x-3">
                             <h2 class="page-header__title">Cập nhật dữ liệu</h2>
                             <button class="page-header__help-btn" data-help-id="data" title="Xem hướng dẫn">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                                <i data-feather="help-circle"></i>
                             </button>
                         </div>
                         <div id="version-marquee-container" class="marquee-container">
@@ -2897,7 +2918,7 @@ export function initializeEventListeners(mainAppController) {
                             <div id="debug-results-container" class="space-y-4">
                                  <p class="text-gray-500">Chưa có file nào được tải lên để kiểm tra.</p>
                             </div>
-                             <div id="pasted-debug-results-container" class="space-y-4 mt-4"></div>
+                            <div id="pasted-debug-results-container" class="space-y-4 mt-4"></div>
                         </div>
                     </div>
                     
@@ -2974,12 +2995,12 @@ export function initializeEventListeners(mainAppController) {
                             <div class="page-header border-b pb-4 mb-6">
                                 <h2 class="page-header__title">Sức khỏe siêu thị</h2>
                                 <button class="page-header__help-btn" data-help-id="luyke" title="Xem hướng dẫn">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                                    <i data-feather="help-circle"></i>
                                 </button>
                             </div>
-                             <button class="toggle-filters-btn" data-target="luyke-filter-container">
+                            <button class="toggle-filters-btn" data-target="luyke-filter-container">
                                 <span class="text">Hiện bộ lọc nâng cao</span>
-                                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                <i data-feather="chevron-down" class="icon"></i>
                             </button>
                              <div id="luyke-filter-container" class="advanced-filters hidden">
                                 <div id="luyke-filter-bar" class="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-4">
@@ -3012,37 +3033,29 @@ export function initializeEventListeners(mainAppController) {
                         <div class="flex justify-between items-center mb-8">
                             <nav id="luyke-subtabs-nav" class="border-b border-gray-200 -mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs" data-content-container="luyke-subtabs-content">
                                 <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-luyke-sieu-thi" data-title="SieuThiLuyKe">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13.293 2.293a1 1 0 011.414 0l7 7A1 1 0 0121 11v8a2 2 0 01-2 2H5a2 2 0 01-2-2v-8a1 1 0 01.293-.707l7-7z"></path></svg>
+                                    <i data-feather="home"></i>
                                     <span>Siêu thị Lũy kế</span>
                                 </button>
                                 <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-luyke-thi-dua" data-title="ThiDuaLuyKe">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"></path></svg>
+                                    <i data-feather="edit-3"></i>
                                     <span>Thi đua Lũy kế</span>
                                 </button>
                                 <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-luyke-thidua-vung" data-title="ThiDuaVung">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13V7m0 13l6-3m-6 3l6-3m0 0l5.447-2.724A1 1 0 0021 10.382V5.618a1 1 0 00-.553-.894L15 2m0 11v6m0-6V2"></path></svg>
+                                    <i data-feather="map"></i>
                                     <span>Thi đua Vùng</span>
                                 </button>
                             </nav>
                              <div class="flex items-center gap-x-2">
                                 <button id="compose-luyke-notification-btn" class="action-btn action-btn--composer" title="Nhận xét">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"></path>
-                                    </svg>
+                                    <i data-feather="pen-tool"></i>
                                     <span>Nhận xét</span>
                                 </button>
                                 <button id="export-luyke-btn" class="action-btn action-btn--export" title="Xuất Excel tab hiện tại">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"></path>
-                                    </svg>
+                                    <i data-feather="download"></i>
                                     <span>Xuất Excel</span>
                                 </button>
                                 <button id="capture-luyke-btn" class="action-btn action-btn--capture" title="Chụp ảnh tab hiện tại">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M6.828 6.172a4 4 0 015.656 0L14.25 7.939l-1.06-1.061a3 3 0 00-4.243 0L6.43 9.394a4 4 0 010-5.656z"></path>
-                                        <path d="M12.75 16.606l-1.061 1.061a3 3 0 01-4.243 0l-2.475-2.475a4 4 0 010-5.656L7.939 7.75l1.06 1.06-1.59 1.59a.75.75 0 001.06 1.061l2.25-2.25zM15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                        <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
+                                    <i data-feather="camera"></i>
                                     <span>Chụp màn hình</span>
                                 </button>
                             </div>
@@ -3110,12 +3123,13 @@ export function initializeEventListeners(mainAppController) {
                                     <div data-capture-group="2" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200"><h3 class="text-xl font-bold uppercase mb-4">Doanh thu chưa xuất</h3><div id="luyke-unexported-revenue-content"></div></div>
                                 </div>
                             </div>
-                             <div id="subtab-luyke-thi-dua" class="sub-tab-content hidden space-y-4">
+                            <div id="subtab-luyke-thi-dua" class="sub-tab-content hidden space-y-4">
                                 <div class="flex flex-wrap items-center justify-between gap-4">
                                     <h3 class="text-xl font-bold text-gray-800 uppercase">Thi đua lũy kế <span id="luyke-competition-summary" class="text-sm font-normal"></span></h3>
                                     <div id="luyke-thidua-view-selector-placeholder"></div> </div>
                                 <div id="luyke-competition-content"></div>
                              </div>
+                            
                             <div id="subtab-luyke-thidua-vung" class="sub-tab-content hidden">
                                 <div class="content-card">
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
@@ -3147,16 +3161,16 @@ export function initializeEventListeners(mainAppController) {
                     <div id="health-employee-section-placeholder" class="placeholder-message hidden">Vui lòng cập nhật danh sách nhân viên để xem kết quả.</div>
                     <div id="health-employee-section-content">
                         <div class="content-card">
-                             <div class="page-header border-b pb-4 mb-6">
+                            <div class="page-header border-b pb-4 mb-6">
                                 <h2 class="page-header__title">Sức khỏe nhân viên</h2>
                                 <button class="page-header__help-btn" data-help-id="sknv" title="Xem hướng dẫn">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                                    <i data-feather="help-circle"></i>
                                 </button>
                             </div>
 
                             <button class="toggle-filters-btn" data-target="sknv-filter-container">
                                 <span class="text">Hiện bộ lọc nâng cao</span>
-                                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                <i data-feather="chevron-down" class="icon"></i>
                             </button>
                             <div id="sknv-filter-container" class="advanced-filters hidden">
                                 <div id="sknv-filter-bar" class="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-4">
@@ -3190,49 +3204,41 @@ export function initializeEventListeners(mainAppController) {
                             <div class="flex justify-between items-center mb-8">
                                 <nav id="employee-subtabs-nav" class="border-b border-gray-200 -mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs" data-content-container="employee-subtabs-content">
                                     <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-sknv" data-title="SKNV">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 00-3-3.87"></path><path d="M16 3.13a4 4 0 010 7.75"></path></svg>
+                                        <i data-feather="users"></i>
                                         <span>SKNV</span>
                                     </button>
                                     <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-doanhthu-lk" data-title="DoanhThuLK">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M2.5 8.5a1 1 0 011-1h17a1 1 0 011 1v10a1 1 0 01-1 1h-17a1 1 0 01-1-1V8.5zM12 4v4m-4-2h8"></path></svg>
+                                        <i data-feather="dollar-sign"></i>
                                         <span>Doanh thu LK</span>
                                     </button>
                                     <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-thunhap" data-title="ThuNhap">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 6v12m-6-6h12"></path></svg>
+                                        <i data-feather="briefcase"></i>
                                         <span>Thu nhập</span>
                                     </button>
                                     <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-khai-thac-luy-ke" data-title="HieuQuaKhaiThacLuyKe">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 13v6a2 2 0 002 2h14a2 2 0 002-2v-6M3 13l6-6 4 4 8-8"></path></svg>
+                                        <i data-feather="bar-chart-2"></i>
                                         <span>Hiệu quả NV LK</span>
                                     </button>
                                     <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-doanhthu-nganhhang" data-title="DTNganhHang">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"></path></svg>
+                                        <i data-feather="layers"></i>
                                         <span>DT ngành hàng</span>
                                     </button>
                                     <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-thi-dua-lk" data-title="HieuQuaThiDuaLK">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM18 21.75l.259-1.035a3.375 3.375 0 00-2.456-2.456L14.25 18l1.035-.259a3.375 3.375 0 002.456-2.456L18 14.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 18l-1.035.259a3.375 3.375 0 00-2.456 2.456L18 21.75z"></path></svg>
+                                        <i data-feather="award"></i>
                                         <span>Thi đua NV LK</span>
                                     </button>
                                 </nav>
                                  <div class="flex items-center gap-x-2">
                                      <button id="compose-sknv-notification-btn" class="action-btn action-btn--composer" title="Nhận xét">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"></path>
-                                        </svg>
+                                        <i data-feather="pen-tool"></i>
                                         <span>Nhận xét</span>
                                     </button>
                                     <button id="export-sknv-btn" class="action-btn action-btn--export" title="Xuất Excel tab hiện tại">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"></path>
-                                        </svg>
+                                        <i data-feather="download"></i>
                                         <span>Xuất Excel</span>
                                     </button>
                                     <button id="capture-sknv-btn" class="action-btn action-btn--capture" title="Chụp ảnh tab hiện tại">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M6.828 6.172a4 4 0 015.656 0L14.25 7.939l-1.06-1.061a3 3 0 00-4.243 0L6.43 9.394a4 4 0 010-5.656z"></path>
-                                            <path d="M12.75 16.606l-1.061 1.061a3 3 0 01-4.243 0l-2.475-2.475a4 4 0 010-5.656L7.939 7.75l1.06 1.06-1.59 1.59a.75.75 0 001.06 1.061l2.25-2.25zM15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                            <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                        </svg>
+                                        <i data-feather="camera"></i>
                                         <span>Chụp màn hình</span>
                                     </button>
                                 </div>
@@ -3287,9 +3293,8 @@ export function initializeEventListeners(mainAppController) {
                                 <div class="flex items-center gap-x-3">
                                     <h2 class="page-header__title">Phân Tích Doanh Thu Realtime</h2>
                                     <button class="page-header__help-btn" data-help-id="realtime" title="Xem hướng dẫn">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                                        <i data-feather="help-circle"></i>
                                     </button>
-                                    <span class="text-sm italic text-gray-500 font-normal hidden md:inline">Hướng dẫn sử dụng</span>
                                 </div>
                                 <div class="flex-shrink-0 flex items-center gap-x-4 ml-auto">
                                     <label for="realtime-file-input" class="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium whitespace-nowrap">Thêm file Realtime</label>
@@ -3300,7 +3305,7 @@ export function initializeEventListeners(mainAppController) {
 
                             <button class="toggle-filters-btn" data-target="realtime-filter-container">
                                 <span class="text">Hiện bộ lọc nâng cao</span>
-                                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                <i data-feather="chevron-down" class="icon"></i>
                             </button>
                             <div id="realtime-filter-container" class="advanced-filters hidden">
                                  <div id="realtime-filter-bar" class="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-4">
@@ -3325,50 +3330,41 @@ export function initializeEventListeners(mainAppController) {
                         <div class="flex justify-between items-center mb-8">
                             <nav id="realtime-subtabs-nav" class="border-b border-gray-200 -mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs" data-content-container="realtime-subtabs-content">
                                 <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-sieu-thi" data-title="SieuThiRealtime">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"></path></svg>
+                                    <i data-feather="zap"></i>
                                     <span>Siêu thị Realtime</span>
                                 </button>
                                 <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-nhan-vien" data-title="DTNVRealtime">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-4.67c.12-.24.232-.483.335-.722M6.75 12.75a8.966 8.966 0 011.586-5.228 8.966 8.966 0 014.126-3.223 8.966 8.966 0 015.228 1.586 8.966 8.966 0 013.223 4.126A8.966 8.966 0 0112.75 18c-2.098 0-4.04-.73-5.54-1.99z"></path></svg>
+                                    <i data-feather="pie-chart"></i>
                                     <span>DT NV Realtime</span>
                                 </button>
                                 <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-hieu-qua" data-title="HieuQuaKhaiThacRealtime">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 13v6a2 2 0 002 2h14a2 2 0 002-2v-6M3 13l6-6 4 4 8-8"></path></svg>
+                                    <i data-feather="bar-chart-2"></i>
                                     <span>Hiệu quả NV Realtime</span>
                                 </button>
                                 <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-nganh-hang" data-title="NganhHangRealtime">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z"></path><path d="M6 9h.008v.008H6V9z"></path></svg>
+                                    <i data-feather="tag"></i>
                                     <span>Ngành hàng Realtime</span>
                                 </button>
                                 <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-hang" data-title="HangRealtime">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h6.375a.375.375 0 01.375.375v1.5a.375.375 0 01-.375.375H9a.375.375 0 01-.375-.375v-1.5A.375.375 0 019 6.75zM9 12.75h6.375a.375.375 0 01.375.375v1.5a.375.375 0 01-.375.375H9a.375.375 0 01-.375-.375v-1.5A.375.375 0 019 12.75z"></path></svg>
+                                    <i data-feather="globe"></i>
                                     <span>DT Hãng Realtime</span>
                                 </button>
                                 <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-thi-dua-realtime" data-title="HieuQuaThiDuaRealtime">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM18 21.75l.259-1.035a3.375 3.375 0 00-2.456-2.456L14.25 18l1.035-.259a3.375 3.375 0 002.456-2.456L18 14.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 18l-1.035.259a3.375 3.375 0 00-2.456 2.456L18 21.75z"></path></svg>
+                                    <i data-feather="award"></i>
                                     <span>Thi đua NV Realtime</span>
                                 </button>
                             </nav>
                              <div class="flex items-center gap-x-2">
                                 <button id="compose-realtime-notification-btn" class="action-btn action-btn--composer" title="Nhận xét">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"></path>
-                                        <path d="M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"></path>
-                                    </svg>
+                                    <i data-feather="pen-tool"></i>
                                     <span>Nhận xét</span>
                                 </button>
                                 <button id="export-realtime-btn" class="action-btn action-btn--export" title="Xuất Excel tab hiện tại">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"></path>
-                                    </svg>
+                                    <i data-feather="download"></i>
                                     <span>Xuất Excel</span>
                                 </button>
                                 <button id="capture-realtime-btn" class="action-btn action-btn--capture" title="Chụp ảnh tab hiện tại">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M6.828 6.172a4 4 0 015.656 0L14.25 7.939l-1.06-1.061a3 3 0 00-4.243 0L6.43 9.394a4 4 0 010-5.656z"></path>
-                                        <path d="M12.75 16.606l-1.061 1.061a3 3 0 01-4.243 0l-2.475-2.475a4 4 0 010-5.656L7.939 7.75l1.06 1.06-1.59 1.59a.75.75 0 001.06 1.061l2.25-2.25zM15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                        <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
+                                    <i data-feather="camera"></i>
                                     <span>Chụp màn hình</span>
                                 </button>
                             </div>
@@ -3569,6 +3565,7 @@ export function initializeEventListeners(mainAppController) {
     <div id="modal-composer-container"></div>
     <div id="modal-preview-container"></div>
     <div id="modal-selection-container"></div>
+    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const tailwindScript = document.querySelector('script[src="https://cdn.tailwindcss.com"]');
@@ -3584,7 +3581,7 @@ export function initializeEventListeners(mainAppController) {
 --- END FILE: ./index.html ---
 
 --- START FILE: ./main.js ---
-// Version 3.3 - Add handler for Luy Ke Competition view switcher
+// Version 3.4 - Add feather.replace() calls to correctly render icons
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -3635,9 +3632,12 @@ const app = {
             modalPreview.render('#modal-preview-container');
             modalSelection.render('#modal-selection-container');
 
+            // === GỌI LỆNH VẼ ICON SAU KHI RENDER COMPONENT ===
+            feather.replace();
+
             this.loadAndApplyBookmarkLink();
             this.loadAndDisplayQrCode(); 
-            this.setupMarquee(); // <<< GỌI HÀM MỚI
+            this.setupMarquee();
 
             await this.storage.openDB();
 
@@ -3657,7 +3657,6 @@ const app = {
             // === END: TẢI TẤT CẢ DỮ LIỆU TỪ FIRESTORE ===
 
             initializeEventListeners(this);
-
             await this.loadDataFromStorage();
 
             settingsService.loadInterfaceSettings();
@@ -3679,7 +3678,6 @@ const app = {
         }
     },
 
-    // === START: HÀM MỚI ĐỂ XỬ LÝ DÒNG CHỮ CHẠY ===
     async setupMarquee() {
         const marqueeContainer = document.getElementById('version-marquee-container');
         const marqueeText = marqueeContainer?.querySelector('.marquee-text');
@@ -3687,13 +3685,11 @@ const app = {
         if (!marqueeContainer || !marqueeText) return;
 
         try {
-            // Lấy số phiên bản
             const versionRes = await fetch(`./version.json?v=${new Date().getTime()}`);
             const versionInfo = await versionRes.json();
             const currentVersion = versionInfo.version || this.currentVersion;
             marqueeText.textContent = `🔥 Chi tiết bản cập nhật - Phiên bản ${currentVersion}`;
 
-            // Gắn sự kiện click
             marqueeContainer.addEventListener('click', async () => {
                 try {
                     const changelogRes = await fetch(`./changelog.json?v=${new Date().getTime()}`);
@@ -3734,8 +3730,7 @@ const app = {
             </div>
         `).join('');
     },
-    // === END: HÀM MỚI ===
-
+    
     async checkForUpdates() {
         try {
             const response = await fetch(`./version.json?v=${new Date().getTime()}`);
@@ -3902,6 +3897,8 @@ const app = {
                 realtimeTab.render();
                 break;
         }
+        // === GỌI LỆNH VẼ ICON SAU KHI RENDER LẠI TAB ===
+        feather.replace();
     },
 
     switchTab(targetId) {
@@ -3917,6 +3914,9 @@ const app = {
         else if (targetId === 'health-employee-section') sknvTab.render();
         else if (targetId === 'realtime-section') realtimeTab.render();
         else if (targetId === 'declaration-section' && appState.isAdmin) ui.renderAdminHelpEditors();
+
+        // === GỌI LỆNH VẼ ICON SAU KHI CHUYỂN TAB ===
+        feather.replace();
     },
 
     async loadAndApplyBookmarkLink() {
@@ -6340,44 +6340,38 @@ export const modalSelection = {
 --- END FILE: ./components/modal-selection.js ---
 
 --- START FILE: ./components/sidebar.js ---
-// Version 1.1 - Update icons for Data and Declaration sections
+// Version 1.2 - Replace all inline SVGs with Feather Icons
 // Chứa mã HTML và logic cho thanh điều hướng bên.
 
 const sidebarHTML = `
 <nav id="sidebar" class="bg-white/80 backdrop-blur-sm shadow-lg fixed top-0 left-0 h-full z-30 p-3 flex flex-col justify-between">
     <div>
          <a href="#home-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            <i data-feather="home"></i>
             <span class="menu-text ml-4">Hướng Dẫn & Góp Ý</span>
         </a>
         <ul class="space-y-2">
             <li>
                 <a href="#data-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                        <line x1="16" y1="17" x2="8" y2="17"></line>
-                        <polyline points="10 9 9 9 8 9"></polyline>
-                    </svg>
+                    <i data-feather="file-text"></i>
                     <span class="menu-text ml-4">Cập nhật dữ liệu</span>
                 </a>
             </li>
             <li>
                 <a href="#health-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+                    <i data-feather="activity"></i>
                     <span class="menu-text ml-4">Sức khỏe siêu thị</span>
                 </a>
             </li>
             <li>
                 <a href="#health-employee-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200">
-                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    <i data-feather="users"></i>
                     <span class="menu-text ml-4">Sức khỏe nhân viên</span>
                 </a>
             </li>
             <li>
                 <a href="#realtime-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                    <i data-feather="trending-up"></i>
                     <span class="menu-text ml-4">Doanh thu realtime</span>
                 </a>
             </li>
@@ -6387,24 +6381,19 @@ const sidebarHTML = `
         <ul class="space-y-2">
             <li>
                 <button id="interface-settings-btn" class="w-full flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    <i data-feather="settings"></i>
                     <span class="menu-text ml-4">Cài đặt giao diện</span>
                 </button>
             </li>
-             <li>
+            <li>
                 <button id="goal-settings-btn" class="w-full flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+                    <i data-feather="target"></i>
                     <span class="menu-text ml-4">Thiết lập mục tiêu</span>
                 </button>
             </li>
             <li>
                 <button id="admin-access-btn" class="w-full flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 flex-shrink-0">
-                        <path d="M8 17.929H6c-1.105 0-2-.895-2-2V5c0-1.105.895-2 2-2h8c1.105 0 2 .895 2 2v5.828"></path>
-                        <polyline points="14 3 14 8 19 8"></polyline>
-                        <path d="M10.42 16.22a2.121 2.121 0 102.122 2.121"></path>
-                        <path d="M16 12.016v4.414m-3.003.015 9.008 2.502-2.502-9.008-3.5 3.504-3-3-3.504 3.5"></path>
-                    </svg>
+                    <i data-feather="edit"></i>
                     <span class="menu-text ml-4">Khai báo</span>
                 </button>
             </li>
@@ -6605,7 +6594,7 @@ createSnapshot();
 --- END FILE: ./create_snapshot.js ---
 
 --- START FILE: ./dashboard.css ---
-/* Version 5.2 - Fix distorted icons, add global icon styles */
+/* Version 5.5 - Unify sidebar icon sizes */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -6653,7 +6642,7 @@ html[data-contrast="6"] { --bg-lightness: var(--bg-lightness-6); --header-lightn
 #sidebar:hover .menu-text { opacity: 1; transition-delay: 0.1s; }
 #sidebar.menu-locked:hover .menu-text { opacity: 0; }
 #main-content { transition: margin-left 0.3s ease-in-out; margin-left: 68px; }
-#sidebar .nav-link { white-space: nowrap; }
+#sidebar .nav-link, #sidebar button { white-space: nowrap; }
 
 /* === BẮT ĐẦU: HIỆU ỨNG TƯƠNG TÁC MỚI === */
 .nav-link,
@@ -6837,7 +6826,18 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #
 .highlighted-row td { animation: pulse-bg 2s infinite; }
 @keyframes pulse-bg { 0% { background-color: var(--highlight-color, #ffff99); } 50% { background-color: var(--highlight-color-light, #ffffcc); } 100% { background-color: var(--highlight-color, #ffff99); } }
 
-.action-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 500; font-size: 0.875em; cursor: pointer; border: 1px solid transparent; }
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    font-size: 0.875em;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
 .action-btn--composer { background-color: #ede9fe; color: #5b21b6; border-color: #c4b5fd; }
 .action-btn--composer:hover { background-color: #d8b4fe; }
 .action-btn--export { background-color: #dcfce7; color: #166534; border-color: #86efac; }
@@ -7221,16 +7221,41 @@ details[open] > summary .arrow { transform: rotate(180deg); }
 }
 /* === END: DRAGGABLE TAG STYLES === */
 
-/* === START: ICON SIZING FIX (NEW) === */
-.action-btn svg,
-.sub-tab-btn svg,
-.nav-link svg,
-.view-switcher__btn svg {
-    width: 1.25rem; /* 20px */
-    height: 1.25rem; /* 20px */
-    flex-shrink: 0; /* Ngăn icon bị co lại khi không đủ không gian */
+/* === START: ICON SIZING & ALIGNMENT FIX (V5.5) === */
+/* General alignment for all buttons containing icons */
+.action-btn,
+.sub-tab-btn,
+.nav-link,
+.view-switcher__btn,
+.toggle-filters-btn,
+.page-header__help-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
 }
-/* === END: ICON SIZING FIX === */
+
+/* Default size for all Feather icons */
+.feather {
+    width: 1.1rem; 
+    height: 1.1rem;
+    stroke-width: 2.5; 
+    flex-shrink: 0;
+}
+
+/* UNIFIED size for ALL icons inside the sidebar */
+#sidebar .feather {
+    width: 1.5rem; /* 24px */
+    height: 1.5rem; /* 24px */
+    stroke-width: 2;
+}
+
+/* Specific size for help buttons in page headers */
+.page-header__help-btn .feather {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+/* === END: ICON SIZING & ALIGNMENT FIX === */
 --- END FILE: ./dashboard.css ---
 
 --- START FILE: ./event-listeners/listeners-actions.js ---
@@ -7948,6 +7973,8 @@ export function initializeEventListeners(mainAppController) {
 
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     
+    <script src="https://unpkg.com/feather-icons"></script>
+
     <link rel="stylesheet" href="./dashboard.css">
     
     <style>
@@ -7955,14 +7982,8 @@ export function initializeEventListeners(mainAppController) {
         #luyke-unexported-revenue-content td:first-child {
             text-transform: capitalize;
         }
-        /* Căn chỉnh icon và text trong các nút */
-        .sub-tab-btn, .action-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem; /* 8px */
-        }
     </style>
-    </head>
+</head>
 <body class="overflow-x-hidden">
 
     <div id="update-notification" class="hidden fixed bottom-5 right-5 bg-blue-600 text-white py-3 px-5 rounded-lg shadow-lg z-[1001] flex items-center gap-4">
@@ -8032,7 +8053,7 @@ export function initializeEventListeners(mainAppController) {
                         <div class="flex items-center gap-x-3">
                             <h2 class="page-header__title">Cập nhật dữ liệu</h2>
                             <button class="page-header__help-btn" data-help-id="data" title="Xem hướng dẫn">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                                <i data-feather="help-circle"></i>
                             </button>
                         </div>
                         <div id="version-marquee-container" class="marquee-container">
@@ -8129,7 +8150,7 @@ export function initializeEventListeners(mainAppController) {
                             <div id="debug-results-container" class="space-y-4">
                                  <p class="text-gray-500">Chưa có file nào được tải lên để kiểm tra.</p>
                             </div>
-                             <div id="pasted-debug-results-container" class="space-y-4 mt-4"></div>
+                            <div id="pasted-debug-results-container" class="space-y-4 mt-4"></div>
                         </div>
                     </div>
                     
@@ -8206,12 +8227,12 @@ export function initializeEventListeners(mainAppController) {
                             <div class="page-header border-b pb-4 mb-6">
                                 <h2 class="page-header__title">Sức khỏe siêu thị</h2>
                                 <button class="page-header__help-btn" data-help-id="luyke" title="Xem hướng dẫn">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                                    <i data-feather="help-circle"></i>
                                 </button>
                             </div>
-                             <button class="toggle-filters-btn" data-target="luyke-filter-container">
+                            <button class="toggle-filters-btn" data-target="luyke-filter-container">
                                 <span class="text">Hiện bộ lọc nâng cao</span>
-                                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                <i data-feather="chevron-down" class="icon"></i>
                             </button>
                              <div id="luyke-filter-container" class="advanced-filters hidden">
                                 <div id="luyke-filter-bar" class="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-4">
@@ -8244,37 +8265,29 @@ export function initializeEventListeners(mainAppController) {
                         <div class="flex justify-between items-center mb-8">
                             <nav id="luyke-subtabs-nav" class="border-b border-gray-200 -mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs" data-content-container="luyke-subtabs-content">
                                 <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-luyke-sieu-thi" data-title="SieuThiLuyKe">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13.293 2.293a1 1 0 011.414 0l7 7A1 1 0 0121 11v8a2 2 0 01-2 2H5a2 2 0 01-2-2v-8a1 1 0 01.293-.707l7-7z"></path></svg>
+                                    <i data-feather="home"></i>
                                     <span>Siêu thị Lũy kế</span>
                                 </button>
                                 <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-luyke-thi-dua" data-title="ThiDuaLuyKe">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"></path></svg>
+                                    <i data-feather="edit-3"></i>
                                     <span>Thi đua Lũy kế</span>
                                 </button>
                                 <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-luyke-thidua-vung" data-title="ThiDuaVung">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13V7m0 13l6-3m-6 3l6-3m0 0l5.447-2.724A1 1 0 0021 10.382V5.618a1 1 0 00-.553-.894L15 2m0 11v6m0-6V2"></path></svg>
+                                    <i data-feather="map"></i>
                                     <span>Thi đua Vùng</span>
                                 </button>
                             </nav>
                              <div class="flex items-center gap-x-2">
                                 <button id="compose-luyke-notification-btn" class="action-btn action-btn--composer" title="Nhận xét">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"></path>
-                                    </svg>
+                                    <i data-feather="pen-tool"></i>
                                     <span>Nhận xét</span>
                                 </button>
                                 <button id="export-luyke-btn" class="action-btn action-btn--export" title="Xuất Excel tab hiện tại">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"></path>
-                                    </svg>
+                                    <i data-feather="download"></i>
                                     <span>Xuất Excel</span>
                                 </button>
                                 <button id="capture-luyke-btn" class="action-btn action-btn--capture" title="Chụp ảnh tab hiện tại">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M6.828 6.172a4 4 0 015.656 0L14.25 7.939l-1.06-1.061a3 3 0 00-4.243 0L6.43 9.394a4 4 0 010-5.656z"></path>
-                                        <path d="M12.75 16.606l-1.061 1.061a3 3 0 01-4.243 0l-2.475-2.475a4 4 0 010-5.656L7.939 7.75l1.06 1.06-1.59 1.59a.75.75 0 001.06 1.061l2.25-2.25zM15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                        <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
+                                    <i data-feather="camera"></i>
                                     <span>Chụp màn hình</span>
                                 </button>
                             </div>
@@ -8342,12 +8355,13 @@ export function initializeEventListeners(mainAppController) {
                                     <div data-capture-group="2" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200"><h3 class="text-xl font-bold uppercase mb-4">Doanh thu chưa xuất</h3><div id="luyke-unexported-revenue-content"></div></div>
                                 </div>
                             </div>
-                             <div id="subtab-luyke-thi-dua" class="sub-tab-content hidden space-y-4">
+                            <div id="subtab-luyke-thi-dua" class="sub-tab-content hidden space-y-4">
                                 <div class="flex flex-wrap items-center justify-between gap-4">
                                     <h3 class="text-xl font-bold text-gray-800 uppercase">Thi đua lũy kế <span id="luyke-competition-summary" class="text-sm font-normal"></span></h3>
                                     <div id="luyke-thidua-view-selector-placeholder"></div> </div>
                                 <div id="luyke-competition-content"></div>
                              </div>
+                            
                             <div id="subtab-luyke-thidua-vung" class="sub-tab-content hidden">
                                 <div class="content-card">
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
@@ -8379,16 +8393,16 @@ export function initializeEventListeners(mainAppController) {
                     <div id="health-employee-section-placeholder" class="placeholder-message hidden">Vui lòng cập nhật danh sách nhân viên để xem kết quả.</div>
                     <div id="health-employee-section-content">
                         <div class="content-card">
-                             <div class="page-header border-b pb-4 mb-6">
+                            <div class="page-header border-b pb-4 mb-6">
                                 <h2 class="page-header__title">Sức khỏe nhân viên</h2>
                                 <button class="page-header__help-btn" data-help-id="sknv" title="Xem hướng dẫn">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                                    <i data-feather="help-circle"></i>
                                 </button>
                             </div>
 
                             <button class="toggle-filters-btn" data-target="sknv-filter-container">
                                 <span class="text">Hiện bộ lọc nâng cao</span>
-                                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                <i data-feather="chevron-down" class="icon"></i>
                             </button>
                             <div id="sknv-filter-container" class="advanced-filters hidden">
                                 <div id="sknv-filter-bar" class="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-4">
@@ -8422,49 +8436,41 @@ export function initializeEventListeners(mainAppController) {
                             <div class="flex justify-between items-center mb-8">
                                 <nav id="employee-subtabs-nav" class="border-b border-gray-200 -mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs" data-content-container="employee-subtabs-content">
                                     <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-sknv" data-title="SKNV">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 00-3-3.87"></path><path d="M16 3.13a4 4 0 010 7.75"></path></svg>
+                                        <i data-feather="users"></i>
                                         <span>SKNV</span>
                                     </button>
                                     <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-doanhthu-lk" data-title="DoanhThuLK">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M2.5 8.5a1 1 0 011-1h17a1 1 0 011 1v10a1 1 0 01-1 1h-17a1 1 0 01-1-1V8.5zM12 4v4m-4-2h8"></path></svg>
+                                        <i data-feather="dollar-sign"></i>
                                         <span>Doanh thu LK</span>
                                     </button>
                                     <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-thunhap" data-title="ThuNhap">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 6v12m-6-6h12"></path></svg>
+                                        <i data-feather="briefcase"></i>
                                         <span>Thu nhập</span>
                                     </button>
                                     <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-khai-thac-luy-ke" data-title="HieuQuaKhaiThacLuyKe">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 13v6a2 2 0 002 2h14a2 2 0 002-2v-6M3 13l6-6 4 4 8-8"></path></svg>
+                                        <i data-feather="bar-chart-2"></i>
                                         <span>Hiệu quả NV LK</span>
                                     </button>
                                     <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-doanhthu-nganhhang" data-title="DTNganhHang">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"></path></svg>
+                                        <i data-feather="layers"></i>
                                         <span>DT ngành hàng</span>
                                     </button>
                                     <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-thi-dua-lk" data-title="HieuQuaThiDuaLK">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM18 21.75l.259-1.035a3.375 3.375 0 00-2.456-2.456L14.25 18l1.035-.259a3.375 3.375 0 002.456-2.456L18 14.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 18l-1.035.259a3.375 3.375 0 00-2.456 2.456L18 21.75z"></path></svg>
+                                        <i data-feather="award"></i>
                                         <span>Thi đua NV LK</span>
                                     </button>
                                 </nav>
                                  <div class="flex items-center gap-x-2">
                                      <button id="compose-sknv-notification-btn" class="action-btn action-btn--composer" title="Nhận xét">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"></path>
-                                        </svg>
+                                        <i data-feather="pen-tool"></i>
                                         <span>Nhận xét</span>
                                     </button>
                                     <button id="export-sknv-btn" class="action-btn action-btn--export" title="Xuất Excel tab hiện tại">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"></path>
-                                        </svg>
+                                        <i data-feather="download"></i>
                                         <span>Xuất Excel</span>
                                     </button>
                                     <button id="capture-sknv-btn" class="action-btn action-btn--capture" title="Chụp ảnh tab hiện tại">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M6.828 6.172a4 4 0 015.656 0L14.25 7.939l-1.06-1.061a3 3 0 00-4.243 0L6.43 9.394a4 4 0 010-5.656z"></path>
-                                            <path d="M12.75 16.606l-1.061 1.061a3 3 0 01-4.243 0l-2.475-2.475a4 4 0 010-5.656L7.939 7.75l1.06 1.06-1.59 1.59a.75.75 0 001.06 1.061l2.25-2.25zM15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                            <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                        </svg>
+                                        <i data-feather="camera"></i>
                                         <span>Chụp màn hình</span>
                                     </button>
                                 </div>
@@ -8519,9 +8525,8 @@ export function initializeEventListeners(mainAppController) {
                                 <div class="flex items-center gap-x-3">
                                     <h2 class="page-header__title">Phân Tích Doanh Thu Realtime</h2>
                                     <button class="page-header__help-btn" data-help-id="realtime" title="Xem hướng dẫn">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                                        <i data-feather="help-circle"></i>
                                     </button>
-                                    <span class="text-sm italic text-gray-500 font-normal hidden md:inline">Hướng dẫn sử dụng</span>
                                 </div>
                                 <div class="flex-shrink-0 flex items-center gap-x-4 ml-auto">
                                     <label for="realtime-file-input" class="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium whitespace-nowrap">Thêm file Realtime</label>
@@ -8532,7 +8537,7 @@ export function initializeEventListeners(mainAppController) {
 
                             <button class="toggle-filters-btn" data-target="realtime-filter-container">
                                 <span class="text">Hiện bộ lọc nâng cao</span>
-                                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                <i data-feather="chevron-down" class="icon"></i>
                             </button>
                             <div id="realtime-filter-container" class="advanced-filters hidden">
                                  <div id="realtime-filter-bar" class="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-4">
@@ -8557,50 +8562,41 @@ export function initializeEventListeners(mainAppController) {
                         <div class="flex justify-between items-center mb-8">
                             <nav id="realtime-subtabs-nav" class="border-b border-gray-200 -mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs" data-content-container="realtime-subtabs-content">
                                 <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-sieu-thi" data-title="SieuThiRealtime">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"></path></svg>
+                                    <i data-feather="zap"></i>
                                     <span>Siêu thị Realtime</span>
                                 </button>
                                 <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-nhan-vien" data-title="DTNVRealtime">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-4.67c.12-.24.232-.483.335-.722M6.75 12.75a8.966 8.966 0 011.586-5.228 8.966 8.966 0 014.126-3.223 8.966 8.966 0 015.228 1.586 8.966 8.966 0 013.223 4.126A8.966 8.966 0 0112.75 18c-2.098 0-4.04-.73-5.54-1.99z"></path></svg>
+                                    <i data-feather="pie-chart"></i>
                                     <span>DT NV Realtime</span>
                                 </button>
                                 <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-hieu-qua" data-title="HieuQuaKhaiThacRealtime">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 13v6a2 2 0 002 2h14a2 2 0 002-2v-6M3 13l6-6 4 4 8-8"></path></svg>
+                                    <i data-feather="bar-chart-2"></i>
                                     <span>Hiệu quả NV Realtime</span>
                                 </button>
                                 <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-nganh-hang" data-title="NganhHangRealtime">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z"></path><path d="M6 9h.008v.008H6V9z"></path></svg>
+                                    <i data-feather="tag"></i>
                                     <span>Ngành hàng Realtime</span>
                                 </button>
                                 <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-hang" data-title="HangRealtime">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h6.375a.375.375 0 01.375.375v1.5a.375.375 0 01-.375.375H9a.375.375 0 01-.375-.375v-1.5A.375.375 0 019 6.75zM9 12.75h6.375a.375.375 0 01.375.375v1.5a.375.375 0 01-.375.375H9a.375.375 0 01-.375-.375v-1.5A.375.375 0 019 12.75z"></path></svg>
+                                    <i data-feather="globe"></i>
                                     <span>DT Hãng Realtime</span>
                                 </button>
                                 <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-thi-dua-realtime" data-title="HieuQuaThiDuaRealtime">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM18 21.75l.259-1.035a3.375 3.375 0 00-2.456-2.456L14.25 18l1.035-.259a3.375 3.375 0 002.456-2.456L18 14.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 18l-1.035.259a3.375 3.375 0 00-2.456 2.456L18 21.75z"></path></svg>
+                                    <i data-feather="award"></i>
                                     <span>Thi đua NV Realtime</span>
                                 </button>
                             </nav>
                              <div class="flex items-center gap-x-2">
                                 <button id="compose-realtime-notification-btn" class="action-btn action-btn--composer" title="Nhận xét">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"></path>
-                                        <path d="M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"></path>
-                                    </svg>
+                                    <i data-feather="pen-tool"></i>
                                     <span>Nhận xét</span>
                                 </button>
                                 <button id="export-realtime-btn" class="action-btn action-btn--export" title="Xuất Excel tab hiện tại">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"></path>
-                                    </svg>
+                                    <i data-feather="download"></i>
                                     <span>Xuất Excel</span>
                                 </button>
                                 <button id="capture-realtime-btn" class="action-btn action-btn--capture" title="Chụp ảnh tab hiện tại">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M6.828 6.172a4 4 0 015.656 0L14.25 7.939l-1.06-1.061a3 3 0 00-4.243 0L6.43 9.394a4 4 0 010-5.656z"></path>
-                                        <path d="M12.75 16.606l-1.061 1.061a3 3 0 01-4.243 0l-2.475-2.475a4 4 0 010-5.656L7.939 7.75l1.06 1.06-1.59 1.59a.75.75 0 001.06 1.061l2.25-2.25zM15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                        <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
+                                    <i data-feather="camera"></i>
                                     <span>Chụp màn hình</span>
                                 </button>
                             </div>
@@ -8801,6 +8797,7 @@ export function initializeEventListeners(mainAppController) {
     <div id="modal-composer-container"></div>
     <div id="modal-preview-container"></div>
     <div id="modal-selection-container"></div>
+    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const tailwindScript = document.querySelector('script[src="https://cdn.tailwindcss.com"]');
@@ -8816,7 +8813,7 @@ export function initializeEventListeners(mainAppController) {
 --- END FILE: ./index.html ---
 
 --- START FILE: ./main.js ---
-// Version 3.3 - Add handler for Luy Ke Competition view switcher
+// Version 3.4 - Add feather.replace() calls to correctly render icons
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -8867,9 +8864,12 @@ const app = {
             modalPreview.render('#modal-preview-container');
             modalSelection.render('#modal-selection-container');
 
+            // === GỌI LỆNH VẼ ICON SAU KHI RENDER COMPONENT ===
+            feather.replace();
+
             this.loadAndApplyBookmarkLink();
             this.loadAndDisplayQrCode(); 
-            this.setupMarquee(); // <<< GỌI HÀM MỚI
+            this.setupMarquee();
 
             await this.storage.openDB();
 
@@ -8889,7 +8889,6 @@ const app = {
             // === END: TẢI TẤT CẢ DỮ LIỆU TỪ FIRESTORE ===
 
             initializeEventListeners(this);
-
             await this.loadDataFromStorage();
 
             settingsService.loadInterfaceSettings();
@@ -8911,7 +8910,6 @@ const app = {
         }
     },
 
-    // === START: HÀM MỚI ĐỂ XỬ LÝ DÒNG CHỮ CHẠY ===
     async setupMarquee() {
         const marqueeContainer = document.getElementById('version-marquee-container');
         const marqueeText = marqueeContainer?.querySelector('.marquee-text');
@@ -8919,13 +8917,11 @@ const app = {
         if (!marqueeContainer || !marqueeText) return;
 
         try {
-            // Lấy số phiên bản
             const versionRes = await fetch(`./version.json?v=${new Date().getTime()}`);
             const versionInfo = await versionRes.json();
             const currentVersion = versionInfo.version || this.currentVersion;
             marqueeText.textContent = `🔥 Chi tiết bản cập nhật - Phiên bản ${currentVersion}`;
 
-            // Gắn sự kiện click
             marqueeContainer.addEventListener('click', async () => {
                 try {
                     const changelogRes = await fetch(`./changelog.json?v=${new Date().getTime()}`);
@@ -8966,8 +8962,7 @@ const app = {
             </div>
         `).join('');
     },
-    // === END: HÀM MỚI ===
-
+    
     async checkForUpdates() {
         try {
             const response = await fetch(`./version.json?v=${new Date().getTime()}`);
@@ -9134,6 +9129,8 @@ const app = {
                 realtimeTab.render();
                 break;
         }
+        // === GỌI LỆNH VẼ ICON SAU KHI RENDER LẠI TAB ===
+        feather.replace();
     },
 
     switchTab(targetId) {
@@ -9149,6 +9146,9 @@ const app = {
         else if (targetId === 'health-employee-section') sknvTab.render();
         else if (targetId === 'realtime-section') realtimeTab.render();
         else if (targetId === 'declaration-section' && appState.isAdmin) ui.renderAdminHelpEditors();
+
+        // === GỌI LỆNH VẼ ICON SAU KHI CHUYỂN TAB ===
+        feather.replace();
     },
 
     async loadAndApplyBookmarkLink() {

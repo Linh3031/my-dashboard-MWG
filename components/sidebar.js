@@ -1,4 +1,4 @@
-// Version 1.2 - Replace all inline SVGs with Feather Icons
+// Version 1.3 - Optimize HTML for better icon/text alignment
 // Chứa mã HTML và logic cho thanh điều hướng bên.
 
 const sidebarHTML = `
@@ -6,31 +6,31 @@ const sidebarHTML = `
     <div>
          <a href="#home-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold mb-4">
             <i data-feather="home"></i>
-            <span class="menu-text ml-4">Hướng Dẫn & Góp Ý</span>
+            <span class="menu-text">Hướng Dẫn & Góp Ý</span>
         </a>
         <ul class="space-y-2">
             <li>
                 <a href="#data-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
                     <i data-feather="file-text"></i>
-                    <span class="menu-text ml-4">Cập nhật dữ liệu</span>
+                    <span class="menu-text">Cập nhật dữ liệu</span>
                 </a>
             </li>
             <li>
                 <a href="#health-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200">
                     <i data-feather="activity"></i>
-                    <span class="menu-text ml-4">Sức khỏe siêu thị</span>
+                    <span class="menu-text">Sức khỏe siêu thị</span>
                 </a>
             </li>
             <li>
                 <a href="#health-employee-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200">
                     <i data-feather="users"></i>
-                    <span class="menu-text ml-4">Sức khỏe nhân viên</span>
+                    <span class="menu-text">Sức khỏe nhân viên</span>
                 </a>
             </li>
             <li>
                 <a href="#realtime-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200">
                     <i data-feather="trending-up"></i>
-                    <span class="menu-text ml-4">Doanh thu realtime</span>
+                    <span class="menu-text">Doanh thu realtime</span>
                 </a>
             </li>
         </ul>
@@ -40,19 +40,19 @@ const sidebarHTML = `
             <li>
                 <button id="interface-settings-btn" class="w-full flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
                     <i data-feather="settings"></i>
-                    <span class="menu-text ml-4">Cài đặt giao diện</span>
+                    <span class="menu-text">Cài đặt giao diện</span>
                 </button>
             </li>
             <li>
                 <button id="goal-settings-btn" class="w-full flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
                     <i data-feather="target"></i>
-                    <span class="menu-text ml-4">Thiết lập mục tiêu</span>
+                    <span class="menu-text">Thiết lập mục tiêu</span>
                 </button>
             </li>
             <li>
                 <button id="admin-access-btn" class="w-full flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
                     <i data-feather="edit"></i>
-                    <span class="menu-text ml-4">Khai báo</span>
+                    <span class="menu-text">Khai báo</span>
                 </button>
             </li>
         </ul>
