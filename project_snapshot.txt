@@ -1363,7 +1363,7 @@ createSnapshot();
 --- END FILE: ./create_snapshot.js ---
 
 --- START FILE: ./dashboard.css ---
-/* Version 5.5 - Add styles for new Luy Ke employee detail layout */
+/* Version 5.6 - Add styles for new Luy Ke employee detail layout */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -2106,6 +2106,10 @@ details[open] > summary .arrow { transform: rotate(180deg); }
 .customer-accordion-luyke .product-list-table {
     width: 100%;
 }
+/* === START: ADDED RULES FOR COLORING === */
+.customer-accordion-luyke .qd-below-target { color: #b91c1c; } /* red-700 */
+.customer-accordion-luyke .qd-above-target { color: #1d4ed8; } /* blue-700 */
+/* === END: ADDED RULES === */
 /* === END: NEW STYLES === */
 --- END FILE: ./dashboard.css ---
 
@@ -2571,7 +2575,7 @@ export function initializeSortingListeners(appController) {
 --- END FILE: ./event-listeners/listeners-sorting.js ---
 
 --- START FILE: ./event-listeners/ui-listeners.js ---
-// Version 3.6 - Refactor: Replace view switchers with direct click-to-view-detail listeners
+// Version 3.8 - Refactor: Replace view switchers with direct click-to-view-detail listeners
 // MODULE: EVENT LISTENERS INITIALIZER
 // File này đóng vai trò là điểm khởi đầu, import và khởi chạy tất cả các module listener con.
 
@@ -2588,6 +2592,7 @@ import { initializeHighlightingListeners } from './listeners-highlighting.js';
 import { initializeSettingsListeners } from './listeners-settings.js';
 import { initializeSortingListeners } from './listeners-sorting.js';
 import { dragDroplisteners } from './listeners-dragdrop.js';
+import { captureService } from '../modules/capture.service.js'; // <<< SỬA LỖI: THÊM IMPORT
 
 let appController = null;
 
@@ -2599,7 +2604,6 @@ async function handleFileInputChange(e) {
     const fileType = fileInput.id.replace('file-', '');
     const dataName = fileInput.dataset.name || fileType;
     const stateKey = fileInput.dataset.stateKey; 
-
     if (!file || !stateKey) return; 
 
     ui.updateFileStatus(fileType, file.name, 'Đang xử lý...', 'default');
@@ -2814,7 +2818,7 @@ export function initializeEventListeners(mainAppController) {
             const areaToCapture = captureDetailBtn.closest('.sub-tab-content')?.querySelector('[id$="-capture-area"]');
             const title = appState.viewingDetailFor?.employeeId || 'ChiTietNV';
             if (areaToCapture) {
-                ui.captureDashboardInParts(areaToCapture, title);
+                captureService.captureDashboardInParts(areaToCapture, title); // <<< SỬA LỖI: Gọi hàm từ module đúng
             }
             return;
         }
@@ -2860,8 +2864,8 @@ export function initializeEventListeners(mainAppController) {
     <title>Công cụ phân tích số cho QLST MWG 4.8</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    [cite_start]<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script> [cite: 253]
-    [cite_start]<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script> [cite: 253]
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css"/>
     <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
     
@@ -2886,7 +2890,7 @@ export function initializeEventListeners(mainAppController) {
     <div id="update-notification" class="hidden fixed bottom-5 right-5 bg-blue-600 text-white py-3 px-5 rounded-lg shadow-lg z-[1001] flex items-center gap-4">
         <p class="font-semibold">Đã có phiên bản mới! Xem chi tiết nội dung cập nhật ở tab "Hướng Dẫn & Góp Ý"</p>
         <button onclick="window.location.reload()" class="bg-white text-blue-600 font-bold py-1 px-3 rounded-md hover:bg-blue-100 transition">Tải lại trang</button>
-    [cite_start]</div> [cite: 254]
+    </div>
 
     <div id="interface-drawer-container"></div>
     <div id="goal-drawer-container"></div>
@@ -2902,11 +2906,11 @@ export function initializeEventListeners(mainAppController) {
                         <h2 class="page-header__title">Hướng Dẫn & Góp Ý</h2>
                         <div id="usage-counter-display" class="text-sm font-semibold">
                             <span class="text-blue-600">Người dùng:</span>
-                            [cite_start]<span id="user-count" class="text-red-600 font-bold">-</span> [cite: 256]
+                            <span id="user-count" class="text-red-600 font-bold">-</span>
                             <span class="text-blue-600 ml-4">Lượt truy cập:</span>
-                            [cite_start]<span id="visitor-count" class="text-red-600 font-bold">-</span> [cite: 256]
+                            <span id="visitor-count" class="text-red-600 font-bold">-</span>
                             <span class="text-blue-600 ml-4">Lượt sử dụng:</span>
-                            [cite_start]<span id="action-count" class="text-red-600 font-bold">-</span> [cite: 257]
+                            <span id="action-count" class="text-red-600 font-bold">-</span>
                         </div>
                     </div>
                   
@@ -2959,7 +2963,7 @@ export function initializeEventListeners(mainAppController) {
                     
                         <div class="header-qr-container">
                              <span>THAM GIA THẢO LUẬN - GÓP Ý</span>
-                            <img id="header-qr-image" src="" alt="Mã QR" class="header-qr-image">
+                             <img id="header-qr-image" src="" alt="Mã QR" class="header-qr-image">
                         </div>
                     </div>
                     <div class="content-card">
@@ -2991,7 +2995,7 @@ export function initializeEventListeners(mainAppController) {
                                             <label for="file-giocong" class="data-input-group__file-trigger">Thêm file</label>
                                             <span id="file-name-giocong" class="data-input-group__file-name">Chưa thêm file</span>
                                         </div>
-                                        [cite_start]<input type="file" id="file-giocong" class="hidden file-input" data-name="Giờ công" data-state-key="rawGioCongData" data-save-key="saved_giocong" accept=".xlsx, .xls, .csv"> [cite: 280]
+                                        <input type="file" id="file-giocong" class="hidden file-input" data-name="Giờ công" data-state-key="rawGioCongData" data-save-key="saved_giocong" accept=".xlsx, .xls, .csv">
                                         <div class="data-input-group__status-wrapper">
                                             <span id="file-status-giocong" class="data-input-group__status-text"></span>
                                         </div>
@@ -3005,7 +3009,7 @@ export function initializeEventListeners(mainAppController) {
                                             <label for="file-thuongnong" class="data-input-group__file-trigger">Thêm file</label>
                                             <span id="file-name-thuongnong" class="data-input-group__file-name">Chưa thêm file</span>
                                         </div>
-                                        [cite_start]<input type="file" id="file-thuongnong" class="hidden file-input" data-name="Thưởng nóng" data-state-key="thuongNongData" data-save-key="saved_thuongnong" accept=".xlsx, .xls, .csv"> [cite: 285]
+                                        <input type="file" id="file-thuongnong" class="hidden file-input" data-name="Thưởng nóng" data-state-key="thuongNongData" data-save-key="saved_thuongnong" accept=".xlsx, .xls, .csv">
                                         <div class="data-input-group__status-wrapper">
                                             <span id="file-status-thuongnong" class="data-input-group__status-text"></span>
                                         </div>
@@ -3095,7 +3099,7 @@ export function initializeEventListeners(mainAppController) {
                                             <label for="file-thuongnong-thangtruoc" class="data-input-group__file-trigger">Thêm file</label>
                                             <span id="file-name-thuongnong-thangtruoc" class="data-input-group__file-name">Chưa thêm file</span>
                                         </div>
-                                        [cite_start]<input type="file" id="file-thuongnong-thangtruoc" class="hidden file-input" data-name="Thưởng nóng tháng trước" data-state-key="thuongNongDataThangTruoc" data-save-key="saved_thuongnong_thangtruoc" accept=".xlsx, .xls, .csv"> [cite: 314]
+                                        <input type="file" id="file-thuongnong-thangtruoc" class="hidden file-input" data-name="Thưởng nóng tháng trước" data-state-key="thuongNongDataThangTruoc" data-save-key="saved_thuongnong_thangtruoc" accept=".xlsx, .xls, .csv">
                                         <div class="data-input-group__status-wrapper">
                                             <span id="file-status-thuongnong-thangtruoc" class="data-input-group__status-text"></span>
                                         </div>
@@ -3197,13 +3201,13 @@ export function initializeEventListeners(mainAppController) {
                                         <p id="luyke-kpi-dt-qd-main" class="font-bold mt-2 mb-3">0</p>
                                         <p id="luyke-kpi-dt-qd-sub1" class="text-sm">DK: 0 / Target: 0</p>
                                     </div>
-                        
+                                
                                     <div class="kpi-card p-6 rounded-2xl shadow-lg">
                                         <h4 class="kpi-card-title">Tỷ lệ hoàn thành Target</h4>
                                         <p id="luyke-kpi-ht-target-qd-main" class="font-bold mt-2 mb-3">0%</p>
                                         <p id="luyke-kpi-ht-target-thuc-sub" class="text-sm">DT Thực: 0%</p>
                                     </div>
-                                
+                                    
                                     <div class="kpi-card p-6 rounded-2xl shadow-lg">
                                         <h4 class="kpi-card-title">Tỷ lệ quy đổi</h4>
                                         <p id="luyke-kpi-tl-qd-main" class="font-bold mt-2 mb-3">0%</p>
@@ -3270,7 +3274,7 @@ export function initializeEventListeners(mainAppController) {
                                     </div>
                                 </div>
                                 <div id="thidua-vung-infographic-container">
-                                    <div class="placeholder-message">Vui lòng tải file và chọn một siêu thị để xem báo cáo.</div>
+                                     <div class="placeholder-message">Vui lòng tải file và chọn một siêu thị để xem báo cáo.</div>
                                 </div>
                             </div>
                         </div>
@@ -3330,7 +3334,7 @@ export function initializeEventListeners(mainAppController) {
                                     <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-thi-dua-lk" data-title="HieuQuaThiDuaLK">Thi đua NV LK</button>
                                 </nav>
                                  <div class="flex items-center gap-x-2">
-                                     <button id="compose-sknv-notification-btn" class="action-btn action-btn--composer" title="Nhận xét">
+                                    <button id="compose-sknv-notification-btn" class="action-btn action-btn--composer" title="Nhận xét">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
                                         <span>Nhận xét</span>
                                     </button>
@@ -3353,7 +3357,7 @@ export function initializeEventListeners(mainAppController) {
                                     </div>
                                 </div>
                                 <div id="subtab-doanhthu-lk" class="sub-tab-content hidden space-y-6" data-capture-preset="landscape-table">
-                                     <div id="revenue-report-container-lk"></div>
+                                    <div id="revenue-report-container-lk"></div>
                                      <div id="dtnv-lk-details-container"></div>
                                 </div>
                                 <div id="subtab-thunhap" class="sub-tab-content hidden space-y-6" data-capture-preset="landscape-table">
@@ -6564,7 +6568,7 @@ createSnapshot();
 --- END FILE: ./create_snapshot.js ---
 
 --- START FILE: ./dashboard.css ---
-/* Version 5.5 - Add styles for new Luy Ke employee detail layout */
+/* Version 5.6 - Add styles for new Luy Ke employee detail layout */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -7307,6 +7311,10 @@ details[open] > summary .arrow { transform: rotate(180deg); }
 .customer-accordion-luyke .product-list-table {
     width: 100%;
 }
+/* === START: ADDED RULES FOR COLORING === */
+.customer-accordion-luyke .qd-below-target { color: #b91c1c; } /* red-700 */
+.customer-accordion-luyke .qd-above-target { color: #1d4ed8; } /* blue-700 */
+/* === END: ADDED RULES === */
 /* === END: NEW STYLES === */
 --- END FILE: ./dashboard.css ---
 
@@ -7772,7 +7780,7 @@ export function initializeSortingListeners(appController) {
 --- END FILE: ./event-listeners/listeners-sorting.js ---
 
 --- START FILE: ./event-listeners/ui-listeners.js ---
-// Version 3.6 - Refactor: Replace view switchers with direct click-to-view-detail listeners
+// Version 3.8 - Refactor: Replace view switchers with direct click-to-view-detail listeners
 // MODULE: EVENT LISTENERS INITIALIZER
 // File này đóng vai trò là điểm khởi đầu, import và khởi chạy tất cả các module listener con.
 
@@ -7789,6 +7797,7 @@ import { initializeHighlightingListeners } from './listeners-highlighting.js';
 import { initializeSettingsListeners } from './listeners-settings.js';
 import { initializeSortingListeners } from './listeners-sorting.js';
 import { dragDroplisteners } from './listeners-dragdrop.js';
+import { captureService } from '../modules/capture.service.js'; // <<< SỬA LỖI: THÊM IMPORT
 
 let appController = null;
 
@@ -7800,7 +7809,6 @@ async function handleFileInputChange(e) {
     const fileType = fileInput.id.replace('file-', '');
     const dataName = fileInput.dataset.name || fileType;
     const stateKey = fileInput.dataset.stateKey; 
-
     if (!file || !stateKey) return; 
 
     ui.updateFileStatus(fileType, file.name, 'Đang xử lý...', 'default');
@@ -8015,7 +8023,7 @@ export function initializeEventListeners(mainAppController) {
             const areaToCapture = captureDetailBtn.closest('.sub-tab-content')?.querySelector('[id$="-capture-area"]');
             const title = appState.viewingDetailFor?.employeeId || 'ChiTietNV';
             if (areaToCapture) {
-                ui.captureDashboardInParts(areaToCapture, title);
+                captureService.captureDashboardInParts(areaToCapture, title); // <<< SỬA LỖI: Gọi hàm từ module đúng
             }
             return;
         }
@@ -8061,8 +8069,8 @@ export function initializeEventListeners(mainAppController) {
     <title>Công cụ phân tích số cho QLST MWG 4.8</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    [cite_start]<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script> [cite: 253]
-    [cite_start]<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script> [cite: 253]
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css"/>
     <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
     
@@ -8087,7 +8095,7 @@ export function initializeEventListeners(mainAppController) {
     <div id="update-notification" class="hidden fixed bottom-5 right-5 bg-blue-600 text-white py-3 px-5 rounded-lg shadow-lg z-[1001] flex items-center gap-4">
         <p class="font-semibold">Đã có phiên bản mới! Xem chi tiết nội dung cập nhật ở tab "Hướng Dẫn & Góp Ý"</p>
         <button onclick="window.location.reload()" class="bg-white text-blue-600 font-bold py-1 px-3 rounded-md hover:bg-blue-100 transition">Tải lại trang</button>
-    [cite_start]</div> [cite: 254]
+    </div>
 
     <div id="interface-drawer-container"></div>
     <div id="goal-drawer-container"></div>
@@ -8103,11 +8111,11 @@ export function initializeEventListeners(mainAppController) {
                         <h2 class="page-header__title">Hướng Dẫn & Góp Ý</h2>
                         <div id="usage-counter-display" class="text-sm font-semibold">
                             <span class="text-blue-600">Người dùng:</span>
-                            [cite_start]<span id="user-count" class="text-red-600 font-bold">-</span> [cite: 256]
+                            <span id="user-count" class="text-red-600 font-bold">-</span>
                             <span class="text-blue-600 ml-4">Lượt truy cập:</span>
-                            [cite_start]<span id="visitor-count" class="text-red-600 font-bold">-</span> [cite: 256]
+                            <span id="visitor-count" class="text-red-600 font-bold">-</span>
                             <span class="text-blue-600 ml-4">Lượt sử dụng:</span>
-                            [cite_start]<span id="action-count" class="text-red-600 font-bold">-</span> [cite: 257]
+                            <span id="action-count" class="text-red-600 font-bold">-</span>
                         </div>
                     </div>
                   
@@ -8160,7 +8168,7 @@ export function initializeEventListeners(mainAppController) {
                     
                         <div class="header-qr-container">
                              <span>THAM GIA THẢO LUẬN - GÓP Ý</span>
-                            <img id="header-qr-image" src="" alt="Mã QR" class="header-qr-image">
+                             <img id="header-qr-image" src="" alt="Mã QR" class="header-qr-image">
                         </div>
                     </div>
                     <div class="content-card">
@@ -8192,7 +8200,7 @@ export function initializeEventListeners(mainAppController) {
                                             <label for="file-giocong" class="data-input-group__file-trigger">Thêm file</label>
                                             <span id="file-name-giocong" class="data-input-group__file-name">Chưa thêm file</span>
                                         </div>
-                                        [cite_start]<input type="file" id="file-giocong" class="hidden file-input" data-name="Giờ công" data-state-key="rawGioCongData" data-save-key="saved_giocong" accept=".xlsx, .xls, .csv"> [cite: 280]
+                                        <input type="file" id="file-giocong" class="hidden file-input" data-name="Giờ công" data-state-key="rawGioCongData" data-save-key="saved_giocong" accept=".xlsx, .xls, .csv">
                                         <div class="data-input-group__status-wrapper">
                                             <span id="file-status-giocong" class="data-input-group__status-text"></span>
                                         </div>
@@ -8206,7 +8214,7 @@ export function initializeEventListeners(mainAppController) {
                                             <label for="file-thuongnong" class="data-input-group__file-trigger">Thêm file</label>
                                             <span id="file-name-thuongnong" class="data-input-group__file-name">Chưa thêm file</span>
                                         </div>
-                                        [cite_start]<input type="file" id="file-thuongnong" class="hidden file-input" data-name="Thưởng nóng" data-state-key="thuongNongData" data-save-key="saved_thuongnong" accept=".xlsx, .xls, .csv"> [cite: 285]
+                                        <input type="file" id="file-thuongnong" class="hidden file-input" data-name="Thưởng nóng" data-state-key="thuongNongData" data-save-key="saved_thuongnong" accept=".xlsx, .xls, .csv">
                                         <div class="data-input-group__status-wrapper">
                                             <span id="file-status-thuongnong" class="data-input-group__status-text"></span>
                                         </div>
@@ -8296,7 +8304,7 @@ export function initializeEventListeners(mainAppController) {
                                             <label for="file-thuongnong-thangtruoc" class="data-input-group__file-trigger">Thêm file</label>
                                             <span id="file-name-thuongnong-thangtruoc" class="data-input-group__file-name">Chưa thêm file</span>
                                         </div>
-                                        [cite_start]<input type="file" id="file-thuongnong-thangtruoc" class="hidden file-input" data-name="Thưởng nóng tháng trước" data-state-key="thuongNongDataThangTruoc" data-save-key="saved_thuongnong_thangtruoc" accept=".xlsx, .xls, .csv"> [cite: 314]
+                                        <input type="file" id="file-thuongnong-thangtruoc" class="hidden file-input" data-name="Thưởng nóng tháng trước" data-state-key="thuongNongDataThangTruoc" data-save-key="saved_thuongnong_thangtruoc" accept=".xlsx, .xls, .csv">
                                         <div class="data-input-group__status-wrapper">
                                             <span id="file-status-thuongnong-thangtruoc" class="data-input-group__status-text"></span>
                                         </div>
@@ -8398,13 +8406,13 @@ export function initializeEventListeners(mainAppController) {
                                         <p id="luyke-kpi-dt-qd-main" class="font-bold mt-2 mb-3">0</p>
                                         <p id="luyke-kpi-dt-qd-sub1" class="text-sm">DK: 0 / Target: 0</p>
                                     </div>
-                        
+                                
                                     <div class="kpi-card p-6 rounded-2xl shadow-lg">
                                         <h4 class="kpi-card-title">Tỷ lệ hoàn thành Target</h4>
                                         <p id="luyke-kpi-ht-target-qd-main" class="font-bold mt-2 mb-3">0%</p>
                                         <p id="luyke-kpi-ht-target-thuc-sub" class="text-sm">DT Thực: 0%</p>
                                     </div>
-                                
+                                    
                                     <div class="kpi-card p-6 rounded-2xl shadow-lg">
                                         <h4 class="kpi-card-title">Tỷ lệ quy đổi</h4>
                                         <p id="luyke-kpi-tl-qd-main" class="font-bold mt-2 mb-3">0%</p>
@@ -8471,7 +8479,7 @@ export function initializeEventListeners(mainAppController) {
                                     </div>
                                 </div>
                                 <div id="thidua-vung-infographic-container">
-                                    <div class="placeholder-message">Vui lòng tải file và chọn một siêu thị để xem báo cáo.</div>
+                                     <div class="placeholder-message">Vui lòng tải file và chọn một siêu thị để xem báo cáo.</div>
                                 </div>
                             </div>
                         </div>
@@ -8531,7 +8539,7 @@ export function initializeEventListeners(mainAppController) {
                                     <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-thi-dua-lk" data-title="HieuQuaThiDuaLK">Thi đua NV LK</button>
                                 </nav>
                                  <div class="flex items-center gap-x-2">
-                                     <button id="compose-sknv-notification-btn" class="action-btn action-btn--composer" title="Nhận xét">
+                                    <button id="compose-sknv-notification-btn" class="action-btn action-btn--composer" title="Nhận xét">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
                                         <span>Nhận xét</span>
                                     </button>
@@ -8554,7 +8562,7 @@ export function initializeEventListeners(mainAppController) {
                                     </div>
                                 </div>
                                 <div id="subtab-doanhthu-lk" class="sub-tab-content hidden space-y-6" data-capture-preset="landscape-table">
-                                     <div id="revenue-report-container-lk"></div>
+                                    <div id="revenue-report-container-lk"></div>
                                      <div id="dtnv-lk-details-container"></div>
                                 </div>
                                 <div id="subtab-thunhap" class="sub-tab-content hidden space-y-6" data-capture-preset="landscape-table">
@@ -14428,7 +14436,7 @@ export const uiRealtime = {
 --- END FILE: ./ui-realtime.js ---
 
 --- START FILE: ./ui-sknv.js ---
-// Version 4.1 - Rework Luy Ke employee detail view with new layout, KPIs, chart, and progress bars
+// Version 4.3 - Rework Luy Ke employee detail view with new layout, KPIs, chart, and progress bars
 // MODULE: UI SKNV
 // Chứa các hàm render giao diện cho tab "Sức khỏe nhân viên"
 
@@ -14643,13 +14651,13 @@ export const uiSknv = {
         let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title} <span class="text-sm font-normal text-gray-500">(Thu nhập DK TB: ${uiComponents.formatRevenue(averageProjectedIncome)})</span></h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="thunhap" data-capture-columns="8">
             <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                 <tr>
-                                <th class="${headerClass('hoTen')}" data-sort="hoTen">Họ Tên <span class="sort-indicator"></span></th>
+                    <th class="${headerClass('hoTen')}" data-sort="hoTen">Họ Tên <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('gioCong')} text-right" data-sort="gioCong">Giờ công <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('tongThuNhap')} text-right" data-sort="tongThuNhap">Tổng thu nhập <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('thuNhapDuKien')} text-right" data-sort="thuNhapDuKien">Thu nhập DK <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('thuNhapThangTruoc')} text-right" data-sort="thuNhapThangTruoc">Tháng trước <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('chenhLechThuNhap')} text-right" data-sort="chenhLechThuNhap">+/- Tháng trước <span class="sort-indicator"></span></th>
-                            </tr>
+                </tr>
                         </thead><tbody>`;
         sortedData.forEach(nv => {
             const incomeDkCellClass = nv.thuNhapDuKien < averageProjectedIncome ? 'cell-performance is-below' : '';
@@ -14828,7 +14836,7 @@ export const uiSknv = {
                 ${visibleColumns.map(col => {
                     const value = totals[col.id];
                     const formatter = formatMap[col.id] || formatMap.defaultPercent;
-                     return `<td class="px-4 py-2 text-right">${formatter(value)}</td>`;
+                    return `<td class="px-4 py-2 text-right">${formatter(value)}</td>`;
                 }).join('')}
             </tr>
         </tfoot></table></div></div>`;
@@ -14845,6 +14853,7 @@ export const uiSknv = {
         if (!hasAnyData) {
              container.innerHTML = '<p class="text-yellow-600 font-semibold">Không tìm thấy doanh thu cho các ngành hàng chính.</p>'; return;
         }
+        // <<< SỬA LỖI: Gọi hàm thông qua this thay vì uiSknv >>>
         let finalHTML = `<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div data-capture-group="1" data-capture-columns="6">${uiSknv.renderCategoryTable('ICT', `${sortStatePrefix}_ict`, reportData, 'dtICT', 'slICT', ['slDienThoai', 'slLaptop'], ['SL Điện thoại', 'SL Laptop'])}</div>
                 <div data-capture-group="1" data-capture-columns="6">${uiSknv.renderCategoryTable('PHỤ KIỆN', `${sortStatePrefix}_phukien`, reportData, 'dtPhuKien', 'slPhuKien', ['slPinSDP', 'slCamera', 'slTaiNgheBLT'], ['SL Pin SDP', 'SL Camera', 'SL Tai nghe BLT'])}</div>
@@ -14916,11 +14925,13 @@ export const uiSknv = {
         };
 
         const renderTopGroupsAsProgressBars = () => {
-            if (!topProductGroups || topProductGroups.length === 0) return '<p class="text-sm text-gray-500">Không có doanh thu.</p>';
+            // Thay đổi: chỉ lấy top 5
+            const top5Groups = topProductGroups.slice(0, 5);
+            if (!top5Groups || top5Groups.length === 0) return '<p class="text-sm text-gray-500">Không có doanh thu.</p>';
             
-            const maxRevenue = topProductGroups[0]?.realRevenue || 0;
+            const maxRevenue = top5Groups[0]?.realRevenue || 0;
             
-            return topProductGroups.map(group => {
+            return top5Groups.map(group => {
                 const percentage = maxRevenue > 0 ? (group.realRevenue / maxRevenue) * 100 : 0;
                 return `
                 <div class="luyke-detail-progress-item">
@@ -14944,7 +14955,8 @@ export const uiSknv = {
             if (!byCustomer || byCustomer.length === 0) return '<p class="text-sm text-gray-500 mt-4">Không có đơn hàng nào.</p>';
             
             return byCustomer.map((customer, index) => {
-                const qdClass = customer.conversionRate >= conversionRateTarget ? 'is-positive' : 'is-negative';
+                // Thay đổi: áp dụng class màu
+                const qdClass = customer.conversionRate >= conversionRateTarget ? 'qd-above-target' : 'qd-below-target';
                 
                 const productListHtml = customer.products.map(p => `
                     <tr class="border-b last:border-b-0">
@@ -14957,6 +14969,7 @@ export const uiSknv = {
                 
                 const tableContent = `<table class="min-w-full text-xs product-list-table"><tbody>${productListHtml}</tbody></table>`;
                 
+                // Thay đổi: Thêm logic thanh cuộn
                 const detailContent = customer.products.length > 8
                     ? `<div class="product-list-scrollable">${tableContent}</div>`
                     : tableContent;
@@ -14998,7 +15011,7 @@ export const uiSknv = {
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                     <div class="bg-white p-4 rounded-lg shadow-md border">
-                        <h4 class="text-md font-bold text-gray-700 border-b pb-2 mb-3">Top 8 Nhóm Hàng Doanh Thu Cao</h4>
+                        <h4 class="text-md font-bold text-gray-700 border-b pb-2 mb-3">Top 5 Nhóm Hàng Doanh Thu Cao</h4>
                         <div class="space-y-3">
                             ${renderTopGroupsAsProgressBars()}
                         </div>
@@ -15184,7 +15197,7 @@ export const uiSknv = {
         if (!container) return;
 
         if (!reportData || reportData.length === 0) {
-             container.innerHTML = ''; return;
+            container.innerHTML = ''; return;
         }
 
         const summaryData = reportData.map(employee => {

@@ -1,4 +1,4 @@
-// Version 3.4 - Refactor: Render detail/summary view based on appState.viewingDetailFor
+// Version 3.5 - Add diagnostic logging for render flow
 // MODULE: Chịu trách nhiệm cho Tab Doanh thu Realtime
 
 import { appState } from './state.js';
@@ -10,6 +10,10 @@ import { dragDroplisteners } from './event-listeners/listeners-dragdrop.js';
 
 export const realtimeTab = {
     render() {
+        // --- BẮT ĐẦU CÔNG CỤ CHẨN ĐOÁN ---
+        console.log("[CHẨN ĐOÁN] Bắt đầu render() trong 'tab-realtime.js'.");
+        // --- KẾT THÚC CÔNG CỤ CHẨN ĐOÁN ---
+
         if (appState.danhSachNhanVien.length === 0) {
             ui.togglePlaceholder('realtime-section', true);
             return;

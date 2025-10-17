@@ -1,4 +1,4 @@
-// Version 4.3 - Rework Luy Ke employee detail view with new layout, KPIs, chart, and progress bars
+// Version 4.7 - Refactor: Remove displayCategoryRevenueReport to ui-components
 // MODULE: UI SKNV
 // Chứa các hàm render giao diện cho tab "Sức khỏe nhân viên"
 
@@ -113,7 +113,7 @@ export const uiSknv = {
         const headerClass = (sortKey) => `px-4 py-3 sortable ${headerClasses[sortKey] || ''} ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
         
         let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="7">
-                        <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
+                    <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                             <tr>
                                 <th class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('doanhThu')} text-right" data-sort="doanhThu">Doanh Thu <span class="sort-indicator"></span></th>
@@ -220,7 +220,7 @@ export const uiSknv = {
                                 <th class="${headerClass('thuNhapThangTruoc')} text-right" data-sort="thuNhapThangTruoc">Tháng trước <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('chenhLechThuNhap')} text-right" data-sort="chenhLechThuNhap">+/- Tháng trước <span class="sort-indicator"></span></th>
                 </tr>
-                        </thead><tbody>`;
+                </thead><tbody>`;
         sortedData.forEach(nv => {
             const incomeDkCellClass = nv.thuNhapDuKien < averageProjectedIncome ? 'cell-performance is-below' : '';
             const incomeDiffClass = nv.chenhLechThuNhap < 0 ? 'income-negative' : 'income-positive';
@@ -404,29 +404,7 @@ export const uiSknv = {
         </tfoot></table></div></div>`;
         return tableHTML;
     },
-
-    displayCategoryRevenueReport: (reportData, containerId, sortStatePrefix) => {
-        const container = document.getElementById(containerId);
-        if (!container) return;
-        if (!reportData || reportData.length === 0) {
-            container.innerHTML = '<p class="text-gray-500">Không có dữ liệu ngành hàng.</p>'; return;
-        }
-        const hasAnyData = reportData.some(item => item.dtICT > 0 || item.dtPhuKien > 0 || item.dtGiaDung > 0 || item.dtCE > 0 || item.dtBaoHiem > 0);
-        if (!hasAnyData) {
-             container.innerHTML = '<p class="text-yellow-600 font-semibold">Không tìm thấy doanh thu cho các ngành hàng chính.</p>'; return;
-        }
-        // <<< SỬA LỖI: Gọi hàm thông qua this thay vì uiSknv >>>
-        let finalHTML = `<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div data-capture-group="1" data-capture-columns="6">${uiSknv.renderCategoryTable('ICT', `${sortStatePrefix}_ict`, reportData, 'dtICT', 'slICT', ['slDienThoai', 'slLaptop'], ['SL Điện thoại', 'SL Laptop'])}</div>
-                <div data-capture-group="1" data-capture-columns="6">${uiSknv.renderCategoryTable('PHỤ KIỆN', `${sortStatePrefix}_phukien`, reportData, 'dtPhuKien', 'slPhuKien', ['slPinSDP', 'slCamera', 'slTaiNgheBLT'], ['SL Pin SDP', 'SL Camera', 'SL Tai nghe BLT'])}</div>
-                <div data-capture-group="2" data-capture-columns="6">${uiSknv.renderCategoryTable('GIA DỤNG', `${sortStatePrefix}_giadung`, reportData, 'dtGiaDung', 'slGiaDung', ['slNoiChien', 'slMLN', 'slRobotHB'], ['SL Nồi chiên', 'SL MLN', 'SL Robot HB'])}</div>
-                <div data-capture-group="2" data-capture-columns="6">${uiSknv.renderCategoryTable('CE', `${sortStatePrefix}_ce`, reportData, 'dtCE', 'slCE', ['slTivi', 'slTuLanh', 'slMayGiat', 'slMayLanh'], ['SL Tivi', 'SL Tủ lạnh', 'SL Máy giặt', 'SL Máy lạnh'])}</div>
-                <div class="lg:col-span-2" data-capture-group="3" data-capture-columns="7">
-                    ${uiSknv.renderCategoryTable('BẢO HIỂM', `${sortStatePrefix}_baohiem`, reportData, 'dtBaoHiem', 'slBaoHiem', ['slBH1d1', 'slBHXM', 'slBHRV', 'slBHMR'], ['BH 1-1', 'BHXM', 'BHRV', 'BHMR'])}
-                </div></div>`;
-        container.innerHTML = finalHTML;
-    },
-
+    
     displaySknvReport: (filteredReport, forceDetail = false) => {
         const summaryContainer = document.getElementById('sknv-summary-container');
         const detailsContainer = document.getElementById('sknv-details-container');
@@ -582,7 +560,7 @@ export const uiSknv = {
                     <div class="bg-white p-4 rounded-lg shadow-md border">
                         <h4 class="text-md font-bold text-gray-700 mb-2">Tỷ Trọng Doanh Thu Ngành Hàng</h4>
                         <div class="luyke-detail-chart-container">
-                             <canvas id="luyke-employee-chart"></canvas>
+                            <canvas id="luyke-employee-chart"></canvas>
                         </div>
                     </div>
                 </div>
@@ -834,7 +812,6 @@ export const uiSknv = {
             if (typeof valA === 'string') return direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
             return direction === 'asc' ? valA - valB : valB - valA;
         });
-        
         const headerClass = (sortKey) => `px-2 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
        
         let tableHTML = `<div class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200"><h3 class="text-xl font-bold text-gray-800 mb-4 uppercase">Bảng tổng hợp hiệu suất nhân viên</h3><div class="overflow-x-auto"><table class="min-w-full text-sm table-bordered" data-table-type="sknv_summary">
@@ -862,7 +839,6 @@ export const uiSknv = {
             if (!groupedByDept[item.boPhan]) groupedByDept[item.boPhan] = [];
             groupedByDept[item.boPhan].push(item);
         });
-
         const departmentOrder = uiSknv._getSortedDepartmentList(summaryData);
 
         departmentOrder.forEach(deptName => {

@@ -1,4 +1,4 @@
-// Version 3.0 - Fix: Render DT NV LK detail view in the correct container
+// Version 3.1 - Update call to displayCategoryRevenueReport
 // MODULE: TAB SKNV
 // Chịu trách nhiệm render và xử lý logic cho tab "Sức khỏe nhân viên"
 
@@ -50,10 +50,7 @@ export const sknvTab = {
                 ui.displaySknvReport(filteredReport, true); // Force detail view
             } else if (activeSubTabId === 'subtab-doanhthu-lk' && detailInfo.sourceTab === 'dtnv-lk') {
                 const luykeDetailData = services.generateLuyKeEmployeeDetailReport(detailInfo.employeeId, filteredYCXData);
-                // === START: THAY ĐỔI CỐT LÕI ===
-                // Truyền vào ID của container mới để render chi tiết đúng chỗ.
                 ui.renderLuykeEmployeeDetail(luykeDetailData, employeeData, 'dtnv-lk-details-container');
-                // === END: THAY ĐỔI CỐT LÕI ===
             } else {
                 this.renderSummaryViews(activeSubTabId, filteredReport, filteredYCXData);
             }
@@ -86,6 +83,7 @@ export const sknvTab = {
         } else if (activeSubTabId === 'subtab-hieu-qua-khai-thac-luy-ke') {
             ui.displayEmployeeEfficiencyReport(filteredReport, 'efficiency-report-container', 'hieu_qua');
         } else if (activeSubTabId === 'subtab-doanhthu-nganhhang') {
+            // Updated call to use the unified ui object
             ui.displayCategoryRevenueReport(filteredReport, 'category-revenue-report-container', 'sknv');
         }
     }
