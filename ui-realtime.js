@@ -1,4 +1,4 @@
-// Version 3.5 - Fix dependency error by importing uiSknv
+// Version 3.7 - Fix: Add correct data-source-tab for clickable rows
 // MODULE: UI REALTIME
 // Chứa các hàm render giao diện cho tab "Doanh thu Realtime".
 
@@ -7,14 +7,13 @@ import { services } from './services.js';
 import { utils } from './utils.js';
 import { uiComponents } from './ui-components.js';
 import { settingsService } from './modules/settings.service.js';
-import { uiSknv } from './ui-sknv.js'; // <<< THÊM DÒNG NÀY ĐỂ SỬA LỖI
+import { uiSknv } from './ui-sknv.js';
 
 export const uiRealtime = {
     _showEfficiencySettingsModal() {
         const modal = document.getElementById('selection-modal');
         if (!modal) return;
 
-        // Lấy danh sách đầy đủ các mục từ settings service
         const allItemsConfig = settingsService.loadEfficiencyViewSettings();
         
         const listContainer = document.getElementById('selection-modal-list');
@@ -82,6 +81,14 @@ export const uiRealtime = {
     displayRealtimeEmployeeRevenueReport: (reportData, containerId, sortStateKey) => {
         const container = document.getElementById(containerId);
         if (!container) return;
+
+        // Clear existing content and hide detail view
+        container.innerHTML = '';
+        const detailContainer = document.getElementById('realtime-employee-detail-container');
+        if (detailContainer) detailContainer.classList.add('hidden');
+        container.classList.remove('hidden');
+
+
         if (!reportData || reportData.length === 0) {
             container.innerHTML = '<p class="text-gray-500">Không có dữ liệu doanh thu cho lựa chọn này.</p>';
             return;
@@ -238,13 +245,13 @@ export const uiRealtime = {
         const container = document.getElementById('realtime-efficiency-content');
         const cardHeader = document.getElementById('realtime-efficiency-title');
 
-        if (!container || !cardHeader || !data || !goals) {
+        if (!container || !cardHeader || !data || !goals) { 
             if (container) container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`;
-            return;
+            return; 
         }
-
+        
         const allItemsConfig = settingsService.loadEfficiencyViewSettings();
-
+        
         const goalKeyMap = {
             pctPhuKien: 'phanTramPhuKien',
             pctGiaDung: 'phanTramGiaDung',
@@ -254,14 +261,17 @@ export const uiRealtime = {
             pctBaoHiem: 'phanTramBaoHiem'
         };
 
-        const allItems = allItemsConfig.map(config => ({
-            ...config,
-            value: data[config.id],
-            target: goals[goalKeyMap[config.id]]
-        }));
+        const allItems = allItemsConfig
+            .filter(item => item.id.startsWith('pct'))
+            .map(config => ({
+                ...config,
+                value: data[config.id],
+                target: goals[goalKeyMap[config.id]]
+            }));
         
         const createRow = (label, value, target) => {
-            const isBelow = value < ((target || 0) / 100);
+            const isBelow = value < ((target || 0) / 100); 
+            
             return `<tr class="border-t">
                 <td class="px-4 py-2 font-semibold text-gray-800">${label}</td>
                 <td class="px-4 py-2 text-right font-bold text-lg ${isBelow ? 'cell-performance is-below' : 'text-green-600'}">${uiComponents.formatPercentage(value || 0)}</td>
@@ -292,7 +302,7 @@ export const uiRealtime = {
                     </thead>
                     <tbody>
                         ${allItems
-                            .filter(item => item.visible)
+                            .filter(item => item.visible) // Lọc theo cài đặt hiển thị
                             .map(item => createRow(item.label, item.value, item.target))
                             .join('')}
                     </tbody>
@@ -314,7 +324,7 @@ export const uiRealtime = {
         const sortedData = [...qdcData]
             .filter(item => visibleItems.includes(item.name)) // Lọc theo cài đặt
             .sort((a,b) => direction === 'asc' ? a[key] - b[key] : b[key] - a[key]);
-
+        
         if (!cardHeader.querySelector('.settings-trigger-btn')) {
             cardHeader.classList.add('flex', 'items-center', 'justify-between');
             cardHeader.innerHTML = `<span>NHÓM HÀNG QUY ĐỔI CAO</span>` + uiComponents.renderSettingsButton('rt-qdc');
@@ -350,16 +360,32 @@ export const uiRealtime = {
         if(titleEl) titleEl.textContent = `Báo cáo Realtime ${warehouse ? 'kho ' + warehouse : 'toàn bộ'} - ${dateTime.toLocaleTimeString('vi-VN')} ${dateTime.toLocaleDateString('vi-VN')}`;
     },
 
-    renderRealtimeEmployeeDetail: (detailData, employeeName) => {
-        const container = document.getElementById('realtime-employee-detail-container');
+    renderRealtimeEmployeeDetail: (detailData, employeeName, containerId = 'realtime-employee-detail-container') => {
+        const container = document.getElementById(containerId);
         if (!container) return;
+        
+        let headerHtml = '';
+        const isMainContainer = containerId === 'realtime-employee-detail-container' || containerId.includes('luyke');
+
+        if (isMainContainer) {
+            headerHtml = `
+                <div class="mb-4 flex justify-between items-center">
+                    <button class="back-to-summary-btn text-blue-600 hover:underline font-semibold">‹ Quay lại bảng tổng hợp</button>
+                    <button id="capture-${containerId}-btn" class="action-btn action-btn--capture" title="Chụp ảnh chi tiết">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15 12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1.172a3 3 0 0 0 2.12-.879l.83-.828A1 1 0 0 1 6.827 3h2.344a1 1 0 0 1 .707.293l.828.828A3 3 0 0 0 12.828 5H14a1 1 0 0 1 1 1v6zM2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828-.828A2 2 0 0 1 3.172 4H2z"/><path d="M8 11a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5zm0 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM3 6.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/></svg>
+                        <span>Chụp ảnh</span>
+                    </button>
+                </div>
+            `;
+        }
+
         if (!detailData) {
-            container.innerHTML = `<div class="rt-infographic-container"><p class="text-center text-gray-500">Không có dữ liệu doanh thu cho nhân viên ${employeeName} trong file realtime.</p></div>`;
+            container.innerHTML = headerHtml + `<div class="rt-infographic-container"><p class="text-center text-gray-500">Không có dữ liệu doanh thu cho nhân viên ${employeeName}.</p></div>`;
             return;
         }
 
-        const selectedWarehouse = document.getElementById('realtime-filter-warehouse').value;
-        const { goals } = settingsService.getRealtimeGoalSettings(selectedWarehouse);
+        const selectedWarehouse = document.getElementById('realtime-filter-warehouse')?.value || document.getElementById('sknv-filter-warehouse')?.value;
+        const { goals } = containerId.includes('luyke') ? settingsService.getLuykeGoalSettings(selectedWarehouse) : settingsService.getRealtimeGoalSettings(selectedWarehouse);
         const { summary, byProductGroup, byCustomer } = detailData;
         const totalRevenue = byProductGroup.reduce((sum, g) => sum + g.realRevenue, 0);
 
@@ -388,25 +414,29 @@ export const uiRealtime = {
         const conversionRateTarget = (goals?.phanTramQD || 0) / 100;
         const conversionRateClass = summary.conversionRate >= conversionRateTarget ? 'is-positive' : 'is-negative';
 
-        container.innerHTML = `
-            <div class="rt-infographic-container" data-capture-group="dtnv-infographic">
-                <div class="rt-infographic-header text-center">
-                    <h3 class="employee-name">${employeeName}</h3>
-                    <p class="employee-title">Chi tiết doanh thu trong ngày</p>
-                </div>
-                <div class="rt-infographic-summary">
-                    <div class="rt-infographic-summary-card"><div class="label">Tổng DT Thực</div><div class="value">${uiComponents.formatRevenue(summary.totalRealRevenue, 1)}</div></div>
-                    <div class="rt-infographic-summary-card"><div class="label">Tổng DTQĐ</div><div class="value">${uiComponents.formatRevenue(summary.totalConvertedRevenue, 1)}</div></div>
-                    <div class="rt-infographic-summary-card"><div class="label">Tỷ lệ QĐ</div><div class="value ${conversionRateClass}">${uiComponents.formatPercentage(summary.conversionRate)}</div></div>
-                    <div class="rt-infographic-summary-card"><div class="label">DT Chưa Xuất</div><div class="value">${uiComponents.formatRevenue(summary.unexportedRevenue, 1)}</div></div>
-                    <div class="rt-infographic-summary-card"><div class="label">Tổng Đơn Hàng</div><div class="value">${summary.totalOrders}</div></div>
-                    <div class="rt-infographic-summary-card"><div class="label">SL Đơn Bán Kèm</div><div class="value">${summary.bundledOrderCount}</div></div>
-                </div>
-                <div class="rt-infographic-grid">
-                    <div class="rt-infographic-section"><h4>Nhóm hàng</h4>${renderProductGroupProgress()}</div>
-                    <div class="rt-infographic-section"><h4>Chi tiết theo khách hàng</h4><div class="rt-customer-accordion">${renderCustomerAccordion()}</div></div>
+        const contentHtml = `
+            <div id="employee-detail-capture-area">
+                <div class="rt-infographic-container" data-capture-group="dtnv-infographic">
+                    <div class="rt-infographic-header text-center">
+                        <h3 class="employee-name">${employeeName}</h3>
+                        <p class="employee-title">Chi tiết doanh thu</p>
+                    </div>
+                    <div class="rt-infographic-summary">
+                        <div class="rt-infographic-summary-card"><div class="label">Tổng DT Thực</div><div class="value">${uiComponents.formatRevenue(summary.totalRealRevenue, 1)}</div></div>
+                        <div class="rt-infographic-summary-card"><div class="label">Tổng DTQĐ</div><div class="value">${uiComponents.formatRevenue(summary.totalConvertedRevenue, 1)}</div></div>
+                        <div class="rt-infographic-summary-card"><div class="label">Tỷ lệ QĐ</div><div class="value ${conversionRateClass}">${uiComponents.formatPercentage(summary.conversionRate)}</div></div>
+                        <div class="rt-infographic-summary-card"><div class="label">DT Chưa Xuất</div><div class="value">${uiComponents.formatRevenue(summary.unexportedRevenue, 1)}</div></div>
+                        <div class="rt-infographic-summary-card"><div class="label">Tổng Đơn Hàng</div><div class="value">${summary.totalOrders}</div></div>
+                        <div class="rt-infographic-summary-card"><div class="label">SL Đơn Bán Kèm</div><div class="value">${summary.bundledOrderCount}</div></div>
+                    </div>
+                    <div class="rt-infographic-grid">
+                        <div class="rt-infographic-section"><h4>Nhóm hàng</h4>${renderProductGroupProgress()}</div>
+                        <div class="rt-infographic-section"><h4>Chi tiết theo khách hàng</h4><div class="rt-customer-accordion">${renderCustomerAccordion()}</div></div>
+                    </div>
                 </div>
             </div>`;
+        
+        container.innerHTML = headerHtml + contentHtml;
     },
 
     renderRealtimeBrandReport: (data, viewType = 'brand') => {

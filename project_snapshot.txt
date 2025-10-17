@@ -1108,7 +1108,7 @@ export const modalSelection = {
 --- END FILE: ./components/modal-selection.js ---
 
 --- START FILE: ./components/sidebar.js ---
-// Version 1.2 - Replace all inline SVGs with Feather Icons
+// Version 1.3 - Optimize HTML for better icon/text alignment
 // Chứa mã HTML và logic cho thanh điều hướng bên.
 
 const sidebarHTML = `
@@ -1116,31 +1116,31 @@ const sidebarHTML = `
     <div>
          <a href="#home-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold mb-4">
             <i data-feather="home"></i>
-            <span class="menu-text ml-4">Hướng Dẫn & Góp Ý</span>
+            <span class="menu-text">Hướng Dẫn & Góp Ý</span>
         </a>
         <ul class="space-y-2">
             <li>
                 <a href="#data-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
                     <i data-feather="file-text"></i>
-                    <span class="menu-text ml-4">Cập nhật dữ liệu</span>
+                    <span class="menu-text">Cập nhật dữ liệu</span>
                 </a>
             </li>
             <li>
                 <a href="#health-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200">
                     <i data-feather="activity"></i>
-                    <span class="menu-text ml-4">Sức khỏe siêu thị</span>
+                    <span class="menu-text">Sức khỏe siêu thị</span>
                 </a>
             </li>
             <li>
                 <a href="#health-employee-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200">
                     <i data-feather="users"></i>
-                    <span class="menu-text ml-4">Sức khỏe nhân viên</span>
+                    <span class="menu-text">Sức khỏe nhân viên</span>
                 </a>
             </li>
             <li>
                 <a href="#realtime-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200">
                     <i data-feather="trending-up"></i>
-                    <span class="menu-text ml-4">Doanh thu realtime</span>
+                    <span class="menu-text">Doanh thu realtime</span>
                 </a>
             </li>
         </ul>
@@ -1150,19 +1150,19 @@ const sidebarHTML = `
             <li>
                 <button id="interface-settings-btn" class="w-full flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
                     <i data-feather="settings"></i>
-                    <span class="menu-text ml-4">Cài đặt giao diện</span>
+                    <span class="menu-text">Cài đặt giao diện</span>
                 </button>
             </li>
             <li>
                 <button id="goal-settings-btn" class="w-full flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
                     <i data-feather="target"></i>
-                    <span class="menu-text ml-4">Thiết lập mục tiêu</span>
+                    <span class="menu-text">Thiết lập mục tiêu</span>
                 </button>
             </li>
             <li>
                 <button id="admin-access-btn" class="w-full flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
                     <i data-feather="edit"></i>
-                    <span class="menu-text ml-4">Khai báo</span>
+                    <span class="menu-text">Khai báo</span>
                 </button>
             </li>
         </ul>
@@ -1362,7 +1362,11 @@ createSnapshot();
 --- END FILE: ./create_snapshot.js ---
 
 --- START FILE: ./dashboard.css ---
-/* Version 5.5 - Unify sidebar icon sizes */
+<<<<<<< HEAD
+/* Version 5.6 - Fix icon hiding and refine icon stroke-width */
+=======
+/* Version 5.6 - Add styles for new Luy Ke employee detail layout */
+>>>>>>> feature/pro-capcut
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -1375,7 +1379,8 @@ createSnapshot();
     --bg-lightness-4: 92%; --header-lightness-4: 88%; --header-text-lightness-4: 15%; --special-header-lightness-4: 80%; --below-target-lightness-4: 88%;
     --bg-lightness-5: 90%; --header-lightness-5: 84%; --header-text-lightness-5: 12%; --special-header-lightness-5: 75%; --below-target-lightness-5: 84%;
     --bg-lightness-6: 88%; --header-lightness-6: 80%; --header-text-lightness-6: 10%; --special-header-lightness-6: 70%; --below-target-lightness-6: 80%;
-    --kpi-card-1-bg: #38bdf8; --kpi-card-2-bg: #34d399; --kpi-card-3-bg: #fbbf24;
+    --kpi-card-1-bg: #38bdf8;
+    --kpi-card-2-bg: #34d399; --kpi-card-3-bg: #fbbf24;
     --kpi-card-4-bg: #2dd4bf; --kpi-card-5-bg: #a78bfa; --kpi-card-6-bg: #f472b6;
     --kpi-card-7-bg: #818cf8;
     --kpi-card-8-bg: #f87171;
@@ -1403,14 +1408,36 @@ html[data-contrast="6"] { --bg-lightness: var(--bg-lightness-6); --header-lightn
 ::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: #555; }
 
+/* === START: SIDEBAR ALIGNMENT & ICON FIX (V5.6) === */
 #sidebar { width: 68px; transition: width 0.3s ease-in-out; overflow-x: hidden; }
 #sidebar:hover { width: 256px; }
 #sidebar.menu-locked:hover { width: 68px; }
-.menu-text { transition: opacity 0.2s ease-in-out; opacity: 0; white-space: nowrap; }
-#sidebar:hover .menu-text { opacity: 1; transition-delay: 0.1s; }
-#sidebar.menu-locked:hover .menu-text { opacity: 0; }
+
+/* Quan trọng: Thêm gap để tạo khoảng cách giữa icon và text */
+#sidebar .nav-link, #sidebar button { 
+    white-space: nowrap; 
+    gap: 1rem; /* Thay thế cho ml-4 */
+}
+
+.menu-text { 
+    transition: opacity 0.2s ease-in-out, width 0.3s ease-in-out; 
+    opacity: 0; 
+    white-space: nowrap; 
+    width: 0; /* Quan trọng: Co lại khi ẩn */
+    overflow: hidden;
+}
+#sidebar:hover .menu-text { 
+    opacity: 1; 
+    transition-delay: 0.1s; 
+    width: auto; /* Mở rộng ra bình thường */
+}
+#sidebar.menu-locked:hover .menu-text { 
+    opacity: 0; 
+    width: 0;
+}
+/* === END: SIDEBAR ALIGNMENT & ICON FIX === */
+
 #main-content { transition: margin-left 0.3s ease-in-out; margin-left: 68px; }
-#sidebar .nav-link, #sidebar button { white-space: nowrap; }
 
 /* === BẮT ĐẦU: HIỆU ỨNG TƯƠNG TÁC MỚI === */
 .nav-link,
@@ -1526,6 +1553,30 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #
 .header-bg-blue { background-color: hsl(217, 95%, var(--special-header-lightness)) !important; color: hsl(217, 80%, var(--header-text-lightness)) !important; }
 .header-bg-green { background-color: hsl(145, 80%, var(--special-header-lightness)) !important; color: hsl(145, 70%, var(--header-text-lightness)) !important; }
 .header-bg-yellow { background-color: hsl(45, 95%, var(--special-header-lightness)) !important; color: hsl(45, 80%, var(--header-text-lightness)) !important; }
+
+/* === START: NEW INTERACTIVE ROW STYLES === */
+.interactive-row {
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+}
+
+.interactive-row:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    background-color: #eff6ff; /* blue-50 */
+}
+
+/* Make the first cell (employee name) the clickable target */
+.interactive-row .employee-name-cell {
+    cursor: pointer;
+    color: #2563eb; /* blue-600 */
+    transition: color 0.2s ease-out;
+}
+
+.interactive-row:hover .employee-name-cell {
+    text-decoration: underline;
+    color: #1d4ed8; /* blue-700 */
+}
+/* === END: NEW INTERACTIVE ROW STYLES === */
 
 .header-group-1 { background-color: hsl(30, 90%, var(--header-lightness)); }
 .header-group-2 { background-color: hsl(90, 90%, var(--header-lightness)); }
@@ -1989,7 +2040,8 @@ details[open] > summary .arrow { transform: rotate(180deg); }
 }
 /* === END: DRAGGABLE TAG STYLES === */
 
-/* === START: ICON SIZING & ALIGNMENT FIX (V5.5) === */
+<<<<<<< HEAD
+/* === START: ICON SIZING & ALIGNMENT FIX (V5.6) === */
 /* General alignment for all buttons containing icons */
 .action-btn,
 .sub-tab-btn,
@@ -2003,19 +2055,19 @@ details[open] > summary .arrow { transform: rotate(180deg); }
     gap: 0.5rem;
 }
 
-/* Default size for all Feather icons */
+/* Default size and stroke for all Feather icons */
 .feather {
     width: 1.1rem; 
     height: 1.1rem;
-    stroke-width: 2.5; 
+    stroke-width: 1.5; /* Tinh chỉnh nét thanh mảnh hơn */
     flex-shrink: 0;
 }
 
-/* UNIFIED size for ALL icons inside the sidebar */
+/* UNIFIED size and stroke for ALL icons inside the sidebar */
 #sidebar .feather {
     width: 1.5rem; /* 24px */
     height: 1.5rem; /* 24px */
-    stroke-width: 2;
+    stroke-width: 2; /* Giữ nét đậm hơn cho menu chính */
 }
 
 /* Specific size for help buttons in page headers */
@@ -2024,6 +2076,116 @@ details[open] > summary .arrow { transform: rotate(180deg); }
     height: 1.25rem;
 }
 /* === END: ICON SIZING & ALIGNMENT FIX === */
+=======
+/* === START: OLD STYLES FOR LUY KE EMPLOYEE DETAIL (v3.9 and before) === */
+.top-groups-list {
+    list-style-type: none; padding: 0; margin: 0;
+}
+.top-groups-list li {
+    font-size: 1rem; font-weight: 500; padding: 0.5rem 0; border-bottom: 1px dashed #e5e7eb; text-transform: capitalize;
+}
+.top-groups-list li:last-child {
+    border-bottom: none;
+}
+.customer-accordion details {
+    transition: background-color 0.2s ease-in-out;
+}
+.customer-accordion summary {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; padding: 0.75rem 1rem; cursor: pointer; list-style: none;
+}
+.customer-accordion summary::-webkit-details-marker {
+    display: none;
+}
+.customer-accordion summary:hover {
+    background-color: #f9fafb; /* gray-50 */
+}
+.customer-accordion .customer-name {
+    font-weight: 700; text-transform: uppercase; color: #1f2937; flex-grow: 1; min-width: 150px;
+}
+.customer-accordion .order-metrics {
+    display: flex; align-items: center; gap: 1rem; flex-shrink: 0; font-size: 0.875rem;
+}
+.customer-accordion .order-metrics span {
+    white-space: nowrap;
+}
+.customer-accordion .qd-below-target { color: #b91c1c; }
+.customer-accordion .qd-above-target { color: #1d4ed8; }
+.customer-accordion .accordion-arrow {
+    margin-left: auto; color: #9ca3af; transition: transform 0.2s ease-in-out;
+}
+.customer-accordion details[open] > summary .accordion-arrow {
+    transform: rotate(180deg);
+}
+.customer-accordion .product-list-table {
+    border-collapse: collapse;
+}
+.customer-accordion .product-list-table tr:last-child td {
+    border-bottom: none;
+}
+.top-groups-table { width: 100%; }
+.top-groups-table th, .top-groups-table td {
+    padding: 0.5rem 0.25rem; text-align: right; border-bottom: 1px dashed #e5e7eb;
+}
+.top-groups-table tr:last-child td { border-bottom: none; }
+.top-groups-table th:first-child, .top-groups-table td:first-child {
+    text-align: left; font-weight: 600; text-transform: capitalize;
+}
+/* === END: OLD STYLES === */
+
+/* === START: NEW STYLES FOR LUY KE EMPLOYEE DETAIL (v4.1 additions) === */
+.luyke-detail-header h3 {
+    font-size: 1.75rem; font-weight: 800; color: #111827; text-align: center;
+}
+
+.luyke-detail-progress-item {
+    display: flex; flex-direction: column; gap: 4px;
+}
+.luyke-detail-progress-label {
+    display: flex; justify-content: space-between; align-items: baseline; font-size: 0.875rem;
+}
+.luyke-detail-progress-values {
+    display: flex; justify-content: space-between; font-size: 0.75rem; color: #4b5563;
+}
+.luyke-detail-chart-container {
+    position: relative; height: 350px; width: 100%;
+}
+
+.customer-accordion-luyke summary {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; padding: 0.5rem 1rem; cursor: pointer; list-style: none;
+}
+.customer-accordion-luyke summary:hover {
+    background-color: #f9fafb;
+}
+.customer-accordion-luyke .customer-name-small {
+    font-weight: 600; font-size: 0.9rem; color: #1f2937; flex-grow: 1; min-width: 120px;
+}
+.customer-accordion-luyke .order-metrics {
+    display: flex; align-items: center; gap: 1rem; flex-shrink: 0; font-size: 0.75rem;
+}
+.customer-accordion-luyke .order-metrics span {
+    white-space: nowrap;
+}
+.customer-accordion-luyke .accordion-arrow {
+    margin-left: auto; color: #9ca3af; transition: transform 0.2s ease-in-out;
+}
+.customer-accordion-luyke details[open] > summary .accordion-arrow {
+    transform: rotate(180deg);
+}
+.customer-accordion-luyke .product-list-scrollable {
+    display: block;
+    max-height: 200px; /* 8 rows * ~25px/row */
+    overflow-y: auto;
+}
+.customer-accordion-luyke .product-list-table {
+    width: 100%;
+}
+/* === START: ADDED RULES FOR COLORING === */
+.customer-accordion-luyke .qd-below-target { color: #b91c1c; } /* red-700 */
+.customer-accordion-luyke .qd-above-target { color: #1d4ed8; } /* blue-700 */
+/* === END: ADDED RULES === */
+/* === END: NEW STYLES === */
+>>>>>>> feature/pro-capcut
+
 --- END FILE: ./dashboard.css ---
 
 --- START FILE: ./event-listeners/listeners-actions.js ---
@@ -2488,7 +2650,7 @@ export function initializeSortingListeners(appController) {
 --- END FILE: ./event-listeners/listeners-sorting.js ---
 
 --- START FILE: ./event-listeners/ui-listeners.js ---
-// Version 3.8 - Revert to client-side processing as per user request
+// Version 3.9 - Fix: Loại bỏ listener bị lồng và lỗi cú pháp sau khi gộp nhánh
 // MODULE: EVENT LISTENERS INITIALIZER
 // File này đóng vai trò là điểm khởi đầu, import và khởi chạy tất cả các module listener con.
 
@@ -2505,6 +2667,7 @@ import { initializeHighlightingListeners } from './listeners-highlighting.js';
 import { initializeSettingsListeners } from './listeners-settings.js';
 import { initializeSortingListeners } from './listeners-sorting.js';
 import { dragDroplisteners } from './listeners-dragdrop.js';
+import { captureService } from '../modules/capture.service.js'; // <<< SỬA LỖI: THÊM IMPORT
 
 let appController = null;
 
@@ -2516,9 +2679,8 @@ async function handleFileInputChange(e) {
     const file = fileInput.files[0];
     const fileType = fileInput.id.replace('file-', '');
     const dataName = fileInput.dataset.name || fileType;
-    const stateKey = fileInput.dataset.stateKey; 
-
-    if (!file || !stateKey) return; 
+    const stateKey = fileInput.dataset.stateKey;
+    if (!file || !stateKey) return;
 
     ui.updateFileStatus(fileType, file.name, 'Đang xử lý...', 'default');
     ui.showProgressBar(fileType);
@@ -2546,7 +2708,7 @@ async function handleFileInputChange(e) {
                 ui.showNotification(`Đã lưu "${dataName}" vào bộ nhớ đệm của trình duyệt.`, 'success');
             }
             appController.updateAndRenderCurrentTab();
-        } else { 
+        } else {
             const errorMessage = `Lỗi file "${dataName}": Thiếu cột: ${missingColumns.join(', ')}.`;
             ui.updateFileStatus(fileType, file.name, `Lỗi: Thiếu cột dữ liệu.`, 'error');
             ui.showNotification(errorMessage, 'error');
@@ -2564,6 +2726,8 @@ async function handleFileInputChange(e) {
 }
 
 function handleFilterChange(prefix) {
+    // Mỗi khi bộ lọc thay đổi, chúng ta cần đảm bảo quay về màn hình tổng hợp
+    appState.viewingDetailFor = null;
     ui.updateEmployeeFilter(prefix);
     appController.updateAndRenderCurrentTab();
 }
@@ -2575,12 +2739,13 @@ export function initializeEventListeners(mainAppController) {
 
     // --- Khởi tạo các thư viện UI ---
     try {
-        const multiSelectConfig = { 
-            removeItemButton: true, 
-            placeholder: true, 
-            placeholderValue: 'Chọn hoặc gõ để tìm...', 
-            searchPlaceholderValue: 'Tìm kiếm...' 
+        const multiSelectConfig = {
+            removeItemButton: true,
+            placeholder: true,
+            placeholderValue: 'Chọn hoặc gõ để tìm...',
+            searchPlaceholderValue: 'Tìm kiếm...'
         };
+
         const competitionMultiSelectConfig = {
             removeItemButton: true,
             placeholder: true,
@@ -2609,16 +2774,14 @@ export function initializeEventListeners(mainAppController) {
         const competitionGroupEl = document.getElementById('competition-group');
         if (competitionGroupEl) appState.choices['competition_group'] = new Choices(competitionGroupEl, competitionMultiSelectConfig);
 
-        const singleSelectConfig = { 
-            searchEnabled: true, 
-            removeItemButton: false, 
-            itemSelectText: 'Chọn', 
-            searchPlaceholderValue: 'Tìm kiếm...' 
+        const singleSelectConfig = {
+            searchEnabled: true,
+            removeItemButton: false,
+            itemSelectText: 'Chọn',
+            searchPlaceholderValue: 'Tìm kiếm...'
         };
         const singleSelects = {
-            'sknv-employee-filter': 'sknv_employee_detail',
             'thidua-employee-filter': 'thidua_employee_detail',
-            'realtime-employee-detail-filter': 'realtime_employee_detail',
             'thidua-vung-filter-supermarket': 'thiDuaVung_sieuThi',
         };
         for (const [id, key] of Object.entries(singleSelects)) {
@@ -2640,6 +2803,7 @@ export function initializeEventListeners(mainAppController) {
                         instance.setDate(dateRange, false);
                     }
                     ui.updateDateSummary(document.getElementById(`${prefix}-date-summary`), instance);
+                    appState.viewingDetailFor = null; // Reset detail view when changing date
                     renderFunc();
                 }
             });
@@ -2659,12 +2823,13 @@ export function initializeEventListeners(mainAppController) {
     initializeCompetitionListeners(appController);
     dragDroplisteners.init(appController);
 
-    // --- Các sự kiện còn lại ---
+    // --- Các sự kiện chính & Tương tác đặc thù ---
     document.getElementById('force-reload-btn')?.addEventListener('click', () => window.location.reload());
     document.querySelectorAll('a.nav-link').forEach(link => link.addEventListener('click', (e) => { e.preventDefault(); appController.switchTab(link.getAttribute('href').substring(1)); }));
     
     document.querySelectorAll('.sub-tab-btn').forEach(btn => btn.addEventListener('click', (e) => {
         ui.handleSubTabClick(e.currentTarget);
+        appState.viewingDetailFor = null; // Reset detail view when changing tabs
         const mainTabId = e.currentTarget.closest('.page-section')?.id || e.currentTarget.closest('.settings-drawer')?.id;
         
         if (mainTabId === 'health-section') luykeTab.render();
@@ -2702,19 +2867,68 @@ export function initializeEventListeners(mainAppController) {
     document.getElementById('sknv-view-selector')?.addEventListener('click', (e) => appController.handleSknvViewChange(e));
     document.getElementById('sknv-employee-filter')?.addEventListener('change', () => sknvTab.render());
     
+    // === START: BỘ LẮNG NGHE SỰ KIỆN TẬP TRUNG CHO CÁC CLICK QUAN TRỌNG ===
     document.body.addEventListener('click', (e) => {
-        const viewSwitcherBtn = e.target.closest('#luyke-thidua-view-selector .view-switcher__btn');
-        if (viewSwitcherBtn) {
+        // Xử lý click để xem chi tiết nhân viên
+        const employeeCell = e.target.closest('.employee-name-cell');
+        if (employeeCell && employeeCell.dataset.employeeId) {
+            e.preventDefault();
+            appState.viewingDetailFor = {
+                employeeId: employeeCell.dataset.employeeId,
+                sourceTab: employeeCell.dataset.sourceTab
+            };
+            appController.updateAndRenderCurrentTab();
+            return;
+        }
+
+        // Xử lý click nút "Quay lại" từ màn hình chi tiết
+        const backButton = e.target.closest('.back-to-summary-btn');
+        if (backButton) {
+            e.preventDefault();
+            appState.viewingDetailFor = null;
+            appController.updateAndRenderCurrentTab();
+            return;
+        }
+
+        // Xử lý nút Chụp Ảnh trên màn hình chi tiết (được tạo động)
+        const captureDetailBtn = e.target.closest('#capture-sknv-detail-btn, #capture-dtnv-lk-detail-btn, #capture-dtnv-rt-detail-btn');
+        if (captureDetailBtn) {
+            e.preventDefault();
+            const areaToCapture = captureDetailBtn.closest('.sub-tab-content')?.querySelector('[id$="-capture-area"]');
+            const title = appState.viewingDetailFor?.employeeId || 'ChiTietNV';
+            if (areaToCapture) {
+                captureService.captureDashboardInParts(areaToCapture, title); // <<< SỬA LỖI: Gọi hàm từ module đúng
+            }
+            return;
+        }
+        
+        // Listener cho luyke-thidua-view-selector
+        const luykeViewSwitcherBtn = e.target.closest('#luyke-thidua-view-selector .view-switcher__btn');
+        if (luykeViewSwitcherBtn) {
             e.preventDefault();
             appController.handleLuykeThiDuaViewChange(e);
+            return;
+        }
+
+        // Listener cho thidua-view-selector
+        const thiDuaViewSwitcherBtn = e.target.closest('#thidua-view-selector .view-switcher__btn');
+        if (thiDuaViewSwitcherBtn) {
+            e.preventDefault();
+            appController.handleThiDuaViewChange(e);
+            return;
+        }
+        
+        // Listener cho dthang-realtime-view-selector
+        const dtHangViewSwitcherBtn = e.target.closest('#dthang-realtime-view-selector .view-switcher__btn');
+        if (dtHangViewSwitcherBtn) {
+            e.preventDefault();
+            appController.handleDthangRealtimeViewChange(e);
+            return;
         }
     });
+    // === END: BỘ LẮNG NGHE SỰ KIỆN TẬP TRUNG ===
     
-    document.getElementById('thidua-view-selector')?.addEventListener('click', (e) => appController.handleThiDuaViewChange(e));
     document.getElementById('thidua-employee-filter')?.addEventListener('change', () => ui.displayCompetitionReport('employee'));
-    document.getElementById('dtnv-realtime-view-selector')?.addEventListener('click', (e) => appController.handleDtnvRealtimeViewChange(e));
-    document.getElementById('realtime-employee-detail-filter')?.addEventListener('change', () => realtimeTab.handleEmployeeDetailChange());
-    document.getElementById('dthang-realtime-view-selector')?.addEventListener('click', (e) => appController.handleDthangRealtimeViewChange(e));
     document.getElementById('realtime-brand-category-filter')?.addEventListener('change', () => realtimeTab.handleBrandFilterChange());
     document.getElementById('realtime-brand-filter')?.addEventListener('change', () => realtimeTab.handleBrandFilterChange());
 }
@@ -2726,7 +2940,7 @@ export function initializeEventListeners(mainAppController) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Công cụ phân tích số cho QLST MWG 4.6</title>
+    <title>Công cụ phân tích số cho QLST MWG 4.8</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -2738,7 +2952,7 @@ export function initializeEventListeners(mainAppController) {
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     
     <script src="https://unpkg.com/feather-icons"></script>
@@ -2765,7 +2979,7 @@ export function initializeEventListeners(mainAppController) {
 
     <div class="flex min-h-screen">
         <div id="sidebar-container"></div> 
-        <main id="main-content" class="flex-1 p-6">
+         <main id="main-content" class="flex-1 p-6">
             <div class="max-w-full mx-auto">
 
                 <section id="home-section" class="page-section hidden">
@@ -2780,7 +2994,7 @@ export function initializeEventListeners(mainAppController) {
                             <span id="action-count" class="text-red-600 font-bold">-</span>
                         </div>
                     </div>
-                    
+                  
                     <div class="content-card">
                          <h3 class="content-card__header">Video Hướng Dẫn Sử Dụng Nhanh</h3>
                          <div id="video-container" class="bg-gray-200 rounded-lg">
@@ -2792,7 +3006,7 @@ export function initializeEventListeners(mainAppController) {
                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                                 allowfullscreen>
                             </iframe>
-                         </div>
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
@@ -2812,12 +3026,12 @@ export function initializeEventListeners(mainAppController) {
 
                     <div class="mt-12">
                         <h2 class="text-2xl font-bold text-gray-800 mb-6">Lịch sử cập nhật</h2>
-                        <div id="update-history-list" class="space-y-6">
+                         <div id="update-history-list" class="space-y-6">
                         </div>
                     </div>
                     </section>
                     <section id="data-section" class="page-section">
-                    <div class="page-header">
+                        <div class="page-header">
                         <div class="flex items-center gap-x-3">
                             <h2 class="page-header__title">Cập nhật dữ liệu</h2>
                             <button class="page-header__help-btn" data-help-id="data" title="Xem hướng dẫn">
@@ -2827,10 +3041,10 @@ export function initializeEventListeners(mainAppController) {
                         <div id="version-marquee-container" class="marquee-container">
                             <p class="marquee-text"></p>
                         </div>
-                        
+                    
                         <div class="header-qr-container">
-                            <span>THAM GIA THẢO LUẬN - GÓP Ý</span>
-                            <img id="header-qr-image" src="" alt="Mã QR" class="header-qr-image">
+                             <span>THAM GIA THẢO LUẬN - GÓP Ý</span>
+                             <img id="header-qr-image" src="" alt="Mã QR" class="header-qr-image">
                         </div>
                     </div>
                     <div class="content-card">
@@ -3002,7 +3216,7 @@ export function initializeEventListeners(mainAppController) {
                                 <span class="text">Hiện bộ lọc nâng cao</span>
                                 <i data-feather="chevron-down" class="icon"></i>
                             </button>
-                             <div id="luyke-filter-container" class="advanced-filters hidden">
+                            <div id="luyke-filter-container" class="advanced-filters hidden">
                                 <div id="luyke-filter-bar" class="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-4">
                                     <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
                                         <div class="md:col-span-2">
@@ -3077,19 +3291,19 @@ export function initializeEventListeners(mainAppController) {
                                         <p id="luyke-kpi-dt-qd-main" class="font-bold mt-2 mb-3">0</p>
                                         <p id="luyke-kpi-dt-qd-sub1" class="text-sm">DK: 0 / Target: 0</p>
                                     </div>
-                                    
+                                
                                     <div class="kpi-card p-6 rounded-2xl shadow-lg">
                                         <h4 class="kpi-card-title">Tỷ lệ hoàn thành Target</h4>
                                         <p id="luyke-kpi-ht-target-qd-main" class="font-bold mt-2 mb-3">0%</p>
                                         <p id="luyke-kpi-ht-target-thuc-sub" class="text-sm">DT Thực: 0%</p>
                                     </div>
-                                
+                                    
                                     <div class="kpi-card p-6 rounded-2xl shadow-lg">
                                         <h4 class="kpi-card-title">Tỷ lệ quy đổi</h4>
                                         <p id="luyke-kpi-tl-qd-main" class="font-bold mt-2 mb-3">0%</p>
                                         <p id="luyke-kpi-tl-qd-sub" class="text-sm">Mục tiêu: 0%</p>
                                     </div>
-                                
+                                    
                                     <div class="kpi-card p-6 rounded-2xl shadow-lg">
                                         <h4 class="kpi-card-title">Doanh thu trả chậm</h4>
                                         <p id="luyke-kpi-dt-tc-main" class="font-bold mt-2 mb-3">0</p>
@@ -3125,6 +3339,7 @@ export function initializeEventListeners(mainAppController) {
                             </div>
                             <div id="subtab-luyke-thi-dua" class="sub-tab-content hidden space-y-4">
                                 <div class="flex flex-wrap items-center justify-between gap-4">
+                                <div class="flex flex-wrap items-center gap-4">
                                     <h3 class="text-xl font-bold text-gray-800 uppercase">Thi đua lũy kế <span id="luyke-competition-summary" class="text-sm font-normal"></span></h3>
                                     <div id="luyke-thidua-view-selector-placeholder"></div> </div>
                                 <div id="luyke-competition-content"></div>
@@ -3151,7 +3366,7 @@ export function initializeEventListeners(mainAppController) {
                                     </div>
                                 </div>
                                 <div id="thidua-vung-infographic-container">
-                                    <div class="placeholder-message">Vui lòng tải file và chọn một siêu thị để xem báo cáo.</div>
+                                     <div class="placeholder-message">Vui lòng tải file và chọn một siêu thị để xem báo cáo.</div>
                                 </div>
                             </div>
                         </div>
@@ -3235,6 +3450,20 @@ export function initializeEventListeners(mainAppController) {
                                     </button>
                                     <button id="export-sknv-btn" class="action-btn action-btn--export" title="Xuất Excel tab hiện tại">
                                         <i data-feather="download"></i>
+                                    <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-sknv" data-title="SKNV">SKNV</button>
+                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-doanhthu-lk" data-title="DoanhThuLK">DT NV LK</button>
+                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-thunhap" data-title="ThuNhap">Thu nhập</button>
+                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-khai-thac-luy-ke" data-title="HieuQuaKhaiThacLuyKe">Hiệu quả NV LK</button>
+                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-doanhthu-nganhhang" data-title="DTNganhHang">DT ngành hàng</button>
+                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-thi-dua-lk" data-title="HieuQuaThiDuaLK">Thi đua NV LK</button>
+                                </nav>
+                                 <div class="flex items-center gap-x-2">
+                                    <button id="compose-sknv-notification-btn" class="action-btn action-btn--composer" title="Nhận xét">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                                        <span>Nhận xét</span>
+                                    </button>
+                                     <button id="export-sknv-btn" class="action-btn action-btn--export" title="Xuất Excel tab hiện tại">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L6.354 8.146a.5.5 0 1 0-.708.708l2 2z"/></svg>
                                         <span>Xuất Excel</span>
                                     </button>
                                     <button id="capture-sknv-btn" class="action-btn action-btn--capture" title="Chụp ảnh tab hiện tại">
@@ -3246,23 +3475,14 @@ export function initializeEventListeners(mainAppController) {
 
                             <div id="employee-subtabs-content">
                                 <div id="subtab-sknv" class="sub-tab-content">
-                                    <div class="flex flex-wrap items-center gap-4 mb-6">
-                                        <div id="sknv-view-selector" class="view-switcher">
-                                            <button data-view="summary" class="view-switcher__btn active">Tổng hợp</button>
-                                            <button data-view="detail" class="view-switcher__btn">Chi tiết</button>
-                                        </div>
-                                        <div id="sknv-employee-selector-container" class="hidden">
-                                            <label for="sknv-employee-filter" class="font-semibold text-sm text-gray-600">Chọn nhân viên:</label>
-                                            <select id="sknv-employee-filter" class="p-2 border rounded-lg text-sm bg-white shadow-sm mt-1" style="min-width: 250px;"></select>
-                                        </div>
-                                    </div>
                                     <div id="sknv-summary-container"></div>
                                     <div id="sknv-details-container" class="mt-6 hidden">
                                         <p class="text-gray-500">Vui lòng chọn một nhân viên để xem chi tiết.</p>
                                     </div>
                                 </div>
                                 <div id="subtab-doanhthu-lk" class="sub-tab-content hidden space-y-6" data-capture-preset="landscape-table">
-                                     <div id="revenue-report-container-lk"></div>
+                                    <div id="revenue-report-container-lk"></div>
+                                     <div id="dtnv-lk-details-container"></div>
                                 </div>
                                 <div id="subtab-thunhap" class="sub-tab-content hidden space-y-6" data-capture-preset="landscape-table">
                                     <div id="income-report-placeholder">
@@ -3278,7 +3498,7 @@ export function initializeEventListeners(mainAppController) {
                                 </div>
                                 <div id="subtab-hieu-qua-thi-dua-lk" class="sub-tab-content hidden space-y-6">
                                     <div id="competition-report-container-lk" class="mt-4">
-                                         <p class="text-gray-500">Vui lòng khai báo chương trình thi đua trong "Thiết lập mục tiêu" để xem báo cáo.</p>
+                                        <p class="text-gray-500">Vui lòng khai báo chương trình thi đua trong "Thiết lập mục tiêu" để xem báo cáo.</p>
                                     </div>
                                 </div>
                             </div>
@@ -3308,7 +3528,7 @@ export function initializeEventListeners(mainAppController) {
                                 <i data-feather="chevron-down" class="icon"></i>
                             </button>
                             <div id="realtime-filter-container" class="advanced-filters hidden">
-                                 <div id="realtime-filter-bar" class="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-4">
+                                <div id="realtime-filter-bar" class="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-4">
                                     <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
                                         <div class="md:col-span-3"><label for="realtime-filter-warehouse" class="block text-sm font-medium text-gray-600 mb-1">Mã Kho</label><select id="realtime-filter-warehouse" class="p-2 border rounded-lg text-sm bg-white shadow-sm w-full"></select></div>
                                         <div class="md:col-span-3"><label for="realtime-filter-department" class="block text-sm font-medium text-gray-600 mb-1">Bộ Phận</label><select id="realtime-filter-department" class="p-2 border rounded-lg text-sm bg-white shadow-sm w-full"></select></div>
@@ -3354,7 +3574,7 @@ export function initializeEventListeners(mainAppController) {
                                     <span>Thi đua NV Realtime</span>
                                 </button>
                             </nav>
-                             <div class="flex items-center gap-x-2">
+                            <div class="flex items-center gap-x-2">
                                 <button id="compose-realtime-notification-btn" class="action-btn action-btn--composer" title="Nhận xét">
                                     <i data-feather="pen-tool"></i>
                                     <span>Nhận xét</span>
@@ -3372,7 +3592,7 @@ export function initializeEventListeners(mainAppController) {
 
                         <div id="realtime-subtabs-content">
                             <div id="subtab-realtime-sieu-thi" class="sub-tab-content space-y-8">
-                                 <h2 id="realtime-supermarket-title" class="text-2xl font-bold text-center text-gray-700"></h2>
+                                <h2 id="realtime-supermarket-title" class="text-2xl font-bold text-center text-gray-700"></h2>
                                 <div id="realtime-kpi-cards-container" data-capture-group="kpi" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                     <div class="kpi-card p-6 rounded-2xl shadow-lg">
                                         <h4 class="kpi-card-title font-semibold uppercase tracking-wider">Doanh thu thực</h4>
@@ -3417,22 +3637,12 @@ export function initializeEventListeners(mainAppController) {
                                     </div>
                                     <div id="realtime-unexported-revenue-panel" data-capture-group="2" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200 flex flex-col">
                                          <h3 class="text-xl font-bold uppercase mb-4 bg-red-100 text-red-800 p-2 rounded-md">DOANH THU CHƯA XUẤT</h3>
-                                         <div id="realtime-unexported-revenue-content" class="flex-grow"><p class="text-gray-500 font-bold text-center">Vui lòng tải file realtime để xem chi tiết.</p></div>
+                                        <div id="realtime-unexported-revenue-content" class="flex-grow"><p class="text-gray-500 font-bold text-center">Vui lòng tải file realtime để xem chi tiết.</p></div>
                                     </div>
                                 </div>
                             </div>
 
-                             <div id="subtab-realtime-nhan-vien" class="sub-tab-content hidden space-y-4" data-capture-preset="large-font-report">
-                                <div class="flex flex-wrap items-center gap-4">
-                                    <div id="dtnv-realtime-view-selector" class="view-switcher">
-                                        <button data-view="summary" class="view-switcher__btn active">Tổng hợp</button>
-                                        <button data-view="infographic" class="view-switcher__btn">Chi tiết</button>
-                                    </div>
-                                    <div id="dtnv-realtime-employee-selector-container" class="hidden">
-                                        <label for="realtime-employee-detail-filter" class="font-semibold text-sm text-gray-600">Xem chi tiết nhân viên:</label>
-                                        <select id="realtime-employee-detail-filter" class="p-2 border rounded-lg text-sm bg-white shadow-sm mt-1 w-full max-w-md"></select>
-                                    </div>
-                                </div>
+                            <div id="subtab-realtime-nhan-vien" class="sub-tab-content hidden space-y-4" data-capture-preset="large-font-report">
                                 <div id="realtime-employee-detail-container"></div>
                                 <div id="realtime-revenue-report-container"></div>
                             </div>
@@ -3461,6 +3671,7 @@ export function initializeEventListeners(mainAppController) {
                                             <select id="realtime-brand-filter" class="p-2 border rounded-lg text-sm bg-white shadow-sm mt-1"></select>
                                         </div>
                                     </div>
+                                    
                                     <div id="realtime-brand-report-container">
                                         <div id="realtime-brand-table-container"></div>
                                         <div id="realtime-employee-table-container" class="hidden"></div>
@@ -3528,7 +3739,7 @@ export function initializeEventListeners(mainAppController) {
                             <div class="border-t pt-8">
                                 <h3 class="text-lg font-bold text-gray-700 mb-2 border-b pb-2">Nội dung Hướng dẫn</h3>
                                 <div class="grid md:grid-cols-1 gap-6 mt-4">
-                                     <div>
+                                    <div>
                                         <label for="edit-help-data" class="block text-md font-semibold text-gray-700 mb-2">Hướng dẫn Tab Cập nhật dữ liệu</label>
                                         <textarea id="edit-help-data" rows="6" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" placeholder="Nhập nội dung hướng dẫn cho tab Cập nhật dữ liệu..."></textarea>
                                     </div>
@@ -3574,7 +3785,7 @@ export function initializeEventListeners(mainAppController) {
             }
         });
     </script>
-    <script type="module" src="./main.js?v=3.3"></script>
+    <script type="module" src="./main.js?v=3.4"></script>
 
 </body>
 </html>
@@ -3582,6 +3793,7 @@ export function initializeEventListeners(mainAppController) {
 
 --- START FILE: ./main.js ---
 // Version 3.4 - Add feather.replace() calls to correctly render icons
+// Version 3.4 - Add state for detail view and remove obsolete handlers
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -3616,6 +3828,7 @@ const app = {
     async init() {
         try {
             appState.competitionConfigs = [];
+            appState.viewingDetailFor = null; // <<< THÊM TRẠNG THÁI MỚI
 
             await firebase.init();
             auth.init();
@@ -3638,6 +3851,7 @@ const app = {
             this.loadAndApplyBookmarkLink();
             this.loadAndDisplayQrCode(); 
             this.setupMarquee();
+            this.setupMarquee(); 
 
             await this.storage.openDB();
 
@@ -4061,27 +4275,10 @@ const app = {
         }
     },
 
-    handleSknvViewChange(e) {
-        const button = e.target.closest('.view-switcher__btn');
-        if (button) {
-            document.querySelectorAll('#sknv-view-selector .view-switcher__btn').forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
-            const view = button.dataset.view;
-            document.getElementById('sknv-employee-selector-container').classList.toggle('hidden', view !== 'detail');
-            sknvTab.render();
-        }
-    },
-
-    handleDtnvRealtimeViewChange(e) {
-        const button = e.target.closest('.view-switcher__btn');
-        if (button) {
-            document.querySelectorAll('#dtnv-realtime-view-selector .view-switcher__btn').forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
-            const view = button.dataset.view;
-            document.getElementById('dtnv-realtime-employee-selector-container').classList.toggle('hidden', view !== 'infographic');
-            realtimeTab.render();
-        }
-    },
+    // <<< START: CÁC HÀM BỊ XÓA >>>
+    // handleSknvViewChange(e) { ... }
+    // handleDtnvRealtimeViewChange(e) { ... }
+    // <<< END: CÁC HÀM BỊ XÓA >>>
 
     handleDthangRealtimeViewChange(e) {
         const button = e.target.closest('.view-switcher__btn');
@@ -6340,7 +6537,7 @@ export const modalSelection = {
 --- END FILE: ./components/modal-selection.js ---
 
 --- START FILE: ./components/sidebar.js ---
-// Version 1.2 - Replace all inline SVGs with Feather Icons
+// Version 1.3 - Optimize HTML for better icon/text alignment
 // Chứa mã HTML và logic cho thanh điều hướng bên.
 
 const sidebarHTML = `
@@ -6348,31 +6545,31 @@ const sidebarHTML = `
     <div>
          <a href="#home-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold mb-4">
             <i data-feather="home"></i>
-            <span class="menu-text ml-4">Hướng Dẫn & Góp Ý</span>
+            <span class="menu-text">Hướng Dẫn & Góp Ý</span>
         </a>
         <ul class="space-y-2">
             <li>
                 <a href="#data-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
                     <i data-feather="file-text"></i>
-                    <span class="menu-text ml-4">Cập nhật dữ liệu</span>
+                    <span class="menu-text">Cập nhật dữ liệu</span>
                 </a>
             </li>
             <li>
                 <a href="#health-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200">
                     <i data-feather="activity"></i>
-                    <span class="menu-text ml-4">Sức khỏe siêu thị</span>
+                    <span class="menu-text">Sức khỏe siêu thị</span>
                 </a>
             </li>
             <li>
                 <a href="#health-employee-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200">
                     <i data-feather="users"></i>
-                    <span class="menu-text ml-4">Sức khỏe nhân viên</span>
+                    <span class="menu-text">Sức khỏe nhân viên</span>
                 </a>
             </li>
             <li>
                 <a href="#realtime-section" class="nav-link flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200">
                     <i data-feather="trending-up"></i>
-                    <span class="menu-text ml-4">Doanh thu realtime</span>
+                    <span class="menu-text">Doanh thu realtime</span>
                 </a>
             </li>
         </ul>
@@ -6382,19 +6579,19 @@ const sidebarHTML = `
             <li>
                 <button id="interface-settings-btn" class="w-full flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
                     <i data-feather="settings"></i>
-                    <span class="menu-text ml-4">Cài đặt giao diện</span>
+                    <span class="menu-text">Cài đặt giao diện</span>
                 </button>
             </li>
             <li>
                 <button id="goal-settings-btn" class="w-full flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
                     <i data-feather="target"></i>
-                    <span class="menu-text ml-4">Thiết lập mục tiêu</span>
+                    <span class="menu-text">Thiết lập mục tiêu</span>
                 </button>
             </li>
             <li>
                 <button id="admin-access-btn" class="w-full flex items-center p-3 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold">
                     <i data-feather="edit"></i>
-                    <span class="menu-text ml-4">Khai báo</span>
+                    <span class="menu-text">Khai báo</span>
                 </button>
             </li>
         </ul>
@@ -6594,7 +6791,11 @@ createSnapshot();
 --- END FILE: ./create_snapshot.js ---
 
 --- START FILE: ./dashboard.css ---
-/* Version 5.5 - Unify sidebar icon sizes */
+<<<<<<< HEAD
+/* Version 5.6 - Fix icon hiding and refine icon stroke-width */
+=======
+/* Version 5.6 - Add styles for new Luy Ke employee detail layout */
+>>>>>>> feature/pro-capcut
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -6607,7 +6808,8 @@ createSnapshot();
     --bg-lightness-4: 92%; --header-lightness-4: 88%; --header-text-lightness-4: 15%; --special-header-lightness-4: 80%; --below-target-lightness-4: 88%;
     --bg-lightness-5: 90%; --header-lightness-5: 84%; --header-text-lightness-5: 12%; --special-header-lightness-5: 75%; --below-target-lightness-5: 84%;
     --bg-lightness-6: 88%; --header-lightness-6: 80%; --header-text-lightness-6: 10%; --special-header-lightness-6: 70%; --below-target-lightness-6: 80%;
-    --kpi-card-1-bg: #38bdf8; --kpi-card-2-bg: #34d399; --kpi-card-3-bg: #fbbf24;
+    --kpi-card-1-bg: #38bdf8;
+    --kpi-card-2-bg: #34d399; --kpi-card-3-bg: #fbbf24;
     --kpi-card-4-bg: #2dd4bf; --kpi-card-5-bg: #a78bfa; --kpi-card-6-bg: #f472b6;
     --kpi-card-7-bg: #818cf8;
     --kpi-card-8-bg: #f87171;
@@ -6635,14 +6837,36 @@ html[data-contrast="6"] { --bg-lightness: var(--bg-lightness-6); --header-lightn
 ::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: #555; }
 
+/* === START: SIDEBAR ALIGNMENT & ICON FIX (V5.6) === */
 #sidebar { width: 68px; transition: width 0.3s ease-in-out; overflow-x: hidden; }
 #sidebar:hover { width: 256px; }
 #sidebar.menu-locked:hover { width: 68px; }
-.menu-text { transition: opacity 0.2s ease-in-out; opacity: 0; white-space: nowrap; }
-#sidebar:hover .menu-text { opacity: 1; transition-delay: 0.1s; }
-#sidebar.menu-locked:hover .menu-text { opacity: 0; }
+
+/* Quan trọng: Thêm gap để tạo khoảng cách giữa icon và text */
+#sidebar .nav-link, #sidebar button { 
+    white-space: nowrap; 
+    gap: 1rem; /* Thay thế cho ml-4 */
+}
+
+.menu-text { 
+    transition: opacity 0.2s ease-in-out, width 0.3s ease-in-out; 
+    opacity: 0; 
+    white-space: nowrap; 
+    width: 0; /* Quan trọng: Co lại khi ẩn */
+    overflow: hidden;
+}
+#sidebar:hover .menu-text { 
+    opacity: 1; 
+    transition-delay: 0.1s; 
+    width: auto; /* Mở rộng ra bình thường */
+}
+#sidebar.menu-locked:hover .menu-text { 
+    opacity: 0; 
+    width: 0;
+}
+/* === END: SIDEBAR ALIGNMENT & ICON FIX === */
+
 #main-content { transition: margin-left 0.3s ease-in-out; margin-left: 68px; }
-#sidebar .nav-link, #sidebar button { white-space: nowrap; }
 
 /* === BẮT ĐẦU: HIỆU ỨNG TƯƠNG TÁC MỚI === */
 .nav-link,
@@ -6758,6 +6982,30 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #
 .header-bg-blue { background-color: hsl(217, 95%, var(--special-header-lightness)) !important; color: hsl(217, 80%, var(--header-text-lightness)) !important; }
 .header-bg-green { background-color: hsl(145, 80%, var(--special-header-lightness)) !important; color: hsl(145, 70%, var(--header-text-lightness)) !important; }
 .header-bg-yellow { background-color: hsl(45, 95%, var(--special-header-lightness)) !important; color: hsl(45, 80%, var(--header-text-lightness)) !important; }
+
+/* === START: NEW INTERACTIVE ROW STYLES === */
+.interactive-row {
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+}
+
+.interactive-row:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    background-color: #eff6ff; /* blue-50 */
+}
+
+/* Make the first cell (employee name) the clickable target */
+.interactive-row .employee-name-cell {
+    cursor: pointer;
+    color: #2563eb; /* blue-600 */
+    transition: color 0.2s ease-out;
+}
+
+.interactive-row:hover .employee-name-cell {
+    text-decoration: underline;
+    color: #1d4ed8; /* blue-700 */
+}
+/* === END: NEW INTERACTIVE ROW STYLES === */
 
 .header-group-1 { background-color: hsl(30, 90%, var(--header-lightness)); }
 .header-group-2 { background-color: hsl(90, 90%, var(--header-lightness)); }
@@ -7221,7 +7469,8 @@ details[open] > summary .arrow { transform: rotate(180deg); }
 }
 /* === END: DRAGGABLE TAG STYLES === */
 
-/* === START: ICON SIZING & ALIGNMENT FIX (V5.5) === */
+<<<<<<< HEAD
+/* === START: ICON SIZING & ALIGNMENT FIX (V5.6) === */
 /* General alignment for all buttons containing icons */
 .action-btn,
 .sub-tab-btn,
@@ -7235,19 +7484,19 @@ details[open] > summary .arrow { transform: rotate(180deg); }
     gap: 0.5rem;
 }
 
-/* Default size for all Feather icons */
+/* Default size and stroke for all Feather icons */
 .feather {
     width: 1.1rem; 
     height: 1.1rem;
-    stroke-width: 2.5; 
+    stroke-width: 1.5; /* Tinh chỉnh nét thanh mảnh hơn */
     flex-shrink: 0;
 }
 
-/* UNIFIED size for ALL icons inside the sidebar */
+/* UNIFIED size and stroke for ALL icons inside the sidebar */
 #sidebar .feather {
     width: 1.5rem; /* 24px */
     height: 1.5rem; /* 24px */
-    stroke-width: 2;
+    stroke-width: 2; /* Giữ nét đậm hơn cho menu chính */
 }
 
 /* Specific size for help buttons in page headers */
@@ -7256,6 +7505,116 @@ details[open] > summary .arrow { transform: rotate(180deg); }
     height: 1.25rem;
 }
 /* === END: ICON SIZING & ALIGNMENT FIX === */
+=======
+/* === START: OLD STYLES FOR LUY KE EMPLOYEE DETAIL (v3.9 and before) === */
+.top-groups-list {
+    list-style-type: none; padding: 0; margin: 0;
+}
+.top-groups-list li {
+    font-size: 1rem; font-weight: 500; padding: 0.5rem 0; border-bottom: 1px dashed #e5e7eb; text-transform: capitalize;
+}
+.top-groups-list li:last-child {
+    border-bottom: none;
+}
+.customer-accordion details {
+    transition: background-color 0.2s ease-in-out;
+}
+.customer-accordion summary {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; padding: 0.75rem 1rem; cursor: pointer; list-style: none;
+}
+.customer-accordion summary::-webkit-details-marker {
+    display: none;
+}
+.customer-accordion summary:hover {
+    background-color: #f9fafb; /* gray-50 */
+}
+.customer-accordion .customer-name {
+    font-weight: 700; text-transform: uppercase; color: #1f2937; flex-grow: 1; min-width: 150px;
+}
+.customer-accordion .order-metrics {
+    display: flex; align-items: center; gap: 1rem; flex-shrink: 0; font-size: 0.875rem;
+}
+.customer-accordion .order-metrics span {
+    white-space: nowrap;
+}
+.customer-accordion .qd-below-target { color: #b91c1c; }
+.customer-accordion .qd-above-target { color: #1d4ed8; }
+.customer-accordion .accordion-arrow {
+    margin-left: auto; color: #9ca3af; transition: transform 0.2s ease-in-out;
+}
+.customer-accordion details[open] > summary .accordion-arrow {
+    transform: rotate(180deg);
+}
+.customer-accordion .product-list-table {
+    border-collapse: collapse;
+}
+.customer-accordion .product-list-table tr:last-child td {
+    border-bottom: none;
+}
+.top-groups-table { width: 100%; }
+.top-groups-table th, .top-groups-table td {
+    padding: 0.5rem 0.25rem; text-align: right; border-bottom: 1px dashed #e5e7eb;
+}
+.top-groups-table tr:last-child td { border-bottom: none; }
+.top-groups-table th:first-child, .top-groups-table td:first-child {
+    text-align: left; font-weight: 600; text-transform: capitalize;
+}
+/* === END: OLD STYLES === */
+
+/* === START: NEW STYLES FOR LUY KE EMPLOYEE DETAIL (v4.1 additions) === */
+.luyke-detail-header h3 {
+    font-size: 1.75rem; font-weight: 800; color: #111827; text-align: center;
+}
+
+.luyke-detail-progress-item {
+    display: flex; flex-direction: column; gap: 4px;
+}
+.luyke-detail-progress-label {
+    display: flex; justify-content: space-between; align-items: baseline; font-size: 0.875rem;
+}
+.luyke-detail-progress-values {
+    display: flex; justify-content: space-between; font-size: 0.75rem; color: #4b5563;
+}
+.luyke-detail-chart-container {
+    position: relative; height: 350px; width: 100%;
+}
+
+.customer-accordion-luyke summary {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; padding: 0.5rem 1rem; cursor: pointer; list-style: none;
+}
+.customer-accordion-luyke summary:hover {
+    background-color: #f9fafb;
+}
+.customer-accordion-luyke .customer-name-small {
+    font-weight: 600; font-size: 0.9rem; color: #1f2937; flex-grow: 1; min-width: 120px;
+}
+.customer-accordion-luyke .order-metrics {
+    display: flex; align-items: center; gap: 1rem; flex-shrink: 0; font-size: 0.75rem;
+}
+.customer-accordion-luyke .order-metrics span {
+    white-space: nowrap;
+}
+.customer-accordion-luyke .accordion-arrow {
+    margin-left: auto; color: #9ca3af; transition: transform 0.2s ease-in-out;
+}
+.customer-accordion-luyke details[open] > summary .accordion-arrow {
+    transform: rotate(180deg);
+}
+.customer-accordion-luyke .product-list-scrollable {
+    display: block;
+    max-height: 200px; /* 8 rows * ~25px/row */
+    overflow-y: auto;
+}
+.customer-accordion-luyke .product-list-table {
+    width: 100%;
+}
+/* === START: ADDED RULES FOR COLORING === */
+.customer-accordion-luyke .qd-below-target { color: #b91c1c; } /* red-700 */
+.customer-accordion-luyke .qd-above-target { color: #1d4ed8; } /* blue-700 */
+/* === END: ADDED RULES === */
+/* === END: NEW STYLES === */
+>>>>>>> feature/pro-capcut
+
 --- END FILE: ./dashboard.css ---
 
 --- START FILE: ./event-listeners/listeners-actions.js ---
@@ -7720,7 +8079,7 @@ export function initializeSortingListeners(appController) {
 --- END FILE: ./event-listeners/listeners-sorting.js ---
 
 --- START FILE: ./event-listeners/ui-listeners.js ---
-// Version 3.8 - Revert to client-side processing as per user request
+// Version 3.9 - Fix: Loại bỏ listener bị lồng và lỗi cú pháp sau khi gộp nhánh
 // MODULE: EVENT LISTENERS INITIALIZER
 // File này đóng vai trò là điểm khởi đầu, import và khởi chạy tất cả các module listener con.
 
@@ -7737,6 +8096,7 @@ import { initializeHighlightingListeners } from './listeners-highlighting.js';
 import { initializeSettingsListeners } from './listeners-settings.js';
 import { initializeSortingListeners } from './listeners-sorting.js';
 import { dragDroplisteners } from './listeners-dragdrop.js';
+import { captureService } from '../modules/capture.service.js'; // <<< SỬA LỖI: THÊM IMPORT
 
 let appController = null;
 
@@ -7748,9 +8108,8 @@ async function handleFileInputChange(e) {
     const file = fileInput.files[0];
     const fileType = fileInput.id.replace('file-', '');
     const dataName = fileInput.dataset.name || fileType;
-    const stateKey = fileInput.dataset.stateKey; 
-
-    if (!file || !stateKey) return; 
+    const stateKey = fileInput.dataset.stateKey;
+    if (!file || !stateKey) return;
 
     ui.updateFileStatus(fileType, file.name, 'Đang xử lý...', 'default');
     ui.showProgressBar(fileType);
@@ -7778,7 +8137,7 @@ async function handleFileInputChange(e) {
                 ui.showNotification(`Đã lưu "${dataName}" vào bộ nhớ đệm của trình duyệt.`, 'success');
             }
             appController.updateAndRenderCurrentTab();
-        } else { 
+        } else {
             const errorMessage = `Lỗi file "${dataName}": Thiếu cột: ${missingColumns.join(', ')}.`;
             ui.updateFileStatus(fileType, file.name, `Lỗi: Thiếu cột dữ liệu.`, 'error');
             ui.showNotification(errorMessage, 'error');
@@ -7796,6 +8155,8 @@ async function handleFileInputChange(e) {
 }
 
 function handleFilterChange(prefix) {
+    // Mỗi khi bộ lọc thay đổi, chúng ta cần đảm bảo quay về màn hình tổng hợp
+    appState.viewingDetailFor = null;
     ui.updateEmployeeFilter(prefix);
     appController.updateAndRenderCurrentTab();
 }
@@ -7807,12 +8168,13 @@ export function initializeEventListeners(mainAppController) {
 
     // --- Khởi tạo các thư viện UI ---
     try {
-        const multiSelectConfig = { 
-            removeItemButton: true, 
-            placeholder: true, 
-            placeholderValue: 'Chọn hoặc gõ để tìm...', 
-            searchPlaceholderValue: 'Tìm kiếm...' 
+        const multiSelectConfig = {
+            removeItemButton: true,
+            placeholder: true,
+            placeholderValue: 'Chọn hoặc gõ để tìm...',
+            searchPlaceholderValue: 'Tìm kiếm...'
         };
+
         const competitionMultiSelectConfig = {
             removeItemButton: true,
             placeholder: true,
@@ -7841,16 +8203,14 @@ export function initializeEventListeners(mainAppController) {
         const competitionGroupEl = document.getElementById('competition-group');
         if (competitionGroupEl) appState.choices['competition_group'] = new Choices(competitionGroupEl, competitionMultiSelectConfig);
 
-        const singleSelectConfig = { 
-            searchEnabled: true, 
-            removeItemButton: false, 
-            itemSelectText: 'Chọn', 
-            searchPlaceholderValue: 'Tìm kiếm...' 
+        const singleSelectConfig = {
+            searchEnabled: true,
+            removeItemButton: false,
+            itemSelectText: 'Chọn',
+            searchPlaceholderValue: 'Tìm kiếm...'
         };
         const singleSelects = {
-            'sknv-employee-filter': 'sknv_employee_detail',
             'thidua-employee-filter': 'thidua_employee_detail',
-            'realtime-employee-detail-filter': 'realtime_employee_detail',
             'thidua-vung-filter-supermarket': 'thiDuaVung_sieuThi',
         };
         for (const [id, key] of Object.entries(singleSelects)) {
@@ -7872,6 +8232,7 @@ export function initializeEventListeners(mainAppController) {
                         instance.setDate(dateRange, false);
                     }
                     ui.updateDateSummary(document.getElementById(`${prefix}-date-summary`), instance);
+                    appState.viewingDetailFor = null; // Reset detail view when changing date
                     renderFunc();
                 }
             });
@@ -7891,12 +8252,13 @@ export function initializeEventListeners(mainAppController) {
     initializeCompetitionListeners(appController);
     dragDroplisteners.init(appController);
 
-    // --- Các sự kiện còn lại ---
+    // --- Các sự kiện chính & Tương tác đặc thù ---
     document.getElementById('force-reload-btn')?.addEventListener('click', () => window.location.reload());
     document.querySelectorAll('a.nav-link').forEach(link => link.addEventListener('click', (e) => { e.preventDefault(); appController.switchTab(link.getAttribute('href').substring(1)); }));
     
     document.querySelectorAll('.sub-tab-btn').forEach(btn => btn.addEventListener('click', (e) => {
         ui.handleSubTabClick(e.currentTarget);
+        appState.viewingDetailFor = null; // Reset detail view when changing tabs
         const mainTabId = e.currentTarget.closest('.page-section')?.id || e.currentTarget.closest('.settings-drawer')?.id;
         
         if (mainTabId === 'health-section') luykeTab.render();
@@ -7934,19 +8296,68 @@ export function initializeEventListeners(mainAppController) {
     document.getElementById('sknv-view-selector')?.addEventListener('click', (e) => appController.handleSknvViewChange(e));
     document.getElementById('sknv-employee-filter')?.addEventListener('change', () => sknvTab.render());
     
+    // === START: BỘ LẮNG NGHE SỰ KIỆN TẬP TRUNG CHO CÁC CLICK QUAN TRỌNG ===
     document.body.addEventListener('click', (e) => {
-        const viewSwitcherBtn = e.target.closest('#luyke-thidua-view-selector .view-switcher__btn');
-        if (viewSwitcherBtn) {
+        // Xử lý click để xem chi tiết nhân viên
+        const employeeCell = e.target.closest('.employee-name-cell');
+        if (employeeCell && employeeCell.dataset.employeeId) {
+            e.preventDefault();
+            appState.viewingDetailFor = {
+                employeeId: employeeCell.dataset.employeeId,
+                sourceTab: employeeCell.dataset.sourceTab
+            };
+            appController.updateAndRenderCurrentTab();
+            return;
+        }
+
+        // Xử lý click nút "Quay lại" từ màn hình chi tiết
+        const backButton = e.target.closest('.back-to-summary-btn');
+        if (backButton) {
+            e.preventDefault();
+            appState.viewingDetailFor = null;
+            appController.updateAndRenderCurrentTab();
+            return;
+        }
+
+        // Xử lý nút Chụp Ảnh trên màn hình chi tiết (được tạo động)
+        const captureDetailBtn = e.target.closest('#capture-sknv-detail-btn, #capture-dtnv-lk-detail-btn, #capture-dtnv-rt-detail-btn');
+        if (captureDetailBtn) {
+            e.preventDefault();
+            const areaToCapture = captureDetailBtn.closest('.sub-tab-content')?.querySelector('[id$="-capture-area"]');
+            const title = appState.viewingDetailFor?.employeeId || 'ChiTietNV';
+            if (areaToCapture) {
+                captureService.captureDashboardInParts(areaToCapture, title); // <<< SỬA LỖI: Gọi hàm từ module đúng
+            }
+            return;
+        }
+        
+        // Listener cho luyke-thidua-view-selector
+        const luykeViewSwitcherBtn = e.target.closest('#luyke-thidua-view-selector .view-switcher__btn');
+        if (luykeViewSwitcherBtn) {
             e.preventDefault();
             appController.handleLuykeThiDuaViewChange(e);
+            return;
+        }
+
+        // Listener cho thidua-view-selector
+        const thiDuaViewSwitcherBtn = e.target.closest('#thidua-view-selector .view-switcher__btn');
+        if (thiDuaViewSwitcherBtn) {
+            e.preventDefault();
+            appController.handleThiDuaViewChange(e);
+            return;
+        }
+        
+        // Listener cho dthang-realtime-view-selector
+        const dtHangViewSwitcherBtn = e.target.closest('#dthang-realtime-view-selector .view-switcher__btn');
+        if (dtHangViewSwitcherBtn) {
+            e.preventDefault();
+            appController.handleDthangRealtimeViewChange(e);
+            return;
         }
     });
+    // === END: BỘ LẮNG NGHE SỰ KIỆN TẬP TRUNG ===
     
-    document.getElementById('thidua-view-selector')?.addEventListener('click', (e) => appController.handleThiDuaViewChange(e));
     document.getElementById('thidua-employee-filter')?.addEventListener('change', () => ui.displayCompetitionReport('employee'));
-    document.getElementById('dtnv-realtime-view-selector')?.addEventListener('click', (e) => appController.handleDtnvRealtimeViewChange(e));
-    document.getElementById('realtime-employee-detail-filter')?.addEventListener('change', () => realtimeTab.handleEmployeeDetailChange());
-    document.getElementById('dthang-realtime-view-selector')?.addEventListener('click', (e) => appController.handleDthangRealtimeViewChange(e));
     document.getElementById('realtime-brand-category-filter')?.addEventListener('change', () => realtimeTab.handleBrandFilterChange());
     document.getElementById('realtime-brand-filter')?.addEventListener('change', () => realtimeTab.handleBrandFilterChange());
 }
@@ -7958,7 +8369,7 @@ export function initializeEventListeners(mainAppController) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Công cụ phân tích số cho QLST MWG 4.6</title>
+    <title>Công cụ phân tích số cho QLST MWG 4.8</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -7970,7 +8381,7 @@ export function initializeEventListeners(mainAppController) {
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     
     <script src="https://unpkg.com/feather-icons"></script>
@@ -7997,7 +8408,7 @@ export function initializeEventListeners(mainAppController) {
 
     <div class="flex min-h-screen">
         <div id="sidebar-container"></div> 
-        <main id="main-content" class="flex-1 p-6">
+         <main id="main-content" class="flex-1 p-6">
             <div class="max-w-full mx-auto">
 
                 <section id="home-section" class="page-section hidden">
@@ -8012,7 +8423,7 @@ export function initializeEventListeners(mainAppController) {
                             <span id="action-count" class="text-red-600 font-bold">-</span>
                         </div>
                     </div>
-                    
+                  
                     <div class="content-card">
                          <h3 class="content-card__header">Video Hướng Dẫn Sử Dụng Nhanh</h3>
                          <div id="video-container" class="bg-gray-200 rounded-lg">
@@ -8024,7 +8435,7 @@ export function initializeEventListeners(mainAppController) {
                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                                 allowfullscreen>
                             </iframe>
-                         </div>
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
@@ -8044,12 +8455,12 @@ export function initializeEventListeners(mainAppController) {
 
                     <div class="mt-12">
                         <h2 class="text-2xl font-bold text-gray-800 mb-6">Lịch sử cập nhật</h2>
-                        <div id="update-history-list" class="space-y-6">
+                         <div id="update-history-list" class="space-y-6">
                         </div>
                     </div>
                     </section>
                     <section id="data-section" class="page-section">
-                    <div class="page-header">
+                        <div class="page-header">
                         <div class="flex items-center gap-x-3">
                             <h2 class="page-header__title">Cập nhật dữ liệu</h2>
                             <button class="page-header__help-btn" data-help-id="data" title="Xem hướng dẫn">
@@ -8059,10 +8470,10 @@ export function initializeEventListeners(mainAppController) {
                         <div id="version-marquee-container" class="marquee-container">
                             <p class="marquee-text"></p>
                         </div>
-                        
+                    
                         <div class="header-qr-container">
-                            <span>THAM GIA THẢO LUẬN - GÓP Ý</span>
-                            <img id="header-qr-image" src="" alt="Mã QR" class="header-qr-image">
+                             <span>THAM GIA THẢO LUẬN - GÓP Ý</span>
+                             <img id="header-qr-image" src="" alt="Mã QR" class="header-qr-image">
                         </div>
                     </div>
                     <div class="content-card">
@@ -8234,7 +8645,7 @@ export function initializeEventListeners(mainAppController) {
                                 <span class="text">Hiện bộ lọc nâng cao</span>
                                 <i data-feather="chevron-down" class="icon"></i>
                             </button>
-                             <div id="luyke-filter-container" class="advanced-filters hidden">
+                            <div id="luyke-filter-container" class="advanced-filters hidden">
                                 <div id="luyke-filter-bar" class="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-4">
                                     <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
                                         <div class="md:col-span-2">
@@ -8309,19 +8720,19 @@ export function initializeEventListeners(mainAppController) {
                                         <p id="luyke-kpi-dt-qd-main" class="font-bold mt-2 mb-3">0</p>
                                         <p id="luyke-kpi-dt-qd-sub1" class="text-sm">DK: 0 / Target: 0</p>
                                     </div>
-                                    
+                                
                                     <div class="kpi-card p-6 rounded-2xl shadow-lg">
                                         <h4 class="kpi-card-title">Tỷ lệ hoàn thành Target</h4>
                                         <p id="luyke-kpi-ht-target-qd-main" class="font-bold mt-2 mb-3">0%</p>
                                         <p id="luyke-kpi-ht-target-thuc-sub" class="text-sm">DT Thực: 0%</p>
                                     </div>
-                                
+                                    
                                     <div class="kpi-card p-6 rounded-2xl shadow-lg">
                                         <h4 class="kpi-card-title">Tỷ lệ quy đổi</h4>
                                         <p id="luyke-kpi-tl-qd-main" class="font-bold mt-2 mb-3">0%</p>
                                         <p id="luyke-kpi-tl-qd-sub" class="text-sm">Mục tiêu: 0%</p>
                                     </div>
-                                
+                                    
                                     <div class="kpi-card p-6 rounded-2xl shadow-lg">
                                         <h4 class="kpi-card-title">Doanh thu trả chậm</h4>
                                         <p id="luyke-kpi-dt-tc-main" class="font-bold mt-2 mb-3">0</p>
@@ -8357,6 +8768,7 @@ export function initializeEventListeners(mainAppController) {
                             </div>
                             <div id="subtab-luyke-thi-dua" class="sub-tab-content hidden space-y-4">
                                 <div class="flex flex-wrap items-center justify-between gap-4">
+                                <div class="flex flex-wrap items-center gap-4">
                                     <h3 class="text-xl font-bold text-gray-800 uppercase">Thi đua lũy kế <span id="luyke-competition-summary" class="text-sm font-normal"></span></h3>
                                     <div id="luyke-thidua-view-selector-placeholder"></div> </div>
                                 <div id="luyke-competition-content"></div>
@@ -8383,7 +8795,7 @@ export function initializeEventListeners(mainAppController) {
                                     </div>
                                 </div>
                                 <div id="thidua-vung-infographic-container">
-                                    <div class="placeholder-message">Vui lòng tải file và chọn một siêu thị để xem báo cáo.</div>
+                                     <div class="placeholder-message">Vui lòng tải file và chọn một siêu thị để xem báo cáo.</div>
                                 </div>
                             </div>
                         </div>
@@ -8467,6 +8879,20 @@ export function initializeEventListeners(mainAppController) {
                                     </button>
                                     <button id="export-sknv-btn" class="action-btn action-btn--export" title="Xuất Excel tab hiện tại">
                                         <i data-feather="download"></i>
+                                    <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-sknv" data-title="SKNV">SKNV</button>
+                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-doanhthu-lk" data-title="DoanhThuLK">DT NV LK</button>
+                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-thunhap" data-title="ThuNhap">Thu nhập</button>
+                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-khai-thac-luy-ke" data-title="HieuQuaKhaiThacLuyKe">Hiệu quả NV LK</button>
+                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-doanhthu-nganhhang" data-title="DTNganhHang">DT ngành hàng</button>
+                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-thi-dua-lk" data-title="HieuQuaThiDuaLK">Thi đua NV LK</button>
+                                </nav>
+                                 <div class="flex items-center gap-x-2">
+                                    <button id="compose-sknv-notification-btn" class="action-btn action-btn--composer" title="Nhận xét">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                                        <span>Nhận xét</span>
+                                    </button>
+                                     <button id="export-sknv-btn" class="action-btn action-btn--export" title="Xuất Excel tab hiện tại">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L6.354 8.146a.5.5 0 1 0-.708.708l2 2z"/></svg>
                                         <span>Xuất Excel</span>
                                     </button>
                                     <button id="capture-sknv-btn" class="action-btn action-btn--capture" title="Chụp ảnh tab hiện tại">
@@ -8478,23 +8904,14 @@ export function initializeEventListeners(mainAppController) {
 
                             <div id="employee-subtabs-content">
                                 <div id="subtab-sknv" class="sub-tab-content">
-                                    <div class="flex flex-wrap items-center gap-4 mb-6">
-                                        <div id="sknv-view-selector" class="view-switcher">
-                                            <button data-view="summary" class="view-switcher__btn active">Tổng hợp</button>
-                                            <button data-view="detail" class="view-switcher__btn">Chi tiết</button>
-                                        </div>
-                                        <div id="sknv-employee-selector-container" class="hidden">
-                                            <label for="sknv-employee-filter" class="font-semibold text-sm text-gray-600">Chọn nhân viên:</label>
-                                            <select id="sknv-employee-filter" class="p-2 border rounded-lg text-sm bg-white shadow-sm mt-1" style="min-width: 250px;"></select>
-                                        </div>
-                                    </div>
                                     <div id="sknv-summary-container"></div>
                                     <div id="sknv-details-container" class="mt-6 hidden">
                                         <p class="text-gray-500">Vui lòng chọn một nhân viên để xem chi tiết.</p>
                                     </div>
                                 </div>
                                 <div id="subtab-doanhthu-lk" class="sub-tab-content hidden space-y-6" data-capture-preset="landscape-table">
-                                     <div id="revenue-report-container-lk"></div>
+                                    <div id="revenue-report-container-lk"></div>
+                                     <div id="dtnv-lk-details-container"></div>
                                 </div>
                                 <div id="subtab-thunhap" class="sub-tab-content hidden space-y-6" data-capture-preset="landscape-table">
                                     <div id="income-report-placeholder">
@@ -8510,7 +8927,7 @@ export function initializeEventListeners(mainAppController) {
                                 </div>
                                 <div id="subtab-hieu-qua-thi-dua-lk" class="sub-tab-content hidden space-y-6">
                                     <div id="competition-report-container-lk" class="mt-4">
-                                         <p class="text-gray-500">Vui lòng khai báo chương trình thi đua trong "Thiết lập mục tiêu" để xem báo cáo.</p>
+                                        <p class="text-gray-500">Vui lòng khai báo chương trình thi đua trong "Thiết lập mục tiêu" để xem báo cáo.</p>
                                     </div>
                                 </div>
                             </div>
@@ -8540,7 +8957,7 @@ export function initializeEventListeners(mainAppController) {
                                 <i data-feather="chevron-down" class="icon"></i>
                             </button>
                             <div id="realtime-filter-container" class="advanced-filters hidden">
-                                 <div id="realtime-filter-bar" class="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-4">
+                                <div id="realtime-filter-bar" class="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-4">
                                     <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
                                         <div class="md:col-span-3"><label for="realtime-filter-warehouse" class="block text-sm font-medium text-gray-600 mb-1">Mã Kho</label><select id="realtime-filter-warehouse" class="p-2 border rounded-lg text-sm bg-white shadow-sm w-full"></select></div>
                                         <div class="md:col-span-3"><label for="realtime-filter-department" class="block text-sm font-medium text-gray-600 mb-1">Bộ Phận</label><select id="realtime-filter-department" class="p-2 border rounded-lg text-sm bg-white shadow-sm w-full"></select></div>
@@ -8586,7 +9003,7 @@ export function initializeEventListeners(mainAppController) {
                                     <span>Thi đua NV Realtime</span>
                                 </button>
                             </nav>
-                             <div class="flex items-center gap-x-2">
+                            <div class="flex items-center gap-x-2">
                                 <button id="compose-realtime-notification-btn" class="action-btn action-btn--composer" title="Nhận xét">
                                     <i data-feather="pen-tool"></i>
                                     <span>Nhận xét</span>
@@ -8604,7 +9021,7 @@ export function initializeEventListeners(mainAppController) {
 
                         <div id="realtime-subtabs-content">
                             <div id="subtab-realtime-sieu-thi" class="sub-tab-content space-y-8">
-                                 <h2 id="realtime-supermarket-title" class="text-2xl font-bold text-center text-gray-700"></h2>
+                                <h2 id="realtime-supermarket-title" class="text-2xl font-bold text-center text-gray-700"></h2>
                                 <div id="realtime-kpi-cards-container" data-capture-group="kpi" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                     <div class="kpi-card p-6 rounded-2xl shadow-lg">
                                         <h4 class="kpi-card-title font-semibold uppercase tracking-wider">Doanh thu thực</h4>
@@ -8649,22 +9066,12 @@ export function initializeEventListeners(mainAppController) {
                                     </div>
                                     <div id="realtime-unexported-revenue-panel" data-capture-group="2" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200 flex flex-col">
                                          <h3 class="text-xl font-bold uppercase mb-4 bg-red-100 text-red-800 p-2 rounded-md">DOANH THU CHƯA XUẤT</h3>
-                                         <div id="realtime-unexported-revenue-content" class="flex-grow"><p class="text-gray-500 font-bold text-center">Vui lòng tải file realtime để xem chi tiết.</p></div>
+                                        <div id="realtime-unexported-revenue-content" class="flex-grow"><p class="text-gray-500 font-bold text-center">Vui lòng tải file realtime để xem chi tiết.</p></div>
                                     </div>
                                 </div>
                             </div>
 
-                             <div id="subtab-realtime-nhan-vien" class="sub-tab-content hidden space-y-4" data-capture-preset="large-font-report">
-                                <div class="flex flex-wrap items-center gap-4">
-                                    <div id="dtnv-realtime-view-selector" class="view-switcher">
-                                        <button data-view="summary" class="view-switcher__btn active">Tổng hợp</button>
-                                        <button data-view="infographic" class="view-switcher__btn">Chi tiết</button>
-                                    </div>
-                                    <div id="dtnv-realtime-employee-selector-container" class="hidden">
-                                        <label for="realtime-employee-detail-filter" class="font-semibold text-sm text-gray-600">Xem chi tiết nhân viên:</label>
-                                        <select id="realtime-employee-detail-filter" class="p-2 border rounded-lg text-sm bg-white shadow-sm mt-1 w-full max-w-md"></select>
-                                    </div>
-                                </div>
+                            <div id="subtab-realtime-nhan-vien" class="sub-tab-content hidden space-y-4" data-capture-preset="large-font-report">
                                 <div id="realtime-employee-detail-container"></div>
                                 <div id="realtime-revenue-report-container"></div>
                             </div>
@@ -8693,6 +9100,7 @@ export function initializeEventListeners(mainAppController) {
                                             <select id="realtime-brand-filter" class="p-2 border rounded-lg text-sm bg-white shadow-sm mt-1"></select>
                                         </div>
                                     </div>
+                                    
                                     <div id="realtime-brand-report-container">
                                         <div id="realtime-brand-table-container"></div>
                                         <div id="realtime-employee-table-container" class="hidden"></div>
@@ -8760,7 +9168,7 @@ export function initializeEventListeners(mainAppController) {
                             <div class="border-t pt-8">
                                 <h3 class="text-lg font-bold text-gray-700 mb-2 border-b pb-2">Nội dung Hướng dẫn</h3>
                                 <div class="grid md:grid-cols-1 gap-6 mt-4">
-                                     <div>
+                                    <div>
                                         <label for="edit-help-data" class="block text-md font-semibold text-gray-700 mb-2">Hướng dẫn Tab Cập nhật dữ liệu</label>
                                         <textarea id="edit-help-data" rows="6" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" placeholder="Nhập nội dung hướng dẫn cho tab Cập nhật dữ liệu..."></textarea>
                                     </div>
@@ -8806,7 +9214,7 @@ export function initializeEventListeners(mainAppController) {
             }
         });
     </script>
-    <script type="module" src="./main.js?v=3.3"></script>
+    <script type="module" src="./main.js?v=3.4"></script>
 
 </body>
 </html>
@@ -8814,6 +9222,7 @@ export function initializeEventListeners(mainAppController) {
 
 --- START FILE: ./main.js ---
 // Version 3.4 - Add feather.replace() calls to correctly render icons
+// Version 3.4 - Add state for detail view and remove obsolete handlers
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -8848,6 +9257,7 @@ const app = {
     async init() {
         try {
             appState.competitionConfigs = [];
+            appState.viewingDetailFor = null; // <<< THÊM TRẠNG THÁI MỚI
 
             await firebase.init();
             auth.init();
@@ -8870,6 +9280,7 @@ const app = {
             this.loadAndApplyBookmarkLink();
             this.loadAndDisplayQrCode(); 
             this.setupMarquee();
+            this.setupMarquee(); 
 
             await this.storage.openDB();
 
@@ -9293,27 +9704,10 @@ const app = {
         }
     },
 
-    handleSknvViewChange(e) {
-        const button = e.target.closest('.view-switcher__btn');
-        if (button) {
-            document.querySelectorAll('#sknv-view-selector .view-switcher__btn').forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
-            const view = button.dataset.view;
-            document.getElementById('sknv-employee-selector-container').classList.toggle('hidden', view !== 'detail');
-            sknvTab.render();
-        }
-    },
-
-    handleDtnvRealtimeViewChange(e) {
-        const button = e.target.closest('.view-switcher__btn');
-        if (button) {
-            document.querySelectorAll('#dtnv-realtime-view-selector .view-switcher__btn').forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
-            const view = button.dataset.view;
-            document.getElementById('dtnv-realtime-employee-selector-container').classList.toggle('hidden', view !== 'infographic');
-            realtimeTab.render();
-        }
-    },
+    // <<< START: CÁC HÀM BỊ XÓA >>>
+    // handleSknvViewChange(e) { ... }
+    // handleDtnvRealtimeViewChange(e) { ... }
+    // <<< END: CÁC HÀM BỊ XÓA >>>
 
     handleDthangRealtimeViewChange(e) {
         const button = e.target.closest('.view-switcher__btn');
@@ -11059,7 +11453,7 @@ export const dataProcessing = {
 --- END FILE: ./services/data-processing.js ---
 
 --- START FILE: ./services.js ---
-// Version 34.0 - Fix: Improve regex for employee ID matching in realtime data
+// Version 38.0 - Refactor: Rework generateLuyKeEmployeeDetailReport to support new UI
 // MODULE: SERVICES FACADE
 // File này đóng vai trò điều phối, nhập khẩu các module logic con và export chúng ra ngoài.
 
@@ -11116,9 +11510,7 @@ const reportGeneration = {
                 let baseCategoryQuantity = 0;
                 
                 baseSalesData.forEach(row => {
-                    // <<< START FIX: Use flexible regex for matching employee ID >>>
                     const msnvMatch = String(row.nguoiTao || '').match(/(\d+)/);
-                    // <<< END FIX >>>
                     if (msnvMatch && msnvMatch[1].trim() === employee.maNV) {
                         const revenueValue = (parseFloat(String(row.thanhTien || "0").replace(/,/g, '')) || 0);
                         const quantityValue = (parseInt(String(row.soLuong || "0"), 10) || 0);
@@ -11214,9 +11606,7 @@ const reportGeneration = {
             for (const key in PG.QDC_GROUPS) data.qdc[key] = { sl: 0, dt: 0, dtqd: 0, name: PG.QDC_GROUPS[key].name };
 
             sourceData.forEach(row => {
-                // <<< START FIX: Use flexible regex for matching employee ID >>>
                 const msnvMatch = String(row.nguoiTao || '').match(/(\d+)/);
-                // <<< END FIX >>>
                 if (msnvMatch && msnvMatch[1].trim() === employee.maNV) {
                     const isDoanhThuHTX = hinhThucXuatTinhDoanhThu.has(row.hinhThucXuat);
                     const isBaseValid = (row.trangThaiThuTien || "").trim() === 'Đã thu' && (row.trangThaiHuy || "").trim() === 'Chưa hủy' && (row.tinhTrangTra || "").trim() === 'Chưa trả';
@@ -11361,7 +11751,7 @@ const reportGeneration = {
         sourceYcxData.forEach(row => {
             const isDoanhThuHTX = hinhThucXuatTinhDoanhThu.has(row.hinhThucXuat);
             const isBaseValid = (row.trangThaiThuTien || "").trim() === 'Đã thu' &&
-                                (row.trangThaiHuy || "").trim() === 'Chưa hủy' &&
+                                 (row.trangThaiHuy || "").trim() === 'Chưa hủy' &&
                                 (row.tinhTrangTra || "").trim() === 'Chưa trả' &&
                                 (row.trangThaiXuat || "").trim() === 'Chưa xuất';
 
@@ -11470,9 +11860,7 @@ const reportGeneration = {
         if (!employeeMaNV || !realtimeYCXData || realtimeYCXData.length === 0) return null;
     
         const employeeData = realtimeYCXData.filter(row => {
-            // <<< START FIX: Use flexible regex for matching employee ID >>>
             const msnvMatch = String(row.nguoiTao || '').match(/(\d+)/);
-            // <<< END FIX >>>
             return msnvMatch && msnvMatch[1].trim() === String(employeeMaNV);
         });
     
@@ -11523,7 +11911,7 @@ const reportGeneration = {
                     });
                     byCustomer[customerName].totalQuantity += quantity;
                 } else if ((row.trangThaiXuat || "").trim() === 'Chưa xuất') {
-                    summary.unexportedRevenue += realRevenue;
+                    summary.unexportedRevenue += convertedRevenue;
                 }
             }
         });
@@ -11538,6 +11926,117 @@ const reportGeneration = {
             byCustomer: Object.values(byCustomer)
         };
     },
+
+    // === START: REFACTORED FUNCTION FOR LUY KE EMPLOYEE DETAIL (v38.0) ===
+    generateLuyKeEmployeeDetailReport(employeeMaNV, luykeYCXData) {
+        if (!employeeMaNV || !luykeYCXData || luykeYCXData.length === 0) {
+            return null;
+        }
+    
+        const employeeData = luykeYCXData.filter(row => {
+            const msnvMatch = String(row.nguoiTao || '').match(/(\d+)/);
+            return msnvMatch && msnvMatch[1].trim() === String(employeeMaNV);
+        });
+    
+        if (employeeData.length === 0) {
+            return null;
+        }
+    
+        const hinhThucXuatTinhDoanhThu = dataProcessing.getHinhThucXuatTinhDoanhThu();
+        const heSoQuyDoi = dataProcessing.getHeSoQuyDoi();
+        
+        const summary = {
+            totalRealRevenue: 0,
+            totalConvertedRevenue: 0,
+            unexportedRevenue: 0, // Calculated from master data
+        };
+        const byProductGroup = {};
+        const byCustomer = {};
+        const categoryChartDataMap = {};
+
+        const employeeMasterData = appState.masterReportData.sknv.find(e => String(e.maNV) === String(employeeMaNV));
+        if (employeeMasterData) {
+            summary.unexportedRevenue = employeeMasterData.doanhThuChuaXuat || 0;
+        }
+    
+        employeeData.forEach(row => {
+            const isDoanhThuHTX = hinhThucXuatTinhDoanhThu.has(row.hinhThucXuat);
+            const isBaseValid = (row.trangThaiThuTien || "").trim() === 'Đã thu' &&
+                                (row.trangThaiHuy || "").trim() === 'Chưa hủy' &&
+                                (row.tinhTrangTra || "").trim() === 'Chưa trả' &&
+                                (row.trangThaiXuat || "").trim() === 'Đã xuất';
+    
+            if (isDoanhThuHTX && isBaseValid) {
+                const realRevenue = parseFloat(String(row.thanhTien || "0").replace(/,/g, '')) || 0;
+                const quantity = parseInt(String(row.soLuong || "0"), 10) || 0;
+                if(isNaN(realRevenue) || isNaN(quantity)) return;
+
+                const heSo = heSoQuyDoi[row.nhomHang] || 1;
+                const convertedRevenue = realRevenue * heSo;
+                const groupName = utils.cleanCategoryName(row.nhomHang || 'Khác');
+                const customerName = row.tenKhachHang || 'Khách Lẻ';
+                const categoryName = utils.cleanCategoryName(row.nganhHang || 'Khác');
+
+                // For Summary KPIs
+                summary.totalRealRevenue += realRevenue;
+                summary.totalConvertedRevenue += convertedRevenue;
+
+                // For Top 8 Product Groups
+                if (!byProductGroup[groupName]) {
+                    byProductGroup[groupName] = { name: groupName, quantity: 0, realRevenue: 0, convertedRevenue: 0 };
+                }
+                byProductGroup[groupName].quantity += quantity;
+                byProductGroup[groupName].realRevenue += realRevenue;
+                byProductGroup[groupName].convertedRevenue += convertedRevenue;
+
+                // For Chart Data
+                if (!categoryChartDataMap[categoryName]) {
+                    categoryChartDataMap[categoryName] = { name: categoryName, revenue: 0 };
+                }
+                categoryChartDataMap[categoryName].revenue += realRevenue;
+
+                // For Customer Accordion
+                if (!byCustomer[customerName]) {
+                    byCustomer[customerName] = { name: customerName, products: [], totalQuantity: 0, totalRealRevenue: 0, totalConvertedRevenue: 0 };
+                }
+                byCustomer[customerName].products.push({
+                    productName: row.tenSanPham,
+                    quantity: quantity,
+                    realRevenue: realRevenue,
+                    convertedRevenue: convertedRevenue,
+                });
+                byCustomer[customerName].totalQuantity += quantity;
+                byCustomer[customerName].totalRealRevenue += realRevenue;
+                byCustomer[customerName].totalConvertedRevenue += convertedRevenue;
+            }
+        });
+    
+        // Final calculations for summary
+        summary.totalOrders = Object.keys(byCustomer).length;
+        summary.bundledOrderCount = Object.values(byCustomer).filter(c => c.products.length > 1).length;
+        summary.conversionRate = summary.totalRealRevenue > 0 ? (summary.totalConvertedRevenue / summary.totalRealRevenue) - 1 : 0;
+    
+        // Final calculations for customers and product groups
+        for (const customerName in byCustomer) {
+            const customer = byCustomer[customerName];
+            customer.conversionRate = customer.totalRealRevenue > 0 ? (customer.totalConvertedRevenue / customer.totalRealRevenue) - 1 : 0;
+        }
+        for (const groupName in byProductGroup) {
+            const group = byProductGroup[groupName];
+            group.conversionRate = group.realRevenue > 0 ? (group.convertedRevenue / group.realRevenue) - 1 : 0;
+        }
+    
+        return {
+            summary,
+            topProductGroups: Object.values(byProductGroup)
+                .sort((a, b) => b.realRevenue - a.realRevenue)
+                .slice(0, 8),
+            categoryChartData: Object.values(categoryChartDataMap),
+            byCustomer: Object.values(byCustomer)
+                .sort((a,b) => b.totalRealRevenue - a.totalRealRevenue)
+        };
+    },
+    // === END: REFACTORED FUNCTION ===
     
     generateRealtimeBrandReport(realtimeYCXData, selectedCategory, selectedBrand) {
         if (!realtimeYCXData || realtimeYCXData.length === 0) return { byBrand: [], byEmployee: [] };
@@ -11556,9 +12055,7 @@ const reportGeneration = {
     
         filteredData.forEach(row => {
             const brand = row.nhaSanXuat || 'Hãng khác';
-            // <<< START FIX: Use flexible regex for matching employee ID >>>
             const msnvMatch = String(row.nguoiTao || '').match(/(\d+)/);
-            // <<< END FIX >>>
             const employeeId = msnvMatch ? msnvMatch[1].trim() : 'Unknown';
             const realRevenue = parseFloat(String(row.thanhTien || "0").replace(/,/g, '')) || 0;
             const quantity = parseInt(String(row.soLuong || "0"), 10) || 0;
@@ -12155,7 +12652,7 @@ export { luykeTab };
 --- END FILE: ./tab-luyke.js ---
 
 --- START FILE: ./tab-realtime.js ---
-// Version 3.3 - Add initializer call for drag-and-drop functionality
+// Version 3.5 - Add diagnostic logging for render flow
 // MODULE: Chịu trách nhiệm cho Tab Doanh thu Realtime
 
 import { appState } from './state.js';
@@ -12167,6 +12664,10 @@ import { dragDroplisteners } from './event-listeners/listeners-dragdrop.js';
 
 export const realtimeTab = {
     render() {
+        // --- BẮT ĐẦU CÔNG CỤ CHẨN ĐOÁN ---
+        console.log("[CHẨN ĐOÁN] Bắt đầu render() trong 'tab-realtime.js'.");
+        // --- KẾT THÚC CÔNG CỤ CHẨN ĐOÁN ---
+
         if (appState.danhSachNhanVien.length === 0) {
             ui.togglePlaceholder('realtime-section', true);
             return;
@@ -12210,84 +12711,69 @@ export const realtimeTab = {
             return msnvMatch && visibleEmployees.has(msnvMatch[1].trim());
         });
         
-        if (activeSubTabId === 'subtab-hieu-qua-thi-dua-realtime') {
-            const competitionReportData = services.calculateCompetitionFocusReport(
-                appState.realtimeYCXData,
-                appState.competitionConfigs
-            );
-
-            ui.renderCompetitionUI(
-                'competition-report-container-rt',
-                competitionReportData
-            );
-        } else { 
-            const supermarketReport = services.aggregateReport(filteredReport, selectedWarehouse);
-            
-            ui.renderRealtimeKpiCards(supermarketReport, settings);
-            ui.renderRealtimeCategoryDetailsTable(supermarketReport);
-            ui.renderRealtimeEfficiencyTable(supermarketReport, settings.goals);
-            ui.renderRealtimeQdcTable(supermarketReport);
-            
-            const realtimeChuaXuatReport = services.generateRealtimeChuaXuatReport(filteredRealtimeYCX);
-            ui.renderRealtimeChuaXuatTable(realtimeChuaXuatReport);
-
-            const activeDtnvViewBtn = document.querySelector('#dtnv-realtime-view-selector .view-switcher__btn.active');
-            const dtnvViewType = activeDtnvViewBtn ? activeDtnvViewBtn.dataset.view : 'summary';
-            
-            const employeeSelectorContainer = document.getElementById('dtnv-realtime-employee-selector-container');
-            employeeSelectorContainer.classList.toggle('hidden', dtnvViewType !== 'infographic');
-            
-            if (dtnvViewType === 'infographic') {
-                this.handleEmployeeDetailChange();
+        const detailInfo = appState.viewingDetailFor;
+        const isViewingDetail = detailInfo && detailInfo.sourceTab === 'dtnv-rt';
+        
+        // Render tab DT NV Realtime first if it's the active one
+        if (activeSubTabId === 'subtab-realtime-nhan-vien') {
+            if (isViewingDetail) {
+                this.handleEmployeeDetailChange(detailInfo.employeeId);
             } else {
-                document.getElementById('realtime-revenue-report-container').classList.remove('hidden');
-                document.getElementById('realtime-employee-detail-container').classList.add('hidden');
-                ui.displayEmployeeRevenueReport(filteredReport, 'realtime-revenue-report-container', 'realtime_dt_nhanvien');
+                ui.displayRealtimeEmployeeRevenueReport(filteredReport, 'realtime-revenue-report-container', 'realtime_dt_nhanvien');
+                this.handleEmployeeDetailChange(null); // Clear detail view
             }
-
-            ui.displayEmployeeEfficiencyReport(filteredReport, 'realtime-efficiency-report-container', 'realtime_hieuqua_nhanvien');
-            ui.displayCategoryRevenueReport(filteredReport, 'realtime-category-revenue-report-container', 'realtime');
-            
-            this.handleBrandFilterChange();
         }
+
+        // Render other tabs
+        const supermarketReport = services.aggregateReport(filteredReport, selectedWarehouse);
+        ui.renderRealtimeKpiCards(supermarketReport, settings);
+        ui.renderRealtimeCategoryDetailsTable(supermarketReport);
+        ui.renderRealtimeEfficiencyTable(supermarketReport, settings.goals);
+        ui.renderRealtimeQdcTable(supermarketReport);
+        const realtimeChuaXuatReport = services.generateRealtimeChuaXuatReport(filteredRealtimeYCX);
+        ui.renderRealtimeChuaXuatTable(realtimeChuaXuatReport);
+        ui.displayEmployeeEfficiencyReport(filteredReport, 'realtime-efficiency-report-container', 'realtime_hieuqua_nhanvien');
+        ui.displayCategoryRevenueReport(filteredReport, 'realtime-category-revenue-report-container', 'realtime');
+        this.handleBrandFilterChange();
+        
+        const competitionReportData = services.calculateCompetitionFocusReport(
+            appState.realtimeYCXData,
+            appState.competitionConfigs
+        );
+        ui.renderCompetitionUI('competition-report-container-rt', competitionReportData);
         
         highlightService.populateHighlightFilters('realtime', filteredRealtimeYCX, filteredReport);
         highlightService.applyHighlights('realtime');
         
-        // Kích hoạt lại tính năng kéo thả cho các cột hiệu quả sau khi render
-        const efficiencyReportContainer = document.getElementById('realtime-efficiency-report-container');
-        if (efficiencyReportContainer) {
-            dragDroplisteners.initializeForContainer('realtime-efficiency-report-container');
+        if (!isViewingDetail) {
+            const efficiencyReportContainer = document.getElementById('realtime-efficiency-report-container');
+            if (efficiencyReportContainer) {
+                dragDroplisteners.initializeForContainer('realtime-efficiency-report-container');
+            }
         }
     },
 
-    handleEmployeeDetailChange() {
-        const filterEl = document.getElementById('realtime-employee-detail-filter');
+    handleEmployeeDetailChange(employeeId) {
         const revenueContainer = document.getElementById('realtime-revenue-report-container');
         const detailContainer = document.getElementById('realtime-employee-detail-container');
         
-        if (!filterEl || !revenueContainer || !detailContainer) return;
+        if (!revenueContainer || !detailContainer) return;
         
-        const activeDtnvViewBtn = document.querySelector('#dtnv-realtime-view-selector .view-switcher__btn.active');
-        const dtnvViewType = activeDtnvViewBtn ? activeDtnvViewBtn.dataset.view : 'summary';
-        
-        if (dtnvViewType === 'summary') {
+        if (!employeeId) {
             revenueContainer.classList.remove('hidden');
             detailContainer.classList.add('hidden');
+            detailContainer.innerHTML = '';
             return;
         }
 
-        const employeeId = filterEl.value;
         revenueContainer.classList.add('hidden');
         detailContainer.classList.remove('hidden');
 
-        if (!employeeId) {
-            detailContainer.innerHTML = '<div class="rt-infographic-container"><p class="text-center text-gray-500 font-semibold">Vui lòng chọn một nhân viên để xem chi tiết.</p></div>';
-        } else {
-            const employeeName = filterEl.options[filterEl.selectedIndex].text;
-            const detailData = services.generateRealtimeEmployeeDetailReport(employeeId, appState.realtimeYCXData);
-            ui.renderRealtimeEmployeeDetail(detailData, employeeName);
-        }
+        const employeeInfo = appState.employeeMaNVMap.get(String(employeeId));
+        const employeeName = employeeInfo ? ui.getShortEmployeeName(employeeInfo.hoTen, employeeInfo.maNV) : `NV ${employeeId}`;
+        const detailData = services.generateRealtimeEmployeeDetailReport(employeeId, appState.realtimeYCXData);
+        
+        ui.renderRealtimeEmployeeDetail(detailData, employeeName);
     },
 
     handleBrandFilterChange() {
@@ -12310,7 +12796,7 @@ export const realtimeTab = {
 --- END FILE: ./tab-realtime.js ---
 
 --- START FILE: ./tab-sknv.js ---
-// Version 2.6 - Add initializer call for drag-and-drop functionality
+// Version 3.1 - Update call to displayCategoryRevenueReport
 // MODULE: TAB SKNV
 // Chịu trách nhiệm render và xử lý logic cho tab "Sức khỏe nhân viên"
 
@@ -12327,6 +12813,7 @@ export const sknvTab = {
             ui.togglePlaceholder('health-employee-section', true);
             return;
         }
+        
         ui.togglePlaceholder('health-employee-section', false);
         
         const selectedWarehouse = document.getElementById('sknv-filter-warehouse').value;
@@ -12352,31 +12839,50 @@ export const sknvTab = {
         const activeSubTabBtn = document.querySelector('#employee-subtabs-nav .sub-tab-btn.active');
         const activeSubTabId = activeSubTabBtn ? activeSubTabBtn.dataset.target : 'subtab-sknv';
 
-        if (activeSubTabId === 'subtab-hieu-qua-thi-dua-lk') {
-            const competitionReportData = services.calculateCompetitionFocusReport(
-                filteredYCXData,
-                appState.competitionConfigs
-            );
-            
-            ui.renderCompetitionUI(
-                'competition-report-container-lk',
-                competitionReportData
-            );
+        const detailInfo = appState.viewingDetailFor;
+        const isViewingDetail = detailInfo && (detailInfo.sourceTab === 'sknv' || detailInfo.sourceTab === 'dtnv-lk');
+
+        if (isViewingDetail) {
+            const employeeData = appState.masterReportData.sknv.find(nv => String(nv.maNV) === String(detailInfo.employeeId));
+            if (activeSubTabId === 'subtab-sknv' && detailInfo.sourceTab === 'sknv') {
+                ui.displaySknvReport(filteredReport, true); // Force detail view
+            } else if (activeSubTabId === 'subtab-doanhthu-lk' && detailInfo.sourceTab === 'dtnv-lk') {
+                const luykeDetailData = services.generateLuyKeEmployeeDetailReport(detailInfo.employeeId, filteredYCXData);
+                ui.renderLuykeEmployeeDetail(luykeDetailData, employeeData, 'dtnv-lk-details-container');
+            } else {
+                this.renderSummaryViews(activeSubTabId, filteredReport, filteredYCXData);
+            }
         } else {
-            ui.displayEmployeeRevenueReport(filteredReport, 'revenue-report-container-lk', 'doanhthu_lk');
-            ui.displayEmployeeIncomeReport(filteredReport);
-            ui.displayEmployeeEfficiencyReport(filteredReport, 'efficiency-report-container', 'hieu_qua');
-            ui.displayCategoryRevenueReport(filteredReport, 'category-revenue-report-container', 'sknv');
-            ui.displaySknvReport(filteredReport);
+            this.renderSummaryViews(activeSubTabId, filteredReport, filteredYCXData);
         }
 
         highlightService.populateHighlightFilters('sknv', filteredYCXData, filteredReport);
         highlightService.applyHighlights('sknv');
 
-        // Kích hoạt lại tính năng kéo thả cho các cột hiệu quả sau khi render
         const efficiencyReportContainer = document.getElementById('efficiency-report-container');
-        if (efficiencyReportContainer) {
+        if (efficiencyReportContainer && !isViewingDetail) {
             dragDroplisteners.initializeForContainer('efficiency-report-container');
+        }
+    },
+
+    renderSummaryViews(activeSubTabId, filteredReport, filteredYCXData) {
+        if (activeSubTabId === 'subtab-hieu-qua-thi-dua-lk') {
+            const competitionReportData = services.calculateCompetitionFocusReport(
+                filteredYCXData,
+                appState.competitionConfigs
+            );
+            ui.renderCompetitionUI('competition-report-container-lk', competitionReportData);
+        } else if (activeSubTabId === 'subtab-sknv') {
+            ui.displaySknvReport(filteredReport, false); // Force summary view
+        } else if (activeSubTabId === 'subtab-doanhthu-lk') {
+            ui.displayEmployeeRevenueReport(filteredReport, 'revenue-report-container-lk', 'doanhthu_lk');
+        } else if (activeSubTabId === 'subtab-thunhap') {
+            ui.displayEmployeeIncomeReport(filteredReport);
+        } else if (activeSubTabId === 'subtab-hieu-qua-khai-thac-luy-ke') {
+            ui.displayEmployeeEfficiencyReport(filteredReport, 'efficiency-report-container', 'hieu_qua');
+        } else if (activeSubTabId === 'subtab-doanhthu-nganhhang') {
+            // Updated call to use the unified ui object
+            ui.displayCategoryRevenueReport(filteredReport, 'category-revenue-report-container', 'sknv');
         }
     }
 };
@@ -12554,18 +13060,19 @@ export { uiCompetition };
 --- END FILE: ./ui-competition.js ---
 
 --- START FILE: ./ui-components.js ---
-// Version 3.1 - Add renderSettingsButton helper function
+// Version 3.4 - Refactor string concatenation to prevent syntax errors
 // MODULE: UI COMPONENTS
 // Chứa các hàm UI chung, tái sử dụng được trên toàn bộ ứng dụng.
 
 import { appState } from './state.js';
 import { services } from './services.js';
 import { utils } from './utils.js';
+import { uiSknv } from './ui-sknv.js';
 
 export const uiComponents = {
     renderSettingsButton(idSuffix) {
         return `<button id="settings-btn-${idSuffix}" class="settings-trigger-btn" title="Tùy chỉnh hiển thị">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                 </button>`;
     },
 
@@ -12647,6 +13154,108 @@ export const uiComponents = {
             });
         }
     },
+
+    // --- START: REFACTORED SHARED FUNCTIONS ---
+    renderCategoryTable(title, sortStateKey, reportData, mainRevenueKey, mainQuantityKey, subQuantityKeys, subQuantityLabels) {
+        const sortState = appState.sortState[sortStateKey] || { key: mainRevenueKey, direction: 'desc' };
+        const { key, direction } = sortState;
+
+        const sortedData = [...reportData].sort((a, b) => {
+            const valA = a[key] || 0;
+            const valB = b[key] || 0;
+            return direction === 'asc' ? valA - valB : valB - valA;
+        });
+
+        const totals = reportData.reduce((acc, item) => {
+            acc[mainRevenueKey] += item[mainRevenueKey];
+            acc[mainQuantityKey] += item[mainQuantityKey];
+            subQuantityKeys.forEach(subKey => {
+                acc[subKey] = (acc[subKey] || 0) + (item[subKey] || 0);
+            });
+            return acc;
+        }, { [mainRevenueKey]: 0, [mainQuantityKey]: 0, ...subQuantityKeys.reduce((obj, key) => ({...obj, [key]: 0}), {}) });
+
+        const headerClass = (sortKey) => `px-2 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
+        const titleClass = {
+            'ICT': 'category-header-ict',
+            'PHỤ KIỆN': 'category-header-phukien',
+            'GIA DỤNG': 'category-header-giadung',
+            'CE': 'category-header-ce',
+            'BẢO HIỂM': 'category-header-baohiem',
+        }[title] || 'bg-gray-200';
+
+        const subHeaders = subQuantityLabels.map((label) => `<th class="px-2 py-2 text-right">${label}</th>`).join('');
+
+        const tableRows = [];
+        sortedData.forEach(item => {
+            if (item[mainRevenueKey] > 0 || item[mainQuantityKey] > 0) {
+                 tableRows.push(`
+                    <tr class="interactive-row">
+                        <td class="px-2 py-2 font-semibold line-clamp-2 employee-name-cell" data-employee-id="${item.maNV}" data-source-tab="sknv">
+                            <a href="#">${this.getShortEmployeeName(item.hoTen, item.maNV)}</a>
+                        </td>
+                        <td class="px-2 py-2 text-right font-bold">${this.formatRevenue(item[mainRevenueKey])}</td>
+                        <td class="px-2 py-2 text-right font-bold">${this.formatNumberOrDash(item[mainQuantityKey])}</td>
+                        ${subQuantityKeys.map(subKey => `<td class="px-2 py-2 text-right">${this.formatNumberOrDash(item[subKey])}</td>`).join('')}
+                    </tr>
+                `);
+            }
+        });
+
+        const html = `
+            <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+                <h4 class="text-lg font-bold p-3 border-b ${titleClass}">${title}</h4>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-sm table-bordered table-striped" data-table-type="${sortStateKey}">
+                        <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
+                            <tr>
+                                <th rowspan="2" class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên</th>
+                                <th rowspan="2" class="${headerClass(mainRevenueKey)} text-right" data-sort="${mainRevenueKey}">DT</th>
+                                <th rowspan="2" class="${headerClass(mainQuantityKey)} text-right" data-sort="${mainQuantityKey}">Tổng SL</th>
+                                <th colspan="${subQuantityKeys.length}" class="px-2 py-2 text-center">Chi tiết SL</th>
+                            </tr>
+                            <tr>${subHeaders}</tr>
+                        </thead>
+                        <tbody>
+                            ${tableRows.join('')}
+                        </tbody>
+                        <tfoot class="table-footer font-bold">
+                            <tr>
+                                <td class="px-2 py-2">Tổng</td>
+                                <td class="px-2 py-2 text-right">${this.formatRevenue(totals[mainRevenueKey])}</td>
+                                <td class="px-2 py-2 text-right">${this.formatNumberOrDash(totals[mainQuantityKey])}</td>
+                                ${subQuantityKeys.map(subKey => `<td class="px-2 py-2 text-right">${this.formatNumberOrDash(totals[subKey])}</td>`).join('')}
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>`;
+        return html;
+    },
+
+    displayCategoryRevenueReport(reportData, containerId, sortStatePrefix) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+    
+        const hasAnyData = reportData.some(item => item.dtICT > 0 || item.dtPhuKien > 0 || item.dtGiaDung > 0 || item.dtCE > 0 || item.dtBaoHiem > 0);
+        if (!hasAnyData) {
+            container.innerHTML = '<p class="text-yellow-600 font-semibold">Không tìm thấy doanh thu cho các ngành hàng chính.</p>';
+            return;
+        }
+
+        const htmlParts = [
+            '<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">',
+            `<div data-capture-group="1" data-capture-columns="6">${this.renderCategoryTable('ICT', `${sortStatePrefix}_ict`, reportData, 'dtICT', 'slICT', ['slDienThoai', 'slLaptop'], ['SL Điện thoại', 'SL Laptop'])}</div>`,
+            `<div data-capture-group="1" data-capture-columns="6">${this.renderCategoryTable('PHỤ KIỆN', `${sortStatePrefix}_phukien`, reportData, 'dtPhuKien', 'slPhuKien', ['slPinSDP', 'slCamera', 'slTaiNgheBLT'], ['SL Pin SDP', 'SL Camera', 'SL Tai nghe BLT'])}</div>`,
+            `<div data-capture-group="2" data-capture-columns="6">${this.renderCategoryTable('GIA DỤNG', `${sortStatePrefix}_giadung`, reportData, 'dtGiaDung', 'slGiaDung', ['slNoiChien', 'slMLN', 'slRobotHB'], ['SL Nồi chiên', 'SL MLN', 'SL Robot HB'])}</div>`,
+            `<div data-capture-group="2" data-capture-columns="6">${this.renderCategoryTable('CE', `${sortStatePrefix}_ce`, reportData, 'dtCE', 'slCE', ['slTivi', 'slTuLanh', 'slMayGiat', 'slMayLanh'], ['SL Tivi', 'SL Tủ lạnh', 'SL Máy giặt', 'SL Máy lạnh'])}</div>`,
+            `<div class="lg:col-span-2" data-capture-group="3" data-capture-columns="7">${this.renderCategoryTable('BẢO HIỂM', `${sortStatePrefix}_baohiem`, reportData, 'dtBaoHiem', 'slBaoHiem', ['slBH1d1', 'slBHXM', 'slBHRV', 'slBHMR'], ['BH 1-1', 'BHXM', 'BHRV', 'BHMR'])}</div>`,
+            '</div>'
+        ];
+        container.innerHTML = htmlParts.join('');
+    },
+    // --- END: REFACTORED SHARED FUNCTIONS ---
+
 
     // --- GENERAL UI HELPERS ---
     showProgressBar: (elementId) => document.getElementById(`progress-${elementId}`)?.classList.remove('hidden'),
@@ -13106,6 +13715,7 @@ export const uiComponents = {
             wrapper.innerHTML = finalHTML;
             resultsContainer.appendChild(wrapper);
         }
+    
     },
 
     renderCompetitionDebugReport(debugResults) {
@@ -13885,7 +14495,7 @@ export const uiLuyke = {
 --- END FILE: ./ui-luyke.js ---
 
 --- START FILE: ./ui-realtime.js ---
-// Version 3.5 - Fix dependency error by importing uiSknv
+// Version 3.7 - Fix: Add correct data-source-tab for clickable rows
 // MODULE: UI REALTIME
 // Chứa các hàm render giao diện cho tab "Doanh thu Realtime".
 
@@ -13894,14 +14504,13 @@ import { services } from './services.js';
 import { utils } from './utils.js';
 import { uiComponents } from './ui-components.js';
 import { settingsService } from './modules/settings.service.js';
-import { uiSknv } from './ui-sknv.js'; // <<< THÊM DÒNG NÀY ĐỂ SỬA LỖI
+import { uiSknv } from './ui-sknv.js';
 
 export const uiRealtime = {
     _showEfficiencySettingsModal() {
         const modal = document.getElementById('selection-modal');
         if (!modal) return;
 
-        // Lấy danh sách đầy đủ các mục từ settings service
         const allItemsConfig = settingsService.loadEfficiencyViewSettings();
         
         const listContainer = document.getElementById('selection-modal-list');
@@ -13969,6 +14578,14 @@ export const uiRealtime = {
     displayRealtimeEmployeeRevenueReport: (reportData, containerId, sortStateKey) => {
         const container = document.getElementById(containerId);
         if (!container) return;
+
+        // Clear existing content and hide detail view
+        container.innerHTML = '';
+        const detailContainer = document.getElementById('realtime-employee-detail-container');
+        if (detailContainer) detailContainer.classList.add('hidden');
+        container.classList.remove('hidden');
+
+
         if (!reportData || reportData.length === 0) {
             container.innerHTML = '<p class="text-gray-500">Không có dữ liệu doanh thu cho lựa chọn này.</p>';
             return;
@@ -14125,13 +14742,13 @@ export const uiRealtime = {
         const container = document.getElementById('realtime-efficiency-content');
         const cardHeader = document.getElementById('realtime-efficiency-title');
 
-        if (!container || !cardHeader || !data || !goals) {
+        if (!container || !cardHeader || !data || !goals) { 
             if (container) container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`;
-            return;
+            return; 
         }
-
+        
         const allItemsConfig = settingsService.loadEfficiencyViewSettings();
-
+        
         const goalKeyMap = {
             pctPhuKien: 'phanTramPhuKien',
             pctGiaDung: 'phanTramGiaDung',
@@ -14141,14 +14758,17 @@ export const uiRealtime = {
             pctBaoHiem: 'phanTramBaoHiem'
         };
 
-        const allItems = allItemsConfig.map(config => ({
-            ...config,
-            value: data[config.id],
-            target: goals[goalKeyMap[config.id]]
-        }));
+        const allItems = allItemsConfig
+            .filter(item => item.id.startsWith('pct'))
+            .map(config => ({
+                ...config,
+                value: data[config.id],
+                target: goals[goalKeyMap[config.id]]
+            }));
         
         const createRow = (label, value, target) => {
-            const isBelow = value < ((target || 0) / 100);
+            const isBelow = value < ((target || 0) / 100); 
+            
             return `<tr class="border-t">
                 <td class="px-4 py-2 font-semibold text-gray-800">${label}</td>
                 <td class="px-4 py-2 text-right font-bold text-lg ${isBelow ? 'cell-performance is-below' : 'text-green-600'}">${uiComponents.formatPercentage(value || 0)}</td>
@@ -14179,7 +14799,7 @@ export const uiRealtime = {
                     </thead>
                     <tbody>
                         ${allItems
-                            .filter(item => item.visible)
+                            .filter(item => item.visible) // Lọc theo cài đặt hiển thị
                             .map(item => createRow(item.label, item.value, item.target))
                             .join('')}
                     </tbody>
@@ -14201,7 +14821,7 @@ export const uiRealtime = {
         const sortedData = [...qdcData]
             .filter(item => visibleItems.includes(item.name)) // Lọc theo cài đặt
             .sort((a,b) => direction === 'asc' ? a[key] - b[key] : b[key] - a[key]);
-
+        
         if (!cardHeader.querySelector('.settings-trigger-btn')) {
             cardHeader.classList.add('flex', 'items-center', 'justify-between');
             cardHeader.innerHTML = `<span>NHÓM HÀNG QUY ĐỔI CAO</span>` + uiComponents.renderSettingsButton('rt-qdc');
@@ -14237,16 +14857,32 @@ export const uiRealtime = {
         if(titleEl) titleEl.textContent = `Báo cáo Realtime ${warehouse ? 'kho ' + warehouse : 'toàn bộ'} - ${dateTime.toLocaleTimeString('vi-VN')} ${dateTime.toLocaleDateString('vi-VN')}`;
     },
 
-    renderRealtimeEmployeeDetail: (detailData, employeeName) => {
-        const container = document.getElementById('realtime-employee-detail-container');
+    renderRealtimeEmployeeDetail: (detailData, employeeName, containerId = 'realtime-employee-detail-container') => {
+        const container = document.getElementById(containerId);
         if (!container) return;
+        
+        let headerHtml = '';
+        const isMainContainer = containerId === 'realtime-employee-detail-container' || containerId.includes('luyke');
+
+        if (isMainContainer) {
+            headerHtml = `
+                <div class="mb-4 flex justify-between items-center">
+                    <button class="back-to-summary-btn text-blue-600 hover:underline font-semibold">‹ Quay lại bảng tổng hợp</button>
+                    <button id="capture-${containerId}-btn" class="action-btn action-btn--capture" title="Chụp ảnh chi tiết">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15 12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1.172a3 3 0 0 0 2.12-.879l.83-.828A1 1 0 0 1 6.827 3h2.344a1 1 0 0 1 .707.293l.828.828A3 3 0 0 0 12.828 5H14a1 1 0 0 1 1 1v6zM2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828-.828A2 2 0 0 1 3.172 4H2z"/><path d="M8 11a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5zm0 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM3 6.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/></svg>
+                        <span>Chụp ảnh</span>
+                    </button>
+                </div>
+            `;
+        }
+
         if (!detailData) {
-            container.innerHTML = `<div class="rt-infographic-container"><p class="text-center text-gray-500">Không có dữ liệu doanh thu cho nhân viên ${employeeName} trong file realtime.</p></div>`;
+            container.innerHTML = headerHtml + `<div class="rt-infographic-container"><p class="text-center text-gray-500">Không có dữ liệu doanh thu cho nhân viên ${employeeName}.</p></div>`;
             return;
         }
 
-        const selectedWarehouse = document.getElementById('realtime-filter-warehouse').value;
-        const { goals } = settingsService.getRealtimeGoalSettings(selectedWarehouse);
+        const selectedWarehouse = document.getElementById('realtime-filter-warehouse')?.value || document.getElementById('sknv-filter-warehouse')?.value;
+        const { goals } = containerId.includes('luyke') ? settingsService.getLuykeGoalSettings(selectedWarehouse) : settingsService.getRealtimeGoalSettings(selectedWarehouse);
         const { summary, byProductGroup, byCustomer } = detailData;
         const totalRevenue = byProductGroup.reduce((sum, g) => sum + g.realRevenue, 0);
 
@@ -14275,25 +14911,29 @@ export const uiRealtime = {
         const conversionRateTarget = (goals?.phanTramQD || 0) / 100;
         const conversionRateClass = summary.conversionRate >= conversionRateTarget ? 'is-positive' : 'is-negative';
 
-        container.innerHTML = `
-            <div class="rt-infographic-container" data-capture-group="dtnv-infographic">
-                <div class="rt-infographic-header text-center">
-                    <h3 class="employee-name">${employeeName}</h3>
-                    <p class="employee-title">Chi tiết doanh thu trong ngày</p>
-                </div>
-                <div class="rt-infographic-summary">
-                    <div class="rt-infographic-summary-card"><div class="label">Tổng DT Thực</div><div class="value">${uiComponents.formatRevenue(summary.totalRealRevenue, 1)}</div></div>
-                    <div class="rt-infographic-summary-card"><div class="label">Tổng DTQĐ</div><div class="value">${uiComponents.formatRevenue(summary.totalConvertedRevenue, 1)}</div></div>
-                    <div class="rt-infographic-summary-card"><div class="label">Tỷ lệ QĐ</div><div class="value ${conversionRateClass}">${uiComponents.formatPercentage(summary.conversionRate)}</div></div>
-                    <div class="rt-infographic-summary-card"><div class="label">DT Chưa Xuất</div><div class="value">${uiComponents.formatRevenue(summary.unexportedRevenue, 1)}</div></div>
-                    <div class="rt-infographic-summary-card"><div class="label">Tổng Đơn Hàng</div><div class="value">${summary.totalOrders}</div></div>
-                    <div class="rt-infographic-summary-card"><div class="label">SL Đơn Bán Kèm</div><div class="value">${summary.bundledOrderCount}</div></div>
-                </div>
-                <div class="rt-infographic-grid">
-                    <div class="rt-infographic-section"><h4>Nhóm hàng</h4>${renderProductGroupProgress()}</div>
-                    <div class="rt-infographic-section"><h4>Chi tiết theo khách hàng</h4><div class="rt-customer-accordion">${renderCustomerAccordion()}</div></div>
+        const contentHtml = `
+            <div id="employee-detail-capture-area">
+                <div class="rt-infographic-container" data-capture-group="dtnv-infographic">
+                    <div class="rt-infographic-header text-center">
+                        <h3 class="employee-name">${employeeName}</h3>
+                        <p class="employee-title">Chi tiết doanh thu</p>
+                    </div>
+                    <div class="rt-infographic-summary">
+                        <div class="rt-infographic-summary-card"><div class="label">Tổng DT Thực</div><div class="value">${uiComponents.formatRevenue(summary.totalRealRevenue, 1)}</div></div>
+                        <div class="rt-infographic-summary-card"><div class="label">Tổng DTQĐ</div><div class="value">${uiComponents.formatRevenue(summary.totalConvertedRevenue, 1)}</div></div>
+                        <div class="rt-infographic-summary-card"><div class="label">Tỷ lệ QĐ</div><div class="value ${conversionRateClass}">${uiComponents.formatPercentage(summary.conversionRate)}</div></div>
+                        <div class="rt-infographic-summary-card"><div class="label">DT Chưa Xuất</div><div class="value">${uiComponents.formatRevenue(summary.unexportedRevenue, 1)}</div></div>
+                        <div class="rt-infographic-summary-card"><div class="label">Tổng Đơn Hàng</div><div class="value">${summary.totalOrders}</div></div>
+                        <div class="rt-infographic-summary-card"><div class="label">SL Đơn Bán Kèm</div><div class="value">${summary.bundledOrderCount}</div></div>
+                    </div>
+                    <div class="rt-infographic-grid">
+                        <div class="rt-infographic-section"><h4>Nhóm hàng</h4>${renderProductGroupProgress()}</div>
+                        <div class="rt-infographic-section"><h4>Chi tiết theo khách hàng</h4><div class="rt-customer-accordion">${renderCustomerAccordion()}</div></div>
+                    </div>
                 </div>
             </div>`;
+        
+        container.innerHTML = headerHtml + contentHtml;
     },
 
     renderRealtimeBrandReport: (data, viewType = 'brand') => {
@@ -14349,7 +14989,7 @@ export const uiRealtime = {
 --- END FILE: ./ui-realtime.js ---
 
 --- START FILE: ./ui-sknv.js ---
-// Version 3.1 - Rename title, move toggles, add drag handles, and restructure for capture
+// Version 4.7 - Refactor: Remove displayCategoryRevenueReport to ui-components
 // MODULE: UI SKNV
 // Chứa các hàm render giao diện cho tab "Sức khỏe nhân viên"
 
@@ -14358,14 +14998,10 @@ import { config } from './config.js';
 import { services } from './services.js';
 import { uiComponents } from './ui-components.js';
 import { settingsService } from './modules/settings.service.js';
+import { ui } from './ui.js';
+import { dragDroplisteners } from './event-listeners/listeners-dragdrop.js';
 
 export const uiSknv = {
-    /**
-     * Helper private để lấy danh sách bộ phận đã được sắp xếp theo yêu cầu.
-     * 'BP Tư Vấn - ĐM' luôn được ưu tiên lên đầu.
-     * @param {Array} reportData - Dữ liệu báo cáo để trích xuất danh sách bộ phận.
-     * @returns {Array<string>} - Mảng chứa tên các bộ phận đã được sắp xếp.
-     */
     _getSortedDepartmentList(reportData) {
         const allDepts = [...new Set(reportData.map(item => item.boPhan).filter(Boolean))];
         const priorityDept = 'BP Tư Vấn - ĐM';
@@ -14382,11 +15018,35 @@ export const uiSknv = {
     displayEmployeeRevenueReport: (reportData, containerId, sortStateKey) => {
         const container = document.getElementById(containerId);
         if (!container) return;
+
+        container.innerHTML = '';
+        
+        let detailContainerId;
+        if (sortStateKey === 'doanhthu_lk') {
+            detailContainerId = 'dtnv-lk-details-container';
+        } else if (sortStateKey === 'realtime_dt_nhanvien') {
+            detailContainerId = 'realtime-employee-detail-container';
+        } else {
+            detailContainerId = 'sknv-details-container'; // Fallback
+        }
+    
+        const detailContainer = document.getElementById(detailContainerId);
+        if (detailContainer) {
+            detailContainer.innerHTML = ''; 
+            detailContainer.classList.add('hidden');
+        }
+        container.classList.remove('hidden');
+
+
         if (!reportData || reportData.length === 0) {
             container.innerHTML = '<p class="text-gray-500">Không có dữ liệu doanh thu cho lựa chọn này.</p>';
             return;
         }
-        let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"><div class="p-4 header-group-1 text-gray-800"><h3 class="text-xl font-bold uppercase">Doanh thu nhân viên</h3><p class="text-sm italic text-gray-600">(đơn vị tính: Triệu đồng)</p></div>`;
+        let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden" data-capture-group="1">
+            <div class="p-4 header-group-1 text-gray-800">
+                <h3 class="text-xl font-bold uppercase">Doanh thu nhân viên</h3>
+                 <p class="text-sm italic text-gray-600">(đơn vị tính: Triệu đồng)</p>
+            </div>`;
         
         const groupedByDept = {};
         reportData.forEach(item => {
@@ -14396,7 +15056,6 @@ export const uiSknv = {
         });
         
         const departmentOrder = uiSknv._getSortedDepartmentList(reportData);
-
         departmentOrder.forEach(deptName => {
             if (groupedByDept[deptName]) {
                 finalHTML += uiSknv.renderRevenueTableForDepartment(deptName, groupedByDept[deptName], sortStateKey);
@@ -14445,7 +15104,7 @@ export const uiSknv = {
         const headerClass = (sortKey) => `px-4 py-3 sortable ${headerClasses[sortKey] || ''} ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
         
         let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="7">
-                        <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
+                    <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                             <tr>
                                 <th class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('doanhThu')} text-right" data-sort="doanhThu">Doanh Thu <span class="sort-indicator"></span></th>
@@ -14460,8 +15119,16 @@ export const uiSknv = {
             const { mucTieu } = item;
             const qdClass = (mucTieu && item.hieuQuaQuyDoi < (mucTieu.phanTramQD / 100)) ? 'cell-performance is-below' : '';
             const tcClass = (mucTieu && item.tyLeTraCham < (mucTieu.phanTramTC / 100)) ? 'cell-performance is-below' : '';
-            tableHTML += `<tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2 font-semibold line-clamp-2">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</td>
+            
+            let sourceTab;
+            if (sortStateKey === 'doanhthu_lk') sourceTab = 'dtnv-lk';
+            else if (sortStateKey === 'realtime_dt_nhanvien') sourceTab = 'dtnv-rt';
+            else sourceTab = 'sknv';
+
+            tableHTML += `<tr class="interactive-row">
+                    <td class="px-4 py-2 font-semibold line-clamp-2 employee-name-cell" data-employee-id="${item.maNV}" data-source-tab="${sourceTab}">
+                        <a href="#">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</a>
+                    </td>
                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThu)}</td>
                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThuQuyDoi)}</td>
                     <td class="px-4 py-2 text-right font-bold ${qdClass}">${uiComponents.formatPercentage(item.hieuQuaQuyDoi)}</td>
@@ -14498,7 +15165,6 @@ export const uiSknv = {
             if (!groupedByDept[dept]) groupedByDept[dept] = [];
             groupedByDept[dept].push(item);
         });
-        
         const departmentOrder = uiSknv._getSortedDepartmentList(reportData);
         
         departmentOrder.forEach(deptName => {
@@ -14536,21 +15202,23 @@ export const uiSknv = {
 
         const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
         let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title} <span class="text-sm font-normal text-gray-500">(Thu nhập DK TB: ${uiComponents.formatRevenue(averageProjectedIncome)})</span></h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="thunhap" data-capture-columns="8">
-                        <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
-                            <tr>
-                                <th class="${headerClass('hoTen')}" data-sort="hoTen">Họ Tên <span class="sort-indicator"></span></th>
+            <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
+                <tr>
+                    <th class="${headerClass('hoTen')}" data-sort="hoTen">Họ Tên <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('gioCong')} text-right" data-sort="gioCong">Giờ công <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('tongThuNhap')} text-right" data-sort="tongThuNhap">Tổng thu nhập <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('thuNhapDuKien')} text-right" data-sort="thuNhapDuKien">Thu nhập DK <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('thuNhapThangTruoc')} text-right" data-sort="thuNhapThangTruoc">Tháng trước <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('chenhLechThuNhap')} text-right" data-sort="chenhLechThuNhap">+/- Tháng trước <span class="sort-indicator"></span></th>
-                            </tr>
-                        </thead><tbody>`;
+                </tr>
+                </thead><tbody>`;
         sortedData.forEach(nv => {
             const incomeDkCellClass = nv.thuNhapDuKien < averageProjectedIncome ? 'cell-performance is-below' : '';
             const incomeDiffClass = nv.chenhLechThuNhap < 0 ? 'income-negative' : 'income-positive';
-            tableHTML += `<tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2 font-semibold line-clamp-2">${uiComponents.getShortEmployeeName(nv.hoTen, nv.maNV)}</td>
+            tableHTML += `<tr class="interactive-row">
+                    <td class="px-4 py-2 font-semibold line-clamp-2 employee-name-cell" data-employee-id="${nv.maNV}" data-source-tab="sknv">
+                        <a href="#">${uiComponents.getShortEmployeeName(nv.hoTen, nv.maNV)}</a>
+                    </td>
                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatNumberOrDash(nv.gioCong)}</td>
                     <td class="px-4 py-2 text-right font-bold text-blue-600">${uiComponents.formatRevenue(nv.tongThuNhap)}</td>
                     <td class="px-4 py-2 text-right font-bold text-green-600 ${incomeDkCellClass}">${uiComponents.formatRevenue(nv.thuNhapDuKien)}</td>
@@ -14621,7 +15289,7 @@ export const uiSknv = {
         });
 
         finalHTML += `    </div> 
-                      </div>`;
+                           </div>`;
         container.innerHTML = finalHTML;
     },
 
@@ -14702,8 +15370,10 @@ export const uiSknv = {
                 pctBaoHiem: (mucTieu && item.pctBaoHiem < (mucTieu.phanTramBaoHiem / 100)) ? 'cell-performance is-below' : ''
             };
 
-            tableHTML += `<tr class="hover:bg-gray-50">
-                <td class="px-4 py-2 font-semibold line-clamp-2">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</td>
+            tableHTML += `<tr class="interactive-row">
+                <td class="px-4 py-2 font-semibold line-clamp-2 employee-name-cell" data-employee-id="${item.maNV}" data-source-tab="sknv">
+                    <a href="#">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</a>
+                </td>
                 ${visibleColumns.map(col => {
                     const value = item[col.id];
                     const className = classMap[col.id] || '';
@@ -14719,118 +15389,239 @@ export const uiSknv = {
                 ${visibleColumns.map(col => {
                     const value = totals[col.id];
                     const formatter = formatMap[col.id] || formatMap.defaultPercent;
-                     return `<td class="px-4 py-2 text-right">${formatter(value)}</td>`;
+                    return `<td class="px-4 py-2 text-right">${formatter(value)}</td>`;
                 }).join('')}
             </tr>
         </tfoot></table></div></div>`;
         return tableHTML;
     },
-
-    displayCategoryRevenueReport: (reportData, containerId, sortStatePrefix) => {
-        const container = document.getElementById(containerId);
-        if (!container) return;
-        if (!reportData || reportData.length === 0) {
-            container.innerHTML = '<p class="text-gray-500">Không có dữ liệu ngành hàng.</p>'; return;
-        }
-        const hasAnyData = reportData.some(item => item.dtICT > 0 || item.dtPhuKien > 0 || item.dtGiaDung > 0 || item.dtCE > 0 || item.dtBaoHiem > 0);
-        if (!hasAnyData) {
-             container.innerHTML = '<p class="text-yellow-600 font-semibold">Không tìm thấy doanh thu cho các ngành hàng chính.</p>'; return;
-        }
-        let finalHTML = `<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div data-capture-group="1" data-capture-columns="6">${uiSknv.renderCategoryTable('ICT', `${sortStatePrefix}_ict`, reportData, 'dtICT', 'slICT', ['slDienThoai', 'slLaptop'], ['SL Điện thoại', 'SL Laptop'])}</div>
-                <div data-capture-group="1" data-capture-columns="6">${uiSknv.renderCategoryTable('PHỤ KIỆN', `${sortStatePrefix}_phukien`, reportData, 'dtPhuKien', 'slPhuKien', ['slPinSDP', 'slCamera', 'slTaiNgheBLT'], ['SL Pin SDP', 'SL Camera', 'SL Tai nghe BLT'])}</div>
-                <div data-capture-group="2" data-capture-columns="6">${uiSknv.renderCategoryTable('GIA DỤNG', `${sortStatePrefix}_giadung`, reportData, 'dtGiaDung', 'slGiaDung', ['slNoiChien', 'slMLN', 'slRobotHB'], ['SL Nồi chiên', 'SL MLN', 'SL Robot HB'])}</div>
-                <div data-capture-group="2" data-capture-columns="6">${uiSknv.renderCategoryTable('CE', `${sortStatePrefix}_ce`, reportData, 'dtCE', 'slCE', ['slTivi', 'slTuLanh', 'slMayGiat', 'slMayLanh'], ['SL Tivi', 'SL Tủ lạnh', 'SL Máy giặt', 'SL Máy lạnh'])}</div>
-                <div class="lg:col-span-2" data-capture-group="3" data-capture-columns="7">
-                    ${uiSknv.renderCategoryTable('BẢO HIỂM', `${sortStatePrefix}_baohiem`, reportData, 'dtBaoHiem', 'slBaoHiem', ['slBH1d1', 'slBHXM', 'slBHRV', 'slBHMR'], ['BH 1-1', 'BHXM', 'BHRV', 'BHMR'])}
-                </div></div>`;
-        container.innerHTML = finalHTML;
-    },
-
-    renderCategoryTable: (title, type, data, revenueField, slField, keys, headers) => {
-        const sortState = appState.sortState[type] || { key: revenueField, direction: 'desc' };
-        const { key, direction } = sortState;
-        const relevantData = data.filter(item => item[revenueField] > 0 || item[slField] > 0);
-        if (relevantData.length === 0) return '';
-        const sortedData = [...relevantData].sort((a, b) => {
-            const valA = a[key] || 0; const valB = b[key] || 0;
-            return direction === 'asc' ? valA - valB : valB - valA;
-        });
-        const totals = relevantData.reduce((acc, item) => {
-            acc[revenueField] = (acc[revenueField] || 0) + item[revenueField];
-            acc[slField] = (acc[slField] || 0) + item[slField];
-            keys.forEach(k => {
-                acc[k] = (acc[k] || 0) + item[k];
-            });
-            return acc;
-        }, {});
-
-        const headerClass = (sortKey) => {
-            let classes = `px-4 py-3 sortable `;
-            if (sortKey === slField || sortKey === revenueField) {
-                classes += 'header-highlight-special ';
-            }
-            if (key === sortKey) {
-                classes += direction === 'asc' ? 'sorted-asc' : 'sorted-desc';
-            }
-            return classes;
-        };
-        
-        const colorKey = type.split('_').pop();
-
-        let tableHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden h-full flex flex-col">
-            <h4 class="text-lg font-bold p-4 border-b border-gray-200 category-header-${colorKey}">${title}</h4>
-            <div class="overflow-x-auto flex-grow"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${type}" data-capture-columns="${3 + keys.length}"><thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold"><tr>
-                <th class="${headerClass('hoTen')}" data-sort="hoTen">Tên nhân viên <span class="sort-indicator"></span></th>
-                <th class="${headerClass(slField)} text-right" data-sort="${slField}">SL <span class="sort-indicator"></span></th>
-                <th class="${headerClass(revenueField)} text-right" data-sort="${revenueField}">Doanh thu thực <span class="sort-indicator"></span></th>`;
-        headers.forEach((h, i) => {
-            tableHTML += `<th class="${headerClass(keys[i])} text-right" data-sort="${keys[i]}">${h} <span class="sort-indicator"></span></th>`;
-        });
-        tableHTML += `</tr></thead><tbody>`;
-        sortedData.forEach(item => {
-            tableHTML += `<tr class="hover:bg-gray-50"><td class="px-4 py-2 font-semibold line-clamp-2">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</td>
-                <td class="px-4 py-2 text-right font-bold">${uiComponents.formatNumberOrDash(item[slField])}</td>
-                <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item[revenueField])}</td>`;
-            keys.forEach(k => { tableHTML += `<td class="px-4 py-2 text-right font-bold">${uiComponents.formatNumberOrDash(item[k])}</td>`; });
-            tableHTML += `</tr>`;
-        });
-        tableHTML += `</tbody><tfoot class="table-footer font-bold">
-                <tr><td class="px-4 py-2">Tổng</td>
-                <td class="px-4 py-2 text-right">${uiComponents.formatNumberOrDash(totals[slField])}</td>
-                <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals[revenueField])}</td>`;
-        keys.forEach(k => { tableHTML += `<td class="px-4 py-2 text-right">${uiComponents.formatNumberOrDash(totals[k])}</td>`; });
-        tableHTML += `</tr></tfoot></table></div></div>`;
-        return tableHTML;
-    },
-
-    displaySknvReport: (filteredReport) => {
-        const selectedMaNV = document.getElementById('sknv-employee-filter')?.value;
-        const activeViewBtn = document.querySelector('#sknv-view-selector .view-switcher__btn.active');
-        const viewType = activeViewBtn ? activeViewBtn.dataset.view : 'summary';
-
+    
+    displaySknvReport: (filteredReport, forceDetail = false) => {
         const summaryContainer = document.getElementById('sknv-summary-container');
         const detailsContainer = document.getElementById('sknv-details-container');
-
         if (!summaryContainer || !detailsContainer) return;
-        
-        summaryContainer.classList.toggle('hidden', viewType === 'detail');
-        detailsContainer.classList.toggle('hidden', viewType === 'summary');
-
-        if (viewType === 'summary') {
-            uiSknv.displaySknvSummaryReport(filteredReport);
-        } else {
-            const employeeData = appState.masterReportData.sknv.find(nv => String(nv.maNV).trim() == String(selectedMaNV).trim());
+    
+        const isViewingDetail = appState.viewingDetailFor && appState.viewingDetailFor.sourceTab === 'sknv';
+    
+        const shouldShowDetail = forceDetail || isViewingDetail;
+    
+        summaryContainer.classList.toggle('hidden', shouldShowDetail);
+        detailsContainer.classList.toggle('hidden', !shouldShowDetail);
+    
+        if (shouldShowDetail) {
+            const employeeId = appState.viewingDetailFor.employeeId;
+            const employeeData = appState.masterReportData.sknv.find(nv => String(nv.maNV).trim() === String(employeeId).trim());
             uiSknv.renderSknvDetailForEmployee(employeeData, filteredReport);
+        } else {
+            uiSknv.displaySknvSummaryReport(filteredReport);
         }
     },
+    
+    // === START: REWORKED FUNCTION (v4.1) ===
+    renderLuykeEmployeeDetail(detailData, employeeData, detailContainerId) {
+        const summaryContainer = document.getElementById('revenue-report-container-lk');
+        const detailContainer = document.getElementById(detailContainerId);
+
+        if (!summaryContainer || !detailContainer) return;
+
+        summaryContainer.classList.add('hidden');
+        detailContainer.classList.remove('hidden');
+        
+        if (!detailData || !employeeData) {
+            detailContainer.innerHTML = `
+                <div class="mb-4">
+                    <button class="back-to-summary-btn text-blue-600 hover:underline font-semibold">‹ Quay lại bảng tổng hợp</button>
+                </div>
+                <p class="text-red-500">Không tìm thấy dữ liệu chi tiết cho nhân viên đã chọn.</p>
+            `;
+            return;
+        }
+
+        const { summary, topProductGroups, categoryChartData, byCustomer } = detailData;
+        const { mucTieu } = employeeData;
+        const conversionRateTarget = (mucTieu?.phanTramQD || 0) / 100;
+
+        const renderKpiCards = () => {
+            const conversionRateClass = summary.conversionRate >= conversionRateTarget ? 'is-positive' : 'is-negative';
+            return `
+            <div class="rt-infographic-summary mb-6">
+                <div class="rt-infographic-summary-card"><div class="label">Tổng DT Thực</div><div class="value">${uiComponents.formatRevenue(summary.totalRealRevenue, 1)}</div></div>
+                <div class="rt-infographic-summary-card"><div class="label">Tổng DTQĐ</div><div class="value">${uiComponents.formatRevenue(summary.totalConvertedRevenue, 1)}</div></div>
+                <div class="rt-infographic-summary-card"><div class="label">Tỷ lệ QĐ</div><div class="value ${conversionRateClass}">${uiComponents.formatPercentage(summary.conversionRate)}</div></div>
+                <div class="rt-infographic-summary-card"><div class="label">DT Chưa Xuất</div><div class="value">${uiComponents.formatRevenue(summary.unexportedRevenue, 1)}</div></div>
+                <div class="rt-infographic-summary-card"><div class="label">Tổng Đơn Hàng</div><div class="value">${summary.totalOrders}</div></div>
+                <div class="rt-infographic-summary-card"><div class="label">SL Đơn Bán Kèm</div><div class="value">${summary.bundledOrderCount}</div></div>
+            </div>
+            `;
+        };
+
+        const renderTopGroupsAsProgressBars = () => {
+            // Thay đổi: chỉ lấy top 5
+            const top5Groups = topProductGroups.slice(0, 5);
+            if (!top5Groups || top5Groups.length === 0) return '<p class="text-sm text-gray-500">Không có doanh thu.</p>';
+            
+            const maxRevenue = top5Groups[0]?.realRevenue || 0;
+            
+            return top5Groups.map(group => {
+                const percentage = maxRevenue > 0 ? (group.realRevenue / maxRevenue) * 100 : 0;
+                return `
+                <div class="luyke-detail-progress-item">
+                    <div class="luyke-detail-progress-label">
+                        <span class="font-semibold">${group.name}</span>
+                        <span class="text-xs">SL: ${uiComponents.formatNumber(group.quantity)} | %QĐ: ${uiComponents.formatPercentage(group.conversionRate)}</span>
+                    </div>
+                    <div class="rt-progress-bar-container">
+                        <div class="rt-progress-bar" style="width: ${percentage}%;"></div>
+                    </div>
+                    <div class="luyke-detail-progress-values">
+                        <span>DT Thực: <strong>${uiComponents.formatRevenue(group.realRevenue)}</strong></span>
+                        <span>DTQĐ: <strong>${uiComponents.formatRevenue(group.convertedRevenue)}</strong></span>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        };
+
+        const renderCustomerAccordion = () => {
+            if (!byCustomer || byCustomer.length === 0) return '<p class="text-sm text-gray-500 mt-4">Không có đơn hàng nào.</p>';
+            
+            return byCustomer.map((customer, index) => {
+                // Thay đổi: áp dụng class màu
+                const qdClass = customer.conversionRate >= conversionRateTarget ? 'qd-above-target' : 'qd-below-target';
+                
+                const productListHtml = customer.products.map(p => `
+                    <tr class="border-b last:border-b-0">
+                        <td class="py-1 pr-2">${p.productName}</td>
+                        <td class="py-1 px-2 text-right">SL: <strong>${p.quantity}</strong></td>
+                        <td class="py-1 px-2 text-right">DT: <strong>${uiComponents.formatRevenue(p.realRevenue, 1)}</strong></td>
+                        <td class="py-1 pl-2 text-right">DTQĐ: <strong>${uiComponents.formatRevenue(p.convertedRevenue, 1)}</strong></td>
+                    </tr>
+                `).join('');
+                
+                const tableContent = `<table class="min-w-full text-xs product-list-table"><tbody>${productListHtml}</tbody></table>`;
+                
+                // Thay đổi: Thêm logic thanh cuộn
+                const detailContent = customer.products.length > 8
+                    ? `<div class="product-list-scrollable">${tableContent}</div>`
+                    : tableContent;
+
+                return `
+                <details class="bg-white rounded-lg shadow-sm border border-gray-200 mb-2">
+                    <summary>
+                        <span class="customer-name-small">${index + 1}. ${customer.name}</span>
+                        <div class="order-metrics">
+                            <span>SL: <strong>${customer.totalQuantity}</strong></span>
+                            <span>DT Thực: <strong class="text-gray-900">${uiComponents.formatRevenue(customer.totalRealRevenue, 1)} Tr</strong></span>
+                            <span>DTQĐ: <strong class="text-blue-600">${uiComponents.formatRevenue(customer.totalConvertedRevenue, 1)} Tr</strong></span>
+                            <span>%QĐ: <strong class="${qdClass}">${uiComponents.formatPercentage(customer.conversionRate)}</strong></span>
+                        </div>
+                        <span class="accordion-arrow">▼</span>
+                    </summary>
+                    <div class="border-t border-gray-200 p-3 bg-gray-50">
+                        ${detailContent}
+                    </div>
+                </details>
+                `;
+            }).join('');
+        };
+        
+        const headerHtml = `
+            <div class="mb-4 flex justify-between items-center">
+                <button class="back-to-summary-btn text-blue-600 hover:underline font-semibold">‹ Quay lại bảng tổng hợp</button>
+                <button id="capture-dtnv-lk-detail-btn" class="action-btn action-btn--capture" title="Chụp ảnh chi tiết">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15 12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1.172a3 3 0 0 0 2.12-.879l.83-.828A1 1 0 0 1 6.827 3h2.344a1 1 0 0 1 .707.293l.828.828A3 3 0 0 0 12.828 5H14a1 1 0 0 1 1 1v6zM2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828-.828A2 2 0 0 1 3.172 4H2z"/><path d="M8 11a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5zm0 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM3 6.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/></svg>
+                    <span>Chụp ảnh</span>
+                </button>
+            </div>
+            <div id="dtnv-lk-capture-area">
+                <div class="p-4 mb-6 bg-white text-gray-800 rounded-lg shadow-lg border luyke-detail-header">
+                    <h3>${employeeData.hoTen} - ${employeeData.maNV}</h3>
+                </div>
+                
+                ${renderKpiCards()}
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white p-4 rounded-lg shadow-md border">
+                        <h4 class="text-md font-bold text-gray-700 border-b pb-2 mb-3">Top 5 Nhóm Hàng Doanh Thu Cao</h4>
+                        <div class="space-y-3">
+                            ${renderTopGroupsAsProgressBars()}
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white p-4 rounded-lg shadow-md border">
+                        <h4 class="text-md font-bold text-gray-700 mb-2">Tỷ Trọng Doanh Thu Ngành Hàng</h4>
+                        <div class="luyke-detail-chart-container">
+                            <canvas id="luyke-employee-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="customer-accordion-luyke">
+                    <h4 class="text-lg font-bold text-gray-800 mb-3">Chi Tiết Theo Khách Hàng</h4>
+                    ${renderCustomerAccordion()}
+                </div>
+            </div>`;
+
+        detailContainer.innerHTML = headerHtml;
+
+        const ctx = document.getElementById('luyke-employee-chart')?.getContext('2d');
+        if (ctx && categoryChartData && categoryChartData.length > 0) {
+            if (appState.charts['luyke-employee-chart']) {
+                appState.charts['luyke-employee-chart'].destroy();
+            }
+            const sortedChartData = [...categoryChartData].sort((a,b) => b.revenue - a.revenue);
+            const topData = sortedChartData.slice(0, 10);
+            
+            appState.charts['luyke-employee-chart'] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: topData.map(d => d.name),
+                    datasets: [{
+                        label: 'Doanh thu',
+                        data: topData.map(d => d.revenue / 1000000),
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 4,
+                    }]
+                },
+                options: {
+                    indexAxis: 'x',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: context => `${context.label}: ${uiComponents.formatRevenue(context.raw * 1000000)} Tr`
+                            }
+                        },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'end',
+                            formatter: (value) => uiComponents.formatRevenue(value * 1000000),
+                            color: '#4b5563',
+                            font: { weight: 'bold', size: 10 }
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                },
+                plugins: [ChartDataLabels]
+            });
+        }
+    },
+    // === END: REWORKED FUNCTION ===
     
     renderSknvDetailForEmployee(employeeData, filteredReport) {
         const detailsContainer = document.getElementById('sknv-details-container');
         if (!detailsContainer) return;
 
         if (!employeeData) {
-            detailsContainer.innerHTML = '<p class="text-red-500">Không tìm thấy dữ liệu cho nhân viên đã chọn. Vui lòng tải lại dữ liệu YCX nếu cần.</p>';
+            detailsContainer.innerHTML = `
+                <div class="mb-4">
+                    <button class="back-to-summary-btn text-blue-600 hover:underline font-semibold">‹ Quay lại bảng tổng hợp</button>
+                </div>
+                <p class="text-red-500">Không tìm thấy dữ liệu cho nhân viên đã chọn. Vui lòng tải lại dữ liệu YCX nếu cần.</p>
+            `;
             return;
         }
     
@@ -14909,15 +15700,25 @@ export const uiSknv = {
         const totalCriteria = evaluationCounts.doanhthu.total + evaluationCounts.nangsuat.total + evaluationCounts.hieuqua.total + evaluationCounts.dongia.total + evaluationCounts.qdc.total;
         const titleHtml = `CHI TIẾT - ${uiComponents.getShortEmployeeName(employeeData.hoTen, employeeData.maNV)} <span class="font-normal text-sm">(Trên TB: <span class="font-bold text-green-300">${totalAbove}</span>, Dưới TB: <span class="font-bold text-yellow-300">${totalBelow}</span> / Tổng: ${totalCriteria})</span>`;
 
-        detailsContainer.innerHTML = `<div class="p-4 mb-6 bg-blue-600 text-white rounded-lg shadow-lg border border-blue-700" data-capture-group="1"><h3 class="text-2xl font-bold text-center uppercase">${titleHtml}</h3></div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" data-capture-layout="grid">
-                <div class="space-y-6" data-capture-group="1">${createDetailTableHtml('Doanh thu (Triệu)', 'header-bg-blue', doanhThuData)}</div>
-                <div class="space-y-6" data-capture-group="1">${createDetailTableHtml('Năng suất (Triệu)', 'header-bg-green', nangSuatData)}</div>
-                <div class="space-y-6" data-capture-group="1">${createDetailTableHtml('Hiệu quả khai thác', 'header-bg-blue', hieuQuaData)}</div>
-                <div class="space-y-6" data-capture-group="1">${createDetailTableHtml('Đơn giá (Triệu)', 'header-bg-yellow', donGiaData)}</div>
-                <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6" data-capture-layout="grid">
-                    <div data-capture-group="1">${uiSknv.renderSknvQdcTable(employeeData, departmentAverages, countEvaluation, evaluationCounts)}</div>
-                    <div data-capture-group="1">${uiSknv.renderSknvNganhHangTable(employeeData)}</div>
+        detailsContainer.innerHTML = `
+            <div class="mb-4 flex justify-between items-center">
+                <button class="back-to-summary-btn text-blue-600 hover:underline font-semibold">‹ Quay lại bảng tổng hợp</button>
+                <button id="capture-sknv-detail-btn" class="action-btn action-btn--capture" title="Chụp ảnh chi tiết">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15 12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1.172a3 3 0 0 0 2.12-.879l.83-.828A1 1 0 0 1 6.827 3h2.344a1 1 0 0 1 .707.293l.828.828A3 3 0 0 0 12.828 5H14a1 1 0 0 1 1 1v6zM2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828-.828A2 2 0 0 1 3.172 4H2z"/><path d="M8 11a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5zm0 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM3 6.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/></svg>
+                    <span>Chụp ảnh</span>
+                </button>
+            </div>
+            <div id="sknv-detail-capture-area">
+                <div class="p-4 mb-6 bg-blue-600 text-white rounded-lg shadow-lg border border-blue-700" data-capture-group="1"><h3 class="text-2xl font-bold text-center uppercase">${titleHtml}</h3></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6" data-capture-layout="grid">
+                    <div class="space-y-6" data-capture-group="1">${createDetailTableHtml('Doanh thu (Triệu)', 'header-bg-blue', doanhThuData)}</div>
+                    <div class="space-y-6" data-capture-group="1">${createDetailTableHtml('Năng suất (Triệu)', 'header-bg-green', nangSuatData)}</div>
+                    <div class="space-y-6" data-capture-group="1">${createDetailTableHtml('Hiệu quả khai thác', 'header-bg-blue', hieuQuaData)}</div>
+                    <div class="space-y-6" data-capture-group="1">${createDetailTableHtml('Đơn giá (Triệu)', 'header-bg-yellow', donGiaData)}</div>
+                    <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6" data-capture-layout="grid">
+                        <div data-capture-group="1">${uiSknv.renderSknvQdcTable(employeeData, departmentAverages, countEvaluation, evaluationCounts)}</div>
+                        <div data-capture-group="1">${uiSknv.renderSknvNganhHangTable(employeeData)}</div>
+                    </div>
                 </div>
             </div>`;
     },
@@ -14927,7 +15728,7 @@ export const uiSknv = {
         if (!container) return;
 
         if (!reportData || reportData.length === 0) {
-             container.innerHTML = ''; return;
+            container.innerHTML = ''; return;
         }
 
         const summaryData = reportData.map(employee => {
@@ -14945,6 +15746,7 @@ export const uiSknv = {
                 const isAbove = higherIsBetter ? (value >= avg) : (value <= avg);
                 if (isAbove) counts[group].above++; else counts[group].below++;
             };
+        
             
             checkAndCount('doanhthu', employee.doanhThu, departmentAverages.doanhThu);
             checkAndCount('doanhthu', employee.doanhThuQuyDoi, departmentAverages.doanhThuQuyDoi);
@@ -15001,7 +15803,6 @@ export const uiSknv = {
             if (typeof valA === 'string') return direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
             return direction === 'asc' ? valA - valB : valB - valA;
         });
-        
         const headerClass = (sortKey) => `px-2 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
        
         let tableHTML = `<div class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200"><h3 class="text-xl font-bold text-gray-800 mb-4 uppercase">Bảng tổng hợp hiệu suất nhân viên</h3><div class="overflow-x-auto"><table class="min-w-full text-sm table-bordered" data-table-type="sknv_summary">
@@ -15029,15 +15830,16 @@ export const uiSknv = {
             if (!groupedByDept[item.boPhan]) groupedByDept[item.boPhan] = [];
             groupedByDept[item.boPhan].push(item);
         });
-
         const departmentOrder = uiSknv._getSortedDepartmentList(summaryData);
 
         departmentOrder.forEach(deptName => {
             if (groupedByDept[deptName]) {
                 tableHTML += `<tr class="font-bold bg-slate-100"><td colspan="12" class="px-4 py-2">${deptName}</td></tr>`;
                 groupedByDept[deptName].forEach(item => {
-                    tableHTML += `<tr class="hover:bg-gray-50">
-                        <td class="px-2 py-2 font-semibold line-clamp-2">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</td>
+                    tableHTML += `<tr class="interactive-row">
+                        <td class="px-2 py-2 font-semibold line-clamp-2 employee-name-cell" data-employee-id="${item.maNV}" data-source-tab="sknv">
+                            <a href="#">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</a>
+                        </td>
                         <td class="px-2 py-2 text-center font-bold text-lg text-blue-600">${item.totalAbove}</td>
                         <td class="px-2 py-2 text-center text-green-600 font-semibold">${item.summary.doanhthu.above}/${item.summary.doanhthu.total}</td><td class="px-2 py-2 text-center text-red-600">${item.summary.doanhthu.below}/${item.summary.doanhthu.total}</td>
                         <td class="px-2 py-2 text-center text-green-600 font-semibold">${item.summary.nangsuat.above}/${item.summary.nangsuat.total}</td><td class="px-2 py-2 text-center text-red-600">${item.summary.nangsuat.below}/${item.summary.nangsuat.total}</td>
@@ -15131,143 +15933,6 @@ export const uiSknv = {
                     <td class="px-4 py-2 text-center font-semibold ${evaluation.class}">${evaluation.text}</td>
                 </tr>`}).join('')}
             </tbody></table></div></div>`;
-    },
-
-    displayCompetitionReport(viewType = 'summary') {
-        const container = document.getElementById('employee-competition-container');
-        if (!container) return;
-    
-        const data = appState.thiDuaReportData;
-        const activeViewBtn = document.querySelector('#thidua-view-selector .view-switcher__btn.active');
-        const effectiveViewType = activeViewBtn ? activeViewBtn.dataset.view : viewType;
-    
-        uiComponents.displayPastedDebugInfo('thiduanv-pasted');
-    
-        if (!data || data.length === 0) {
-            container.innerHTML = `<p class="text-gray-500">Không có dữ liệu thi đua để hiển thị. Vui lòng dán "Data lũy kế" và "Thi đua nhân viên" ở tab Cập nhật dữ liệu để xử lý báo cáo.</p>`;
-            return;
-        }
-    
-        let htmlContent = '';
-        if (effectiveViewType === 'summary') {
-            htmlContent = this.renderCompetitionSummary(data);
-        } else if (effectiveViewType === 'category') {
-            htmlContent = this.renderCompetitionByCategory(data);
-        } else if (effectiveViewType === 'employee') {
-            const selectedMaNV = document.getElementById('thidua-employee-filter')?.value;
-            const employeeData = data.find(e => String(e.maNV) === String(selectedMaNV));
-            htmlContent = this.renderCompetitionByEmployee(employeeData);
-        }
-        
-        container.innerHTML = htmlContent;
-    },
-
-    renderCompetitionSummary(data) {
-        const sortState = appState.sortState.sknv_thidua_summary || { key: 'completedCount', direction: 'desc' };
-        const { key, direction } = sortState;
-        const sortedData = [...data].sort((a,b) => direction === 'asc' ? (a[key] - b[key]) : (b[key] - a[key]));
-        
-        const headerClass = (sortKey) => `px-4 py-2 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
-
-        return `<div class="overflow-x-auto"><table class="min-w-full text-sm table-bordered table-striped" data-table-type="sknv_thidua_summary">
-            <thead class="sknv-subtable-header">
-                <tr>
-                    <th class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên</th>
-                    <th class="${headerClass('completedCount')} text-center" data-sort="completedCount">Số CT Đạt</th>
-                    <th class="${headerClass('totalCompetitions')} text-center" data-sort="totalCompetitions">Tổng Số CT</th>
-                    <th class="${headerClass('completionRate')} text-center" data-sort="completionRate">Tỷ lệ hoàn thành</th>
-                </tr>
-            </thead>
-            <tbody>${sortedData.map(e => `
-                <tr class="border-t">
-                    <td class="px-4 py-2 font-semibold">${uiComponents.getShortEmployeeName(e.hoTen, e.maNV)}</td>
-                    <td class="px-4 py-2 text-center font-bold text-green-600 text-lg">${e.completedCount}</td>
-                    <td class="px-4 py-2 text-center font-bold">${e.totalCompetitions}</td>
-                    <td class="px-4 py-2 text-center font-bold text-blue-600">${uiComponents.formatPercentage(e.completionRate)}</td>
-                </tr>`).join('')}
-            </tbody></table></div>`;
-    },
-    
-    renderCompetitionByCategory(data) {
-        if (!data[0] || !data[0].competitions) return '<p class="text-gray-500">Dữ liệu thi đua không hợp lệ.</p>';
-        const categories = data[0].competitions.map(c => c.tenNganhHang);
-        let html = '<div class="space-y-6">';
-
-        categories.forEach(categoryName => {
-            const categoryData = data.map(employee => {
-                const competition = employee.competitions.find(c => c.tenNganhHang === categoryName);
-                return {
-                    hoTen: employee.hoTen,
-                    maNV: employee.maNV,
-                    thucHien: competition.thucHien,
-                    mucTieu: competition.mucTieu,
-                    percentExpected: competition.percentExpected,
-                    conLai: competition.conLai
-                };
-            }).filter(e => e.thucHien > 0 || e.mucTieu > 0);
-            
-            const sortState = appState.sortState.sknv_thidua_category || { key: 'percentExpected', direction: 'desc' };
-            const { key, direction } = sortState;
-            const sortedCategoryData = [...categoryData].sort((a,b) => direction === 'asc' ? a[key] - b[key] : b[key] - a[key]);
-            
-            const headerClass = (sortKey) => `px-4 py-2 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
-            const cleanName = categoryName.replace(/thi đua doanh thu bán hàng|thi đua doanh thu|thi đua số lượng/gi, "").trim();
-
-            html += `<div class="infographic-card"><h4 class="infographic-card__header infographic-card__header--completed">${cleanName}</h4>
-                <div class="overflow-x-auto"><table class="min-w-full text-sm table-bordered" data-table-type="sknv_thidua_category">
-                <thead class="sknv-subtable-header"><tr>
-                    <th class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên</th>
-                    <th class="${headerClass('thucHien')} text-right" data-sort="thucHien">Thực hiện</th>
-                    <th class="${headerClass('mucTieu')} text-right" data-sort="mucTieu">Mục tiêu</th>
-                    <th class="${headerClass('percentExpected')} text-right" data-sort="percentExpected">% HT</th>
-                </tr></thead>
-                <tbody>${sortedCategoryData.map(e => `
-                    <tr class="border-t">
-                        <td class="px-4 py-2 font-semibold">${uiComponents.getShortEmployeeName(e.hoTen, e.maNV)}</td>
-                        <td class="px-4 py-2 text-right font-bold">${uiComponents.formatNumberOrDash(e.thucHien)}</td>
-                        <td class="px-4 py-2 text-right">${uiComponents.formatNumberOrDash(e.mucTieu)}</td>
-                        <td class="px-4 py-2 text-right font-bold text-blue-600 ${e.percentExpected >= 1 ? 'text-green-600' : ''}">${uiComponents.formatPercentage(e.percentExpected)}</td>
-                    </tr>`).join('')}
-                </tbody></table></div></div>`;
-        });
-
-        html += '</div>';
-        return html;
-    },
-
-    renderCompetitionByEmployee(employeeData) {
-        if (!employeeData) {
-            return '<p class="text-center text-gray-500 p-4">Vui lòng chọn một nhân viên để xem chi tiết.</p>';
-        }
-
-        const completed = employeeData.competitions.filter(c => c.percentExpected >= 1);
-        const pending = employeeData.competitions.filter(c => c.percentExpected < 1);
-        const sortState = appState.sortState.sknv_thidua_employee || { key: 'percentExpected', direction: 'desc' };
-        const { key, direction } = sortState;
-
-        const renderList = (items, title, headerClass) => {
-            if (items.length === 0) return '';
-            const sortedItems = [...items].sort((a,b) => direction === 'asc' ? a[key] - b[key] : b[key] - a[key]);
-
-            return `<div class="infographic-card">
-                <h4 class="infographic-card__header ${headerClass}">${title} (${items.length})</h4>
-                <div class="infographic-card__body">${sortedItems.map(c => `
-                    <div class="infographic-card__item">
-                        <h5 class="infographic-card__title">${c.tenNganhHang}</h5>
-                        <div class="infographic-card__metrics">
-                            <span class="metric-label">Thực hiện:</span><span class="metric-value">${uiComponents.formatNumberOrDash(c.thucHien)}</span>
-                            <span class="metric-label">Mục tiêu:</span><span class="metric-value">${uiComponents.formatNumberOrDash(c.mucTieu)}</span>
-                            <span class="metric-label">Còn lại:</span><span class="metric-value ${c.conLai < 0 ? 'is-negative' : ''}">${uiComponents.formatNumberOrDash(c.conLai)}</span>
-                            <span class="metric-label">% HT:</span><span class="metric-value is-positive">${uiComponents.formatPercentage(c.percentExpected)}</span>
-                        </div>
-                    </div>`).join('')}
-                </div></div>`;
-        };
-
-        return `<div class="competition-infographic">
-            ${renderList(completed, 'Các chương trình đã ĐẠT', 'infographic-card__header--completed')}
-            ${renderList(pending, 'Các chương trình CHƯA ĐẠT', 'infographic-card__header--pending')}
-        </div>`;
     },
 };
 --- END FILE: ./ui-sknv.js ---
@@ -15455,7 +16120,7 @@ export { ui };
 --- END FILE: ./ui.js ---
 
 --- START FILE: ./utils.js ---
-// Version 3.0 - Refactored: Extracted services to separate modules
+// Version 3.1 - Refactor cleanCategoryName to capitalize words
 // MODULE: UTILITIES
 // Chứa các hàm tiện ích chung không thuộc về logic hay giao diện cụ thể.
 import { ui } from './ui.js';
@@ -15481,8 +16146,15 @@ export const utils = {
 
     cleanCategoryName(name) {
         if (!name || typeof name !== 'string') return '';
-        // Chuẩn hóa: 1. Bỏ mã số đầu, 2. Bỏ khoảng trắng thừa đầu/cuối, 3. Thay thế nhiều khoảng trắng bên trong bằng 1, 4. Chuyển thành chữ thường.
-        return name.replace(/^\d+\s*-\s*/, '').trim().replace(/\s+/g, ' ').toLowerCase();
+        // Bỏ mã số, khoảng trắng thừa, và viết hoa chữ cái đầu mỗi từ.
+        return name
+            .replace(/^\d+\s*-\s*/, '')
+            .trim()
+            .replace(/\s+/g, ' ')
+            .toLowerCase()
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
     },
 
     exportTableToExcel(activeTabContent, fileName) {

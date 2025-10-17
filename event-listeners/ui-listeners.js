@@ -1,4 +1,4 @@
-// Version 3.8 - Revert to client-side processing as per user request
+// Version 3.9 - Fix: Loại bỏ listener bị lồng và lỗi cú pháp sau khi gộp nhánh
 // MODULE: EVENT LISTENERS INITIALIZER
 // File này đóng vai trò là điểm khởi đầu, import và khởi chạy tất cả các module listener con.
 
@@ -15,6 +15,7 @@ import { initializeHighlightingListeners } from './listeners-highlighting.js';
 import { initializeSettingsListeners } from './listeners-settings.js';
 import { initializeSortingListeners } from './listeners-sorting.js';
 import { dragDroplisteners } from './listeners-dragdrop.js';
+import { captureService } from '../modules/capture.service.js'; // <<< SỬA LỖI: THÊM IMPORT
 
 let appController = null;
 
@@ -26,9 +27,8 @@ async function handleFileInputChange(e) {
     const file = fileInput.files[0];
     const fileType = fileInput.id.replace('file-', '');
     const dataName = fileInput.dataset.name || fileType;
-    const stateKey = fileInput.dataset.stateKey; 
-
-    if (!file || !stateKey) return; 
+    const stateKey = fileInput.dataset.stateKey;
+    if (!file || !stateKey) return;
 
     ui.updateFileStatus(fileType, file.name, 'Đang xử lý...', 'default');
     ui.showProgressBar(fileType);
@@ -56,7 +56,7 @@ async function handleFileInputChange(e) {
                 ui.showNotification(`Đã lưu "${dataName}" vào bộ nhớ đệm của trình duyệt.`, 'success');
             }
             appController.updateAndRenderCurrentTab();
-        } else { 
+        } else {
             const errorMessage = `Lỗi file "${dataName}": Thiếu cột: ${missingColumns.join(', ')}.`;
             ui.updateFileStatus(fileType, file.name, `Lỗi: Thiếu cột dữ liệu.`, 'error');
             ui.showNotification(errorMessage, 'error');
@@ -74,6 +74,8 @@ async function handleFileInputChange(e) {
 }
 
 function handleFilterChange(prefix) {
+    // Mỗi khi bộ lọc thay đổi, chúng ta cần đảm bảo quay về màn hình tổng hợp
+    appState.viewingDetailFor = null;
     ui.updateEmployeeFilter(prefix);
     appController.updateAndRenderCurrentTab();
 }
@@ -85,12 +87,13 @@ export function initializeEventListeners(mainAppController) {
 
     // --- Khởi tạo các thư viện UI ---
     try {
-        const multiSelectConfig = { 
-            removeItemButton: true, 
-            placeholder: true, 
-            placeholderValue: 'Chọn hoặc gõ để tìm...', 
-            searchPlaceholderValue: 'Tìm kiếm...' 
+        const multiSelectConfig = {
+            removeItemButton: true,
+            placeholder: true,
+            placeholderValue: 'Chọn hoặc gõ để tìm...',
+            searchPlaceholderValue: 'Tìm kiếm...'
         };
+
         const competitionMultiSelectConfig = {
             removeItemButton: true,
             placeholder: true,
@@ -119,16 +122,14 @@ export function initializeEventListeners(mainAppController) {
         const competitionGroupEl = document.getElementById('competition-group');
         if (competitionGroupEl) appState.choices['competition_group'] = new Choices(competitionGroupEl, competitionMultiSelectConfig);
 
-        const singleSelectConfig = { 
-            searchEnabled: true, 
-            removeItemButton: false, 
-            itemSelectText: 'Chọn', 
-            searchPlaceholderValue: 'Tìm kiếm...' 
+        const singleSelectConfig = {
+            searchEnabled: true,
+            removeItemButton: false,
+            itemSelectText: 'Chọn',
+            searchPlaceholderValue: 'Tìm kiếm...'
         };
         const singleSelects = {
-            'sknv-employee-filter': 'sknv_employee_detail',
             'thidua-employee-filter': 'thidua_employee_detail',
-            'realtime-employee-detail-filter': 'realtime_employee_detail',
             'thidua-vung-filter-supermarket': 'thiDuaVung_sieuThi',
         };
         for (const [id, key] of Object.entries(singleSelects)) {
@@ -150,6 +151,7 @@ export function initializeEventListeners(mainAppController) {
                         instance.setDate(dateRange, false);
                     }
                     ui.updateDateSummary(document.getElementById(`${prefix}-date-summary`), instance);
+                    appState.viewingDetailFor = null; // Reset detail view when changing date
                     renderFunc();
                 }
             });
@@ -169,12 +171,13 @@ export function initializeEventListeners(mainAppController) {
     initializeCompetitionListeners(appController);
     dragDroplisteners.init(appController);
 
-    // --- Các sự kiện còn lại ---
+    // --- Các sự kiện chính & Tương tác đặc thù ---
     document.getElementById('force-reload-btn')?.addEventListener('click', () => window.location.reload());
     document.querySelectorAll('a.nav-link').forEach(link => link.addEventListener('click', (e) => { e.preventDefault(); appController.switchTab(link.getAttribute('href').substring(1)); }));
     
     document.querySelectorAll('.sub-tab-btn').forEach(btn => btn.addEventListener('click', (e) => {
         ui.handleSubTabClick(e.currentTarget);
+        appState.viewingDetailFor = null; // Reset detail view when changing tabs
         const mainTabId = e.currentTarget.closest('.page-section')?.id || e.currentTarget.closest('.settings-drawer')?.id;
         
         if (mainTabId === 'health-section') luykeTab.render();
@@ -212,19 +215,68 @@ export function initializeEventListeners(mainAppController) {
     document.getElementById('sknv-view-selector')?.addEventListener('click', (e) => appController.handleSknvViewChange(e));
     document.getElementById('sknv-employee-filter')?.addEventListener('change', () => sknvTab.render());
     
+    // === START: BỘ LẮNG NGHE SỰ KIỆN TẬP TRUNG CHO CÁC CLICK QUAN TRỌNG ===
     document.body.addEventListener('click', (e) => {
-        const viewSwitcherBtn = e.target.closest('#luyke-thidua-view-selector .view-switcher__btn');
-        if (viewSwitcherBtn) {
+        // Xử lý click để xem chi tiết nhân viên
+        const employeeCell = e.target.closest('.employee-name-cell');
+        if (employeeCell && employeeCell.dataset.employeeId) {
+            e.preventDefault();
+            appState.viewingDetailFor = {
+                employeeId: employeeCell.dataset.employeeId,
+                sourceTab: employeeCell.dataset.sourceTab
+            };
+            appController.updateAndRenderCurrentTab();
+            return;
+        }
+
+        // Xử lý click nút "Quay lại" từ màn hình chi tiết
+        const backButton = e.target.closest('.back-to-summary-btn');
+        if (backButton) {
+            e.preventDefault();
+            appState.viewingDetailFor = null;
+            appController.updateAndRenderCurrentTab();
+            return;
+        }
+
+        // Xử lý nút Chụp Ảnh trên màn hình chi tiết (được tạo động)
+        const captureDetailBtn = e.target.closest('#capture-sknv-detail-btn, #capture-dtnv-lk-detail-btn, #capture-dtnv-rt-detail-btn');
+        if (captureDetailBtn) {
+            e.preventDefault();
+            const areaToCapture = captureDetailBtn.closest('.sub-tab-content')?.querySelector('[id$="-capture-area"]');
+            const title = appState.viewingDetailFor?.employeeId || 'ChiTietNV';
+            if (areaToCapture) {
+                captureService.captureDashboardInParts(areaToCapture, title); // <<< SỬA LỖI: Gọi hàm từ module đúng
+            }
+            return;
+        }
+        
+        // Listener cho luyke-thidua-view-selector
+        const luykeViewSwitcherBtn = e.target.closest('#luyke-thidua-view-selector .view-switcher__btn');
+        if (luykeViewSwitcherBtn) {
             e.preventDefault();
             appController.handleLuykeThiDuaViewChange(e);
+            return;
+        }
+
+        // Listener cho thidua-view-selector
+        const thiDuaViewSwitcherBtn = e.target.closest('#thidua-view-selector .view-switcher__btn');
+        if (thiDuaViewSwitcherBtn) {
+            e.preventDefault();
+            appController.handleThiDuaViewChange(e);
+            return;
+        }
+        
+        // Listener cho dthang-realtime-view-selector
+        const dtHangViewSwitcherBtn = e.target.closest('#dthang-realtime-view-selector .view-switcher__btn');
+        if (dtHangViewSwitcherBtn) {
+            e.preventDefault();
+            appController.handleDthangRealtimeViewChange(e);
+            return;
         }
     });
+    // === END: BỘ LẮNG NGHE SỰ KIỆN TẬP TRUNG ===
     
-    document.getElementById('thidua-view-selector')?.addEventListener('click', (e) => appController.handleThiDuaViewChange(e));
     document.getElementById('thidua-employee-filter')?.addEventListener('change', () => ui.displayCompetitionReport('employee'));
-    document.getElementById('dtnv-realtime-view-selector')?.addEventListener('click', (e) => appController.handleDtnvRealtimeViewChange(e));
-    document.getElementById('realtime-employee-detail-filter')?.addEventListener('change', () => realtimeTab.handleEmployeeDetailChange());
-    document.getElementById('dthang-realtime-view-selector')?.addEventListener('click', (e) => appController.handleDthangRealtimeViewChange(e));
     document.getElementById('realtime-brand-category-filter')?.addEventListener('change', () => realtimeTab.handleBrandFilterChange());
     document.getElementById('realtime-brand-filter')?.addEventListener('change', () => realtimeTab.handleBrandFilterChange());
 }
