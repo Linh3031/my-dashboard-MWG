@@ -1,4 +1,4 @@
-// Version 3.6 - Refactor: Replace view switchers with direct click-to-view-detail listeners
+// Version 3.8 - Refactor: Replace view switchers with direct click-to-view-detail listeners
 // MODULE: EVENT LISTENERS INITIALIZER
 // File này đóng vai trò là điểm khởi đầu, import và khởi chạy tất cả các module listener con.
 
@@ -15,6 +15,7 @@ import { initializeHighlightingListeners } from './listeners-highlighting.js';
 import { initializeSettingsListeners } from './listeners-settings.js';
 import { initializeSortingListeners } from './listeners-sorting.js';
 import { dragDroplisteners } from './listeners-dragdrop.js';
+import { captureService } from '../modules/capture.service.js'; // <<< SỬA LỖI: THÊM IMPORT
 
 let appController = null;
 
@@ -26,7 +27,6 @@ async function handleFileInputChange(e) {
     const fileType = fileInput.id.replace('file-', '');
     const dataName = fileInput.dataset.name || fileType;
     const stateKey = fileInput.dataset.stateKey; 
-
     if (!file || !stateKey) return; 
 
     ui.updateFileStatus(fileType, file.name, 'Đang xử lý...', 'default');
@@ -241,7 +241,7 @@ export function initializeEventListeners(mainAppController) {
             const areaToCapture = captureDetailBtn.closest('.sub-tab-content')?.querySelector('[id$="-capture-area"]');
             const title = appState.viewingDetailFor?.employeeId || 'ChiTietNV';
             if (areaToCapture) {
-                ui.captureDashboardInParts(areaToCapture, title);
+                captureService.captureDashboardInParts(areaToCapture, title); // <<< SỬA LỖI: Gọi hàm từ module đúng
             }
             return;
         }

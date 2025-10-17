@@ -1,4 +1,4 @@
-/* Version 5.5 - Add styles for new Luy Ke employee detail layout */
+/* Version 5.6 - Add styles for new Luy Ke employee detail layout */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -741,4 +741,8 @@ details[open] > summary .arrow { transform: rotate(180deg); }
 .customer-accordion-luyke .product-list-table {
     width: 100%;
 }
+/* === START: ADDED RULES FOR COLORING === */
+.customer-accordion-luyke .qd-below-target { color: #b91c1c; } /* red-700 */
+.customer-accordion-luyke .qd-above-target { color: #1d4ed8; } /* blue-700 */
+/* === END: ADDED RULES === */
 /* === END: NEW STYLES === */

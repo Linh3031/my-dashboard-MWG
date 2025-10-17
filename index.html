@@ -6,8 +6,8 @@
     <title>Công cụ phân tích số cho QLST MWG 4.8</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    [cite_start]<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script> [cite: 253]
-    [cite_start]<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script> [cite: 253]
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css"/>
     <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
     
@@ -32,7 +32,7 @@
     <div id="update-notification" class="hidden fixed bottom-5 right-5 bg-blue-600 text-white py-3 px-5 rounded-lg shadow-lg z-[1001] flex items-center gap-4">
         <p class="font-semibold">Đã có phiên bản mới! Xem chi tiết nội dung cập nhật ở tab "Hướng Dẫn & Góp Ý"</p>
         <button onclick="window.location.reload()" class="bg-white text-blue-600 font-bold py-1 px-3 rounded-md hover:bg-blue-100 transition">Tải lại trang</button>
-    [cite_start]</div> [cite: 254]
+    </div>
 
     <div id="interface-drawer-container"></div>
     <div id="goal-drawer-container"></div>
@@ -48,11 +48,11 @@
                         <h2 class="page-header__title">Hướng Dẫn & Góp Ý</h2>
                         <div id="usage-counter-display" class="text-sm font-semibold">
                             <span class="text-blue-600">Người dùng:</span>
-                            [cite_start]<span id="user-count" class="text-red-600 font-bold">-</span> [cite: 256]
+                            <span id="user-count" class="text-red-600 font-bold">-</span>
                             <span class="text-blue-600 ml-4">Lượt truy cập:</span>
-                            [cite_start]<span id="visitor-count" class="text-red-600 font-bold">-</span> [cite: 256]
+                            <span id="visitor-count" class="text-red-600 font-bold">-</span>
                             <span class="text-blue-600 ml-4">Lượt sử dụng:</span>
-                            [cite_start]<span id="action-count" class="text-red-600 font-bold">-</span> [cite: 257]
+                            <span id="action-count" class="text-red-600 font-bold">-</span>
                         </div>
                     </div>
                   
@@ -105,7 +105,7 @@
                     
                         <div class="header-qr-container">
                              <span>THAM GIA THẢO LUẬN - GÓP Ý</span>
-                            <img id="header-qr-image" src="" alt="Mã QR" class="header-qr-image">
+                             <img id="header-qr-image" src="" alt="Mã QR" class="header-qr-image">
                         </div>
                     </div>
                     <div class="content-card">
@@ -137,7 +137,7 @@
                                             <label for="file-giocong" class="data-input-group__file-trigger">Thêm file</label>
                                             <span id="file-name-giocong" class="data-input-group__file-name">Chưa thêm file</span>
                                         </div>
-                                        [cite_start]<input type="file" id="file-giocong" class="hidden file-input" data-name="Giờ công" data-state-key="rawGioCongData" data-save-key="saved_giocong" accept=".xlsx, .xls, .csv"> [cite: 280]
+                                        <input type="file" id="file-giocong" class="hidden file-input" data-name="Giờ công" data-state-key="rawGioCongData" data-save-key="saved_giocong" accept=".xlsx, .xls, .csv">
                                         <div class="data-input-group__status-wrapper">
                                             <span id="file-status-giocong" class="data-input-group__status-text"></span>
                                         </div>
@@ -151,7 +151,7 @@
                                             <label for="file-thuongnong" class="data-input-group__file-trigger">Thêm file</label>
                                             <span id="file-name-thuongnong" class="data-input-group__file-name">Chưa thêm file</span>
                                         </div>
-                                        [cite_start]<input type="file" id="file-thuongnong" class="hidden file-input" data-name="Thưởng nóng" data-state-key="thuongNongData" data-save-key="saved_thuongnong" accept=".xlsx, .xls, .csv"> [cite: 285]
+                                        <input type="file" id="file-thuongnong" class="hidden file-input" data-name="Thưởng nóng" data-state-key="thuongNongData" data-save-key="saved_thuongnong" accept=".xlsx, .xls, .csv">
                                         <div class="data-input-group__status-wrapper">
                                             <span id="file-status-thuongnong" class="data-input-group__status-text"></span>
                                         </div>
@@ -241,7 +241,7 @@
                                             <label for="file-thuongnong-thangtruoc" class="data-input-group__file-trigger">Thêm file</label>
                                             <span id="file-name-thuongnong-thangtruoc" class="data-input-group__file-name">Chưa thêm file</span>
                                         </div>
-                                        [cite_start]<input type="file" id="file-thuongnong-thangtruoc" class="hidden file-input" data-name="Thưởng nóng tháng trước" data-state-key="thuongNongDataThangTruoc" data-save-key="saved_thuongnong_thangtruoc" accept=".xlsx, .xls, .csv"> [cite: 314]
+                                        <input type="file" id="file-thuongnong-thangtruoc" class="hidden file-input" data-name="Thưởng nóng tháng trước" data-state-key="thuongNongDataThangTruoc" data-save-key="saved_thuongnong_thangtruoc" accept=".xlsx, .xls, .csv">
                                         <div class="data-input-group__status-wrapper">
                                             <span id="file-status-thuongnong-thangtruoc" class="data-input-group__status-text"></span>
                                         </div>
@@ -343,13 +343,13 @@
                                         <p id="luyke-kpi-dt-qd-main" class="font-bold mt-2 mb-3">0</p>
                                         <p id="luyke-kpi-dt-qd-sub1" class="text-sm">DK: 0 / Target: 0</p>
                                     </div>
-                        
+                                
                                     <div class="kpi-card p-6 rounded-2xl shadow-lg">
                                         <h4 class="kpi-card-title">Tỷ lệ hoàn thành Target</h4>
                                         <p id="luyke-kpi-ht-target-qd-main" class="font-bold mt-2 mb-3">0%</p>
                                         <p id="luyke-kpi-ht-target-thuc-sub" class="text-sm">DT Thực: 0%</p>
                                     </div>
-                                
+                                    
                                     <div class="kpi-card p-6 rounded-2xl shadow-lg">
                                         <h4 class="kpi-card-title">Tỷ lệ quy đổi</h4>
                                         <p id="luyke-kpi-tl-qd-main" class="font-bold mt-2 mb-3">0%</p>
@@ -416,7 +416,7 @@
                                     </div>
                                 </div>
                                 <div id="thidua-vung-infographic-container">
-                                    <div class="placeholder-message">Vui lòng tải file và chọn một siêu thị để xem báo cáo.</div>
+                                     <div class="placeholder-message">Vui lòng tải file và chọn một siêu thị để xem báo cáo.</div>
                                 </div>
                             </div>
                         </div>
@@ -476,7 +476,7 @@
                                     <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-thi-dua-lk" data-title="HieuQuaThiDuaLK">Thi đua NV LK</button>
                                 </nav>
                                  <div class="flex items-center gap-x-2">
-                                     <button id="compose-sknv-notification-btn" class="action-btn action-btn--composer" title="Nhận xét">
+                                    <button id="compose-sknv-notification-btn" class="action-btn action-btn--composer" title="Nhận xét">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
                                         <span>Nhận xét</span>
                                     </button>
@@ -499,7 +499,7 @@
                                     </div>
                                 </div>
                                 <div id="subtab-doanhthu-lk" class="sub-tab-content hidden space-y-6" data-capture-preset="landscape-table">
-                                     <div id="revenue-report-container-lk"></div>
+                                    <div id="revenue-report-container-lk"></div>
                                      <div id="dtnv-lk-details-container"></div>
                                 </div>
                                 <div id="subtab-thunhap" class="sub-tab-content hidden space-y-6" data-capture-preset="landscape-table">

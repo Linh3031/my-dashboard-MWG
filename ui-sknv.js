@@ -1,4 +1,4 @@
-// Version 4.1 - Rework Luy Ke employee detail view with new layout, KPIs, chart, and progress bars
+// Version 4.3 - Rework Luy Ke employee detail view with new layout, KPIs, chart, and progress bars
 // MODULE: UI SKNV
 // Chứa các hàm render giao diện cho tab "Sức khỏe nhân viên"
 
@@ -213,13 +213,13 @@ export const uiSknv = {
         let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title} <span class="text-sm font-normal text-gray-500">(Thu nhập DK TB: ${uiComponents.formatRevenue(averageProjectedIncome)})</span></h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="thunhap" data-capture-columns="8">
             <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                 <tr>
-                                <th class="${headerClass('hoTen')}" data-sort="hoTen">Họ Tên <span class="sort-indicator"></span></th>
+                    <th class="${headerClass('hoTen')}" data-sort="hoTen">Họ Tên <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('gioCong')} text-right" data-sort="gioCong">Giờ công <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('tongThuNhap')} text-right" data-sort="tongThuNhap">Tổng thu nhập <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('thuNhapDuKien')} text-right" data-sort="thuNhapDuKien">Thu nhập DK <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('thuNhapThangTruoc')} text-right" data-sort="thuNhapThangTruoc">Tháng trước <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('chenhLechThuNhap')} text-right" data-sort="chenhLechThuNhap">+/- Tháng trước <span class="sort-indicator"></span></th>
-                            </tr>
+                </tr>
                         </thead><tbody>`;
         sortedData.forEach(nv => {
             const incomeDkCellClass = nv.thuNhapDuKien < averageProjectedIncome ? 'cell-performance is-below' : '';
@@ -398,7 +398,7 @@ export const uiSknv = {
                 ${visibleColumns.map(col => {
                     const value = totals[col.id];
                     const formatter = formatMap[col.id] || formatMap.defaultPercent;
-                     return `<td class="px-4 py-2 text-right">${formatter(value)}</td>`;
+                    return `<td class="px-4 py-2 text-right">${formatter(value)}</td>`;
                 }).join('')}
             </tr>
         </tfoot></table></div></div>`;
@@ -415,6 +415,7 @@ export const uiSknv = {
         if (!hasAnyData) {
              container.innerHTML = '<p class="text-yellow-600 font-semibold">Không tìm thấy doanh thu cho các ngành hàng chính.</p>'; return;
         }
+        // <<< SỬA LỖI: Gọi hàm thông qua this thay vì uiSknv >>>
         let finalHTML = `<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div data-capture-group="1" data-capture-columns="6">${uiSknv.renderCategoryTable('ICT', `${sortStatePrefix}_ict`, reportData, 'dtICT', 'slICT', ['slDienThoai', 'slLaptop'], ['SL Điện thoại', 'SL Laptop'])}</div>
                 <div data-capture-group="1" data-capture-columns="6">${uiSknv.renderCategoryTable('PHỤ KIỆN', `${sortStatePrefix}_phukien`, reportData, 'dtPhuKien', 'slPhuKien', ['slPinSDP', 'slCamera', 'slTaiNgheBLT'], ['SL Pin SDP', 'SL Camera', 'SL Tai nghe BLT'])}</div>
@@ -486,11 +487,13 @@ export const uiSknv = {
         };
 
         const renderTopGroupsAsProgressBars = () => {
-            if (!topProductGroups || topProductGroups.length === 0) return '<p class="text-sm text-gray-500">Không có doanh thu.</p>';
+            // Thay đổi: chỉ lấy top 5
+            const top5Groups = topProductGroups.slice(0, 5);
+            if (!top5Groups || top5Groups.length === 0) return '<p class="text-sm text-gray-500">Không có doanh thu.</p>';
             
-            const maxRevenue = topProductGroups[0]?.realRevenue || 0;
+            const maxRevenue = top5Groups[0]?.realRevenue || 0;
             
-            return topProductGroups.map(group => {
+            return top5Groups.map(group => {
                 const percentage = maxRevenue > 0 ? (group.realRevenue / maxRevenue) * 100 : 0;
                 return `
                 <div class="luyke-detail-progress-item">
@@ -514,7 +517,8 @@ export const uiSknv = {
             if (!byCustomer || byCustomer.length === 0) return '<p class="text-sm text-gray-500 mt-4">Không có đơn hàng nào.</p>';
             
             return byCustomer.map((customer, index) => {
-                const qdClass = customer.conversionRate >= conversionRateTarget ? 'is-positive' : 'is-negative';
+                // Thay đổi: áp dụng class màu
+                const qdClass = customer.conversionRate >= conversionRateTarget ? 'qd-above-target' : 'qd-below-target';
                 
                 const productListHtml = customer.products.map(p => `
                     <tr class="border-b last:border-b-0">
@@ -527,6 +531,7 @@ export const uiSknv = {
                 
                 const tableContent = `<table class="min-w-full text-xs product-list-table"><tbody>${productListHtml}</tbody></table>`;
                 
+                // Thay đổi: Thêm logic thanh cuộn
                 const detailContent = customer.products.length > 8
                     ? `<div class="product-list-scrollable">${tableContent}</div>`
                     : tableContent;
@@ -568,7 +573,7 @@ export const uiSknv = {
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                     <div class="bg-white p-4 rounded-lg shadow-md border">
-                        <h4 class="text-md font-bold text-gray-700 border-b pb-2 mb-3">Top 8 Nhóm Hàng Doanh Thu Cao</h4>
+                        <h4 class="text-md font-bold text-gray-700 border-b pb-2 mb-3">Top 5 Nhóm Hàng Doanh Thu Cao</h4>
                         <div class="space-y-3">
                             ${renderTopGroupsAsProgressBars()}
                         </div>
@@ -754,7 +759,7 @@ export const uiSknv = {
         if (!container) return;
 
         if (!reportData || reportData.length === 0) {
-             container.innerHTML = ''; return;
+            container.innerHTML = ''; return;
         }
 
         const summaryData = reportData.map(employee => {
