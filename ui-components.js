@@ -1,23 +1,22 @@
-// Version 3.4 - Refactor string concatenation to prevent syntax errors
+// Version 3.7 - Critical Fix: Break circular dependency by importing from utils.js
 // MODULE: UI COMPONENTS
 // Chứa các hàm UI chung, tái sử dụng được trên toàn bộ ứng dụng.
 
 import { appState } from './state.js';
 import { services } from './services.js';
 import { utils } from './utils.js';
-import { uiSknv } from './ui-sknv.js';
+import { settingsService } from './modules/settings.service.js';
 
 export const uiComponents = {
     renderSettingsButton(idSuffix) {
         return `<button id="settings-btn-${idSuffix}" class="settings-trigger-btn" title="Tùy chỉnh hiển thị">
-                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                 </button>`;
     },
 
     renderCompetitionConfigUI() {
         const container = document.getElementById(`competition-list-container`);
         if (!container) return;
-
         const configs = appState.competitionConfigs || [];
 
         if (configs.length === 0) {
@@ -29,18 +28,18 @@ export const uiComponents = {
             return `
                 <div class="p-3 border rounded-lg bg-white flex justify-between items-center shadow-sm">
                     <div>
-                        <div class="flex items-center gap-x-2">
+                         <div class="flex items-center gap-x-2">
                             <p class="font-bold text-gray-800">${config.name}</p>
                         </div>
                         <div class="text-xs text-gray-500 mt-1 space-y-1">
-                            <p><strong>Hãng:</strong> <span class="font-semibold text-blue-600">${(config.brands || []).join(', ')}</span></p>
+                             <p><strong>Hãng:</strong> <span class="font-semibold text-blue-600">${(config.brands || []).join(', ')}</span></p>
                             <p><strong>Nhóm hàng:</strong> <span class="font-semibold">${(config.groups || []).length} nhóm</span></p>
                         </div>
                     </div>
-                    <div class="flex items-center gap-x-2 flex-shrink-0">
+                     <div class="flex items-center gap-x-2 flex-shrink-0">
                         <button class="edit-competition-btn p-2 rounded-md hover:bg-gray-200 text-gray-600" data-index="${index}" title="Sửa chương trình">
                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                        </button>
+                         </button>
                         <button class="delete-competition-btn p-2 rounded-md hover:bg-red-100 text-red-600" data-index="${index}" title="Xóa chương trình">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                         </button>
@@ -56,7 +55,6 @@ export const uiComponents = {
 
         if (!qdcContainer || !nganhHangContainer) return;
         
-        // Clear previous tags
         qdcContainer.innerHTML = '<h5 class="composer__tag-group-title">Chọn Nhóm Hàng QĐC</h5>';
         nganhHangContainer.innerHTML = '<h5 class="composer__tag-group-title">Chọn Ngành Hàng Chi Tiết</h5>';
 
@@ -72,7 +70,6 @@ export const uiComponents = {
             const qdcItems = Object.values(supermarketReport.qdc)
                 .filter(item => item.sl > 0)
                 .sort((a,b) => b.dtqd - a.dtqd);
-            
             qdcItems.forEach(item => {
                 const tag = `[QDC_INFO_${item.name}]`;
                 qdcContainer.appendChild(createTagButton(tag, item.name));
@@ -83,7 +80,7 @@ export const uiComponents = {
             const nganhHangItems = Object.values(supermarketReport.nganhHangChiTiet)
                 .filter(item => item.quantity > 0)
                 .sort((a, b) => b.revenue - a.revenue)
-                .slice(0, 15); // Limit to top 15 for brevity
+                .slice(0, 15);
 
             nganhHangItems.forEach(item => {
                 const cleanName = utils.cleanCategoryName(item.name);
@@ -93,6 +90,296 @@ export const uiComponents = {
         }
     },
 
+    displayEmployeeRevenueReport: (reportData, containerId, sortStateKey) => {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        container.innerHTML = '';
+        
+        let detailContainerId;
+        if (sortStateKey === 'doanhthu_lk') {
+            detailContainerId = 'dtnv-lk-details-container';
+        } else if (sortStateKey === 'realtime_dt_nhanvien') {
+            detailContainerId = 'realtime-employee-detail-container';
+        } else {
+            detailContainerId = 'sknv-details-container';
+        }
+    
+        const detailContainer = document.getElementById(detailContainerId);
+        if (detailContainer) {
+            detailContainer.innerHTML = ''; 
+            detailContainer.classList.add('hidden');
+        }
+        container.classList.remove('hidden');
+
+        if (!reportData || reportData.length === 0) {
+            container.innerHTML = '<p class="text-gray-500">Không có dữ liệu doanh thu cho lựa chọn này.</p>';
+            return;
+        }
+        let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden" data-capture-group="1">
+            <div class="p-4 header-group-1 text-gray-800">
+                <h3 class="text-xl font-bold uppercase">Doanh thu nhân viên</h3>
+                 <p class="text-sm italic text-gray-600">(đơn vị tính: Triệu đồng)</p>
+            </div>`;
+        
+        const groupedByDept = {};
+        reportData.forEach(item => {
+            const dept = item.boPhan;
+            if (!groupedByDept[dept]) groupedByDept[dept] = [];
+            groupedByDept[dept].push(item);
+        });
+        
+        const departmentOrder = utils.getSortedDepartmentList(reportData); // <<< FIX: USE UTILS
+        departmentOrder.forEach(deptName => {
+            if (groupedByDept[deptName]) {
+                finalHTML += uiComponents.renderRevenueTableForDepartment(deptName, groupedByDept[deptName], sortStateKey);
+            }
+        });
+
+        finalHTML += `</div>`;
+        container.innerHTML = finalHTML;
+    },
+
+    renderRevenueTableForDepartment: (title, data, sortStateKey) => {
+        const sortState = appState.sortState[sortStateKey] || { key: 'doanhThu', direction: 'desc' };
+        const { key, direction } = sortState;
+        const sortedData = [...data].sort((a, b) => {
+            const valA = a[key] || 0; const valB = b[key] || 0;
+            return direction === 'asc' ? valA - valB : valB - valA;
+        });
+
+        const totals = data.reduce((acc, item) => {
+            acc.doanhThu += item.doanhThu;
+            acc.doanhThuQuyDoi += item.doanhThuQuyDoi;
+            acc.doanhThuTraGop += item.doanhThuTraGop;
+            acc.doanhThuChuaXuat += item.doanhThuChuaXuat;
+            return acc;
+        }, { doanhThu: 0, doanhThuQuyDoi: 0, doanhThuTraGop: 0, doanhThuChuaXuat: 0 });
+
+        totals.hieuQuaQuyDoi = totals.doanhThu > 0 ? (totals.doanhThuQuyDoi / totals.doanhThu) - 1 : 0;
+        totals.tyLeTraCham = totals.doanhThu > 0 ? totals.doanhThuTraGop / totals.doanhThu : 0;
+
+        let titleClass = '';
+        if (title.includes('Tư Vấn')) titleClass = 'department-header-tv';
+        else if (title.includes('Kho')) titleClass = 'department-header-kho';
+        else if (title.includes('Trang Trí')) titleClass = 'department-header-tt';
+
+        const isRealtime = sortStateKey === 'realtime_dt_nhanvien';
+        const headerClasses = {
+            hoTen: '',
+            doanhThu: isRealtime ? 'header-group-4' : 'header-bg-blue',
+            doanhThuQuyDoi: isRealtime ? 'header-group-4' : 'header-bg-blue',
+            hieuQuaQuyDoi: isRealtime ? 'header-group-4' : 'header-bg-blue',
+            doanhThuTraGop: isRealtime ? 'header-group-5' : 'header-bg-green',
+            tyLeTraCham: isRealtime ? 'header-group-5' : 'header-bg-green',
+            doanhThuChuaXuat: isRealtime ? 'header-group-6' : 'header-bg-yellow'
+        };
+
+        const headerClass = (sortKey) => `px-4 py-3 sortable ${headerClasses[sortKey] || ''} ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
+        
+        let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="7">
+                 <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
+                            <tr>
+                                <th class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('doanhThu')} text-right" data-sort="doanhThu">Doanh Thu <span class="sort-indicator"></span></th>
+                                 <th class="${headerClass('doanhThuQuyDoi')} text-right" data-sort="doanhThuQuyDoi">Doanh Thu QĐ <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('hieuQuaQuyDoi')} text-right" data-sort="hieuQuaQuyDoi">% QĐ <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('doanhThuTraGop')} text-right" data-sort="doanhThuTraGop">DT trả chậm <span class="sort-indicator"></span></th>
+                                 <th class="${headerClass('tyLeTraCham')} text-right" data-sort="tyLeTraCham">% trả chậm <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('doanhThuChuaXuat')} text-right" data-sort="doanhThuChuaXuat">DT Chưa Xuất <span class="sort-indicator"></span></th>
+                            </tr>
+                 </thead><tbody>`;
+        sortedData.forEach(item => {
+            const { mucTieu } = item;
+            const qdClass = (mucTieu && item.hieuQuaQuyDoi < (mucTieu.phanTramQD / 100)) ? 'cell-performance is-below' : '';
+            const tcClass = (mucTieu && item.tyLeTraCham < (mucTieu.phanTramTC / 100)) ? 'cell-performance is-below' : '';
+            
+            let sourceTab;
+            if (sortStateKey === 'doanhthu_lk') sourceTab = 'dtnv-lk';
+            else if (sortStateKey === 'realtime_dt_nhanvien') sourceTab = 'dtnv-rt';
+            else sourceTab = 'sknv';
+
+            tableHTML += `<tr class="interactive-row">
+                    <td class="px-4 py-2 font-semibold line-clamp-2 employee-name-cell" data-employee-id="${item.maNV}" data-source-tab="${sourceTab}">
+                        <a href="#">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</a>
+                    </td>
+                    <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThu)}</td>
+                    <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThuQuyDoi)}</td>
+                    <td class="px-4 py-2 text-right font-bold ${qdClass}">${uiComponents.formatPercentage(item.hieuQuaQuyDoi)}</td>
+                    <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThuTraGop)}</td>
+                    <td class="px-4 py-2 text-right font-bold ${tcClass}">${uiComponents.formatPercentage(item.tyLeTraCham)}</td>
+                    <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThuChuaXuat)}</td></tr>`;
+        });
+         tableHTML += `</tbody><tfoot class="table-footer font-bold"><tr>
+                    <td class="px-4 py-2">Tổng</td>
+                    <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThu)}</td>
+                     <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuQuyDoi)}</td>
+                    <td class="px-4 py-2 text-right">${uiComponents.formatPercentage(totals.hieuQuaQuyDoi)}</td>
+                    <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuTraGop)}</td>
+                    <td class="px-4 py-2 text-right">${uiComponents.formatPercentage(totals.tyLeTraCham)}</td>
+                    <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuChuaXuat)}</td>
+                 </tr></tfoot></table></div></div>`;
+        return tableHTML;
+    },
+
+    displayEmployeeEfficiencyReport: (reportData, containerId, sortStateKey) => {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        if (!reportData || reportData.length === 0) {
+            container.innerHTML = '<p class="text-gray-500">Không có dữ liệu hiệu quả cho lựa chọn này.</p>';
+            return;
+        }
+
+        const columnSettings = settingsService.loadEfficiencyViewSettings();
+        const visibleColumns = columnSettings.filter(c => c.visible);
+
+        const columnTogglesHTML = `
+            <div id="efficiency-column-toggles" class="p-3 border-b border-gray-200 flex flex-wrap items-center gap-x-2 gap-y-2">
+                <span class="text-sm font-semibold mr-2 text-gray-700 non-draggable">Tùy chỉnh cột:</span>
+                ${columnSettings.map(col => `
+                     <button 
+                        class="column-toggle-btn draggable-tag flex items-center ${col.visible ? 'active' : ''}" 
+                        data-column-id="${col.id}">
+                        <svg class="drag-handle-icon mr-2 cursor-grab" width="12" height="12" viewBox="0 0 10 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M4 2a1 1 0 10-2 0 1 1 0 002 0zM2 9a1 1 0 110-2 1 1 0 010 2zm0 5a1 1 0 110-2 1 1 0 010 2zm5-12a1 1 0 10-2 0 1 1 0 002 0zM7 9a1 1 0 110-2 1 1 0 010 2zm0 5a1 1 0 110-2 1 1 0 010 2z" fill="currentColor"></path></svg>
+                        <span>${col.label}</span>
+                    </button>
+                `).join('')}
+             </div>
+        `;
+
+        let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+                            ${columnTogglesHTML}
+                            <div data-capture-group="efficiency-table">
+                                <div class="p-4 header-group-3 text-gray-800">
+                                     <h3 class="text-xl font-bold uppercase">HIỆU QUẢ KHAI THÁC THEO NHÂN VIÊN</h3>
+                                    <p class="text-sm italic text-gray-600">(đơn vị tính: Triệu đồng)</p>
+                                 </div>`;
+
+        const groupedByDept = {};
+        reportData.forEach(item => {
+            const dept = item.boPhan;
+            if (!groupedByDept[dept]) groupedByDept[dept] = [];
+            groupedByDept[dept].push(item);
+        });
+
+        const departmentOrder = utils.getSortedDepartmentList(reportData); // <<< FIX: USE UTILS
+
+        departmentOrder.forEach(deptName => {
+            if (groupedByDept[deptName]) {
+                finalHTML += uiComponents.renderEfficiencyTableForDepartment(deptName, groupedByDept[deptName], sortStateKey, visibleColumns);
+             }
+        });
+
+        finalHTML += `    </div> 
+                           </div>`;
+        container.innerHTML = finalHTML;
+    },
+
+    renderEfficiencyTableForDepartment: (title, data, sortStateKey, visibleColumns) => {
+        const sortState = appState.sortState[sortStateKey] || { key: 'dtICT', direction: 'desc' };
+        const { key, direction } = sortState;
+        const sortedData = [...data].sort((a, b) => {
+            const valA = a[key] || 0; const valB = b[key] || 0;
+            return direction === 'asc' ? valA - valB : valB - valA;
+        });
+
+        const formatMap = {
+            dtICT: (val) => uiComponents.formatRevenue(val),
+            dtPhuKien: (val) => uiComponents.formatRevenue(val),
+            dtCE: (val) => uiComponents.formatRevenue(val),
+            dtGiaDung: (val) => uiComponents.formatRevenue(val),
+            defaultPercent: (val) => uiComponents.formatPercentage(val)
+         };
+
+        const totals = data.reduce((acc, item) => {
+            acc.dtICT += item.dtICT;
+            acc.dtPhuKien += item.dtPhuKien;
+            acc.dtCE += item.dtCE;
+            acc.dtGiaDung += item.dtGiaDung;
+            acc.dtMLN += item.dtMLN;
+            acc.slSmartphone += item.slSmartphone;
+            acc.slSimOnline += item.slSimOnline;
+             acc.slUDDD += item.slUDDD;
+            acc.slBaoHiemDenominator += item.slBaoHiemDenominator;
+            acc.slBaoHiemVAS += item.slBaoHiemVAS;
+            return acc;
+        }, { dtICT: 0, dtPhuKien: 0, dtCE: 0, dtGiaDung: 0, dtMLN: 0, slSmartphone: 0, slSimOnline: 0, slUDDD: 0, slBaoHiemDenominator: 0, slBaoHiemVAS: 0 });
+
+        totals.pctPhuKien = totals.dtICT > 0 ? totals.dtPhuKien / totals.dtICT : 0;
+        totals.pctGiaDung = totals.dtCE > 0 ? totals.dtGiaDung / totals.dtCE : 0;
+        totals.pctMLN = totals.dtCE > 0 ? totals.dtMLN / totals.dtCE : 0;
+        totals.pctSim = totals.slSmartphone > 0 ? totals.slSimOnline / totals.slSmartphone : 0;
+        totals.pctVAS = totals.slSmartphone > 0 ? totals.slUDDD / totals.slSmartphone : 0;
+        totals.pctBaoHiem = totals.slBaoHiemDenominator > 0 ? totals.slBaoHiemVAS / totals.slBaoHiemDenominator : 0;
+        
+        let titleClass = '';
+        if (title.includes('Tư Vấn')) titleClass = 'department-header-tv';
+        else if (title.includes('Kho')) titleClass = 'department-header-kho';
+        else if (title.includes('Trang Trí')) titleClass = 'department-header-tt';
+
+        const allHeaders = {
+            dtICT: { label: 'DT ICT', class: 'text-right header-group-10' },
+            dtPhuKien: { label: 'DT Phụ kiện', class: 'text-right header-group-10' },
+            pctPhuKien: { label: '% Phụ kiện', class: 'text-right header-group-10' },
+            dtCE: { label: 'DT CE', class: 'text-right header-group-11' },
+            dtGiaDung: { label: 'DT Gia dụng', class: 'text-right header-group-11' },
+            pctGiaDung: { label: '% Gia dụng', class: 'text-right header-group-11' },
+            pctMLN: { label: '% MLN', class: 'text-right header-group-12' },
+            pctSim: { label: '% Sim', class: 'text-right header-group-12' },
+            pctVAS: { label: '% VAS', class: 'text-right header-group-12' },
+            pctBaoHiem: { label: '% Bảo hiểm', class: 'text-right header-group-12' }
+        };
+
+        const headerClass = (sortKey) => `px-4 py-3 sortable draggable-header ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
+        const captureColumnCount = 1 + visibleColumns.length;
+
+        let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="${captureColumnCount}">
+            <thead class="text-xs text-slate-800 uppercase font-bold">
+                 <tr>
+                    <th class="${headerClass('hoTen')}" data-sort="hoTen">Tên nhân viên <span class="sort-indicator"></span></th>
+                    ${visibleColumns.map(col => `<th class="${headerClass(col.id)} ${allHeaders[col.id].class}" data-sort="${col.id}">${allHeaders[col.id].label} <span class="sort-indicator"></span></th>`).join('')}
+                </tr>
+            </thead><tbody>`;
+
+        sortedData.forEach(item => {
+            const { mucTieu } = item;
+            const classMap = {
+                pctPhuKien: (mucTieu && item.pctPhuKien < (mucTieu.phanTramPhuKien / 100)) ? 'cell-performance is-below' : '',
+                pctGiaDung: (mucTieu && item.pctGiaDung < (mucTieu.phanTramGiaDung / 100)) ? 'cell-performance is-below' : '',
+                pctMLN: (mucTieu && item.pctMLN < (mucTieu.phanTramMLN / 100)) ? 'cell-performance is-below' : '',
+                pctSim: (mucTieu && item.pctSim < (mucTieu.phanTramSim / 100)) ? 'cell-performance is-below' : '',
+                pctVAS: (mucTieu && item.pctVAS < (mucTieu.phanTramVAS / 100)) ? 'cell-performance is-below' : '',
+                pctBaoHiem: (mucTieu && item.pctBaoHiem < (mucTieu.phanTramBaoHiem / 100)) ? 'cell-performance is-below' : ''
+            };
+
+            tableHTML += `<tr class="interactive-row">
+                <td class="px-4 py-2 font-semibold line-clamp-2 employee-name-cell" data-employee-id="${item.maNV}" data-source-tab="sknv">
+                     <a href="#">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</a>
+                </td>
+                ${visibleColumns.map(col => {
+                    const value = item[col.id];
+                    const className = classMap[col.id] || '';
+                    const formatter = formatMap[col.id] || formatMap.defaultPercent;
+                    return `<td class="px-4 py-2 text-right font-bold ${className}">${formatter(value)}</td>`;
+                }).join('')}
+            </tr>`;
+        });
+
+        tableHTML += `</tbody><tfoot class="table-footer font-bold">
+             <tr>
+                <td class="px-4 py-2">Tổng</td>
+                ${visibleColumns.map(col => {
+                    const value = totals[col.id];
+                    const formatter = formatMap[col.id] || formatMap.defaultPercent;
+                    return `<td class="px-4 py-2 text-right">${formatter(value)}</td>`;
+                 }).join('')}
+            </tr>
+        </tfoot></table></div></div>`;
+        return tableHTML;
+    },
+    // --- END: MOVED SHARED FUNCTIONS ---
+    
     // --- START: REFACTORED SHARED FUNCTIONS ---
     renderCategoryTable(title, sortStateKey, reportData, mainRevenueKey, mainQuantityKey, subQuantityKeys, subQuantityLabels) {
         const sortState = appState.sortState[sortStateKey] || { key: mainRevenueKey, direction: 'desc' };
@@ -102,7 +389,7 @@ export const uiComponents = {
             const valA = a[key] || 0;
             const valB = b[key] || 0;
             return direction === 'asc' ? valA - valB : valB - valA;
-        });
+         });
 
         const totals = reportData.reduce((acc, item) => {
             acc[mainRevenueKey] += item[mainRevenueKey];
@@ -130,11 +417,11 @@ export const uiComponents = {
                  tableRows.push(`
                     <tr class="interactive-row">
                         <td class="px-2 py-2 font-semibold line-clamp-2 employee-name-cell" data-employee-id="${item.maNV}" data-source-tab="sknv">
-                            <a href="#">${this.getShortEmployeeName(item.hoTen, item.maNV)}</a>
+                             <a href="#">${this.getShortEmployeeName(item.hoTen, item.maNV)}</a>
                         </td>
                         <td class="px-2 py-2 text-right font-bold">${this.formatRevenue(item[mainRevenueKey])}</td>
                         <td class="px-2 py-2 text-right font-bold">${this.formatNumberOrDash(item[mainQuantityKey])}</td>
-                        ${subQuantityKeys.map(subKey => `<td class="px-2 py-2 text-right">${this.formatNumberOrDash(item[subKey])}</td>`).join('')}
+                         ${subQuantityKeys.map(subKey => `<td class="px-2 py-2 text-right">${this.formatNumberOrDash(item[subKey])}</td>`).join('')}
                     </tr>
                 `);
             }
@@ -143,26 +430,26 @@ export const uiComponents = {
         const html = `
             <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
                 <h4 class="text-lg font-bold p-3 border-b ${titleClass}">${title}</h4>
-                <div class="overflow-x-auto">
+                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm table-bordered table-striped" data-table-type="${sortStateKey}">
                         <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                             <tr>
-                                <th rowspan="2" class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên</th>
+                                 <th rowspan="2" class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên</th>
                                 <th rowspan="2" class="${headerClass(mainRevenueKey)} text-right" data-sort="${mainRevenueKey}">DT</th>
                                 <th rowspan="2" class="${headerClass(mainQuantityKey)} text-right" data-sort="${mainQuantityKey}">Tổng SL</th>
-                                <th colspan="${subQuantityKeys.length}" class="px-2 py-2 text-center">Chi tiết SL</th>
+                                 <th colspan="${subQuantityKeys.length}" class="px-2 py-2 text-center">Chi tiết SL</th>
                             </tr>
                             <tr>${subHeaders}</tr>
                         </thead>
                         <tbody>
-                            ${tableRows.join('')}
+                             ${tableRows.join('')}
                         </tbody>
                         <tfoot class="table-footer font-bold">
                             <tr>
-                                <td class="px-2 py-2">Tổng</td>
+                                 <td class="px-2 py-2">Tổng</td>
                                 <td class="px-2 py-2 text-right">${this.formatRevenue(totals[mainRevenueKey])}</td>
                                 <td class="px-2 py-2 text-right">${this.formatNumberOrDash(totals[mainQuantityKey])}</td>
-                                ${subQuantityKeys.map(subKey => `<td class="px-2 py-2 text-right">${this.formatNumberOrDash(totals[subKey])}</td>`).join('')}
+                                 ${subQuantityKeys.map(subKey => `<td class="px-2 py-2 text-right">${this.formatNumberOrDash(totals[subKey])}</td>`).join('')}
                             </tr>
                         </tfoot>
                     </table>
@@ -183,11 +470,11 @@ export const uiComponents = {
 
         const htmlParts = [
             '<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">',
-            `<div data-capture-group="1" data-capture-columns="6">${this.renderCategoryTable('ICT', `${sortStatePrefix}_ict`, reportData, 'dtICT', 'slICT', ['slDienThoai', 'slLaptop'], ['SL Điện thoại', 'SL Laptop'])}</div>`,
+             `<div data-capture-group="1" data-capture-columns="6">${this.renderCategoryTable('ICT', `${sortStatePrefix}_ict`, reportData, 'dtICT', 'slICT', ['slDienThoai', 'slLaptop'], ['SL Điện thoại', 'SL Laptop'])}</div>`,
             `<div data-capture-group="1" data-capture-columns="6">${this.renderCategoryTable('PHỤ KIỆN', `${sortStatePrefix}_phukien`, reportData, 'dtPhuKien', 'slPhuKien', ['slPinSDP', 'slCamera', 'slTaiNgheBLT'], ['SL Pin SDP', 'SL Camera', 'SL Tai nghe BLT'])}</div>`,
             `<div data-capture-group="2" data-capture-columns="6">${this.renderCategoryTable('GIA DỤNG', `${sortStatePrefix}_giadung`, reportData, 'dtGiaDung', 'slGiaDung', ['slNoiChien', 'slMLN', 'slRobotHB'], ['SL Nồi chiên', 'SL MLN', 'SL Robot HB'])}</div>`,
             `<div data-capture-group="2" data-capture-columns="6">${this.renderCategoryTable('CE', `${sortStatePrefix}_ce`, reportData, 'dtCE', 'slCE', ['slTivi', 'slTuLanh', 'slMayGiat', 'slMayLanh'], ['SL Tivi', 'SL Tủ lạnh', 'SL Máy giặt', 'SL Máy lạnh'])}</div>`,
-            `<div class="lg:col-span-2" data-capture-group="3" data-capture-columns="7">${this.renderCategoryTable('BẢO HIỂM', `${sortStatePrefix}_baohiem`, reportData, 'dtBaoHiem', 'slBaoHiem', ['slBH1d1', 'slBHXM', 'slBHRV', 'slBHMR'], ['BH 1-1', 'BHXM', 'BHRV', 'BHMR'])}</div>`,
+             `<div class="lg:col-span-2" data-capture-group="3" data-capture-columns="7">${this.renderCategoryTable('BẢO HIỂM', `${sortStatePrefix}_baohiem`, reportData, 'dtBaoHiem', 'slBaoHiem', ['slBH1d1', 'slBHXM', 'slBHRV', 'slBHMR'], ['BH 1-1', 'BHXM', 'BHRV', 'BHMR'])}</div>`,
             '</div>'
         ];
         container.innerHTML = htmlParts.join('');
@@ -224,7 +511,7 @@ export const uiComponents = {
             visitorCountEl.textContent = statsData.pageLoads ? uiComponents.formatNumber(statsData.pageLoads) : '0';
         }
         if (actionCountEl) {
-            actionCountEl.textContent = statsData.actionsTaken ? uiComponents.formatNumber(statsData.actionsTaken) : '0';
+             actionCountEl.textContent = statsData.actionsTaken ? uiComponents.formatNumber(statsData.actionsTaken) : '0';
         }
         if (userCountEl) {
             userCountEl.textContent = statsData.totalUsers ? uiComponents.formatNumber(statsData.totalUsers) : '0';
@@ -289,7 +576,7 @@ export const uiComponents = {
         if (value === 0) return '-';
         return new Intl.NumberFormat('vi-VN', { 
             style: 'percent', 
-            maximumFractionDigits: 0 
+             maximumFractionDigits: 0 
         }).format(value);
     },
     
@@ -342,7 +629,7 @@ export const uiComponents = {
                 drawer.classList.add('open');
                 sidebar.classList.add('menu-locked');
                 overlay.classList.remove('hidden');
-            }, 10);
+             }, 10);
         } else {
             drawer.classList.remove('open');
             sidebar.classList.remove('menu-locked');
@@ -426,7 +713,7 @@ export const uiComponents = {
                 uiComponents.toggleModal('preview-modal', false);
             })
             .catch(err => {
-                console.error('Lỗi sao chép:', err);
+                 console.error('Lỗi sao chép:', err);
                 uiComponents.showNotification('Lỗi khi sao chép.', 'error');
             });
     },
@@ -458,7 +745,7 @@ export const uiComponents = {
             
             container.innerHTML = updateHistory.map(item => `
                 <div class="bg-white rounded-xl shadow-md p-5 border border-gray-200">
-                    <h4 class="font-bold text-blue-600 mb-2">Phiên bản ${item.version} (${item.date})</h4>
+                     <h4 class="font-bold text-blue-600 mb-2">Phiên bản ${item.version} (${item.date})</h4>
                     <ul class="list-disc list-inside text-gray-700 space-y-1 text-sm">
                         ${item.notes.map(note => `<li>${note}</li>`).join('')}
                     </ul>
@@ -466,7 +753,7 @@ export const uiComponents = {
             `).join('');
 
         } catch (error) {
-            console.error("Lỗi khi render lịch sử cập nhật:", error);
+             console.error("Lỗi khi render lịch sử cập nhật:", error);
             container.innerHTML = '<p class="text-red-500">Không thể tải lịch sử cập nhật.</p>';
         }
     },
@@ -497,33 +784,33 @@ export const uiComponents = {
                 userNameDisplay = item.user;
             }
 
-            return `
+             return `
                 <div class="feedback-item bg-white rounded-xl shadow-md p-5 border border-gray-200" data-id="${item.id}">
                     <p class="text-gray-800">${item.content}</p>
                     <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">
                         <span class="font-semibold">${userNameDisplay}</span>
-                        <span>${this.formatTimeAgo(item.timestamp)}</span>
+                         <span>${this.formatTimeAgo(item.timestamp)}</span>
                         ${appState.isAdmin ? `<button class="reply-btn text-blue-600 hover:underline">Trả lời</button>` : ''}
                     </div>
                     
                     <div class="ml-6 mt-4 space-y-3">
-                        ${(item.replies || []).map(reply => `
+                         ${(item.replies || []).map(reply => `
                             <div class="bg-gray-100 rounded-lg p-3">
                                 <p class="text-gray-700 text-sm">${reply.content}</p>
-                                <div class="text-xs text-gray-500 mt-2">
+                                 <div class="text-xs text-gray-500 mt-2">
                                     <strong>Admin</strong> - ${this.formatTimeAgo(reply.timestamp instanceof Date ? reply.timestamp : reply.timestamp?.toDate())}
                                 </div>
                             </div>
-                        `).join('')}
+                         `).join('')}
                     </div>
     
                     <div class="reply-form-container hidden ml-6 mt-4">
                         <textarea class="w-full p-2 border rounded-lg text-sm" rows="2" placeholder="Viết câu trả lời..."></textarea>
-                        <div class="flex justify-end gap-2 mt-2">
+                         <div class="flex justify-end gap-2 mt-2">
                             <button class="cancel-reply-btn text-sm text-gray-600 px-3 py-1 rounded-md hover:bg-gray-100">Hủy</button>
                             <button class="submit-reply-btn text-sm bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700">Gửi</button>
                         </div>
-                    </div>
+                     </div>
                 </div>
             `;
         }).join('');
@@ -600,6 +887,7 @@ export const uiComponents = {
             });
             content += '</ul>';
         }
+    
         content += `<p class="text-xs italic mt-2"><strong>Trạng thái xử lý:</strong> ${debugData.status}</p></div>`;
         container.innerHTML = content;
     },
@@ -612,7 +900,7 @@ export const uiComponents = {
             if (!data || data.length === 0) {
                 return `<div class="p-2 border rounded-md bg-white mb-4">
                     <h4 class="font-bold text-gray-800 mb-2">${title}</h4>
-                    <p class="text-gray-500">Không có dữ liệu để hiển thị.</p>
+                     <p class="text-gray-500">Không có dữ liệu để hiển thị.</p>
                 </div>`;
             }
     
@@ -620,11 +908,12 @@ export const uiComponents = {
             let tableHTML = `<div class="p-2 border rounded-md bg-white mb-4">
                 <h4 class="font-bold text-gray-800 mb-2">${title}</h4>
                 <div class="overflow-x-auto">
-                    <table class="min-w-full text-xs">
+                     <table class="min-w-full text-xs">
                         <thead class="bg-gray-100">
                             <tr>${headers.map(h => `<th class="px-2 py-1 text-left font-semibold text-gray-600 whitespace-nowrap">${h}</th>`).join('')}</tr>
                         </thead>
-                        <tbody>`;
+                    
+                     <tbody>`;
             
             data.forEach(row => {
                 tableHTML += `<tr class="border-t">`;
@@ -632,7 +921,7 @@ export const uiComponents = {
                     tableHTML += `<td class="px-2 py-1 font-mono">${row[header] !== undefined ? row[header] : ''}</td>`;
                 });
                 tableHTML += `</tr>`;
-            });
+             });
     
             tableHTML += `</tbody></table></div></div>`;
             return tableHTML;
@@ -677,18 +966,18 @@ export const uiComponents = {
                     <table class="min-w-full text-xs table-bordered competition-debug-table">
                         <thead class="bg-gray-100 sticky top-0">
                             <tr>
-                                <th class="p-2">Người tạo</th>
+                                 <th class="p-2">Người tạo</th>
                                 <th class="p-2">Nhóm hàng</th>
                                 <th class="p-2">HT Xuất</th>
-                                <th class="p-2">TT Thu tiền</th>
+                                 <th class="p-2">TT Thu tiền</th>
                                 <th class="p-2">TT Hủy</th>
                                 <th class="p-2">TT Trả</th>
                                 <th class="p-2">TT Xuất</th>
-                                ${checkHeaders.map(h => `<th class="p-2">${h}</th>`).join('')}
+                                 ${checkHeaders.map(h => `<th class="p-2">${h}</th>`).join('')}
                                 <th class="p-2">Tổng thể</th>
                             </tr>
                         </thead>
-                        <tbody>`;
+                         <tbody>`;
 
         const renderCheck = (status) => `<td class="text-center font-bold text-lg">${status ? '<span class="text-green-500">✅</span>' : '<span class="text-red-500">❌</span>'}</td>`;
 
@@ -697,17 +986,17 @@ export const uiComponents = {
             const { rowData, checks, isOverallValid } = result;
             tableHTML += `
                 <tr class="${rowClass}">
-                    <td class="p-2">${rowData.nguoiTao || ''}</td>
+                     <td class="p-2">${rowData.nguoiTao || ''}</td>
                     <td class="p-2">${rowData.nhomHang || ''}</td>
                     <td class="p-2">${rowData.hinhThucXuat || ''}</td>
                     <td class="p-2">${rowData.trangThaiThuTien || ''}</td>
                     <td class="p-2">${rowData.trangThaiHuy || ''}</td>
-                    <td class="p-2">${rowData.tinhTrangTra || ''}</td>
+                     <td class="p-2">${rowData.tinhTrangTra || ''}</td>
                     <td class="p-2">${rowData.trangThaiXuat || ''}</td>
                     ${renderCheck(checks.isDoanhThuHTX)}
                     ${renderCheck(checks.isThuTien)}
                     ${renderCheck(checks.isChuaHuy)}
-                    ${renderCheck(checks.isChuaTra)}
+                     ${renderCheck(checks.isChuaTra)}
                     ${renderCheck(checks.isDaXuat)}
                     ${renderCheck(isOverallValid)}
                 </tr>
@@ -746,7 +1035,7 @@ export const uiComponents = {
             const departmentInstance = appState.choices[`${prefix}_department`];
             if (departmentInstance) {
                 departmentInstance.clearStore();
-                departmentInstance.setChoices(departmentChoicesOptions, 'value', 'label', true);
+                 departmentInstance.setChoices(departmentChoicesOptions, 'value', 'label', true);
             }
             
             uiComponents.updateEmployeeFilter(prefix);
@@ -819,7 +1108,7 @@ export const uiComponents = {
         const filteredEmployees = appState.danhSachNhanVien.filter(nv => 
             (!selectedWarehouse || String(nv.maKho) == selectedWarehouse) &&
             (!selectedDept || nv.boPhan === selectedDept)
-        );
+         );
 
         if (multiSelectInstance) {
             const currentMultiSelectValues = multiSelectInstance.getValue(true);
@@ -833,7 +1122,7 @@ export const uiComponents = {
         }
 
         const singleSelectOptions = filteredEmployees.map(nv => ({
-            value: nv.maNV,
+             value: nv.maNV,
             label: uiComponents.getShortEmployeeName(nv.hoTen, nv.maNV)
         }));
 
@@ -847,7 +1136,7 @@ export const uiComponents = {
                 if (currentValue && filteredEmployees.some(e => String(e.maNV) == currentValue)) {
                     instance.setValue([currentValue]);
                 }
-            }
+             }
         };
         
         if (prefix === 'sknv') {

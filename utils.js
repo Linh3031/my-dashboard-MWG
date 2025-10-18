@@ -1,4 +1,4 @@
-// Version 3.1 - Refactor cleanCategoryName to capitalize words
+// Version 3.2 - Add getSortedDepartmentList utility function
 // MODULE: UTILITIES
 // Chứa các hàm tiện ích chung không thuộc về logic hay giao diện cụ thể.
 import { ui } from './ui.js';
@@ -32,7 +32,7 @@ export const utils = {
             .toLowerCase()
             .split(' ')
             .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(' ');
+             .join(' ');
     },
 
     exportTableToExcel(activeTabContent, fileName) {
@@ -54,4 +54,19 @@ export const utils = {
             ui.showNotification('Có lỗi xảy ra khi xuất file Excel.', 'error');
         }
     },
+
+    // <<< START: NEWLY MOVED FUNCTION >>>
+    getSortedDepartmentList(reportData) {
+        const allDepts = [...new Set(reportData.map(item => item.boPhan).filter(Boolean))];
+        const priorityDept = 'BP Tư Vấn - ĐM';
+
+        allDepts.sort((a, b) => {
+            if (a === priorityDept) return -1;
+            if (b === priorityDept) return 1;
+            return a.localeCompare(b);
+        });
+
+        return allDepts;
+    },
+    // <<< END: NEWLY MOVED FUNCTION >>>
 };
