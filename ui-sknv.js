@@ -1,4 +1,4 @@
-// Version 6.7 - Critical Fix: Replace broken medals with high-quality, error-free SVG icons
+// Version 6.9 - Update medal SVGs to new high-quality, detailed versions
 // MODULE: UI SKNV
 // Chứa các hàm render giao diện cho tab "Sức khỏe nhân viên"
 
@@ -351,9 +351,58 @@ export const uiSknv = {
 
         let finalCardsHtml = '';
         
-        const gold_medal_svg = `<span class="medal-container"><svg viewBox="0 0 32 32" class="medal-icon gold" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M16,2 A14,14 0 1,0 16,30 A14,14 0 1,0 16,2 M16,5 A11,11 0 1,1 16,27 A11,11 0 1,1 16,5 Z" /><path d="M8,22 l-4,8 l8,-4 l-4,-4 Z" /><path d="M24,22 l4,8 l-8,-4 l4,-4 Z" /><text x="50%" y="52%" dominant-baseline="middle" text-anchor="middle" font-size="14" font-weight="bold" font-family="Arial, sans-serif" fill="#ffffff">1</text></svg></span>`;
-        const silver_medal_svg = `<span class="medal-container"><svg viewBox="0 0 32 32" class="medal-icon silver" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M16,2 A14,14 0 1,0 16,30 A14,14 0 1,0 16,2 M16,5 A11,11 0 1,1 16,27 A11,11 0 1,1 16,5 Z" /><path d="M8,22 l-4,8 l8,-4 l-4,-4 Z" /><path d="M24,22 l4,8 l-8,-4 l4,-4 Z" /><text x="50%" y="52%" dominant-baseline="middle" text-anchor="middle" font-size="14" font-weight="bold" font-family="Arial, sans-serif" fill="#ffffff">2</text></svg></span>`;
-        const bronze_medal_svg = `<span class="medal-container"><svg viewBox="0 0 32 32" class="medal-icon bronze" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M16,2 A14,14 0 1,0 16,30 A14,14 0 1,0 16,2 M16,5 A11,11 0 1,1 16,27 A11,11 0 1,1 16,5 Z" /><path d="M8,22 l-4,8 l8,-4 l-4,-4 Z" /><path d="M24,22 l4,8 l-8,-4 l4,-4 Z" /><text x="50%" y="52%" dominant-baseline="middle" text-anchor="middle" font-size="14" font-weight="bold" font-family="Arial, sans-serif" fill="#ffffff">3</text></svg></span>`;
+        // === START: NEW HIGH-QUALITY MEDAL SVGS ===
+        const gold_medal_svg = `<span class="medal-container"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="gold-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style="stop-color:#FFDF00;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#FFB800;stop-opacity:1" />
+                </linearGradient>
+                <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
+                    <feOffset dx="2" dy="2" result="offsetblur"/>
+                    <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
+            </defs>
+            <path d="M 20 75 L 35 95 L 35 75 L 50 90 L 65 75 L 65 95 L 80 75 L 50 85 Z" fill="#E53935"/>
+            <circle cx="50" cy="45" r="38" fill="#BDBDBD"/>
+            <circle cx="50" cy="45" r="35" fill="url(#gold-grad)"/>
+            <circle cx="50" cy="45" r="28" fill="#FFC107" stroke="#FFFFFF" stroke-width="2"/>
+            <text x="50" y="52" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="white" text-anchor="middle">1</text>
+            <path d="M 68 25 l 3 -6 l 3 6 l 6 3 l -6 3 l -3 6 l -3 -6 l -6 -3 Z" fill="white" opacity="0.8"/>
+            <path d="M 30 55 l 2 -4 l 2 4 l 4 2 l -4 2 l -2 4 l -2 -4 l -4 -2 Z" fill="white" opacity="0.5"/>
+        </svg></span>`;
+
+        const silver_medal_svg = `<span class="medal-container"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="silver-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style="stop-color:#F5F5F5;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#B0BEC5;stop-opacity:1" />
+                </linearGradient>
+            </defs>
+            <path d="M 20 75 L 35 95 L 35 75 L 50 90 L 65 75 L 65 95 L 80 75 L 50 85 Z" fill="#E53935"/>
+            <circle cx="50" cy="45" r="38" fill="#78909C"/>
+            <circle cx="50" cy="45" r="35" fill="url(#silver-grad)"/>
+            <circle cx="50" cy="45" r="28" fill="#B0BEC5" stroke="#FFFFFF" stroke-width="2"/>
+            <text x="50" y="52" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="white" text-anchor="middle">2</text>
+            <path d="M 68 25 l 3 -6 l 3 6 l 6 3 l -6 3 l -3 6 l -3 -6 l -6 -3 Z" fill="white" opacity="0.8"/>
+        </svg></span>`;
+
+        const bronze_medal_svg = `<span class="medal-container"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="bronze-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style="stop-color:#FFCC80;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#D84315;stop-opacity:1" />
+                </linearGradient>
+            </defs>
+            <path d="M 20 75 L 35 95 L 35 75 L 50 90 L 65 75 L 65 95 L 80 75 L 50 85 Z" fill="#E53935"/>
+            <circle cx="50" cy="45" r="38" fill="#A1887F"/>
+            <circle cx="50" cy="45" r="35" fill="url(#bronze-grad)"/>
+            <circle cx="50" cy="45" r="28" fill="#D84315" stroke="#FFFFFF" stroke-width="2"/>
+            <text x="50" y="52" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="white" text-anchor="middle">3</text>
+            <path d="M 68 25 l 3 -6 l 3 6 l 6 3 l -6 3 l -3 6 l -3 -6 l -6 -3 Z" fill="white" opacity="0.8"/>
+        </svg></span>`;
+        // === END: NEW HIGH-QUALITY MEDAL SVGS ===
 
         departmentOrder.forEach(deptName => {
             if (groupedByDept[deptName] && groupedByDept[deptName].length > 0) {
@@ -380,13 +429,15 @@ export const uiSknv = {
 
                         return `
                             <div class="sknv-card__sub-kpi-item ${subKpiColorClass}">
-                                <i data-feather="${group.icon}"></i>
-                                <span class="label">${group.label}</span>
+                                <div class="sknv-card__sub-kpi-header">
+                                    <i data-feather="${group.icon}"></i>
+                                    <span class="label">${group.label}</span>
+                                </div>
                                 <span class="value ${valueColorClass}">${item.summary[group.key].above}/${item.summary[group.key].total}</span>
                             </div>
                         `;
                     }).join('');
-
+                    
                     finalCardsHtml += `
                         <div class="sknv-card interactive-row" data-employee-id="${item.maNV}" data-source-tab="sknv">
                             ${medalHtml}

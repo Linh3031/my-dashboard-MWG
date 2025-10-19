@@ -1,4 +1,4 @@
-// Version 3.8 - Improve getShortEmployeeName logic
+// Version 3.9 - Fix click-to-detail bug in Luy Ke Revenue tab
 // MODULE: UI COMPONENTS
 // Chứa các hàm UI chung, tái sử dụng được trên toàn bộ ứng dụng.
 
@@ -11,7 +11,7 @@ export const uiComponents = {
     renderSettingsButton(idSuffix) {
         return `<button id="settings-btn-${idSuffix}" class="settings-trigger-btn" title="Tùy chỉnh hiển thị">
                       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                </button>`;
+                 </button>`;
     },
 
     renderCompetitionConfigUI() {
@@ -27,15 +27,15 @@ export const uiComponents = {
         container.innerHTML = configs.map((config, index) => {
             return `
                 <div class="p-3 border rounded-lg bg-white flex justify-between items-center shadow-sm">
-                    <div>
+                     <div>
                          <div class="flex items-center gap-x-2">
                              <p class="font-bold text-gray-800">${config.name}</p>
                         </div>
-                        <div class="text-xs text-gray-500 mt-1 space-y-1">
+                         <div class="text-xs text-gray-500 mt-1 space-y-1">
                              <p><strong>Hãng:</strong> <span class="font-semibold text-blue-600">${(config.brands || []).join(', ')}</span></p>
                              <p><strong>Nhóm hàng:</strong> <span class="font-semibold">${(config.groups || []).length} nhóm</span></p>
                         </div>
-                    </div>
+                     </div>
                      <div class="flex items-center gap-x-2 flex-shrink-0">
                         <button class="edit-competition-btn p-2 rounded-md hover:bg-gray-200 text-gray-600" data-index="${index}" title="Sửa chương trình">
                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
@@ -179,7 +179,7 @@ export const uiComponents = {
         
         let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="7">
                  <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
-                            <tr>
+                     <tr>
                                 <th class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('doanhThu')} text-right" data-sort="doanhThu">Doanh Thu <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('doanhThuQuyDoi')} text-right" data-sort="doanhThuQuyDoi">Doanh Thu QĐ <span class="sort-indicator"></span></th>
@@ -194,13 +194,15 @@ export const uiComponents = {
             const qdClass = (mucTieu && item.hieuQuaQuyDoi < (mucTieu.phanTramQD / 100)) ? 'cell-performance is-below' : '';
             const tcClass = (mucTieu && item.tyLeTraCham < (mucTieu.phanTramTC / 100)) ? 'cell-performance is-below' : '';
             
+            // === START: BUG FIX LOGIC ===
             let sourceTab;
             if (sortStateKey === 'doanhthu_lk') sourceTab = 'dtnv-lk';
             else if (sortStateKey === 'realtime_dt_nhanvien') sourceTab = 'dtnv-rt';
             else sourceTab = 'sknv';
+            // === END: BUG FIX LOGIC ===
 
-            tableHTML += `<tr class="interactive-row">
-                    <td class="px-4 py-2 font-semibold line-clamp-2 employee-name-cell" data-employee-id="${item.maNV}" data-source-tab="${sourceTab}">
+            tableHTML += `<tr class="interactive-row" data-employee-id="${item.maNV}" data-source-tab="${sourceTab}">
+                    <td class="px-4 py-2 font-semibold line-clamp-2 employee-name-cell">
                         <a href="#">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</a>
                     </td>
                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThu)}</td>
@@ -225,7 +227,6 @@ export const uiComponents = {
     displayEmployeeEfficiencyReport: (reportData, containerId, sortStateKey) => {
         const container = document.getElementById(containerId);
         if (!container) return;
-
         if (!reportData || reportData.length === 0) {
             container.innerHTML = '<p class="text-gray-500">Không có dữ liệu hiệu quả cho lựa chọn này.</p>';
             return;
@@ -238,14 +239,14 @@ export const uiComponents = {
             <div id="efficiency-column-toggles" class="p-3 border-b border-gray-200 flex flex-wrap items-center gap-x-2 gap-y-2">
                 <span class="text-sm font-semibold mr-2 text-gray-700 non-draggable">Tùy chỉnh cột:</span>
                 ${columnSettings.map(col => `
-                     <button 
+                    <button 
                         class="column-toggle-btn draggable-tag flex items-center ${col.visible ? 'active' : ''}" 
                         data-column-id="${col.id}">
                         <svg class="drag-handle-icon mr-2 cursor-grab" width="12" height="12" viewBox="0 0 10 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M4 2a1 1 0 10-2 0 1 1 0 002 0zM2 9a1 1 0 110-2 1 1 0 010 2zm0 5a1 1 0 110-2 1 1 0 010 2zm5-12a1 1 0 10-2 0 1 1 0 002 0zM7 9a1 1 0 110-2 1 1 0 010 2zm0 5a1 1 0 110-2 1 1 0 010 2z" fill="currentColor"></path></svg>
                         <span>${col.label}</span>
                     </button>
                 `).join('')}
-             </div>
+            </div>
         `;
 
         let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
@@ -355,7 +356,7 @@ export const uiComponents = {
 
             tableHTML += `<tr class="interactive-row">
                 <td class="px-4 py-2 font-semibold line-clamp-2 employee-name-cell" data-employee-id="${item.maNV}" data-source-tab="sknv">
-                     <a href="#">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</a>
+                    <a href="#">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</a>
                 </td>
                 ${visibleColumns.map(col => {
                     const value = item[col.id];
@@ -622,7 +623,6 @@ export const uiComponents = {
         const overlay = document.getElementById('drawer-overlay');
 
         if (!drawer || !sidebar || !overlay) return;
-
         if (show) {
             drawer.classList.remove('hidden');
             setTimeout(() => {
