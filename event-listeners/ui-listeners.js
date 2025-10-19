@@ -1,4 +1,4 @@
-// Version 3.11 - Critical Fix: Update imports and function calls to use the new uiRealtime module
+// Version 3.12 - Critical Fix: Correct all import paths and update click listener
 // MODULE: EVENT LISTENERS INITIALIZER
 // File này đóng vai trò là điểm khởi đầu, import và khởi chạy tất cả các module listener con.
 
@@ -7,7 +7,7 @@ import { ui } from '../ui.js';
 import { services } from '../services.js';
 import { luykeTab } from '../tab-luyke.js';
 import { sknvTab } from '../tab-sknv.js';
-import { uiRealtime } from '../ui-realtime.js'; // <<< FIX: IMPORT THE CORRECT, MERGED MODULE
+import { uiRealtime } from '../ui-realtime.js';
 import { initializeActionListeners } from './listeners-actions.js';
 import { initializeCollaborationListeners } from './listeners-collaboration.js';
 import { initializeCompetitionListeners } from './listeners-competition.js';
@@ -60,7 +60,7 @@ async function handleFileInputChange(e) {
             ui.updateFileStatus(fileType, file.name, `Lỗi: Thiếu cột dữ liệu.`, 'error');
             ui.showNotification(errorMessage, 'error');
             if (document.getElementById('debug-tool-container')?.classList.contains('hidden')) {
-                 document.getElementById('toggle-debug-btn')?.click();
+                document.getElementById('toggle-debug-btn')?.click();
             }
         }
     } catch (error) {
@@ -176,7 +176,6 @@ export function initializeEventListeners(mainAppController) {
         
         if (mainTabId === 'health-section') luykeTab.render();
         else if (mainTabId === 'health-employee-section') sknvTab.render();
-        // <<< FIX: Call render from the correct, imported module >>>
         else if (mainTabId === 'realtime-section') uiRealtime.render(); 
     }));
 
@@ -211,16 +210,25 @@ export function initializeEventListeners(mainAppController) {
     document.getElementById('sknv-employee-filter')?.addEventListener('change', () => sknvTab.render());
     
     document.body.addEventListener('click', (e) => {
-        const employeeCell = e.target.closest('.employee-name-cell');
-        if (employeeCell && employeeCell.dataset.employeeId) {
+        // === START: UPDATED CLICK LOGIC (V3.12) ===
+        // This now targets '.interactive-row' which is on both summary cards and table rows
+        const interactiveRow = e.target.closest('.interactive-row');
+        if (interactiveRow && interactiveRow.dataset.employeeId) {
             e.preventDefault();
+            
+            // Prevent re-triggering if already viewing the same employee's detail
+            if (appState.viewingDetailFor && appState.viewingDetailFor.employeeId === interactiveRow.dataset.employeeId) {
+                return;
+            }
+            
             appState.viewingDetailFor = {
-                employeeId: employeeCell.dataset.employeeId,
-                sourceTab: employeeCell.dataset.sourceTab
+                employeeId: interactiveRow.dataset.employeeId,
+                sourceTab: interactiveRow.dataset.sourceTab
             };
             appController.updateAndRenderCurrentTab();
             return;
         }
+        // === END: UPDATED CLICK LOGIC ===
 
         const backButton = e.target.closest('.back-to-summary-btn');
         if (backButton) {
@@ -264,7 +272,6 @@ export function initializeEventListeners(mainAppController) {
     });
     
     document.getElementById('thidua-employee-filter')?.addEventListener('change', () => ui.displayCompetitionReport('employee'));
-    // <<< FIX: Call handlers from the correct, imported module >>>
     document.getElementById('realtime-brand-category-filter')?.addEventListener('change', () => uiRealtime.handleBrandFilterChange());
     document.getElementById('realtime-brand-filter')?.addEventListener('change', () => uiRealtime.handleBrandFilterChange());
 }

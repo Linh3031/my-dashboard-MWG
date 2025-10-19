@@ -1,4 +1,4 @@
-/* Version 6.1 - Add styles for SKNV department grouping and refine interactive elements */
+/* Version 6.2 - Add styles for SKNV detail view and medal icons */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -284,7 +284,8 @@ var(--special-header-lightness)) !important; }
 #dtnv-realtime-employee-selector-container .choices__list--single { min-width: 300px; }
 
 .kpi-card-title { color: var(--kpi-title-color); opacity: 0.8; font-size: 1em; }
-.kpi-card p[id$="-main"] { color: var(--kpi-main-color); font-size: var(--kpi-main-font-size); transition: font-size 0.2s ease-in-out; }
+.kpi-card p[id$="-main"] { color: var(--kpi-main-color); font-size: var(--kpi-main-font-size);
+transition: font-size 0.2s ease-in-out; }
 .kpi-card p[id$="-sub"], .kpi-card p[id$="-sub1"], .kpi-card p[id$="-sub2"] { color: var(--kpi-sub-color); font-size: 1em; }
 
 .kpi-percentage, .kpi-percentage-value { font-weight: 700; }
@@ -425,7 +426,7 @@ details[open] > summary
 .rt-customer-details table { font-size: 0.8rem; }
 .preview-content { background-color: #f3f4f6; padding: 1rem; border-radius: 0.5rem; white-space: pre-wrap; word-wrap: break-word; font-size: 0.875em; line-height: 1.6; color: #1f2937; font-family: 'Inter', sans-serif; }
 
-/* === START: BỐ CỤC CHO THI ĐUA VÙNG & THI ĐUA LŨY KẾ (V5.9) === */
+/* === BẮT ĐẦU: BỐ CỤC CHO THI ĐUA VÙNG & THI ĐUA LŨY KẾ (V5.9) === */
 .tdv-rows-container { display: flex; flex-direction: column; gap: 1.5rem; }
 #subtab-luyke-thi-dua .tdv-row-body {
     display: grid;
@@ -582,7 +583,6 @@ solid #2563eb;
     background-color: #f3f4f6; /* gray-100 */
 }
 .selection-item input[type="checkbox"] {
- 
     width: 1rem;
     height: 1rem;
     margin-right: 0.75rem;
@@ -625,7 +625,6 @@ solid #2563eb;
     color: #312e81;
 }
 .marquee-text {
- 
     position: absolute;
     white-space: nowrap;
     will-change: transform;
@@ -925,6 +924,156 @@ solid #2563eb;
 .sknv-card__sub-kpi-item.medium { border-top-color: #f59e0b; }
 .sknv-card__sub-kpi-item.weak { border-top-color: #ef4444; }
 /* === END: SKNV INFOGRAPHIC CARD STYLES === */
+
+/* === START: SKNV DETAIL VIEW STYLES (V6.2) === */
+.sknv-detail-header-card {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem; /* 24px */
+    padding: 1.5rem; /* 24px */
+    background-color: #ffffff;
+    border-radius: 0.75rem; /* 12px */
+    border: 1px solid #e5e7eb; /* gray-200 */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.sknv-detail-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 9999px;
+    background-color: #e0e7ff; /* indigo-100 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.sknv-detail-avatar svg {
+    width: 32px;
+    height: 32px;
+    color: #4338ca; /* indigo-700 */
+}
+
+.sknv-detail-info .name {
+    font-size: 1.5rem; /* 24px */
+    font-weight: 800;
+    color: #111827; /* gray-900 */
+    line-height: 1.2;
+}
+
+.sknv-detail-info .department {
+    font-size: 1rem; /* 16px */
+    font-weight: 500;
+    color: #4b5563; /* gray-600 */
+}
+
+.sknv-detail-info .kpi-summary {
+    margin-top: 0.5rem; /* 8px */
+    font-weight: 600;
+    color: #374151; /* gray-700 */
+}
+
+.sknv-detail-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem; /* 12px */
+    padding: 0.75rem 1.25rem; /* 12px 20px */
+    color: #ffffff;
+}
+.sknv-detail-card-header .header-icon {
+    width: 20px;
+    height: 20px;
+}
+.sknv-header-blue { background-color: #2563eb; } /* blue-600 */
+.sknv-header-green { background-color: #16a34a; } /* green-600 */
+.sknv-header-orange { background-color: #f97316; } /* orange-600 */
+.sknv-header-yellow { background-color: #ca8a04; } /* yellow-600 */
+.sknv-header-indigo { background-color: #4f46e5; } /* indigo-600 */
+.sknv-header-purple { background-color: #7e22ce; } /* purple-700 */
+
+
+.sknv-detail-card-body {
+    padding: 1rem 1.25rem; /* 16px 20px */
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem; /* 12px */
+}
+
+.sknv-detail-metric-item {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px dashed #e5e7eb; /* gray-200 */
+}
+.sknv-detail-metric-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.sknv-detail-metric-item .label {
+    font-weight: 500;
+    color: #374151; /* gray-700 */
+    white-space: nowrap;
+}
+
+.sknv-detail-metric-item .values-group {
+    display: flex;
+    align-items: baseline;
+    justify-content: flex-end;
+    gap: 1rem;
+    text-align: right;
+}
+
+.sknv-detail-metric-item .value {
+    font-weight: 700;
+    font-size: 1.125rem; /* 18px */
+    color: #111827; /* gray-900 */
+    min-width: 80px;
+}
+
+.sknv-detail-metric-item .average {
+    font-size: 0.875rem; /* 14px */
+    color: #6b7280; /* gray-500 */
+    min-width: 80px;
+    font-style: italic;
+}
+.sknv-detail-metric-item .average::before {
+    content: '(TB: ';
+}
+.sknv-detail-metric-item .average::after {
+    content: ')';
+}
+
+.sknv-detail-metric-item .evaluation {
+    font-weight: 700;
+    min-width: 70px;
+    text-align: center;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.75rem; /* 12px */
+}
+.sknv-detail-metric-item .evaluation.text-green-600 {
+    background-color: #dcfce7; /* green-100 */
+}
+.sknv-detail-metric-item .evaluation.text-yellow-600 {
+    background-color: #fef9c3; /* yellow-100 */
+}
+/* === END: SKNV DETAIL VIEW STYLES === */
+
+
+/* === START: SKNV MEDAL ICONS (V6.2) === */
+.medal-icon {
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 4px;
+    stroke-width: 2.5;
+}
+.medal-icon.gold { color: #facc15; } /* yellow-400 */
+.medal-icon.silver { color: #9ca3af; } /* gray-400 */
+.medal-icon.bronze { color: #f97316; } /* orange-500 */
+/* === END: SKNV MEDAL ICONS === */
 
 /* === START: SKNV Department Grouping Styles (V6.1) === */
 .sknv-department-group {

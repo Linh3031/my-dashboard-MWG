@@ -1,4 +1,4 @@
-// Version 3.2 - Add getSortedDepartmentList utility function
+// Version 3.3 - Make department sorting more robust
 // MODULE: UTILITIES
 // Chứa các hàm tiện ích chung không thuộc về logic hay giao diện cụ thể.
 import { ui } from './ui.js';
@@ -32,7 +32,7 @@ export const utils = {
             .toLowerCase()
             .split(' ')
             .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-             .join(' ');
+            .join(' ');
     },
 
     exportTableToExcel(activeTabContent, fileName) {
@@ -55,18 +55,25 @@ export const utils = {
         }
     },
 
-    // <<< START: NEWLY MOVED FUNCTION >>>
+    // <<< START: UPDATED FUNCTION >>>
     getSortedDepartmentList(reportData) {
         const allDepts = [...new Set(reportData.map(item => item.boPhan).filter(Boolean))];
-        const priorityDept = 'BP Tư Vấn - ĐM';
 
         allDepts.sort((a, b) => {
-            if (a === priorityDept) return -1;
-            if (b === priorityDept) return 1;
+            const aIsPriority = a.includes('Tư Vấn - ĐM');
+            const bIsPriority = b.includes('Tư Vấn - ĐM');
+
+            if (aIsPriority && !bIsPriority) {
+                return -1; // a comes first
+            }
+            if (!aIsPriority && bIsPriority) {
+                return 1; // b comes first
+            }
+            // If both are priority or both are not, sort alphabetically
             return a.localeCompare(b);
         });
 
         return allDepts;
     },
-    // <<< END: NEWLY MOVED FUNCTION >>>
+    // <<< END: UPDATED FUNCTION >>>
 };
