@@ -1,11 +1,12 @@
-// Version 4.9 - Critical Fix: Remove circular dependency by importing from utils.js
+// Version 6.2 - Fix click issue, ensure TV-DM department is on top,
+// employee name/ID on one line, and add medal icons for top 3 in each department.
 // MODULE: UI SKNV
 // Chứa các hàm render giao diện cho tab "Sức khỏe nhân viên"
 
 import { appState } from './state.js';
 import { services } from './services.js';
 import { uiComponents } from './ui-components.js';
-import { utils } from './utils.js'; // <<< FIX: IMPORT UTILS
+import { utils } from './utils.js';
 
 export const uiSknv = {
     displayEmployeeIncomeReport: (reportData) => {
@@ -25,7 +26,7 @@ export const uiSknv = {
             if (!groupedByDept[dept]) groupedByDept[dept] = [];
             groupedByDept[dept].push(item);
         });
-        const departmentOrder = utils.getSortedDepartmentList(reportData); // <<< FIX: USE UTILS
+        const departmentOrder = utils.getSortedDepartmentList(reportData);
         
         departmentOrder.forEach(deptName => {
             if (groupedByDept[deptName]) finalHTML += uiSknv.renderIncomeTableForDepartment(deptName, groupedByDept[deptName]);
@@ -63,14 +64,14 @@ export const uiSknv = {
         const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
         let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title} <span class="text-sm font-normal text-gray-500">(Thu nhập DK TB: ${uiComponents.formatRevenue(averageProjectedIncome)})</span></h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="thunhap" data-capture-columns="8">
             <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
-                <tr>
+                 <tr>
                     <th class="${headerClass('hoTen')}" data-sort="hoTen">Họ Tên <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('gioCong')} text-right" data-sort="gioCong">Giờ công <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('tongThuNhap')} text-right" data-sort="tongThuNhap">Tổng thu nhập <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('thuNhapDuKien')} text-right" data-sort="thuNhapDuKien">Thu nhập DK <span class="sort-indicator"></span></th>
+                                 <th class="${headerClass('thuNhapDuKien')} text-right" data-sort="thuNhapDuKien">Thu nhập DK <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('thuNhapThangTruoc')} text-right" data-sort="thuNhapThangTruoc">Tháng trước <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('chenhLechThuNhap')} text-right" data-sort="chenhLechThuNhap">+/- Tháng trước <span class="sort-indicator"></span></th>
-                </tr>
+                 </tr>
                  </thead><tbody>`;
         sortedData.forEach(nv => {
             const incomeDkCellClass = nv.thuNhapDuKien < averageProjectedIncome ? 'cell-performance is-below' : '';
@@ -150,13 +151,33 @@ export const uiSknv = {
             if (isAbove) { evaluationCounts[group].above++; } else { evaluationCounts[group].below++; }
         };
         
-        const createDetailTableHtml = (title, colorClass, rows) => {
-            let rowsHtml = rows.map(row => {
+        // This function will now render the new card-based detail layout
+        const createDetailCardHtml = (title, colorClass, icon, data) => {
+            let itemsHtml = data.map(row => {
                 const evaluation = uiSknv.getSknvEvaluation(row.rawValue, row.rawAverage, row.higherIsBetter);
-                return `<tr class="border-t"><td class="px-4 py-2 font-medium text-gray-700">${row.label}</td><td class="px-4 py-2 text-right font-bold text-gray-900 ${row.valueClass || ''}">${row.value}</td><td class="px-4 py-2 text-right font-medium text-gray-500">${row.average}</td><td class="px-4 py-2 text-center font-semibold ${evaluation.class}">${evaluation.text}</td></tr>`
+                return `
+                    <div class="sknv-detail-metric-item">
+                        <span class="label">${row.label}</span>
+                        <div class="values-group">
+                            <span class="value ${row.valueClass || ''}">${row.value}</span>
+                            <span class="average">${row.average}</span>
+                            <span class="evaluation ${evaluation.class}">${evaluation.text}</span>
+                        </div>
+                    </div>
+                `;
             }).join('');
-            return `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"><h4 class="text-lg font-bold p-3 border-b ${colorClass}">${title}</h4><table class="min-w-full text-sm table-bordered table-striped" data-capture-columns="4">
-                <thead class="sknv-subtable-header"><tr><th class="px-4 py-2 text-left">Chỉ số</th><th class="px-4 py-2 text-right">Giá trị</th><th class="px-4 py-2 text-right">Giá trị TB</th><th class="px-4 py-2 text-center">Đánh giá</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
+        
+            return `
+                <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+                    <div class="sknv-detail-card-header ${colorClass}">
+                        <i data-feather="${icon}" class="header-icon"></i>
+                        <h4 class="text-lg font-bold">${title}</h4>
+                    </div>
+                    <div class="sknv-detail-card-body">
+                        ${itemsHtml}
+                    </div>
+                </div>
+            `;
         };
         
         const { mucTieu } = employeeData;
@@ -207,8 +228,7 @@ export const uiSknv = {
         const totalAbove = evaluationCounts.doanhthu.above + evaluationCounts.nangsuat.above + evaluationCounts.hieuqua.above + evaluationCounts.dongia.above + evaluationCounts.qdc.above;
         const totalBelow = evaluationCounts.doanhthu.below + evaluationCounts.nangsuat.below + evaluationCounts.hieuqua.below + evaluationCounts.dongia.below + evaluationCounts.qdc.below;
         const totalCriteria = evaluationCounts.doanhthu.total + evaluationCounts.nangsuat.total + evaluationCounts.hieuqua.total + evaluationCounts.dongia.total + evaluationCounts.qdc.total;
-        const titleHtml = `CHI TIẾT - ${uiComponents.getShortEmployeeName(employeeData.hoTen, employeeData.maNV)} <span class="font-normal text-sm">(Trên TB: <span class="font-bold text-green-300">${totalAbove}</span>, Dưới TB: <span class="font-bold text-yellow-300">${totalBelow}</span> / Tổng: ${totalCriteria})</span>`;
-
+        
         detailsContainer.innerHTML = `
             <div class="mb-4 flex justify-between items-center">
                  <button class="back-to-summary-btn text-blue-600 hover:underline font-semibold">‹ Quay lại bảng tổng hợp</button>
@@ -218,18 +238,33 @@ export const uiSknv = {
                  </button>
             </div>
             <div id="sknv-detail-capture-area">
-                <div class="p-4 mb-6 bg-blue-600 text-white rounded-lg shadow-lg border border-blue-700" data-capture-group="1"><h3 class="text-2xl font-bold text-center uppercase">${titleHtml}</h3></div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6" data-capture-layout="grid">
-                    <div class="space-y-6" data-capture-group="1">${createDetailTableHtml('Doanh thu (Triệu)', 'header-bg-blue', doanhThuData)}</div>
-                     <div class="space-y-6" data-capture-group="1">${createDetailTableHtml('Năng suất (Triệu)', 'header-bg-green', nangSuatData)}</div>
-                    <div class="space-y-6" data-capture-group="1">${createDetailTableHtml('Hiệu quả khai thác', 'header-bg-blue', hieuQuaData)}</div>
-                    <div class="space-y-6" data-capture-group="1">${createDetailTableHtml('Đơn giá (Triệu)', 'header-bg-yellow', donGiaData)}</div>
+                <div class="sknv-detail-header-card" data-capture-group="1">
+                    <div class="sknv-card__avatar sknv-detail-avatar">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    </div>
+                    <div class="sknv-detail-info">
+                        <p class="name">${employeeData.hoTen} - ${employeeData.maNV}</p>
+                        <p class="department">${employeeData.boPhan}</p>
+                        <p class="kpi-summary">Chỉ số trên TB: <span class="text-green-600 font-bold">${totalAbove}</span> / Tổng: <span class="font-bold">${totalCriteria}</span></p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6" data-capture-layout="grid">
+                    <div class="space-y-6" data-capture-group="1">
+                        ${createDetailCardHtml('Doanh thu', 'sknv-header-blue', 'trending-up', doanhThuData)}
+                        ${createDetailCardHtml('Hiệu quả khai thác', 'sknv-header-orange', 'award', hieuQuaData)}
+                    </div>
+                    <div class="space-y-6" data-capture-group="1">
+                        ${createDetailCardHtml('Năng suất', 'sknv-header-green', 'dollar-sign', nangSuatData)}
+                        ${createDetailCardHtml('Đơn giá', 'sknv-header-yellow', 'tag', donGiaData)}
+                    </div>
                     <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6" data-capture-layout="grid">
                          <div data-capture-group="1">${uiSknv.renderSknvQdcTable(employeeData, departmentAverages, countEvaluation, evaluationCounts)}</div>
                         <div data-capture-group="1">${uiSknv.renderSknvNganhHangTable(employeeData)}</div>
                     </div>
                 </div>
             </div>`;
+            feather.replace(); // Re-render feather icons after content update
     },
 
     displaySknvSummaryReport: (reportData) => {
@@ -237,131 +272,156 @@ export const uiSknv = {
         if (!container) return;
 
         if (!reportData || reportData.length === 0) {
-            container.innerHTML = ''; return;
+            container.innerHTML = '<p class="text-gray-500 font-bold p-4">Không có dữ liệu hiệu suất để hiển thị.</p>';
+            return;
         }
 
-        const summaryData = reportData.map(employee => {
+        const summarizedData = reportData.map(employee => {
             const departmentAverages = services.calculateDepartmentAverages(employee.boPhan, reportData);
             const counts = {
-                doanhthu: { above: 0, below: 0, total: 7 },
-                nangsuat: { above: 0, below: 0, total: 7 },
-                hieuqua: { above: 0, below: 0, total: 6 },
-                dongia: { above: 0, below: 0, total: 7 },
-                qdc: { above: 0, below: 0, total: 0 }
+                doanhthu: { above: 0, total: 7 },
+                nangsuat: { above: 0, total: 7 },
+                hieuqua: { above: 0, total: 6 },
+                dongia: { above: 0, total: 7 },
+                qdc: { above: 0, total: 0 }
             };
 
-            const checkAndCount = (group, value, avg, higherIsBetter = true) => {
+            const check = (group, value, avg, higherIsBetter = true) => {
                 if (!isFinite(value) || avg === undefined || !isFinite(avg)) return;
-                const isAbove = higherIsBetter ? (value >= avg) : (value <= avg);
-                if (isAbove) counts[group].above++; else counts[group].below++;
+                if (higherIsBetter ? (value >= avg) : (value <= avg)) counts[group].above++;
             };
-        
-            
-            checkAndCount('doanhthu', employee.doanhThu, departmentAverages.doanhThu);
-            checkAndCount('doanhthu', employee.doanhThuQuyDoi, departmentAverages.doanhThuQuyDoi);
-            checkAndCount('doanhthu', employee.hieuQuaQuyDoi, departmentAverages.hieuQuaQuyDoi);
-            checkAndCount('doanhthu', employee.dtCE, departmentAverages.dtCE);
-            checkAndCount('doanhthu', employee.dtICT, departmentAverages.dtICT);
-            checkAndCount('doanhthu', employee.doanhThuTraGop, departmentAverages.doanhThuTraGop);
-            checkAndCount('doanhthu', employee.tyLeTraCham, departmentAverages.tyLeTraCham);
 
-            checkAndCount('nangsuat', employee.thuongNong, departmentAverages.thuongNong);
-            checkAndCount('nangsuat', employee.thuongERP, departmentAverages.thuongERP);
-            checkAndCount('nangsuat', employee.tongThuNhap, departmentAverages.tongThuNhap);
-            checkAndCount('nangsuat', employee.thuNhapDuKien, departmentAverages.thuNhapDuKien);
-            checkAndCount('nangsuat', employee.gioCong, departmentAverages.gioCong);
-            checkAndCount('nangsuat', employee.gioCong > 0 ? employee.tongThuNhap / employee.gioCong : 0, departmentAverages.gioCong > 0 ? departmentAverages.tongThuNhap / departmentAverages.gioCong : 0);
-            checkAndCount('nangsuat', employee.gioCong > 0 ? employee.doanhThuQuyDoi / employee.gioCong : 0, departmentAverages.gioCong > 0 ? departmentAverages.doanhThuQuyDoi / departmentAverages.gioCong : 0);
-            
-            checkAndCount('hieuqua', employee.pctPhuKien, departmentAverages.pctPhuKien);
-            checkAndCount('hieuqua', employee.pctGiaDung, departmentAverages.pctGiaDung);
-            checkAndCount('hieuqua', employee.pctMLN, departmentAverages.pctMLN);
-            checkAndCount('hieuqua', employee.pctSim, departmentAverages.pctSim);
-            checkAndCount('hieuqua', employee.pctVAS, departmentAverages.pctVAS);
-            checkAndCount('hieuqua', employee.pctBaoHiem, departmentAverages.pctBaoHiem);
+            check('doanhthu', employee.doanhThu, departmentAverages.doanhThu);
+            check('doanhthu', employee.doanhThuQuyDoi, departmentAverages.doanhThuQuyDoi);
+            check('doanhthu', employee.hieuQuaQuyDoi, departmentAverages.hieuQuaQuyDoi);
+            check('doanhthu', employee.dtCE, departmentAverages.dtCE);
+            check('doanhthu', employee.dtICT, departmentAverages.dtICT);
+            check('doanhthu', employee.doanhThuTraGop, departmentAverages.doanhThuTraGop);
+            check('doanhthu', employee.tyLeTraCham, departmentAverages.tyLeTraCham);
 
-            checkAndCount('dongia', employee.donGiaTrungBinh, departmentAverages.donGiaTrungBinh);
-            checkAndCount('dongia', employee.donGiaTivi, departmentAverages.donGiaTivi);
-            checkAndCount('dongia', employee.donGiaTuLanh, departmentAverages.donGiaTuLanh);
-            checkAndCount('dongia', employee.donGiaMayGiat, departmentAverages.donGiaMayGiat);
-            checkAndCount('dongia', employee.donGiaMayLanh, departmentAverages.donGiaMayLanh);
-            checkAndCount('dongia', employee.donGiaDienThoai, departmentAverages.donGiaDienThoai);
-            checkAndCount('dongia', employee.donGiaLaptop, departmentAverages.donGiaLaptop);
+            check('nangsuat', employee.tongThuNhap, departmentAverages.tongThuNhap);
+            check('nangsuat', employee.thuNhapDuKien, departmentAverages.thuNhapDuKien);
+            check('nangsuat', employee.gioCong, departmentAverages.gioCong);
+            check('nangsuat', employee.gioCong > 0 ? employee.tongThuNhap / employee.gioCong : 0, departmentAverages.gioCong > 0 ? departmentAverages.tongThuNhap / departmentAverages.gioCong : 0);
+            check('nangsuat', employee.gioCong > 0 ? employee.doanhThuQuyDoi / employee.gioCong : 0, departmentAverages.gioCong > 0 ? departmentAverages.doanhThuQuyDoi / departmentAverages.gioCong : 0);
+            check('nangsuat', employee.thuongNong, departmentAverages.thuongNong);
+            check('nangsuat', employee.thuongERP, departmentAverages.thuongERP);
+
+            check('hieuqua', employee.pctPhuKien, departmentAverages.pctPhuKien);
+            check('hieuqua', employee.pctGiaDung, departmentAverages.pctGiaDung);
+            check('hieuqua', employee.pctMLN, departmentAverages.pctMLN);
+            check('hieuqua', employee.pctSim, departmentAverages.pctSim);
+            check('hieuqua', employee.pctVAS, departmentAverages.pctVAS);
+            check('hieuqua', employee.pctBaoHiem, departmentAverages.pctBaoHiem);
+
+            check('dongia', employee.donGiaTrungBinh, departmentAverages.donGiaTrungBinh);
+            check('dongia', employee.donGiaTivi, departmentAverages.donGiaTivi);
+            check('dongia', employee.donGiaTuLanh, departmentAverages.donGiaTuLanh);
+            check('dongia', employee.donGiaMayGiat, departmentAverages.donGiaMayGiat);
+            check('dongia', employee.donGiaMayLanh, departmentAverages.donGiaMayLanh);
+            check('dongia', employee.donGiaDienThoai, departmentAverages.donGiaDienThoai);
+            check('dongia', employee.donGiaLaptop, departmentAverages.donGiaLaptop);
 
             if(employee.qdc && departmentAverages.qdc) {
                  for (const key in employee.qdc) {
-                    if(departmentAverages.qdc[key]) {
+                    if(departmentAverages.qdc[key] && employee.qdc[key].dtqd > 0) {
                         counts.qdc.total++;
-                        checkAndCount('qdc', employee.qdc[key].dtqd, departmentAverages.qdc[key].dtqd);
+                        check('qdc', employee.qdc[key].dtqd, departmentAverages.qdc[key].dtqd);
                     }
                 }
             }
 
             const totalAbove = counts.doanhthu.above + counts.nangsuat.above + counts.hieuqua.above + counts.dongia.above + counts.qdc.above;
-            return { ...employee, summary: counts, totalAbove };
+            const totalCriteria = counts.doanhthu.total + counts.nangsuat.total + counts.hieuqua.total + counts.dongia.total + counts.qdc.total;
+            
+            return { ...employee, summary: counts, totalAbove, totalCriteria };
         });
 
-        const { key, direction } = appState.sortState.sknv_summary;
-        summaryData.sort((a, b) => {
-            let valA, valB;
-            if (key === 'totalAbove') { valA = a.totalAbove; valB = b.totalAbove; }
-            else if (key.endsWith('Above')) { const group = key.replace('Above',''); valA = a.summary[group].above; valB = b.summary[group].above; }
-            else if (key.endsWith('Below')) { const group = key.replace('Below',''); valA = a.summary[group].below; valB = b.summary[group].below; }
-            else { valA = a[key]; valB = b[key]; }
+        const subKpiGroups = [
+            { key: 'doanhthu', label: 'Doanh Thu', icon: 'trending-up' },
+            { key: 'nangsuat', label: 'Năng Suất', icon: 'dollar-sign' },
+            { key: 'hieuqua', label: 'Hiệu Quả', icon: 'award' },
+            { key: 'dongia', label: 'Đơn Giá', icon: 'tag' },
+            { key: 'qdc', label: 'QĐC', icon: 'star' }
+        ];
 
-            if (typeof valA === 'string') return direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
-            return direction === 'asc' ? valA - valB : valB - valA;
-        });
-        const headerClass = (sortKey) => `px-2 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
-       
-        let tableHTML = `<div class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200"><h3 class="text-xl font-bold text-gray-800 mb-4 uppercase">Bảng tổng hợp hiệu suất nhân viên</h3><div class="overflow-x-auto"><table class="min-w-full text-sm table-bordered" data-table-type="sknv_summary">
-             <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
-                <tr>
-                    <th rowspan="2" class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên</th>
-                    <th rowspan="2" class="${headerClass('totalAbove')}" data-sort="totalAbove">Tổng trên TB</th>
-                    <th colspan="2">Doanh thu</th>
-                     <th colspan="2">Năng suất</th>
-                    <th colspan="2">Hiệu quả</th>
-                    <th colspan="2">Đơn giá</th>
-                    <th colspan="2">Nhóm Hàng QĐC</th>
-                </tr>
-                <tr>
-                     <th class="${headerClass('doanhthuAbove')}" data-sort="doanhthuAbove">Trên</th><th class="${headerClass('doanhthuBelow')}" data-sort="doanhthuBelow">Dưới</th>
-                    <th class="${headerClass('nangsuatAbove')}" data-sort="nangsuatAbove">Trên</th><th class="${headerClass('nangsuatBelow')}" data-sort="nangsuatBelow">Dưới</th>
-                    <th class="${headerClass('hieuquaAbove')}" data-sort="hieuquaAbove">Trên</th><th class="${headerClass('hieuquaBelow')}" data-sort="hieuquaBelow">Dưới</th>
-                    <th class="${headerClass('dongiaAbove')}" data-sort="dongiaAbove">Trên</th><th class="${headerClass('dongiaBelow')}" data-sort="dongiaBelow">Dưới</th>
-                    <th class="${headerClass('qdcAbove')}" data-sort="qdcAbove">Trên</th><th class="${headerClass('qdcBelow')}" data-sort="qdcBelow">Dưới</th>
-                 </tr>
-            </thead><tbody>`;
-        
+        // Group by department
         const groupedByDept = {};
-        summaryData.forEach(item => {
-            if (!groupedByDept[item.boPhan]) groupedByDept[item.boPhan] = [];
-            groupedByDept[item.boPhan].push(item);
+        summarizedData.forEach(item => {
+            const dept = item.boPhan;
+            if (!groupedByDept[dept]) groupedByDept[dept] = [];
+            groupedByDept[dept].push(item);
         });
-        const departmentOrder = utils.getSortedDepartmentList(summaryData); // <<< FIX: USE UTILS
+
+        // Define department order - 'Tư vấn - ĐM' first
+        const departmentOrder = [
+            'Tư vấn - ĐM', // Prioritized department
+            ...Object.keys(groupedByDept).filter(dept => dept !== 'Tư vấn - ĐM').sort() // Other departments sorted alphabetically
+        ];
+
+        let finalCardsHtml = '';
 
         departmentOrder.forEach(deptName => {
-            if (groupedByDept[deptName]) {
-                tableHTML += `<tr class="font-bold bg-slate-100"><td colspan="12" class="px-4 py-2">${deptName}</td></tr>`;
-                groupedByDept[deptName].forEach(item => {
-                    tableHTML += `<tr class="interactive-row">
-                        <td class="px-2 py-2 font-semibold line-clamp-2 employee-name-cell" data-employee-id="${item.maNV}" data-source-tab="sknv">
-                            <a href="#">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</a>
-                         </td>
-                        <td class="px-2 py-2 text-center font-bold text-lg text-blue-600">${item.totalAbove}</td>
-                        <td class="px-2 py-2 text-center text-green-600 font-semibold">${item.summary.doanhthu.above}/${item.summary.doanhthu.total}</td><td class="px-2 py-2 text-center text-red-600">${item.summary.doanhthu.below}/${item.summary.doanhthu.total}</td>
-                        <td class="px-2 py-2 text-center text-green-600 font-semibold">${item.summary.nangsuat.above}/${item.summary.nangsuat.total}</td><td class="px-2 py-2 text-center text-red-600">${item.summary.nangsuat.below}/${item.summary.nangsuat.total}</td>
-                         <td class="px-2 py-2 text-center text-green-600 font-semibold">${item.summary.hieuqua.above}/${item.summary.hieuqua.total}</td><td class="px-2 py-2 text-center text-red-600">${item.summary.hieuqua.below}/${item.summary.hieuqua.total}</td>
-                        <td class="px-2 py-2 text-center text-green-600 font-semibold">${item.summary.dongia.above}/${item.summary.dongia.total}</td><td class="px-2 py-2 text-center text-red-600">${item.summary.dongia.below}/${item.summary.dongia.total}</td>
-                        <td class="px-2 py-2 text-center text-green-600 font-semibold">${item.summary.qdc.above}/${item.summary.qdc.total}</td><td class="px-2 py-2 text-center text-red-600">${item.summary.qdc.below}/${item.summary.qdc.total}</td>
-                    </tr>`;
-                });
-            }
-         });
+            if (groupedByDept[deptName] && groupedByDept[deptName].length > 0) {
+                // Sort employees within each department by totalAbove
+                const sortedDeptEmployees = [...groupedByDept[deptName]].sort((a, b) => (b.totalAbove || 0) - (a.totalAbove || 0));
 
-        tableHTML += `</tbody></table></div></div>`;
-        container.innerHTML = tableHTML;
+                finalCardsHtml += `<div class="sknv-department-group">`;
+                finalCardsHtml += `<h4 class="sknv-department-header ${deptName.includes('Tư vấn - ĐM') ? 'sknv-department-header--priority' : ''}">${deptName}</h4>`;
+                finalCardsHtml += `<div class="sknv-summary-grid">`;
+
+                sortedDeptEmployees.forEach((item, index) => {
+                    const performancePercentage = item.totalCriteria > 0 ? (item.totalAbove / item.totalCriteria) : 0;
+                    const performanceColorClass = performancePercentage >= 0.7 ? 'sknv-card-kpi-strong' : performancePercentage >= 0.4 ? 'sknv-card-kpi-medium' : 'sknv-card-kpi-weak';
+                    
+                    let medalIcon = '';
+                    if (index === 0) medalIcon = '<i data-feather="award" class="medal-icon gold"></i>';
+                    else if (index === 1) medalIcon = '<i data-feather="award" class="medal-icon silver"></i>';
+                    else if (index === 2) medalIcon = '<i data-feather="award" class="medal-icon bronze"></i>';
+
+                    const subKpisHtml = subKpiGroups.map(group => {
+                        if (item.summary[group.key].total === 0) return '';
+                        const subKpiPerf = item.summary[group.key].above / item.summary[group.key].total;
+                        const subKpiColorClass = subKpiPerf >= 0.7 ? 'strong' : subKpiPerf >= 0.4 ? 'medium' : 'weak';
+                        return `
+                            <div class="sknv-card__sub-kpi-item ${subKpiColorClass}">
+                                <i data-feather="${group.icon}"></i>
+                                <span class="label">${group.label}</span>
+                                <span class="value">${item.summary[group.key].above}/${item.summary[group.key].total}</span>
+                            </div>
+                        `;
+                    }).join('');
+
+                    finalCardsHtml += `
+                        <div class="sknv-card interactive-row" data-employee-id="${item.maNV}" data-source-tab="sknv">
+                            <div class="sknv-card__header">
+                                <div class="sknv-card__avatar">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                                </div>
+                                <div class="sknv-card__info">
+                                    <p class="name">${item.hoTen} - ${item.maNV} ${medalIcon}</p>
+                                    <p class="id">${item.boPhan}</p>
+                                </div>
+                            </div>
+                            <div class="sknv-card__main-kpi ${performanceColorClass}">
+                                <span class="value">${item.totalAbove}</span>
+                                <span class="total">/ ${item.totalCriteria}</span>
+                                <span class="label">Chỉ số trên TB</span>
+                            </div>
+                            <div class="sknv-card__sub-kpi-grid">
+                                ${subKpisHtml}
+                            </div>
+                        </div>`;
+                });
+                finalCardsHtml += `</div></div>`; // Close sknv-summary-grid and sknv-department-group
+            }
+        });
+        container.innerHTML = `<div data-capture-group="1">${finalCardsHtml}</div>`;
+
+        // IMPORTANT: Call Feather Icons replacement after rendering dynamic content
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
     },
     
     getSknvEvaluation: (value, avgValue, higherIsBetter = true) => {
@@ -387,7 +447,7 @@ export const uiSknv = {
         const sortedData = [...dataArray].sort((a,b) => direction === 'asc' ? a[key] - b[key] : b[key] - a[key]);
         const headerClass = (sortKey) => `px-4 py-2 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
 
-        return `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"><h4 class="text-lg font-bold p-3 border-b header-bg-purple">Doanh thu theo Ngành hàng</h4><div class="overflow-x-auto" style="max-height: 400px;"><table class="min-w-full text-sm table-bordered table-striped" data-table-type="sknv_nganhhang_chitiet">
+        return `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"><div class="sknv-detail-card-header sknv-header-purple"><i data-feather="list" class="header-icon"></i><h4 class="text-lg font-bold">Doanh thu theo Ngành hàng</h4></div><div class="overflow-x-auto" style="max-height: 400px;"><table class="min-w-full text-sm table-bordered table-striped" data-table-type="sknv_nganhhang_chitiet">
             <thead class="sknv-subtable-header"><tr>
                 <th class="${headerClass('name')}" data-sort="name">Ngành hàng</th>
                 <th class="${headerClass('quantity')} text-right" data-sort="quantity">SL</th>
@@ -417,14 +477,14 @@ export const uiSknv = {
 
         if (sortedData.length === 0) {
             evaluationCounts.qdc.total = 0;
-            return '<div class="bg-white rounded-xl shadow-md border border-gray-200 p-4"><h4 class="text-lg font-bold p-3 border-b header-bg-indigo">Nhóm hàng Quy đổi cao</h4><p class="p-4 text-gray-500">Không có dữ liệu.</p></div>';
+            return '<div class="bg-white rounded-xl shadow-md border border-gray-200 p-4"><div class="sknv-detail-card-header sknv-header-indigo"><i data-feather="star" class="header-icon"></i><h4 class="text-lg font-bold">Nhóm hàng Quy đổi cao</h4></div><p class="p-4 text-gray-500">Không có dữ liệu.</p></div>';
         }
         
         evaluationCounts.qdc.total = sortedData.length;
 
         const headerClass = (sortKey) => `px-4 py-2 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
 
-        return `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"><h4 class="text-lg font-bold p-3 border-b header-bg-indigo">Nhóm hàng Quy đổi cao</h4><div class="overflow-x-auto" style="max-height: 400px;"><table class="min-w-full text-sm table-bordered table-striped" data-table-type="sknv_qdc">
+        return `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"><div class="sknv-detail-card-header sknv-header-indigo"><i data-feather="star" class="header-icon"></i><h4 class="text-lg font-bold">Nhóm hàng Quy đổi cao</h4></div><div class="overflow-x-auto" style="max-height: 400px;"><table class="min-w-full text-sm table-bordered table-striped" data-table-type="sknv_qdc">
             <thead class="sknv-subtable-header"><tr>
                 <th class="${headerClass('name')}" data-sort="name">Nhóm hàng</th>
                 <th class="${headerClass('sl')} text-right" data-sort="sl">SL</th>
