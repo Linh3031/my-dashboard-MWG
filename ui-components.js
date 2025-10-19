@@ -1,4 +1,4 @@
-// Version 3.7 - Critical Fix: Break circular dependency by importing from utils.js
+// Version 3.8 - Improve getShortEmployeeName logic
 // MODULE: UI COMPONENTS
 // Chứa các hàm UI chung, tái sử dụng được trên toàn bộ ứng dụng.
 
@@ -29,18 +29,18 @@ export const uiComponents = {
                 <div class="p-3 border rounded-lg bg-white flex justify-between items-center shadow-sm">
                     <div>
                          <div class="flex items-center gap-x-2">
-                            <p class="font-bold text-gray-800">${config.name}</p>
+                             <p class="font-bold text-gray-800">${config.name}</p>
                         </div>
                         <div class="text-xs text-gray-500 mt-1 space-y-1">
                              <p><strong>Hãng:</strong> <span class="font-semibold text-blue-600">${(config.brands || []).join(', ')}</span></p>
-                            <p><strong>Nhóm hàng:</strong> <span class="font-semibold">${(config.groups || []).length} nhóm</span></p>
+                             <p><strong>Nhóm hàng:</strong> <span class="font-semibold">${(config.groups || []).length} nhóm</span></p>
                         </div>
                     </div>
                      <div class="flex items-center gap-x-2 flex-shrink-0">
                         <button class="edit-competition-btn p-2 rounded-md hover:bg-gray-200 text-gray-600" data-index="${index}" title="Sửa chương trình">
                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                          </button>
-                        <button class="delete-competition-btn p-2 rounded-md hover:bg-red-100 text-red-600" data-index="${index}" title="Xóa chương trình">
+                         <button class="delete-competition-btn p-2 rounded-md hover:bg-red-100 text-red-600" data-index="${index}" title="Xóa chương trình">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                         </button>
                     </div>
@@ -119,7 +119,7 @@ export const uiComponents = {
         let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden" data-capture-group="1">
             <div class="p-4 header-group-1 text-gray-800">
                 <h3 class="text-xl font-bold uppercase">Doanh thu nhân viên</h3>
-                 <p class="text-sm italic text-gray-600">(đơn vị tính: Triệu đồng)</p>
+                <p class="text-sm italic text-gray-600">(đơn vị tính: Triệu đồng)</p>
             </div>`;
         
         const groupedByDept = {};
@@ -129,7 +129,7 @@ export const uiComponents = {
             groupedByDept[dept].push(item);
         });
         
-        const departmentOrder = utils.getSortedDepartmentList(reportData); // <<< FIX: USE UTILS
+        const departmentOrder = utils.getSortedDepartmentList(reportData);
         departmentOrder.forEach(deptName => {
             if (groupedByDept[deptName]) {
                 finalHTML += uiComponents.renderRevenueTableForDepartment(deptName, groupedByDept[deptName], sortStateKey);
@@ -182,10 +182,10 @@ export const uiComponents = {
                             <tr>
                                 <th class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('doanhThu')} text-right" data-sort="doanhThu">Doanh Thu <span class="sort-indicator"></span></th>
-                                 <th class="${headerClass('doanhThuQuyDoi')} text-right" data-sort="doanhThuQuyDoi">Doanh Thu QĐ <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('doanhThuQuyDoi')} text-right" data-sort="doanhThuQuyDoi">Doanh Thu QĐ <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('hieuQuaQuyDoi')} text-right" data-sort="hieuQuaQuyDoi">% QĐ <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('doanhThuTraGop')} text-right" data-sort="doanhThuTraGop">DT trả chậm <span class="sort-indicator"></span></th>
-                                 <th class="${headerClass('tyLeTraCham')} text-right" data-sort="tyLeTraCham">% trả chậm <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('tyLeTraCham')} text-right" data-sort="tyLeTraCham">% trả chậm <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('doanhThuChuaXuat')} text-right" data-sort="doanhThuChuaXuat">DT Chưa Xuất <span class="sort-indicator"></span></th>
                             </tr>
                  </thead><tbody>`;
@@ -213,7 +213,7 @@ export const uiComponents = {
          tableHTML += `</tbody><tfoot class="table-footer font-bold"><tr>
                     <td class="px-4 py-2">Tổng</td>
                     <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThu)}</td>
-                     <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuQuyDoi)}</td>
+                    <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuQuyDoi)}</td>
                     <td class="px-4 py-2 text-right">${uiComponents.formatPercentage(totals.hieuQuaQuyDoi)}</td>
                     <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuTraGop)}</td>
                     <td class="px-4 py-2 text-right">${uiComponents.formatPercentage(totals.tyLeTraCham)}</td>
@@ -252,9 +252,9 @@ export const uiComponents = {
                             ${columnTogglesHTML}
                             <div data-capture-group="efficiency-table">
                                 <div class="p-4 header-group-3 text-gray-800">
-                                     <h3 class="text-xl font-bold uppercase">HIỆU QUẢ KHAI THÁC THEO NHÂN VIÊN</h3>
+                                    <h3 class="text-xl font-bold uppercase">HIỆU QUẢ KHAI THÁC THEO NHÂN VIÊN</h3>
                                     <p class="text-sm italic text-gray-600">(đơn vị tính: Triệu đồng)</p>
-                                 </div>`;
+                                </div>`;
 
         const groupedByDept = {};
         reportData.forEach(item => {
@@ -263,16 +263,16 @@ export const uiComponents = {
             groupedByDept[dept].push(item);
         });
 
-        const departmentOrder = utils.getSortedDepartmentList(reportData); // <<< FIX: USE UTILS
+        const departmentOrder = utils.getSortedDepartmentList(reportData);
 
         departmentOrder.forEach(deptName => {
             if (groupedByDept[deptName]) {
                 finalHTML += uiComponents.renderEfficiencyTableForDepartment(deptName, groupedByDept[deptName], sortStateKey, visibleColumns);
-             }
+            }
         });
 
         finalHTML += `    </div> 
-                           </div>`;
+                        </div>`;
         container.innerHTML = finalHTML;
     },
 
@@ -290,7 +290,7 @@ export const uiComponents = {
             dtCE: (val) => uiComponents.formatRevenue(val),
             dtGiaDung: (val) => uiComponents.formatRevenue(val),
             defaultPercent: (val) => uiComponents.formatPercentage(val)
-         };
+        };
 
         const totals = data.reduce((acc, item) => {
             acc.dtICT += item.dtICT;
@@ -300,7 +300,7 @@ export const uiComponents = {
             acc.dtMLN += item.dtMLN;
             acc.slSmartphone += item.slSmartphone;
             acc.slSimOnline += item.slSimOnline;
-             acc.slUDDD += item.slUDDD;
+            acc.slUDDD += item.slUDDD;
             acc.slBaoHiemDenominator += item.slBaoHiemDenominator;
             acc.slBaoHiemVAS += item.slBaoHiemVAS;
             return acc;
@@ -373,14 +373,12 @@ export const uiComponents = {
                     const value = totals[col.id];
                     const formatter = formatMap[col.id] || formatMap.defaultPercent;
                     return `<td class="px-4 py-2 text-right">${formatter(value)}</td>`;
-                 }).join('')}
+                }).join('')}
             </tr>
         </tfoot></table></div></div>`;
         return tableHTML;
     },
-    // --- END: MOVED SHARED FUNCTIONS ---
     
-    // --- START: REFACTORED SHARED FUNCTIONS ---
     renderCategoryTable(title, sortStateKey, reportData, mainRevenueKey, mainQuantityKey, subQuantityKeys, subQuantityLabels) {
         const sortState = appState.sortState[sortStateKey] || { key: mainRevenueKey, direction: 'desc' };
         const { key, direction } = sortState;
@@ -389,7 +387,7 @@ export const uiComponents = {
             const valA = a[key] || 0;
             const valB = b[key] || 0;
             return direction === 'asc' ? valA - valB : valB - valA;
-         });
+        });
 
         const totals = reportData.reduce((acc, item) => {
             acc[mainRevenueKey] += item[mainRevenueKey];
@@ -417,11 +415,11 @@ export const uiComponents = {
                  tableRows.push(`
                     <tr class="interactive-row">
                         <td class="px-2 py-2 font-semibold line-clamp-2 employee-name-cell" data-employee-id="${item.maNV}" data-source-tab="sknv">
-                             <a href="#">${this.getShortEmployeeName(item.hoTen, item.maNV)}</a>
+                            <a href="#">${this.getShortEmployeeName(item.hoTen, item.maNV)}</a>
                         </td>
                         <td class="px-2 py-2 text-right font-bold">${this.formatRevenue(item[mainRevenueKey])}</td>
                         <td class="px-2 py-2 text-right font-bold">${this.formatNumberOrDash(item[mainQuantityKey])}</td>
-                         ${subQuantityKeys.map(subKey => `<td class="px-2 py-2 text-right">${this.formatNumberOrDash(item[subKey])}</td>`).join('')}
+                        ${subQuantityKeys.map(subKey => `<td class="px-2 py-2 text-right">${this.formatNumberOrDash(item[subKey])}</td>`).join('')}
                     </tr>
                 `);
             }
@@ -430,26 +428,26 @@ export const uiComponents = {
         const html = `
             <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
                 <h4 class="text-lg font-bold p-3 border-b ${titleClass}">${title}</h4>
-                 <div class="overflow-x-auto">
+                <div class="overflow-x-auto">
                     <table class="min-w-full text-sm table-bordered table-striped" data-table-type="${sortStateKey}">
                         <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                             <tr>
-                                 <th rowspan="2" class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên</th>
+                                <th rowspan="2" class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên</th>
                                 <th rowspan="2" class="${headerClass(mainRevenueKey)} text-right" data-sort="${mainRevenueKey}">DT</th>
                                 <th rowspan="2" class="${headerClass(mainQuantityKey)} text-right" data-sort="${mainQuantityKey}">Tổng SL</th>
-                                 <th colspan="${subQuantityKeys.length}" class="px-2 py-2 text-center">Chi tiết SL</th>
+                                <th colspan="${subQuantityKeys.length}" class="px-2 py-2 text-center">Chi tiết SL</th>
                             </tr>
                             <tr>${subHeaders}</tr>
                         </thead>
                         <tbody>
-                             ${tableRows.join('')}
+                            ${tableRows.join('')}
                         </tbody>
                         <tfoot class="table-footer font-bold">
                             <tr>
-                                 <td class="px-2 py-2">Tổng</td>
+                                <td class="px-2 py-2">Tổng</td>
                                 <td class="px-2 py-2 text-right">${this.formatRevenue(totals[mainRevenueKey])}</td>
                                 <td class="px-2 py-2 text-right">${this.formatNumberOrDash(totals[mainQuantityKey])}</td>
-                                 ${subQuantityKeys.map(subKey => `<td class="px-2 py-2 text-right">${this.formatNumberOrDash(totals[subKey])}</td>`).join('')}
+                                ${subQuantityKeys.map(subKey => `<td class="px-2 py-2 text-right">${this.formatNumberOrDash(totals[subKey])}</td>`).join('')}
                             </tr>
                         </tfoot>
                     </table>
@@ -470,19 +468,16 @@ export const uiComponents = {
 
         const htmlParts = [
             '<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">',
-             `<div data-capture-group="1" data-capture-columns="6">${this.renderCategoryTable('ICT', `${sortStatePrefix}_ict`, reportData, 'dtICT', 'slICT', ['slDienThoai', 'slLaptop'], ['SL Điện thoại', 'SL Laptop'])}</div>`,
+            `<div data-capture-group="1" data-capture-columns="6">${this.renderCategoryTable('ICT', `${sortStatePrefix}_ict`, reportData, 'dtICT', 'slICT', ['slDienThoai', 'slLaptop'], ['SL Điện thoại', 'SL Laptop'])}</div>`,
             `<div data-capture-group="1" data-capture-columns="6">${this.renderCategoryTable('PHỤ KIỆN', `${sortStatePrefix}_phukien`, reportData, 'dtPhuKien', 'slPhuKien', ['slPinSDP', 'slCamera', 'slTaiNgheBLT'], ['SL Pin SDP', 'SL Camera', 'SL Tai nghe BLT'])}</div>`,
             `<div data-capture-group="2" data-capture-columns="6">${this.renderCategoryTable('GIA DỤNG', `${sortStatePrefix}_giadung`, reportData, 'dtGiaDung', 'slGiaDung', ['slNoiChien', 'slMLN', 'slRobotHB'], ['SL Nồi chiên', 'SL MLN', 'SL Robot HB'])}</div>`,
             `<div data-capture-group="2" data-capture-columns="6">${this.renderCategoryTable('CE', `${sortStatePrefix}_ce`, reportData, 'dtCE', 'slCE', ['slTivi', 'slTuLanh', 'slMayGiat', 'slMayLanh'], ['SL Tivi', 'SL Tủ lạnh', 'SL Máy giặt', 'SL Máy lạnh'])}</div>`,
-             `<div class="lg:col-span-2" data-capture-group="3" data-capture-columns="7">${this.renderCategoryTable('BẢO HIỂM', `${sortStatePrefix}_baohiem`, reportData, 'dtBaoHiem', 'slBaoHiem', ['slBH1d1', 'slBHXM', 'slBHRV', 'slBHMR'], ['BH 1-1', 'BHXM', 'BHRV', 'BHMR'])}</div>`,
+            `<div class="lg:col-span-2" data-capture-group="3" data-capture-columns="7">${this.renderCategoryTable('BẢO HIỂM', `${sortStatePrefix}_baohiem`, reportData, 'dtBaoHiem', 'slBaoHiem', ['slBH1d1', 'slBHXM', 'slBHRV', 'slBHMR'], ['BH 1-1', 'BHXM', 'BHRV', 'BHMR'])}</div>`,
             '</div>'
         ];
         container.innerHTML = htmlParts.join('');
     },
-    // --- END: REFACTORED SHARED FUNCTIONS ---
-
-
-    // --- GENERAL UI HELPERS ---
+    
     showProgressBar: (elementId) => document.getElementById(`progress-${elementId}`)?.classList.remove('hidden'),
     hideProgressBar: (elementId) => document.getElementById(`progress-${elementId}`)?.classList.add('hidden'),
     
@@ -511,7 +506,7 @@ export const uiComponents = {
             visitorCountEl.textContent = statsData.pageLoads ? uiComponents.formatNumber(statsData.pageLoads) : '0';
         }
         if (actionCountEl) {
-             actionCountEl.textContent = statsData.actionsTaken ? uiComponents.formatNumber(statsData.actionsTaken) : '0';
+            actionCountEl.textContent = statsData.actionsTaken ? uiComponents.formatNumber(statsData.actionsTaken) : '0';
         }
         if (userCountEl) {
             userCountEl.textContent = statsData.totalUsers ? uiComponents.formatNumber(statsData.totalUsers) : '0';
@@ -545,7 +540,6 @@ export const uiComponents = {
         }
     },
 
-    // --- FORMATTERS ---
     formatNumber: (value, decimals = 0) => {
         if (isNaN(value) || value === null) return '0';
         return new Intl.NumberFormat('vi-VN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(value);
@@ -576,7 +570,7 @@ export const uiComponents = {
         if (value === 0) return '-';
         return new Intl.NumberFormat('vi-VN', { 
             style: 'percent', 
-             maximumFractionDigits: 0 
+            maximumFractionDigits: 0 
         }).format(value);
     },
     
@@ -596,14 +590,20 @@ export const uiComponents = {
         return "vài giây trước";
     },
 
+    // === START: UPDATED FUNCTION (V3.8) ===
     getShortEmployeeName(hoTen, maNV) {
         if (!hoTen) return maNV || '';
-        const nameParts = hoTen.split(' ');
-        const firstName = nameParts[nameParts.length - 1];
-        return `${firstName} - ${maNV}`;
+        const nameParts = hoTen.split(' ').filter(p => p); // Lọc bỏ các khoảng trắng thừa
+        
+        let displayName = hoTen; // Mặc định là tên đầy đủ
+        if (nameParts.length > 2) {
+            displayName = nameParts.slice(-2).join(' '); // Lấy 2 từ cuối
+        }
+        
+        return `${displayName} - ${maNV}`;
     },
+    // === END: UPDATED FUNCTION ===
 
-    // --- MODALS, DRAWERS, TABS ---
     toggleModal(modalId, show) {
         const modal = document.getElementById(modalId);
         if (!modal) return;
@@ -629,7 +629,7 @@ export const uiComponents = {
                 drawer.classList.add('open');
                 sidebar.classList.add('menu-locked');
                 overlay.classList.remove('hidden');
-             }, 10);
+            }, 10);
         } else {
             drawer.classList.remove('open');
             sidebar.classList.remove('menu-locked');
@@ -675,7 +675,6 @@ export const uiComponents = {
         }
     },
 
-    // --- COMPOSER, HELP, FEEDBACK UI ---
     showHelpModal(helpId) {
         const title = `Hướng dẫn cho Tab ${helpId.charAt(0).toUpperCase() + helpId.slice(1)}`;
         const content = appState.helpContent[helpId] || "Nội dung hướng dẫn không có sẵn.";
@@ -713,7 +712,7 @@ export const uiComponents = {
                 uiComponents.toggleModal('preview-modal', false);
             })
             .catch(err => {
-                 console.error('Lỗi sao chép:', err);
+                console.error('Lỗi sao chép:', err);
                 uiComponents.showNotification('Lỗi khi sao chép.', 'error');
             });
     },
@@ -745,7 +744,7 @@ export const uiComponents = {
             
             container.innerHTML = updateHistory.map(item => `
                 <div class="bg-white rounded-xl shadow-md p-5 border border-gray-200">
-                     <h4 class="font-bold text-blue-600 mb-2">Phiên bản ${item.version} (${item.date})</h4>
+                    <h4 class="font-bold text-blue-600 mb-2">Phiên bản ${item.version} (${item.date})</h4>
                     <ul class="list-disc list-inside text-gray-700 space-y-1 text-sm">
                         ${item.notes.map(note => `<li>${note}</li>`).join('')}
                     </ul>
@@ -753,7 +752,7 @@ export const uiComponents = {
             `).join('');
 
         } catch (error) {
-             console.error("Lỗi khi render lịch sử cập nhật:", error);
+            console.error("Lỗi khi render lịch sử cập nhật:", error);
             container.innerHTML = '<p class="text-red-500">Không thể tải lịch sử cập nhật.</p>';
         }
     },
@@ -784,39 +783,38 @@ export const uiComponents = {
                 userNameDisplay = item.user;
             }
 
-             return `
+            return `
                 <div class="feedback-item bg-white rounded-xl shadow-md p-5 border border-gray-200" data-id="${item.id}">
                     <p class="text-gray-800">${item.content}</p>
                     <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">
                         <span class="font-semibold">${userNameDisplay}</span>
-                         <span>${this.formatTimeAgo(item.timestamp)}</span>
+                        <span>${this.formatTimeAgo(item.timestamp)}</span>
                         ${appState.isAdmin ? `<button class="reply-btn text-blue-600 hover:underline">Trả lời</button>` : ''}
                     </div>
                     
                     <div class="ml-6 mt-4 space-y-3">
-                         ${(item.replies || []).map(reply => `
+                        ${(item.replies || []).map(reply => `
                             <div class="bg-gray-100 rounded-lg p-3">
                                 <p class="text-gray-700 text-sm">${reply.content}</p>
-                                 <div class="text-xs text-gray-500 mt-2">
+                                <div class="text-xs text-gray-500 mt-2">
                                     <strong>Admin</strong> - ${this.formatTimeAgo(reply.timestamp instanceof Date ? reply.timestamp : reply.timestamp?.toDate())}
                                 </div>
                             </div>
-                         `).join('')}
+                        `).join('')}
                     </div>
     
                     <div class="reply-form-container hidden ml-6 mt-4">
                         <textarea class="w-full p-2 border rounded-lg text-sm" rows="2" placeholder="Viết câu trả lời..."></textarea>
-                         <div class="flex justify-end gap-2 mt-2">
+                        <div class="flex justify-end gap-2 mt-2">
                             <button class="cancel-reply-btn text-sm text-gray-600 px-3 py-1 rounded-md hover:bg-gray-100">Hủy</button>
                             <button class="submit-reply-btn text-sm bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700">Gửi</button>
                         </div>
-                     </div>
+                    </div>
                 </div>
             `;
         }).join('');
     },
 
-    // --- SETTINGS & FILTERS UI ---
     applyInterfaceSettings(settings) {
         const root = document.documentElement;
         if (settings.kpiCard1Bg) root.style.setProperty('--kpi-card-1-bg', settings.kpiCard1Bg);
@@ -900,7 +898,7 @@ export const uiComponents = {
             if (!data || data.length === 0) {
                 return `<div class="p-2 border rounded-md bg-white mb-4">
                     <h4 class="font-bold text-gray-800 mb-2">${title}</h4>
-                     <p class="text-gray-500">Không có dữ liệu để hiển thị.</p>
+                    <p class="text-gray-500">Không có dữ liệu để hiển thị.</p>
                 </div>`;
             }
     
@@ -908,12 +906,11 @@ export const uiComponents = {
             let tableHTML = `<div class="p-2 border rounded-md bg-white mb-4">
                 <h4 class="font-bold text-gray-800 mb-2">${title}</h4>
                 <div class="overflow-x-auto">
-                     <table class="min-w-full text-xs">
+                    <table class="min-w-full text-xs">
                         <thead class="bg-gray-100">
                             <tr>${headers.map(h => `<th class="px-2 py-1 text-left font-semibold text-gray-600 whitespace-nowrap">${h}</th>`).join('')}</tr>
                         </thead>
-                    
-                     <tbody>`;
+                        <tbody>`;
             
             data.forEach(row => {
                 tableHTML += `<tr class="border-t">`;
@@ -921,7 +918,7 @@ export const uiComponents = {
                     tableHTML += `<td class="px-2 py-1 font-mono">${row[header] !== undefined ? row[header] : ''}</td>`;
                 });
                 tableHTML += `</tr>`;
-             });
+            });
     
             tableHTML += `</tbody></table></div></div>`;
             return tableHTML;
@@ -966,18 +963,18 @@ export const uiComponents = {
                     <table class="min-w-full text-xs table-bordered competition-debug-table">
                         <thead class="bg-gray-100 sticky top-0">
                             <tr>
-                                 <th class="p-2">Người tạo</th>
+                                <th class="p-2">Người tạo</th>
                                 <th class="p-2">Nhóm hàng</th>
                                 <th class="p-2">HT Xuất</th>
-                                 <th class="p-2">TT Thu tiền</th>
+                                <th class="p-2">TT Thu tiền</th>
                                 <th class="p-2">TT Hủy</th>
                                 <th class="p-2">TT Trả</th>
                                 <th class="p-2">TT Xuất</th>
-                                 ${checkHeaders.map(h => `<th class="p-2">${h}</th>`).join('')}
+                                ${checkHeaders.map(h => `<th class="p-2">${h}</th>`).join('')}
                                 <th class="p-2">Tổng thể</th>
                             </tr>
                         </thead>
-                         <tbody>`;
+                        <tbody>`;
 
         const renderCheck = (status) => `<td class="text-center font-bold text-lg">${status ? '<span class="text-green-500">✅</span>' : '<span class="text-red-500">❌</span>'}</td>`;
 
@@ -986,17 +983,17 @@ export const uiComponents = {
             const { rowData, checks, isOverallValid } = result;
             tableHTML += `
                 <tr class="${rowClass}">
-                     <td class="p-2">${rowData.nguoiTao || ''}</td>
+                    <td class="p-2">${rowData.nguoiTao || ''}</td>
                     <td class="p-2">${rowData.nhomHang || ''}</td>
                     <td class="p-2">${rowData.hinhThucXuat || ''}</td>
                     <td class="p-2">${rowData.trangThaiThuTien || ''}</td>
                     <td class="p-2">${rowData.trangThaiHuy || ''}</td>
-                     <td class="p-2">${rowData.tinhTrangTra || ''}</td>
+                    <td class="p-2">${rowData.tinhTrangTra || ''}</td>
                     <td class="p-2">${rowData.trangThaiXuat || ''}</td>
                     ${renderCheck(checks.isDoanhThuHTX)}
                     ${renderCheck(checks.isThuTien)}
                     ${renderCheck(checks.isChuaHuy)}
-                     ${renderCheck(checks.isChuaTra)}
+                    ${renderCheck(checks.isChuaTra)}
                     ${renderCheck(checks.isDaXuat)}
                     ${renderCheck(isOverallValid)}
                 </tr>
@@ -1035,7 +1032,7 @@ export const uiComponents = {
             const departmentInstance = appState.choices[`${prefix}_department`];
             if (departmentInstance) {
                 departmentInstance.clearStore();
-                 departmentInstance.setChoices(departmentChoicesOptions, 'value', 'label', true);
+                departmentInstance.setChoices(departmentChoicesOptions, 'value', 'label', true);
             }
             
             uiComponents.updateEmployeeFilter(prefix);
@@ -1043,8 +1040,8 @@ export const uiComponents = {
         
         const createOptionsHTML = (items, includeAllOption = false) => {
             let html = includeAllOption ? '<option value="">Tất cả</option>' : '';
-             html += items.map(item => `<option value="${item}">${item}</option>`).join('');
-             return html;
+            html += items.map(item => `<option value="${item}">${item}</option>`).join('');
+            return html;
         };
         const luykeGoalEl = document.getElementById('luyke-goal-warehouse-select');
         if (luykeGoalEl) luykeGoalEl.innerHTML = createOptionsHTML(uniqueWarehouses);
@@ -1108,7 +1105,7 @@ export const uiComponents = {
         const filteredEmployees = appState.danhSachNhanVien.filter(nv => 
             (!selectedWarehouse || String(nv.maKho) == selectedWarehouse) &&
             (!selectedDept || nv.boPhan === selectedDept)
-         );
+        );
 
         if (multiSelectInstance) {
             const currentMultiSelectValues = multiSelectInstance.getValue(true);
@@ -1122,7 +1119,7 @@ export const uiComponents = {
         }
 
         const singleSelectOptions = filteredEmployees.map(nv => ({
-             value: nv.maNV,
+            value: nv.maNV,
             label: uiComponents.getShortEmployeeName(nv.hoTen, nv.maNV)
         }));
 
@@ -1136,7 +1133,7 @@ export const uiComponents = {
                 if (currentValue && filteredEmployees.some(e => String(e.maNV) == currentValue)) {
                     instance.setValue([currentValue]);
                 }
-             }
+            }
         };
         
         if (prefix === 'sknv') {

@@ -1,4 +1,4 @@
-// Version 6.3 - Redesign detail view, add medals, and fix display issues
+// Version 6.7 - Critical Fix: Replace broken medals with high-quality, error-free SVG icons
 // MODULE: UI SKNV
 // Chứa các hàm render giao diện cho tab "Sức khỏe nhân viên"
 
@@ -120,7 +120,32 @@ export const uiSknv = {
         }
     },
     
-    // === START: REWRITTEN FUNCTION (V6.3) ===
+    _createDetailMetricGrid(title, colorClass, icon, data) {
+        let itemsHtml = data.map(row => {
+            const evaluation = uiSknv.getSknvEvaluation(row.rawValue, row.rawAverage, row.higherIsBetter);
+            return `
+                <div class="sknv-detail-metric-card">
+                    <span class="label">${row.label}</span>
+                    <span class="value ${row.valueClass || ''}">${row.value}</span>
+                    <span class="average">(TB: ${row.average})</span>
+                    <div class="evaluation-badge ${evaluation.class}">${evaluation.text}</div>
+                </div>
+            `;
+        }).join('');
+    
+        return `
+            <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+                <div class="sknv-detail-card-header ${colorClass}">
+                    <i data-feather="${icon}" class="header-icon"></i>
+                    <h4 class="text-lg font-bold">${title}</h4>
+                </div>
+                <div class="sknv-detail-grid-body">
+                    ${itemsHtml}
+                </div>
+            </div>
+        `;
+    },
+
     renderSknvDetailForEmployee(employeeData, filteredReport) {
         const detailsContainer = document.getElementById('sknv-details-container');
         if (!detailsContainer) return;
@@ -149,34 +174,6 @@ export const uiSknv = {
             if (!isFinite(value) || avgValue === undefined || !isFinite(avgValue)) return;
             let isAbove = higherIsBetter ? (value >= avgValue) : (value <= avgValue);
             if (isAbove) { evaluationCounts[group].above++; }
-        };
-        
-        const createDetailCardHtml = (title, colorClass, icon, data) => {
-            let itemsHtml = data.map(row => {
-                const evaluation = uiSknv.getSknvEvaluation(row.rawValue, row.rawAverage, row.higherIsBetter);
-                return `
-                    <div class="sknv-detail-metric-item">
-                        <span class="label">${row.label}</span>
-                        <div class="values-group">
-                            <span class="value ${row.valueClass || ''}">${row.value}</span>
-                            <span class="average">${row.average}</span>
-                            <span class="evaluation ${evaluation.class}">${evaluation.text}</span>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        
-            return `
-                <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-                    <div class="sknv-detail-card-header ${colorClass}">
-                        <i data-feather="${icon}" class="header-icon"></i>
-                        <h4 class="text-lg font-bold">${title}</h4>
-                    </div>
-                    <div class="sknv-detail-card-body">
-                        ${itemsHtml}
-                    </div>
-                </div>
-            `;
         };
         
         const { mucTieu } = employeeData;
@@ -249,12 +246,12 @@ export const uiSknv = {
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6" data-capture-layout="grid">
                     <div class="space-y-6" data-capture-group="1">
-                        ${createDetailCardHtml('Doanh thu', 'sknv-header-blue', 'trending-up', doanhThuData)}
-                        ${createDetailCardHtml('Hiệu quả khai thác', 'sknv-header-orange', 'award', hieuQuaData)}
+                        ${this._createDetailMetricGrid('Doanh thu', 'sknv-header-blue', 'trending-up', doanhThuData)}
+                        ${this._createDetailMetricGrid('Hiệu quả khai thác', 'sknv-header-orange', 'award', hieuQuaData)}
                     </div>
                     <div class="space-y-6" data-capture-group="1">
-                        ${createDetailCardHtml('Năng suất', 'sknv-header-green', 'dollar-sign', nangSuatData)}
-                        ${createDetailCardHtml('Đơn giá', 'sknv-header-yellow', 'tag', donGiaData)}
+                        ${this._createDetailMetricGrid('Năng suất', 'sknv-header-green', 'dollar-sign', nangSuatData)}
+                        ${this._createDetailMetricGrid('Đơn giá', 'sknv-header-yellow', 'tag', donGiaData)}
                     </div>
                     <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6" data-capture-layout="grid">
                         <div data-capture-group="1">${uiSknv.renderSknvQdcTable(employeeData, departmentAverages, countEvaluation, evaluationCounts)}</div>
@@ -262,10 +259,9 @@ export const uiSknv = {
                     </div>
                 </div>
             </div>`;
-            feather.replace(); // Re-render feather icons after content update
+            feather.replace();
     },
-    // === END: REWRITTEN FUNCTION ===
-
+    
     displaySknvSummaryReport: (reportData) => {
         const container = document.getElementById('sknv-summary-container');
         if (!container) return;
@@ -354,6 +350,10 @@ export const uiSknv = {
         const departmentOrder = utils.getSortedDepartmentList(reportData);
 
         let finalCardsHtml = '';
+        
+        const gold_medal_svg = `<span class="medal-container"><svg viewBox="0 0 32 32" class="medal-icon gold" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M16,2 A14,14 0 1,0 16,30 A14,14 0 1,0 16,2 M16,5 A11,11 0 1,1 16,27 A11,11 0 1,1 16,5 Z" /><path d="M8,22 l-4,8 l8,-4 l-4,-4 Z" /><path d="M24,22 l4,8 l-8,-4 l4,-4 Z" /><text x="50%" y="52%" dominant-baseline="middle" text-anchor="middle" font-size="14" font-weight="bold" font-family="Arial, sans-serif" fill="#ffffff">1</text></svg></span>`;
+        const silver_medal_svg = `<span class="medal-container"><svg viewBox="0 0 32 32" class="medal-icon silver" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M16,2 A14,14 0 1,0 16,30 A14,14 0 1,0 16,2 M16,5 A11,11 0 1,1 16,27 A11,11 0 1,1 16,5 Z" /><path d="M8,22 l-4,8 l8,-4 l-4,-4 Z" /><path d="M24,22 l4,8 l-8,-4 l4,-4 Z" /><text x="50%" y="52%" dominant-baseline="middle" text-anchor="middle" font-size="14" font-weight="bold" font-family="Arial, sans-serif" fill="#ffffff">2</text></svg></span>`;
+        const bronze_medal_svg = `<span class="medal-container"><svg viewBox="0 0 32 32" class="medal-icon bronze" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M16,2 A14,14 0 1,0 16,30 A14,14 0 1,0 16,2 M16,5 A11,11 0 1,1 16,27 A11,11 0 1,1 16,5 Z" /><path d="M8,22 l-4,8 l8,-4 l-4,-4 Z" /><path d="M24,22 l4,8 l-8,-4 l4,-4 Z" /><text x="50%" y="52%" dominant-baseline="middle" text-anchor="middle" font-size="14" font-weight="bold" font-family="Arial, sans-serif" fill="#ffffff">3</text></svg></span>`;
 
         departmentOrder.forEach(deptName => {
             if (groupedByDept[deptName] && groupedByDept[deptName].length > 0) {
@@ -367,32 +367,35 @@ export const uiSknv = {
                     const performancePercentage = item.totalCriteria > 0 ? (item.totalAbove / item.totalCriteria) : 0;
                     const performanceColorClass = performancePercentage >= 0.7 ? 'sknv-card-kpi-strong' : performancePercentage >= 0.4 ? 'sknv-card-kpi-medium' : 'sknv-card-kpi-weak';
                     
-                    let medalIcon = '';
-                    if (index === 0) medalIcon = '<i data-feather="award" class="medal-icon gold"></i>';
-                    else if (index === 1) medalIcon = '<i data-feather="award" class="medal-icon silver"></i>';
-                    else if (index === 2) medalIcon = '<i data-feather="award" class="medal-icon bronze"></i>';
+                    let medalHtml = '';
+                    if (index === 0) medalHtml = gold_medal_svg;
+                    else if (index === 1) medalHtml = silver_medal_svg;
+                    else if (index === 2) medalHtml = bronze_medal_svg;
 
                     const subKpisHtml = subKpiGroups.map(group => {
                         if (item.summary[group.key].total === 0) return '';
-                        const subKpiPerf = item.summary[group.key].above / item.summary[group.key].total;
+                        const subKpiPerf = item.summary[group.key].total > 0 ? item.summary[group.key].above / item.summary[group.key].total : 0;
                         const subKpiColorClass = subKpiPerf >= 0.7 ? 'strong' : subKpiPerf >= 0.4 ? 'medium' : 'weak';
+                        const valueColorClass = subKpiPerf >= 0.5 ? 'text-blue-600' : 'text-red-600';
+
                         return `
                             <div class="sknv-card__sub-kpi-item ${subKpiColorClass}">
                                 <i data-feather="${group.icon}"></i>
                                 <span class="label">${group.label}</span>
-                                <span class="value">${item.summary[group.key].above}/${item.summary[group.key].total}</span>
+                                <span class="value ${valueColorClass}">${item.summary[group.key].above}/${item.summary[group.key].total}</span>
                             </div>
                         `;
                     }).join('');
 
                     finalCardsHtml += `
                         <div class="sknv-card interactive-row" data-employee-id="${item.maNV}" data-source-tab="sknv">
+                            ${medalHtml}
                             <div class="sknv-card__header">
                                 <div class="sknv-card__avatar">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                                 </div>
                                 <div class="sknv-card__info">
-                                    <p class="name">${item.hoTen} - ${item.maNV} ${medalIcon}</p>
+                                    <p class="name">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</p>
                                     <p class="id">${item.boPhan}</p>
                                 </div>
                             </div>

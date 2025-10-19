@@ -1,4 +1,4 @@
-/* Version 6.2 - Add styles for SKNV detail view and medal icons */
+/* Version 6.4 - Finalize SKNV UI: 4-column layout, new detail header, name truncation, and medal styles */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -797,8 +797,20 @@ solid #2563eb;
 /* === START: SKNV INFOGRAPHIC CARD STYLES (V6.0) === */
 .sknv-summary-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    grid-template-columns: 1fr; /* Default to 1 column for mobile */
     gap: 1.5rem;
+}
+
+@media (min-width: 768px) { /* 2 columns for tablets */
+    .sknv-summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1280px) { /* 4 columns for large desktops */
+    .sknv-summary-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
 }
 
 .sknv-card {
@@ -841,10 +853,19 @@ solid #2563eb;
     color: #4338ca;
 }
 
+.sknv-card__info {
+    flex-grow: 1;
+    min-width: 0;
+}
 .sknv-card__info .name {
     font-weight: 700;
     color: #111827;
     line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
 }
 
 .sknv-card__info .id {
@@ -916,7 +937,6 @@ solid #2563eb;
 .sknv-card__sub-kpi-item .value {
     font-size: 0.875rem;
     font-weight: 700;
-    color: #1f2937;
     margin-top: 2px;
 }
 
@@ -924,156 +944,6 @@ solid #2563eb;
 .sknv-card__sub-kpi-item.medium { border-top-color: #f59e0b; }
 .sknv-card__sub-kpi-item.weak { border-top-color: #ef4444; }
 /* === END: SKNV INFOGRAPHIC CARD STYLES === */
-
-/* === START: SKNV DETAIL VIEW STYLES (V6.2) === */
-.sknv-detail-header-card {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem; /* 24px */
-    padding: 1.5rem; /* 24px */
-    background-color: #ffffff;
-    border-radius: 0.75rem; /* 12px */
-    border: 1px solid #e5e7eb; /* gray-200 */
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-.sknv-detail-avatar {
-    width: 64px;
-    height: 64px;
-    border-radius: 9999px;
-    background-color: #e0e7ff; /* indigo-100 */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.sknv-detail-avatar svg {
-    width: 32px;
-    height: 32px;
-    color: #4338ca; /* indigo-700 */
-}
-
-.sknv-detail-info .name {
-    font-size: 1.5rem; /* 24px */
-    font-weight: 800;
-    color: #111827; /* gray-900 */
-    line-height: 1.2;
-}
-
-.sknv-detail-info .department {
-    font-size: 1rem; /* 16px */
-    font-weight: 500;
-    color: #4b5563; /* gray-600 */
-}
-
-.sknv-detail-info .kpi-summary {
-    margin-top: 0.5rem; /* 8px */
-    font-weight: 600;
-    color: #374151; /* gray-700 */
-}
-
-.sknv-detail-card-header {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem; /* 12px */
-    padding: 0.75rem 1.25rem; /* 12px 20px */
-    color: #ffffff;
-}
-.sknv-detail-card-header .header-icon {
-    width: 20px;
-    height: 20px;
-}
-.sknv-header-blue { background-color: #2563eb; } /* blue-600 */
-.sknv-header-green { background-color: #16a34a; } /* green-600 */
-.sknv-header-orange { background-color: #f97316; } /* orange-600 */
-.sknv-header-yellow { background-color: #ca8a04; } /* yellow-600 */
-.sknv-header-indigo { background-color: #4f46e5; } /* indigo-600 */
-.sknv-header-purple { background-color: #7e22ce; } /* purple-700 */
-
-
-.sknv-detail-card-body {
-    padding: 1rem 1.25rem; /* 16px 20px */
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem; /* 12px */
-}
-
-.sknv-detail-metric-item {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 1rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px dashed #e5e7eb; /* gray-200 */
-}
-.sknv-detail-metric-item:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
-}
-
-.sknv-detail-metric-item .label {
-    font-weight: 500;
-    color: #374151; /* gray-700 */
-    white-space: nowrap;
-}
-
-.sknv-detail-metric-item .values-group {
-    display: flex;
-    align-items: baseline;
-    justify-content: flex-end;
-    gap: 1rem;
-    text-align: right;
-}
-
-.sknv-detail-metric-item .value {
-    font-weight: 700;
-    font-size: 1.125rem; /* 18px */
-    color: #111827; /* gray-900 */
-    min-width: 80px;
-}
-
-.sknv-detail-metric-item .average {
-    font-size: 0.875rem; /* 14px */
-    color: #6b7280; /* gray-500 */
-    min-width: 80px;
-    font-style: italic;
-}
-.sknv-detail-metric-item .average::before {
-    content: '(TB: ';
-}
-.sknv-detail-metric-item .average::after {
-    content: ')';
-}
-
-.sknv-detail-metric-item .evaluation {
-    font-weight: 700;
-    min-width: 70px;
-    text-align: center;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 0.75rem; /* 12px */
-}
-.sknv-detail-metric-item .evaluation.text-green-600 {
-    background-color: #dcfce7; /* green-100 */
-}
-.sknv-detail-metric-item .evaluation.text-yellow-600 {
-    background-color: #fef9c3; /* yellow-100 */
-}
-/* === END: SKNV DETAIL VIEW STYLES === */
-
-
-/* === START: SKNV MEDAL ICONS (V6.2) === */
-.medal-icon {
-    display: inline-block;
-    vertical-align: middle;
-    margin-left: 4px;
-    stroke-width: 2.5;
-}
-.medal-icon.gold { color: #facc15; } /* yellow-400 */
-.medal-icon.silver { color: #9ca3af; } /* gray-400 */
-.medal-icon.bronze { color: #f97316; } /* orange-500 */
-/* === END: SKNV MEDAL ICONS === */
 
 /* === START: SKNV Department Grouping Styles (V6.1) === */
 .sknv-department-group {
@@ -1129,3 +999,131 @@ solid #2563eb;
     border-top: none;
 }
 /* === END: SKNV Department Grouping Styles === */
+
+/* === START: SKNV DETAIL VIEW & MEDALS (V6.4) === */
+.sknv-detail-header-card {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    background-color: #eff6ff; /* blue-50 */
+    border: 1px solid #dbeafe; /* blue-200 */
+    border-top: 4px solid #3b82f6; /* blue-500 */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+.sknv-detail-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 9999px;
+    background-color: #dbeafe; /* blue-200 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.sknv-detail-avatar svg {
+    width: 32px;
+    height: 32px;
+    color: #1e40af; /* blue-800 */
+}
+.sknv-detail-info .name,
+.sknv-detail-info .department,
+.sknv-detail-info .kpi-summary {
+    color: #1f2937; /* dark text */
+}
+.sknv-detail-info .kpi-summary .font-bold {
+    color: #1d4ed8; /* darker blue */
+}
+.sknv-detail-info .name {
+    font-size: 1.5rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+.sknv-detail-info .department {
+    font-size: 1rem;
+    font-weight: 500;
+}
+.sknv-detail-info .kpi-summary {
+    margin-top: 0.5rem;
+    font-weight: 600;
+}
+
+.sknv-detail-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1.25rem;
+    color: #ffffff;
+}
+.sknv-detail-card-header .header-icon {
+    width: 20px;
+    height: 20px;
+}
+.sknv-header-blue { background-color: #2563eb; }
+.sknv-header-green { background-color: #16a34a; }
+.sknv-header-orange { background-color: #f97316; }
+.sknv-header-yellow { background-color: #ca8a04; }
+.sknv-header-indigo { background-color: #4f46e5; }
+.sknv-header-purple { background-color: #7e22ce; }
+
+.sknv-detail-grid-body {
+    padding: 1rem 1.25rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+}
+.sknv-detail-metric-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 1rem;
+    background-color: #f9fafb;
+    border-radius: 0.5rem;
+    border: 1px solid #f3f4f6;
+    transition: all 0.2s ease-in-out;
+}
+.sknv-detail-metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+}
+.sknv-detail-metric-card .label {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: #374151;
+}
+.sknv-detail-metric-card .value {
+    font-weight: 800;
+    font-size: 1.75rem;
+    line-height: 1.2;
+    color: #111827;
+    margin: 0.25rem 0;
+}
+.sknv-detail-metric-card .average {
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-style: italic;
+}
+.sknv-detail-metric-card .evaluation-badge {
+    margin-top: 0.5rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+}
+.evaluation-badge.text-green-600 { background-color: #dcfce7; }
+.evaluation-badge.text-yellow-600 { background-color: #fef9c3; }
+
+.medal-container {
+    display: inline-block;
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    margin-left: 8px;
+}
+.medal-container svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+/* === END: SKNV DETAIL VIEW & MEDALS === */
