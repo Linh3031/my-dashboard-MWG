@@ -1,4 +1,4 @@
-// Version 3.5 - Resolve merge conflicts by removing duplicate function call
+// Version 3.6 - Refactor: Update imports to use uiRealtime module directly
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -10,7 +10,7 @@ import { firebase } from './firebase.js';
 import { auth } from './auth.js';
 import { luykeTab } from './tab-luyke.js';
 import { sknvTab } from './tab-sknv.js';
-import { realtimeTab } from './tab-realtime.js';
+import { uiRealtime } from './ui-realtime.js'; // <<< FIX: IMPORT MODULE MỚI
 import { initializeEventListeners } from './event-listeners/ui-listeners.js';
 import { sidebar } from './components/sidebar.js';
 import { storage } from './modules/storage.js';
@@ -27,13 +27,13 @@ import { settingsService } from './modules/settings.service.js';
 import { highlightService } from './modules/highlight.service.js';
 
 const app = {
-    currentVersion: '3.4',
+    currentVersion: '3.5',
     storage: storage,
 
     async init() {
         try {
             appState.competitionConfigs = [];
-            appState.viewingDetailFor = null; // <<< THÊM TRẠNG THÁI MỚI
+            appState.viewingDetailFor = null;
 
             await firebase.init();
             auth.init();
@@ -110,18 +110,18 @@ const app = {
 
             marqueeContainer.addEventListener('click', async () => {
                 try {
-                    const changelogRes = await fetch(`./changelog.json?v=${new Date().getTime()}`);
+                     const changelogRes = await fetch(`./changelog.json?v=${new Date().getTime()}`);
                     const changelogData = await changelogRes.json();
                     
                     const modalTitle = document.getElementById('help-modal-title');
                     const modalContent = document.getElementById('help-modal-content');
 
-                    if (modalTitle) modalTitle.textContent = "Lịch Sử Cập Nhật";
+                     if (modalTitle) modalTitle.textContent = "Lịch Sử Cập Nhật";
                     if (modalContent) {
                         modalContent.innerHTML = this._formatChangelogForModal(changelogData);
                     }
                    
-                    ui.toggleModal('help-modal', true);
+                     ui.toggleModal('help-modal', true);
 
                 } catch (error) {
                     console.error("Lỗi khi tải hoặc hiển thị changelog:", error);
@@ -130,7 +130,7 @@ const app = {
             });
 
         } catch (error) {
-            console.error("Lỗi khi thiết lập marquee:", error);
+             console.error("Lỗi khi thiết lập marquee:", error);
             marqueeText.textContent = "Không thể tải thông tin phiên bản.";
         }
     },
@@ -191,7 +191,7 @@ const app = {
         const loadSavedFile = async (saveKey, stateKey, fileType, uiId) => {
             if (saveKey === 'saved_category_structure') {
                 if (appState.categoryStructure.length > 0 || appState.brandList.length > 0) {
-                    ui.updateFileStatus('category-structure', 'Tải từ Cloud', `✓ Đã tải ${appState.categoryStructure.length} nhóm & ${appState.brandList.length} hãng.`, 'success');
+                     ui.updateFileStatus('category-structure', 'Tải từ Cloud', `✓ Đã tải ${appState.categoryStructure.length} nhóm & ${appState.brandList.length} hãng.`, 'success');
                 }
                 return;
             }
@@ -205,7 +205,7 @@ const app = {
                     appState[stateKey] = normalizedData;
                     ui.updateFileStatus(uiId, '', `✓ Đã tải ${normalizedData.length} dòng.`, 'success');
                 }
-            } catch (e) { console.error(`Lỗi đọc ${uiId} từ IndexedDB:`, e); }
+             } catch (e) { console.error(`Lỗi đọc ${uiId} từ IndexedDB:`, e); }
         };
 
         await loadSavedFile('saved_danhsachnv', 'danhSachNhanVien', 'danhsachnv', 'danhsachnv');
@@ -237,7 +237,7 @@ const app = {
                         else if (key === 'sknv') parsedTemplates[key]['subtab-sknv'] = oldString;
                         else if (key === 'realtime') parsedTemplates[key]['subtab-realtime-sieu-thi'] = oldString;
                     }
-                }
+                 }
                 appState.composerTemplates = parsedTemplates;
             } else {
                 appState.composerTemplates = { luyke: {}, sknv: {}, realtime: {} };
@@ -252,7 +252,7 @@ const app = {
     loadPastedDataFromStorage() {
         const pasteThuongERPThangTruoc = localStorage.getItem('saved_thuongerp_thangtruoc');
         if (pasteThuongERPThangTruoc) {
-            const el = document.getElementById('paste-thuongerp-thangtruoc');
+             const el = document.getElementById('paste-thuongerp-thangtruoc');
             if(el) {
                 el.value = pasteThuongERPThangTruoc;
                 this.handleErpThangTruocPaste({ target: el });
@@ -270,9 +270,9 @@ const app = {
             this.handleThiduaNVPaste();
         }
 
-        const pasteThuongERP = localStorage.getItem('daily_paste_thuongerp');
+         const pasteThuongERP = localStorage.getItem('daily_paste_thuongerp');
         if (pasteThuongERP) {
-            const el = document.getElementById('paste-thuongerp');
+             const el = document.getElementById('paste-thuongerp');
             if(el) {
                 el.value = pasteThuongERP;
                 this.handleErpPaste();
@@ -284,13 +284,13 @@ const app = {
         return new Promise((resolve, reject) => {
             if (!file) return reject(new Error("No file provided."));
             const reader = new FileReader();
-            reader.onload = (event) => {
+             reader.onload = (event) => {
                 try {
                     const data = new Uint8Array(event.target.result);
                     const workbook = XLSX.read(data, { type: 'array', cellDates: true });
                     resolve(workbook);
                 } catch (err) { reject(err); }
-            };
+             };
             reader.onerror = (err) => reject(new Error("Could not read the file: " + err));
             reader.readAsArrayBuffer(file);
         });
@@ -306,13 +306,14 @@ const app = {
 
         switch (activeTab.id) {
             case 'health-section':
-                luykeTab.render();
+                 luykeTab.render();
                 break;
             case 'health-employee-section':
                 sknvTab.render();
                 break;
             case 'realtime-section':
-                realtimeTab.render();
+                // <<< FIX: Call render from the correct module >>>
+                uiRealtime.render();
                 break;
         }
         // === GỌI LỆNH VẼ ICON SAU KHI RENDER LẠI TAB ===
@@ -323,14 +324,14 @@ const app = {
         document.querySelectorAll('.page-section').forEach(section => section.classList.toggle('hidden', section.id !== targetId));
         document.querySelectorAll('.nav-link').forEach(link => {
             const isActive = link.getAttribute('href') === `#${targetId}`;
-            link.classList.toggle('bg-blue-100', isActive);
+             link.classList.toggle('bg-blue-100', isActive);
             link.classList.toggle('text-blue-700', isActive);
         });
 
         if (targetId === 'home-section') ui.renderHomePage();
         else if (targetId === 'health-section') luykeTab.render();
         else if (targetId === 'health-employee-section') sknvTab.render();
-        else if (targetId === 'realtime-section') realtimeTab.render();
+        else if (targetId === 'realtime-section') uiRealtime.render(); // <<< FIX: Call render from the correct module >>>
         else if (targetId === 'declaration-section' && appState.isAdmin) ui.renderAdminHelpEditors();
 
         // === GỌI LỆNH VẼ ICON SAU KHI CHUYỂN TAB ===
@@ -342,7 +343,7 @@ const app = {
             const bookmarkUrl = await firebase.getBookmarkDownloadURL();
             const linkElement = document.getElementById('download-bookmark-link');
             if (linkElement) {
-                linkElement.href = bookmarkUrl;
+                 linkElement.href = bookmarkUrl;
             }
         } catch (error) {
             console.error("Không thể tải link bookmark:", error);
@@ -402,7 +403,7 @@ const app = {
             } else {
                  ui.showNotification(`File realtime lỗi: Thiếu cột ${missingColumns.join(', ')}.`, 'error');
                  if (document.getElementById('debug-tool-container')?.classList.contains('hidden')) {
-                    document.getElementById('toggle-debug-btn')?.click();
+                     document.getElementById('toggle-debug-btn')?.click();
                  }
             }
         } catch (err) { ui.showNotification(`Có lỗi khi đọc file: ${err.message}`, 'error'); console.error(err); }
@@ -479,17 +480,12 @@ const app = {
         }
     },
 
-    // <<< START: CÁC HÀM BỊ XÓA >>>
-    // handleSknvViewChange(e) { ... }
-    // handleDtnvRealtimeViewChange(e) { ... }
-    // <<< END: CÁC HÀM BỊ XÓA >>>
-
     handleDthangRealtimeViewChange(e) {
         const button = e.target.closest('.view-switcher__btn');
         if (button) {
             document.querySelectorAll('#dthang-realtime-view-selector .view-switcher__btn').forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
-            realtimeTab.render();
+            uiRealtime.render();
         }
     },
 
@@ -505,7 +501,7 @@ const app = {
     handleThiDuaViewChange(e) {
         const button = e.target.closest('.view-switcher__btn');
         if (button) {
-            document.querySelectorAll('#thidua-view-selector .view-switcher__btn').forEach(btn => btn.classList.remove('active'));
+             document.querySelectorAll('#thidua-view-selector .view-switcher__btn').forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
             const view = button.dataset.view;
             document.getElementById('thidua-employee-selector-container').classList.toggle('hidden', view !== 'employee');
@@ -592,7 +588,7 @@ const app = {
         const id = document.getElementById('competition-id').value;
         const name = document.getElementById('competition-name').value.trim();
         if (!name) {
-            ui.showNotification('Tên chương trình không được để trống.', 'error');
+             ui.showNotification('Tên chương trình không được để trống.', 'error');
             return;
         }
 
@@ -618,7 +614,7 @@ const app = {
         };
 
         if (id !== '') {
-            appState.competitionConfigs[parseInt(id, 10)] = newConfig;
+             appState.competitionConfigs[parseInt(id, 10)] = newConfig;
         } else {
             appState.competitionConfigs.push(newConfig);
         }
@@ -664,7 +660,7 @@ const app = {
     },
     
     handleContrastChange(e) {
-        const level = e.target.value;
+         const level = e.target.value;
         localStorage.setItem('contrastLevel', level);
         document.documentElement.dataset.contrast = level;
     },
@@ -701,7 +697,7 @@ const app = {
         // Ghi lên Firebase
         await firebase.saveDeclarationsToFirestore(declarationsToSave);
         // Cập nhật state cục bộ ngay lập tức
-        appState.declarations.hinhThucXuat = declarationsToSave.ycx;
+         appState.declarations.hinhThucXuat = declarationsToSave.ycx;
         appState.declarations.hinhThucXuatGop = declarationsToSave.ycxGop;
         appState.declarations.heSoQuyDoi = declarationsToSave.heSo;
         // Render lại tab hiện tại để áp dụng thay đổi
@@ -734,7 +730,7 @@ const app = {
             replyForm.classList.add('hidden');
         }
         if (e.target.classList.contains('submit-reply-btn')) {
-            const textarea = replyForm.querySelector('textarea');
+             const textarea = replyForm.querySelector('textarea');
             const success = await firebase.submitReply(docId, textarea.value.trim());
             if (success) {
                 textarea.value = '';
@@ -786,14 +782,14 @@ const app = {
                 const newTabBtn = document.createElement('button');
                 newTabBtn.className = `composer__tab-btn ${isActive ? 'active' : ''}`;
              
-newTabBtn.dataset.target = `context-pane-${subTabId}`;
+                newTabBtn.dataset.target = `context-pane-${subTabId}`;
                 newTabBtn.textContent = btn.textContent.trim();
                 newTabBtn.addEventListener('click', () => {
                     contextTabsContainer.querySelectorAll('.composer__tab-btn').forEach(t => t.classList.remove('active'));
                     contextContentContainer.querySelectorAll('.composer__context-pane').forEach(c => c.classList.add('hidden'));
                     newTabBtn.classList.add('active');
              
-document.getElementById(`context-pane-${subTabId}`).classList.remove('hidden');
+                    document.getElementById(`context-pane-${subTabId}`).classList.remove('hidden');
                 });
                 contextTabsContainer.appendChild(newTabBtn);
 
@@ -810,7 +806,7 @@ document.getElementById(`context-pane-${subTabId}`).classList.remove('hidden');
                     appState.composerTemplates[sectionId] = {};
                 }
      
-textarea.value = appState.composerTemplates[sectionId][subTabId] || '';
+                textarea.value = appState.composerTemplates[sectionId][subTabId] || '';
                 
                 newContentPane.appendChild(textarea);
                 contextContentContainer.appendChild(newContentPane);
@@ -836,7 +832,7 @@ textarea.value = appState.composerTemplates[sectionId][subTabId] || '';
             const content = nav.nextElementSibling;
             if (nav && content) {
              
-nav.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
+                nav.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
                 content.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
                 e.target.classList.add('active');
                 const targetId = e.target.dataset.tab;
@@ -852,7 +848,7 @@ nav.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
              if (!activeTextarea) {
                 ui.showNotification("Vui lòng chọn một tab nội dung để chèn thẻ.", "error");
             }
-            let tagToInsert = e.target.dataset.tag;
+             let tagToInsert = e.target.dataset.tag;
             if (e.target.dataset.tagTemplate) {
                 const dept = document.getElementById('composer-dept-filter').value;
                 tagToInsert = e.target.dataset.tagTemplate.replace('{dept}', dept);
@@ -866,7 +862,7 @@ nav.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
             const activeContextTab = modal.querySelector('#composer-context-tabs .composer__tab-btn.active');
             const subTabId = activeContextTab?.dataset.target.replace('context-pane-', '');
             if (subTabId) {
-                if (!appState.composerTemplates[sectionId]) appState.composerTemplates[sectionId] =
+                 if (!appState.composerTemplates[sectionId]) appState.composerTemplates[sectionId] =
 {};
                 appState.composerTemplates[sectionId][subTabId] = activeTextarea.value;
                 localStorage.setItem('composerTemplates', JSON.stringify(appState.composerTemplates));
@@ -883,7 +879,7 @@ nav.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
             }
 
          
-const template = activeTextarea.value;
+            const template = activeTextarea.value;
             
             const filteredReportData = this._getFilteredReportData(sectionId);
             const supermarketReport = services.aggregateReport(filteredReportData);
@@ -907,8 +903,8 @@ const template = activeTextarea.value;
                 imgEl.src = qrUrl;
             }
         }
-catch (error) {
-            console.error("Không thể tải mã QR:", error);
+        catch (error) {
+             console.error("Không thể tải mã QR:", error);
             const container = document.querySelector('.header-qr-container');
             if (container) {
                 container.style.display = 'none';

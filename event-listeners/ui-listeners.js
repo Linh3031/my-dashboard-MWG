@@ -1,4 +1,4 @@
-// Version 3.9 - Fix: Loại bỏ listener bị lồng và lỗi cú pháp sau khi gộp nhánh
+// Version 3.12 - Critical Fix: Correct all import paths and update click listener
 // MODULE: EVENT LISTENERS INITIALIZER
 // File này đóng vai trò là điểm khởi đầu, import và khởi chạy tất cả các module listener con.
 
@@ -7,7 +7,7 @@ import { ui } from '../ui.js';
 import { services } from '../services.js';
 import { luykeTab } from '../tab-luyke.js';
 import { sknvTab } from '../tab-sknv.js';
-import { realtimeTab } from '../tab-realtime.js';
+import { uiRealtime } from '../ui-realtime.js';
 import { initializeActionListeners } from './listeners-actions.js';
 import { initializeCollaborationListeners } from './listeners-collaboration.js';
 import { initializeCompetitionListeners } from './listeners-competition.js';
@@ -15,13 +15,12 @@ import { initializeHighlightingListeners } from './listeners-highlighting.js';
 import { initializeSettingsListeners } from './listeners-settings.js';
 import { initializeSortingListeners } from './listeners-sorting.js';
 import { dragDroplisteners } from './listeners-dragdrop.js';
-import { captureService } from '../modules/capture.service.js'; // <<< SỬA LỖI: THÊM IMPORT
+import { captureService } from '../modules/capture.service.js';
 
 let appController = null;
 
 // --- HELPERS / HANDLERS ---
 
-// === HOÀN TÁC: Quay lại logic xử lý file tại trình duyệt ===
 async function handleFileInputChange(e) {
     const fileInput = e.target;
     const file = fileInput.files[0];
@@ -74,7 +73,6 @@ async function handleFileInputChange(e) {
 }
 
 function handleFilterChange(prefix) {
-    // Mỗi khi bộ lọc thay đổi, chúng ta cần đảm bảo quay về màn hình tổng hợp
     appState.viewingDetailFor = null;
     ui.updateEmployeeFilter(prefix);
     appController.updateAndRenderCurrentTab();
@@ -85,7 +83,6 @@ function handleFilterChange(prefix) {
 export function initializeEventListeners(mainAppController) {
     appController = mainAppController;
 
-    // --- Khởi tạo các thư viện UI ---
     try {
         const multiSelectConfig = {
             removeItemButton: true,
@@ -99,7 +96,6 @@ export function initializeEventListeners(mainAppController) {
             placeholder: true,
             placeholderValue: 'Chọn hoặc gõ để tìm...',
             searchPlaceholderValue: 'Tìm kiếm...',
-            closeOnSelect: false,
         };
 
         ['luyke', 'sknv', 'realtime'].forEach(prefix => {
@@ -129,7 +125,7 @@ export function initializeEventListeners(mainAppController) {
             searchPlaceholderValue: 'Tìm kiếm...'
         };
         const singleSelects = {
-            'thidua-employee-filter': 'thidua_employee_detail',
+             'thidua-employee-filter': 'thidua_employee_detail',
             'thidua-vung-filter-supermarket': 'thiDuaVung_sieuThi',
         };
         for (const [id, key] of Object.entries(singleSelects)) {
@@ -151,7 +147,7 @@ export function initializeEventListeners(mainAppController) {
                         instance.setDate(dateRange, false);
                     }
                     ui.updateDateSummary(document.getElementById(`${prefix}-date-summary`), instance);
-                    appState.viewingDetailFor = null; // Reset detail view when changing date
+                    appState.viewingDetailFor = null;
                     renderFunc();
                 }
             });
@@ -162,7 +158,6 @@ export function initializeEventListeners(mainAppController) {
         initDatePicker('sknv', sknvTab.render);
     } catch (error) { console.error("Lỗi khi khởi tạo Flatpickr:", error); }
 
-    // --- Đăng ký các nhóm sự kiện từ module con ---
     initializeSettingsListeners(appController);
     initializeHighlightingListeners(appController);
     initializeActionListeners();
@@ -171,18 +166,17 @@ export function initializeEventListeners(mainAppController) {
     initializeCompetitionListeners(appController);
     dragDroplisteners.init(appController);
 
-    // --- Các sự kiện chính & Tương tác đặc thù ---
     document.getElementById('force-reload-btn')?.addEventListener('click', () => window.location.reload());
     document.querySelectorAll('a.nav-link').forEach(link => link.addEventListener('click', (e) => { e.preventDefault(); appController.switchTab(link.getAttribute('href').substring(1)); }));
     
     document.querySelectorAll('.sub-tab-btn').forEach(btn => btn.addEventListener('click', (e) => {
         ui.handleSubTabClick(e.currentTarget);
-        appState.viewingDetailFor = null; // Reset detail view when changing tabs
+        appState.viewingDetailFor = null;
         const mainTabId = e.currentTarget.closest('.page-section')?.id || e.currentTarget.closest('.settings-drawer')?.id;
         
         if (mainTabId === 'health-section') luykeTab.render();
         else if (mainTabId === 'health-employee-section') sknvTab.render();
-        else if (mainTabId === 'realtime-section') realtimeTab.render();
+        else if (mainTabId === 'realtime-section') uiRealtime.render(); 
     }));
 
     document.querySelectorAll('.toggle-filters-btn').forEach(button => button.addEventListener('click', () => ui.toggleFilterSection(button.dataset.target)));
@@ -209,27 +203,33 @@ export function initializeEventListeners(mainAppController) {
     ['luyke', 'sknv', 'realtime'].forEach(prefix => {
         document.getElementById(`${prefix}-filter-warehouse`)?.addEventListener('change', () => handleFilterChange(prefix));
         document.getElementById(`${prefix}-filter-department`)?.addEventListener('change', () => handleFilterChange(prefix));
-        document.getElementById(`${prefix}-filter-name`)?.addEventListener('change', () => handleFilterChange(prefix));
+         document.getElementById(`${prefix}-filter-name`)?.addEventListener('change', () => handleFilterChange(prefix));
     });
     
     document.getElementById('sknv-view-selector')?.addEventListener('click', (e) => appController.handleSknvViewChange(e));
     document.getElementById('sknv-employee-filter')?.addEventListener('change', () => sknvTab.render());
     
-    // === START: BỘ LẮNG NGHE SỰ KIỆN TẬP TRUNG CHO CÁC CLICK QUAN TRỌNG ===
     document.body.addEventListener('click', (e) => {
-        // Xử lý click để xem chi tiết nhân viên
-        const employeeCell = e.target.closest('.employee-name-cell');
-        if (employeeCell && employeeCell.dataset.employeeId) {
+        // === START: UPDATED CLICK LOGIC (V3.12) ===
+        // This now targets '.interactive-row' which is on both summary cards and table rows
+        const interactiveRow = e.target.closest('.interactive-row');
+        if (interactiveRow && interactiveRow.dataset.employeeId) {
             e.preventDefault();
+            
+            // Prevent re-triggering if already viewing the same employee's detail
+            if (appState.viewingDetailFor && appState.viewingDetailFor.employeeId === interactiveRow.dataset.employeeId) {
+                return;
+            }
+            
             appState.viewingDetailFor = {
-                employeeId: employeeCell.dataset.employeeId,
-                sourceTab: employeeCell.dataset.sourceTab
+                employeeId: interactiveRow.dataset.employeeId,
+                sourceTab: interactiveRow.dataset.sourceTab
             };
             appController.updateAndRenderCurrentTab();
             return;
         }
+        // === END: UPDATED CLICK LOGIC ===
 
-        // Xử lý click nút "Quay lại" từ màn hình chi tiết
         const backButton = e.target.closest('.back-to-summary-btn');
         if (backButton) {
             e.preventDefault();
@@ -238,19 +238,17 @@ export function initializeEventListeners(mainAppController) {
             return;
         }
 
-        // Xử lý nút Chụp Ảnh trên màn hình chi tiết (được tạo động)
         const captureDetailBtn = e.target.closest('#capture-sknv-detail-btn, #capture-dtnv-lk-detail-btn, #capture-dtnv-rt-detail-btn');
         if (captureDetailBtn) {
             e.preventDefault();
             const areaToCapture = captureDetailBtn.closest('.sub-tab-content')?.querySelector('[id$="-capture-area"]');
             const title = appState.viewingDetailFor?.employeeId || 'ChiTietNV';
             if (areaToCapture) {
-                captureService.captureDashboardInParts(areaToCapture, title); // <<< SỬA LỖI: Gọi hàm từ module đúng
+                captureService.captureDashboardInParts(areaToCapture, title);
             }
             return;
         }
         
-        // Listener cho luyke-thidua-view-selector
         const luykeViewSwitcherBtn = e.target.closest('#luyke-thidua-view-selector .view-switcher__btn');
         if (luykeViewSwitcherBtn) {
             e.preventDefault();
@@ -258,7 +256,6 @@ export function initializeEventListeners(mainAppController) {
             return;
         }
 
-        // Listener cho thidua-view-selector
         const thiDuaViewSwitcherBtn = e.target.closest('#thidua-view-selector .view-switcher__btn');
         if (thiDuaViewSwitcherBtn) {
             e.preventDefault();
@@ -266,7 +263,6 @@ export function initializeEventListeners(mainAppController) {
             return;
         }
         
-        // Listener cho dthang-realtime-view-selector
         const dtHangViewSwitcherBtn = e.target.closest('#dthang-realtime-view-selector .view-switcher__btn');
         if (dtHangViewSwitcherBtn) {
             e.preventDefault();
@@ -274,9 +270,8 @@ export function initializeEventListeners(mainAppController) {
             return;
         }
     });
-    // === END: BỘ LẮNG NGHE SỰ KIỆN TẬP TRUNG ===
     
     document.getElementById('thidua-employee-filter')?.addEventListener('change', () => ui.displayCompetitionReport('employee'));
-    document.getElementById('realtime-brand-category-filter')?.addEventListener('change', () => realtimeTab.handleBrandFilterChange());
-    document.getElementById('realtime-brand-filter')?.addEventListener('change', () => realtimeTab.handleBrandFilterChange());
+    document.getElementById('realtime-brand-category-filter')?.addEventListener('change', () => uiRealtime.handleBrandFilterChange());
+    document.getElementById('realtime-brand-filter')?.addEventListener('change', () => uiRealtime.handleBrandFilterChange());
 }

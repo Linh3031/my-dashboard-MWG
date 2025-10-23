@@ -1,23 +1,22 @@
-// Version 3.4 - Refactor string concatenation to prevent syntax errors
+// Version 3.9 - Fix click-to-detail bug in Luy Ke Revenue tab
 // MODULE: UI COMPONENTS
 // Chứa các hàm UI chung, tái sử dụng được trên toàn bộ ứng dụng.
 
 import { appState } from './state.js';
 import { services } from './services.js';
 import { utils } from './utils.js';
-import { uiSknv } from './ui-sknv.js';
+import { settingsService } from './modules/settings.service.js';
 
 export const uiComponents = {
     renderSettingsButton(idSuffix) {
         return `<button id="settings-btn-${idSuffix}" class="settings-trigger-btn" title="Tùy chỉnh hiển thị">
-                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                </button>`;
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                 </button>`;
     },
 
     renderCompetitionConfigUI() {
         const container = document.getElementById(`competition-list-container`);
         if (!container) return;
-
         const configs = appState.competitionConfigs || [];
 
         if (configs.length === 0) {
@@ -28,20 +27,20 @@ export const uiComponents = {
         container.innerHTML = configs.map((config, index) => {
             return `
                 <div class="p-3 border rounded-lg bg-white flex justify-between items-center shadow-sm">
-                    <div>
-                        <div class="flex items-center gap-x-2">
-                            <p class="font-bold text-gray-800">${config.name}</p>
+                     <div>
+                         <div class="flex items-center gap-x-2">
+                             <p class="font-bold text-gray-800">${config.name}</p>
                         </div>
-                        <div class="text-xs text-gray-500 mt-1 space-y-1">
-                            <p><strong>Hãng:</strong> <span class="font-semibold text-blue-600">${(config.brands || []).join(', ')}</span></p>
-                            <p><strong>Nhóm hàng:</strong> <span class="font-semibold">${(config.groups || []).length} nhóm</span></p>
+                         <div class="text-xs text-gray-500 mt-1 space-y-1">
+                             <p><strong>Hãng:</strong> <span class="font-semibold text-blue-600">${(config.brands || []).join(', ')}</span></p>
+                             <p><strong>Nhóm hàng:</strong> <span class="font-semibold">${(config.groups || []).length} nhóm</span></p>
                         </div>
-                    </div>
-                    <div class="flex items-center gap-x-2 flex-shrink-0">
+                     </div>
+                     <div class="flex items-center gap-x-2 flex-shrink-0">
                         <button class="edit-competition-btn p-2 rounded-md hover:bg-gray-200 text-gray-600" data-index="${index}" title="Sửa chương trình">
                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                        </button>
-                        <button class="delete-competition-btn p-2 rounded-md hover:bg-red-100 text-red-600" data-index="${index}" title="Xóa chương trình">
+                         </button>
+                         <button class="delete-competition-btn p-2 rounded-md hover:bg-red-100 text-red-600" data-index="${index}" title="Xóa chương trình">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                         </button>
                     </div>
@@ -56,7 +55,6 @@ export const uiComponents = {
 
         if (!qdcContainer || !nganhHangContainer) return;
         
-        // Clear previous tags
         qdcContainer.innerHTML = '<h5 class="composer__tag-group-title">Chọn Nhóm Hàng QĐC</h5>';
         nganhHangContainer.innerHTML = '<h5 class="composer__tag-group-title">Chọn Ngành Hàng Chi Tiết</h5>';
 
@@ -72,7 +70,6 @@ export const uiComponents = {
             const qdcItems = Object.values(supermarketReport.qdc)
                 .filter(item => item.sl > 0)
                 .sort((a,b) => b.dtqd - a.dtqd);
-            
             qdcItems.forEach(item => {
                 const tag = `[QDC_INFO_${item.name}]`;
                 qdcContainer.appendChild(createTagButton(tag, item.name));
@@ -83,7 +80,7 @@ export const uiComponents = {
             const nganhHangItems = Object.values(supermarketReport.nganhHangChiTiet)
                 .filter(item => item.quantity > 0)
                 .sort((a, b) => b.revenue - a.revenue)
-                .slice(0, 15); // Limit to top 15 for brevity
+                .slice(0, 15);
 
             nganhHangItems.forEach(item => {
                 const cleanName = utils.cleanCategoryName(item.name);
@@ -93,7 +90,296 @@ export const uiComponents = {
         }
     },
 
-    // --- START: REFACTORED SHARED FUNCTIONS ---
+    displayEmployeeRevenueReport: (reportData, containerId, sortStateKey) => {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        container.innerHTML = '';
+        
+        let detailContainerId;
+        if (sortStateKey === 'doanhthu_lk') {
+            detailContainerId = 'dtnv-lk-details-container';
+        } else if (sortStateKey === 'realtime_dt_nhanvien') {
+            detailContainerId = 'realtime-employee-detail-container';
+        } else {
+            detailContainerId = 'sknv-details-container';
+        }
+    
+        const detailContainer = document.getElementById(detailContainerId);
+        if (detailContainer) {
+            detailContainer.innerHTML = ''; 
+            detailContainer.classList.add('hidden');
+        }
+        container.classList.remove('hidden');
+
+        if (!reportData || reportData.length === 0) {
+            container.innerHTML = '<p class="text-gray-500">Không có dữ liệu doanh thu cho lựa chọn này.</p>';
+            return;
+        }
+        let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden" data-capture-group="1">
+            <div class="p-4 header-group-1 text-gray-800">
+                <h3 class="text-xl font-bold uppercase">Doanh thu nhân viên</h3>
+                <p class="text-sm italic text-gray-600">(đơn vị tính: Triệu đồng)</p>
+            </div>`;
+        
+        const groupedByDept = {};
+        reportData.forEach(item => {
+            const dept = item.boPhan;
+            if (!groupedByDept[dept]) groupedByDept[dept] = [];
+            groupedByDept[dept].push(item);
+        });
+        
+        const departmentOrder = utils.getSortedDepartmentList(reportData);
+        departmentOrder.forEach(deptName => {
+            if (groupedByDept[deptName]) {
+                finalHTML += uiComponents.renderRevenueTableForDepartment(deptName, groupedByDept[deptName], sortStateKey);
+            }
+        });
+
+        finalHTML += `</div>`;
+        container.innerHTML = finalHTML;
+    },
+
+    renderRevenueTableForDepartment: (title, data, sortStateKey) => {
+        const sortState = appState.sortState[sortStateKey] || { key: 'doanhThu', direction: 'desc' };
+        const { key, direction } = sortState;
+        const sortedData = [...data].sort((a, b) => {
+            const valA = a[key] || 0; const valB = b[key] || 0;
+            return direction === 'asc' ? valA - valB : valB - valA;
+        });
+
+        const totals = data.reduce((acc, item) => {
+            acc.doanhThu += item.doanhThu;
+            acc.doanhThuQuyDoi += item.doanhThuQuyDoi;
+            acc.doanhThuTraGop += item.doanhThuTraGop;
+            acc.doanhThuChuaXuat += item.doanhThuChuaXuat;
+            return acc;
+        }, { doanhThu: 0, doanhThuQuyDoi: 0, doanhThuTraGop: 0, doanhThuChuaXuat: 0 });
+
+        totals.hieuQuaQuyDoi = totals.doanhThu > 0 ? (totals.doanhThuQuyDoi / totals.doanhThu) - 1 : 0;
+        totals.tyLeTraCham = totals.doanhThu > 0 ? totals.doanhThuTraGop / totals.doanhThu : 0;
+
+        let titleClass = '';
+        if (title.includes('Tư Vấn')) titleClass = 'department-header-tv';
+        else if (title.includes('Kho')) titleClass = 'department-header-kho';
+        else if (title.includes('Trang Trí')) titleClass = 'department-header-tt';
+
+        const isRealtime = sortStateKey === 'realtime_dt_nhanvien';
+        const headerClasses = {
+            hoTen: '',
+            doanhThu: isRealtime ? 'header-group-4' : 'header-bg-blue',
+            doanhThuQuyDoi: isRealtime ? 'header-group-4' : 'header-bg-blue',
+            hieuQuaQuyDoi: isRealtime ? 'header-group-4' : 'header-bg-blue',
+            doanhThuTraGop: isRealtime ? 'header-group-5' : 'header-bg-green',
+            tyLeTraCham: isRealtime ? 'header-group-5' : 'header-bg-green',
+            doanhThuChuaXuat: isRealtime ? 'header-group-6' : 'header-bg-yellow'
+        };
+
+        const headerClass = (sortKey) => `px-4 py-3 sortable ${headerClasses[sortKey] || ''} ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
+        
+        let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="7">
+                 <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
+                     <tr>
+                                <th class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('doanhThu')} text-right" data-sort="doanhThu">Doanh Thu <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('doanhThuQuyDoi')} text-right" data-sort="doanhThuQuyDoi">Doanh Thu QĐ <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('hieuQuaQuyDoi')} text-right" data-sort="hieuQuaQuyDoi">% QĐ <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('doanhThuTraGop')} text-right" data-sort="doanhThuTraGop">DT trả chậm <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('tyLeTraCham')} text-right" data-sort="tyLeTraCham">% trả chậm <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('doanhThuChuaXuat')} text-right" data-sort="doanhThuChuaXuat">DT Chưa Xuất <span class="sort-indicator"></span></th>
+                            </tr>
+                 </thead><tbody>`;
+        sortedData.forEach(item => {
+            const { mucTieu } = item;
+            const qdClass = (mucTieu && item.hieuQuaQuyDoi < (mucTieu.phanTramQD / 100)) ? 'cell-performance is-below' : '';
+            const tcClass = (mucTieu && item.tyLeTraCham < (mucTieu.phanTramTC / 100)) ? 'cell-performance is-below' : '';
+            
+            // === START: BUG FIX LOGIC ===
+            let sourceTab;
+            if (sortStateKey === 'doanhthu_lk') sourceTab = 'dtnv-lk';
+            else if (sortStateKey === 'realtime_dt_nhanvien') sourceTab = 'dtnv-rt';
+            else sourceTab = 'sknv';
+            // === END: BUG FIX LOGIC ===
+
+            tableHTML += `<tr class="interactive-row" data-employee-id="${item.maNV}" data-source-tab="${sourceTab}">
+                    <td class="px-4 py-2 font-semibold line-clamp-2 employee-name-cell">
+                        <a href="#">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</a>
+                    </td>
+                    <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThu)}</td>
+                    <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThuQuyDoi)}</td>
+                    <td class="px-4 py-2 text-right font-bold ${qdClass}">${uiComponents.formatPercentage(item.hieuQuaQuyDoi)}</td>
+                    <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThuTraGop)}</td>
+                    <td class="px-4 py-2 text-right font-bold ${tcClass}">${uiComponents.formatPercentage(item.tyLeTraCham)}</td>
+                    <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThuChuaXuat)}</td></tr>`;
+        });
+         tableHTML += `</tbody><tfoot class="table-footer font-bold"><tr>
+                    <td class="px-4 py-2">Tổng</td>
+                    <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThu)}</td>
+                    <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuQuyDoi)}</td>
+                    <td class="px-4 py-2 text-right">${uiComponents.formatPercentage(totals.hieuQuaQuyDoi)}</td>
+                    <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuTraGop)}</td>
+                    <td class="px-4 py-2 text-right">${uiComponents.formatPercentage(totals.tyLeTraCham)}</td>
+                    <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuChuaXuat)}</td>
+                 </tr></tfoot></table></div></div>`;
+        return tableHTML;
+    },
+
+    displayEmployeeEfficiencyReport: (reportData, containerId, sortStateKey) => {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        if (!reportData || reportData.length === 0) {
+            container.innerHTML = '<p class="text-gray-500">Không có dữ liệu hiệu quả cho lựa chọn này.</p>';
+            return;
+        }
+
+        const columnSettings = settingsService.loadEfficiencyViewSettings();
+        const visibleColumns = columnSettings.filter(c => c.visible);
+
+        const columnTogglesHTML = `
+            <div id="efficiency-column-toggles" class="p-3 border-b border-gray-200 flex flex-wrap items-center gap-x-2 gap-y-2">
+                <span class="text-sm font-semibold mr-2 text-gray-700 non-draggable">Tùy chỉnh cột:</span>
+                ${columnSettings.map(col => `
+                    <button 
+                        class="column-toggle-btn draggable-tag flex items-center ${col.visible ? 'active' : ''}" 
+                        data-column-id="${col.id}">
+                        <svg class="drag-handle-icon mr-2 cursor-grab" width="12" height="12" viewBox="0 0 10 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M4 2a1 1 0 10-2 0 1 1 0 002 0zM2 9a1 1 0 110-2 1 1 0 010 2zm0 5a1 1 0 110-2 1 1 0 010 2zm5-12a1 1 0 10-2 0 1 1 0 002 0zM7 9a1 1 0 110-2 1 1 0 010 2zm0 5a1 1 0 110-2 1 1 0 010 2z" fill="currentColor"></path></svg>
+                        <span>${col.label}</span>
+                    </button>
+                `).join('')}
+            </div>
+        `;
+
+        let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+                            ${columnTogglesHTML}
+                            <div data-capture-group="efficiency-table">
+                                <div class="p-4 header-group-3 text-gray-800">
+                                    <h3 class="text-xl font-bold uppercase">HIỆU QUẢ KHAI THÁC THEO NHÂN VIÊN</h3>
+                                    <p class="text-sm italic text-gray-600">(đơn vị tính: Triệu đồng)</p>
+                                </div>`;
+
+        const groupedByDept = {};
+        reportData.forEach(item => {
+            const dept = item.boPhan;
+            if (!groupedByDept[dept]) groupedByDept[dept] = [];
+            groupedByDept[dept].push(item);
+        });
+
+        const departmentOrder = utils.getSortedDepartmentList(reportData);
+
+        departmentOrder.forEach(deptName => {
+            if (groupedByDept[deptName]) {
+                finalHTML += uiComponents.renderEfficiencyTableForDepartment(deptName, groupedByDept[deptName], sortStateKey, visibleColumns);
+            }
+        });
+
+        finalHTML += `    </div> 
+                        </div>`;
+        container.innerHTML = finalHTML;
+    },
+
+    renderEfficiencyTableForDepartment: (title, data, sortStateKey, visibleColumns) => {
+        const sortState = appState.sortState[sortStateKey] || { key: 'dtICT', direction: 'desc' };
+        const { key, direction } = sortState;
+        const sortedData = [...data].sort((a, b) => {
+            const valA = a[key] || 0; const valB = b[key] || 0;
+            return direction === 'asc' ? valA - valB : valB - valA;
+        });
+
+        const formatMap = {
+            dtICT: (val) => uiComponents.formatRevenue(val),
+            dtPhuKien: (val) => uiComponents.formatRevenue(val),
+            dtCE: (val) => uiComponents.formatRevenue(val),
+            dtGiaDung: (val) => uiComponents.formatRevenue(val),
+            defaultPercent: (val) => uiComponents.formatPercentage(val)
+        };
+
+        const totals = data.reduce((acc, item) => {
+            acc.dtICT += item.dtICT;
+            acc.dtPhuKien += item.dtPhuKien;
+            acc.dtCE += item.dtCE;
+            acc.dtGiaDung += item.dtGiaDung;
+            acc.dtMLN += item.dtMLN;
+            acc.slSmartphone += item.slSmartphone;
+            acc.slSimOnline += item.slSimOnline;
+            acc.slUDDD += item.slUDDD;
+            acc.slBaoHiemDenominator += item.slBaoHiemDenominator;
+            acc.slBaoHiemVAS += item.slBaoHiemVAS;
+            return acc;
+        }, { dtICT: 0, dtPhuKien: 0, dtCE: 0, dtGiaDung: 0, dtMLN: 0, slSmartphone: 0, slSimOnline: 0, slUDDD: 0, slBaoHiemDenominator: 0, slBaoHiemVAS: 0 });
+
+        totals.pctPhuKien = totals.dtICT > 0 ? totals.dtPhuKien / totals.dtICT : 0;
+        totals.pctGiaDung = totals.dtCE > 0 ? totals.dtGiaDung / totals.dtCE : 0;
+        totals.pctMLN = totals.dtCE > 0 ? totals.dtMLN / totals.dtCE : 0;
+        totals.pctSim = totals.slSmartphone > 0 ? totals.slSimOnline / totals.slSmartphone : 0;
+        totals.pctVAS = totals.slSmartphone > 0 ? totals.slUDDD / totals.slSmartphone : 0;
+        totals.pctBaoHiem = totals.slBaoHiemDenominator > 0 ? totals.slBaoHiemVAS / totals.slBaoHiemDenominator : 0;
+        
+        let titleClass = '';
+        if (title.includes('Tư Vấn')) titleClass = 'department-header-tv';
+        else if (title.includes('Kho')) titleClass = 'department-header-kho';
+        else if (title.includes('Trang Trí')) titleClass = 'department-header-tt';
+
+        const allHeaders = {
+            dtICT: { label: 'DT ICT', class: 'text-right header-group-10' },
+            dtPhuKien: { label: 'DT Phụ kiện', class: 'text-right header-group-10' },
+            pctPhuKien: { label: '% Phụ kiện', class: 'text-right header-group-10' },
+            dtCE: { label: 'DT CE', class: 'text-right header-group-11' },
+            dtGiaDung: { label: 'DT Gia dụng', class: 'text-right header-group-11' },
+            pctGiaDung: { label: '% Gia dụng', class: 'text-right header-group-11' },
+            pctMLN: { label: '% MLN', class: 'text-right header-group-12' },
+            pctSim: { label: '% Sim', class: 'text-right header-group-12' },
+            pctVAS: { label: '% VAS', class: 'text-right header-group-12' },
+            pctBaoHiem: { label: '% Bảo hiểm', class: 'text-right header-group-12' }
+        };
+
+        const headerClass = (sortKey) => `px-4 py-3 sortable draggable-header ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
+        const captureColumnCount = 1 + visibleColumns.length;
+
+        let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="${captureColumnCount}">
+            <thead class="text-xs text-slate-800 uppercase font-bold">
+                 <tr>
+                    <th class="${headerClass('hoTen')}" data-sort="hoTen">Tên nhân viên <span class="sort-indicator"></span></th>
+                    ${visibleColumns.map(col => `<th class="${headerClass(col.id)} ${allHeaders[col.id].class}" data-sort="${col.id}">${allHeaders[col.id].label} <span class="sort-indicator"></span></th>`).join('')}
+                </tr>
+            </thead><tbody>`;
+
+        sortedData.forEach(item => {
+            const { mucTieu } = item;
+            const classMap = {
+                pctPhuKien: (mucTieu && item.pctPhuKien < (mucTieu.phanTramPhuKien / 100)) ? 'cell-performance is-below' : '',
+                pctGiaDung: (mucTieu && item.pctGiaDung < (mucTieu.phanTramGiaDung / 100)) ? 'cell-performance is-below' : '',
+                pctMLN: (mucTieu && item.pctMLN < (mucTieu.phanTramMLN / 100)) ? 'cell-performance is-below' : '',
+                pctSim: (mucTieu && item.pctSim < (mucTieu.phanTramSim / 100)) ? 'cell-performance is-below' : '',
+                pctVAS: (mucTieu && item.pctVAS < (mucTieu.phanTramVAS / 100)) ? 'cell-performance is-below' : '',
+                pctBaoHiem: (mucTieu && item.pctBaoHiem < (mucTieu.phanTramBaoHiem / 100)) ? 'cell-performance is-below' : ''
+            };
+
+            tableHTML += `<tr class="interactive-row">
+                <td class="px-4 py-2 font-semibold line-clamp-2 employee-name-cell" data-employee-id="${item.maNV}" data-source-tab="sknv">
+                    <a href="#">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</a>
+                </td>
+                ${visibleColumns.map(col => {
+                    const value = item[col.id];
+                    const className = classMap[col.id] || '';
+                    const formatter = formatMap[col.id] || formatMap.defaultPercent;
+                    return `<td class="px-4 py-2 text-right font-bold ${className}">${formatter(value)}</td>`;
+                }).join('')}
+            </tr>`;
+        });
+
+        tableHTML += `</tbody><tfoot class="table-footer font-bold">
+             <tr>
+                <td class="px-4 py-2">Tổng</td>
+                ${visibleColumns.map(col => {
+                    const value = totals[col.id];
+                    const formatter = formatMap[col.id] || formatMap.defaultPercent;
+                    return `<td class="px-4 py-2 text-right">${formatter(value)}</td>`;
+                }).join('')}
+            </tr>
+        </tfoot></table></div></div>`;
+        return tableHTML;
+    },
+    
     renderCategoryTable(title, sortStateKey, reportData, mainRevenueKey, mainQuantityKey, subQuantityKeys, subQuantityLabels) {
         const sortState = appState.sortState[sortStateKey] || { key: mainRevenueKey, direction: 'desc' };
         const { key, direction } = sortState;
@@ -192,10 +478,7 @@ export const uiComponents = {
         ];
         container.innerHTML = htmlParts.join('');
     },
-    // --- END: REFACTORED SHARED FUNCTIONS ---
-
-
-    // --- GENERAL UI HELPERS ---
+    
     showProgressBar: (elementId) => document.getElementById(`progress-${elementId}`)?.classList.remove('hidden'),
     hideProgressBar: (elementId) => document.getElementById(`progress-${elementId}`)?.classList.add('hidden'),
     
@@ -258,7 +541,6 @@ export const uiComponents = {
         }
     },
 
-    // --- FORMATTERS ---
     formatNumber: (value, decimals = 0) => {
         if (isNaN(value) || value === null) return '0';
         return new Intl.NumberFormat('vi-VN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(value);
@@ -309,14 +591,20 @@ export const uiComponents = {
         return "vài giây trước";
     },
 
+    // === START: UPDATED FUNCTION (V3.8) ===
     getShortEmployeeName(hoTen, maNV) {
         if (!hoTen) return maNV || '';
-        const nameParts = hoTen.split(' ');
-        const firstName = nameParts[nameParts.length - 1];
-        return `${firstName} - ${maNV}`;
+        const nameParts = hoTen.split(' ').filter(p => p); // Lọc bỏ các khoảng trắng thừa
+        
+        let displayName = hoTen; // Mặc định là tên đầy đủ
+        if (nameParts.length > 2) {
+            displayName = nameParts.slice(-2).join(' '); // Lấy 2 từ cuối
+        }
+        
+        return `${displayName} - ${maNV}`;
     },
+    // === END: UPDATED FUNCTION ===
 
-    // --- MODALS, DRAWERS, TABS ---
     toggleModal(modalId, show) {
         const modal = document.getElementById(modalId);
         if (!modal) return;
@@ -335,7 +623,6 @@ export const uiComponents = {
         const overlay = document.getElementById('drawer-overlay');
 
         if (!drawer || !sidebar || !overlay) return;
-
         if (show) {
             drawer.classList.remove('hidden');
             setTimeout(() => {
@@ -388,7 +675,6 @@ export const uiComponents = {
         }
     },
 
-    // --- COMPOSER, HELP, FEEDBACK UI ---
     showHelpModal(helpId) {
         const title = `Hướng dẫn cho Tab ${helpId.charAt(0).toUpperCase() + helpId.slice(1)}`;
         const content = appState.helpContent[helpId] || "Nội dung hướng dẫn không có sẵn.";
@@ -529,7 +815,6 @@ export const uiComponents = {
         }).join('');
     },
 
-    // --- SETTINGS & FILTERS UI ---
     applyInterfaceSettings(settings) {
         const root = document.documentElement;
         if (settings.kpiCard1Bg) root.style.setProperty('--kpi-card-1-bg', settings.kpiCard1Bg);
@@ -600,6 +885,7 @@ export const uiComponents = {
             });
             content += '</ul>';
         }
+    
         content += `<p class="text-xs italic mt-2"><strong>Trạng thái xử lý:</strong> ${debugData.status}</p></div>`;
         container.innerHTML = content;
     },
@@ -754,8 +1040,8 @@ export const uiComponents = {
         
         const createOptionsHTML = (items, includeAllOption = false) => {
             let html = includeAllOption ? '<option value="">Tất cả</option>' : '';
-             html += items.map(item => `<option value="${item}">${item}</option>`).join('');
-             return html;
+            html += items.map(item => `<option value="${item}">${item}</option>`).join('');
+            return html;
         };
         const luykeGoalEl = document.getElementById('luyke-goal-warehouse-select');
         if (luykeGoalEl) luykeGoalEl.innerHTML = createOptionsHTML(uniqueWarehouses);

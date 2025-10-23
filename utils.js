@@ -1,4 +1,4 @@
-// Version 3.1 - Refactor cleanCategoryName to capitalize words
+// Version 3.3 - Make department sorting more robust
 // MODULE: UTILITIES
 // Chứa các hàm tiện ích chung không thuộc về logic hay giao diện cụ thể.
 import { ui } from './ui.js';
@@ -54,4 +54,26 @@ export const utils = {
             ui.showNotification('Có lỗi xảy ra khi xuất file Excel.', 'error');
         }
     },
+
+    // <<< START: UPDATED FUNCTION >>>
+    getSortedDepartmentList(reportData) {
+        const allDepts = [...new Set(reportData.map(item => item.boPhan).filter(Boolean))];
+
+        allDepts.sort((a, b) => {
+            const aIsPriority = a.includes('Tư Vấn - ĐM');
+            const bIsPriority = b.includes('Tư Vấn - ĐM');
+
+            if (aIsPriority && !bIsPriority) {
+                return -1; // a comes first
+            }
+            if (!aIsPriority && bIsPriority) {
+                return 1; // b comes first
+            }
+            // If both are priority or both are not, sort alphabetically
+            return a.localeCompare(b);
+        });
+
+        return allDepts;
+    },
+    // <<< END: UPDATED FUNCTION >>>
 };

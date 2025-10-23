@@ -1,15 +1,147 @@
-// Version 3.7 - Fix: Add correct data-source-tab for clickable rows
+// Version 4.0 - Major Refactor: Merge tab-realtime logic and fix all TypeErrors
 // MODULE: UI REALTIME
-// Chứa các hàm render giao diện cho tab "Doanh thu Realtime".
+// Chứa TOÀN BỘ logic và hàm render giao diện cho tab "Doanh thu Realtime".
 
 import { appState } from './state.js';
+import { ui } from './ui.js';
 import { services } from './services.js';
-import { utils } from './utils.js';
-import { uiComponents } from './ui-components.js';
 import { settingsService } from './modules/settings.service.js';
-import { uiSknv } from './ui-sknv.js';
+import { highlightService } from './modules/highlight.service.js';
+import { dragDroplisteners } from './event-listeners/listeners-dragdrop.js';
+import { uiComponents } from './ui-components.js';
 
 export const uiRealtime = {
+    render() {
+        console.log("[CHẨN ĐOÁN] Bắt đầu render() trong 'ui-realtime.js' (đã gộp).");
+
+        if (appState.danhSachNhanVien.length === 0) {
+            ui.togglePlaceholder('realtime-section', true);
+            return;
+        }
+        ui.togglePlaceholder('realtime-section', false);
+
+        const selectedWarehouse = document.getElementById('realtime-filter-warehouse').value;
+        this.updateRealtimeSupermarketTitle(selectedWarehouse, new Date());
+        
+        const activeSubTabBtn = document.querySelector('#realtime-subtabs-nav .sub-tab-btn.active');
+        const activeSubTabId = activeSubTabBtn ? activeSubTabBtn.dataset.target : 'subtab-realtime-sieu-thi';
+
+        if (appState.realtimeYCXData.length === 0) {
+             this.renderRealtimeKpiCards({}, { goals: {}, timing: {} });
+             document.getElementById('realtime-category-details-content').innerHTML = '<p class="text-gray-500 font-bold">Vui lòng tải file realtime để xem chi tiết.</p>';
+             document.getElementById('realtime-efficiency-content').innerHTML = '<p class="text-gray-500 font-bold">Vui lòng tải file realtime để xem chi tiết.</p>';
+             document.getElementById('realtime-qdc-content').innerHTML = '<p class="text-gray-500 font-bold">Vui lòng tải file realtime để xem chi tiết.</p>';
+             document.getElementById('realtime-unexported-revenue-content').innerHTML = '<p class="text-gray-500 font-bold">Vui lòng tải file realtime để xem chi tiết.</p>';
+             document.getElementById('realtime-revenue-report-container').innerHTML = '';
+             document.getElementById('realtime-employee-detail-container').innerHTML = '';
+             document.getElementById('realtime-brand-report-container').innerHTML = '<p class="text-gray-500">Vui lòng tải file realtime và chọn bộ lọc để xem dữ liệu.</p>';
+             document.getElementById('competition-report-container-rt').innerHTML = '<p class="text-gray-500">Vui lòng tải file realtime để xem chi tiết.</p>';
+             return;
+        };
+
+        const selectedDept = document.getElementById('realtime-filter-department').value;
+        const selectedEmployees = appState.choices.realtime_employee ? appState.choices.realtime_employee.getValue(true) : [];
+        
+        const settings = settingsService.getRealtimeGoalSettings(selectedWarehouse);
+        
+        appState.masterReportData.realtime = services.generateMasterReportData(appState.realtimeYCXData, settings.goals, true);
+        
+        let filteredReport = appState.masterReportData.realtime;
+        if (selectedWarehouse) filteredReport = filteredReport.filter(nv => nv.maKho == selectedWarehouse);
+        if (selectedDept) filteredReport = filteredReport.filter(nv => nv.boPhan === selectedDept);
+        if (selectedEmployees && selectedEmployees.length > 0) filteredReport = filteredReport.filter(nv => selectedEmployees.includes(String(nv.maNV)));
+
+        const visibleEmployees = new Set(filteredReport.map(nv => String(nv.maNV)));
+        const filteredRealtimeYCX = appState.realtimeYCXData.filter(row => {
+            const msnvMatch = String(row.nguoiTao || '').match(/(\d+)/);
+            return msnvMatch && visibleEmployees.has(msnvMatch[1].trim());
+        });
+        
+        const detailInfo = appState.viewingDetailFor;
+        const isViewingDetail = detailInfo && detailInfo.sourceTab === 'dtnv-rt';
+        
+        if (activeSubTabId === 'subtab-realtime-nhan-vien') {
+            if (isViewingDetail) {
+                this.handleEmployeeDetailChange(detailInfo.employeeId);
+            } else {
+                ui.displayEmployeeRevenueReport(filteredReport, 'realtime-revenue-report-container', 'realtime_dt_nhanvien');
+                this.handleEmployeeDetailChange(null); 
+            }
+        }
+
+        const supermarketReport = services.aggregateReport(filteredReport, selectedWarehouse);
+        this.renderRealtimeKpiCards(supermarketReport, settings);
+        this.renderRealtimeCategoryDetailsTable(supermarketReport);
+        this.renderRealtimeEfficiencyTable(supermarketReport, settings.goals);
+        this.renderRealtimeQdcTable(supermarketReport);
+        const realtimeChuaXuatReport = services.generateRealtimeChuaXuatReport(filteredRealtimeYCX);
+        this.renderRealtimeChuaXuatTable(realtimeChuaXuatReport);
+        ui.displayEmployeeEfficiencyReport(filteredReport, 'realtime-efficiency-report-container', 'realtime_hieuqua_nhanvien');
+        ui.displayCategoryRevenueReport(filteredReport, 'realtime-category-revenue-report-container', 'realtime');
+        this.handleBrandFilterChange();
+        
+        const competitionReportData = services.calculateCompetitionFocusReport(
+            appState.realtimeYCXData,
+            appState.competitionConfigs
+        );
+        ui.renderCompetitionUI('competition-report-container-rt', competitionReportData);
+        
+        highlightService.populateHighlightFilters('realtime', filteredRealtimeYCX, filteredReport);
+        highlightService.applyHighlights('realtime');
+        
+        if (!isViewingDetail) {
+            const efficiencyReportContainer = document.getElementById('realtime-efficiency-report-container');
+            if (efficiencyReportContainer) {
+                dragDroplisteners.initializeForContainer('realtime-efficiency-report-container');
+            }
+         }
+    },
+
+    handleEmployeeDetailChange(employeeId) {
+        const revenueContainer = document.getElementById('realtime-revenue-report-container');
+        const detailContainer = document.getElementById('realtime-employee-detail-container');
+        
+        if (!revenueContainer || !detailContainer) return;
+        
+        if (!employeeId) {
+            revenueContainer.classList.remove('hidden');
+            detailContainer.classList.add('hidden');
+            detailContainer.innerHTML = '';
+            return;
+        }
+
+        revenueContainer.classList.add('hidden');
+        detailContainer.classList.remove('hidden');
+
+        const employeeInfo = appState.employeeMaNVMap.get(String(employeeId));
+        const employeeName = employeeInfo ? ui.getShortEmployeeName(employeeInfo.hoTen, employeeInfo.maNV) : `NV ${employeeId}`;
+        const detailData = services.generateRealtimeEmployeeDetailReport(employeeId, appState.realtimeYCXData);
+        
+        this.renderRealtimeEmployeeDetail(detailData, employeeName);
+    },
+
+    handleBrandFilterChange() {
+        const categoryFilter = document.getElementById('realtime-brand-category-filter');
+        const brandFilter = document.getElementById('realtime-brand-filter');
+        const activeDthangViewBtn = document.querySelector('#dthang-realtime-view-selector .view-switcher__btn.active');
+        const dthangViewType = activeDthangViewBtn ? activeDthangViewBtn.dataset.view : 'brand';
+
+        if (!categoryFilter || !brandFilter) return;
+
+        const selectedCategory = categoryFilter.value;
+        
+        ui.updateBrandFilterOptions(selectedCategory);
+
+        const selectedBrand = brandFilter.value;
+        const reportData = services.generateRealtimeBrandReport(appState.realtimeYCXData, selectedCategory, selectedBrand);
+        this.renderRealtimeBrandReport(reportData, dthangViewType);
+    },
+
+    updateRealtimeSupermarketTitle: (warehouse, dateTime) => {
+        const titleEl = document.getElementById('realtime-supermarket-title');
+        if(titleEl) titleEl.textContent = `Báo cáo Realtime ${warehouse ? 'kho ' + warehouse : 'toàn bộ'} - ${dateTime.toLocaleTimeString('vi-VN')} ${dateTime.toLocaleDateString('vi-VN')}`;
+    },
+
     _showEfficiencySettingsModal() {
         const modal = document.getElementById('selection-modal');
         if (!modal) return;
@@ -78,46 +210,6 @@ export const uiRealtime = {
         uiComponents.toggleModal('selection-modal', true);
     },
 
-    displayRealtimeEmployeeRevenueReport: (reportData, containerId, sortStateKey) => {
-        const container = document.getElementById(containerId);
-        if (!container) return;
-
-        // Clear existing content and hide detail view
-        container.innerHTML = '';
-        const detailContainer = document.getElementById('realtime-employee-detail-container');
-        if (detailContainer) detailContainer.classList.add('hidden');
-        container.classList.remove('hidden');
-
-
-        if (!reportData || reportData.length === 0) {
-            container.innerHTML = '<p class="text-gray-500">Không có dữ liệu doanh thu cho lựa chọn này.</p>';
-            return;
-        }
-        let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden" data-capture-group="1">
-            <div class="p-4 header-group-1 text-gray-800">
-                <h3 class="text-xl font-bold uppercase">Doanh thu nhân viên Realtime</h3>
-                <p class="text-sm italic text-gray-600">(đơn vị tính: Triệu đồng)</p>
-            </div>`;
-
-        const groupedByDept = {};
-        reportData.forEach(item => {
-            const dept = item.boPhan;
-            if (!groupedByDept[dept]) groupedByDept[dept] = [];
-            groupedByDept[dept].push(item);
-        });
-
-        const departmentOrder = uiSknv._getSortedDepartmentList(reportData);
-
-        departmentOrder.forEach(deptName => {
-            if (groupedByDept[deptName]) {
-                finalHTML += uiSknv.renderRevenueTableForDepartment(deptName, groupedByDept[deptName], sortStateKey);
-            }
-        });
-
-        finalHTML += `</div>`;
-        container.innerHTML = finalHTML;
-    },
-
     renderRealtimeKpiCards: (data, settings) => {
         const { doanhThu, doanhThuQuyDoi, doanhThuChuaXuat, doanhThuQuyDoiChuaXuat, doanhThuTraGop, hieuQuaQuyDoi, tyLeTraCham } = data;
         const { goals: rtGoals } = settings;
@@ -156,35 +248,35 @@ export const uiRealtime = {
         });
 
         const totals = reportData.reduce((acc, item) => {
-            acc.soLuong += item.soLuong;
+             acc.soLuong += item.soLuong;
             acc.doanhThuThuc += item.doanhThuThuc;
             acc.doanhThuQuyDoi += item.doanhThuQuyDoi;
             return acc;
         }, { soLuong: 0, doanhThuThuc: 0, doanhThuQuyDoi: 0 });
 
         const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
-
+        
         container.innerHTML = `<div class="overflow-x-auto"><table class="min-w-full text-sm table-bordered table-striped" data-table-type="realtime_chuaxuat">
             <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold"><tr>
                 <th class="${headerClass('nganhHang')}" data-sort="nganhHang">Ngành hàng</th>
                 <th class="${headerClass('soLuong')} text-right" data-sort="soLuong">Số lượng</th>
                 <th class="${headerClass('doanhThuThuc')} text-right" data-sort="doanhThuThuc">Doanh thu thực</th>
-                <th class="${headerClass('doanhThuQuyDoi')} text-right" data-sort="doanhThuQuyDoi">Doanh thu QĐ</th></tr>
+                 <th class="${headerClass('doanhThuQuyDoi')} text-right" data-sort="doanhThuQuyDoi">Doanh thu QĐ</th></tr>
             </thead>
             <tbody>${sortedData.map(item => `
-                <tr class="hover:bg-gray-50">
+                 <tr class="hover:bg-gray-50">
                     <td class="px-4 py-2 font-semibold">${item.nganhHang}</td>
                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatNumber(item.soLuong)}</td>
-                    <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThuThuc)}</td>
+                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThuThuc)}</td>
                     <td class="px-4 py-2 text-right font-bold text-blue-600">${uiComponents.formatRevenue(item.doanhThuQuyDoi)}</td>
-                </tr>`).join('')}
+                 </tr>`).join('')}
             </tbody>
             <tfoot class="table-footer font-bold"><tr>
                 <td class="px-4 py-2">Tổng</td>
-                <td class="px-4 py-2 text-right">${uiComponents.formatNumber(totals.soLuong)}</td>
+                 <td class="px-4 py-2 text-right">${uiComponents.formatNumber(totals.soLuong)}</td>
                 <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuThuc)}</td>
                 <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuQuyDoi)}</td>
-            </tr></tfoot></table></div>`;
+             </tr></tfoot></table></div>`;
     },
 
     renderRealtimeCategoryDetailsTable: (data) => {
@@ -211,11 +303,11 @@ export const uiRealtime = {
             .sort((a, b) => direction === 'asc' ? a[key] - b[key] : b[key] - a[key]);
 
         if (!cardHeader.querySelector('.settings-trigger-btn')) {
-            cardHeader.classList.add('flex', 'items-center', 'justify-between');
+             cardHeader.classList.add('flex', 'items-center', 'justify-between');
             cardHeader.innerHTML = `<span>NGÀNH HÀNG CHI TIẾT</span>` + uiComponents.renderSettingsButton('rt-cat');
             setTimeout(() => {
                 document.getElementById('settings-btn-rt-cat').addEventListener('click', () => {
-                    uiRealtime._showCategorySettingsModal(data);
+                    this._showCategorySettingsModal(data);
                 });
             }, 0);
         }
@@ -228,13 +320,13 @@ export const uiRealtime = {
                 <th class="${headerClass('quantity')} text-right header-highlight" data-sort="quantity">SL</th>
                 <th class="${headerClass('revenue')} text-right header-highlight" data-sort="revenue">Doanh thu thực</th>
                 <th class="${headerClass('revenueQuyDoi')} text-right" data-sort="revenueQuyDoi">Doanh thu QĐ</th>
-                <th class="${headerClass('avgPrice')} text-right" data-sort="avgPrice">Đơn giá TB</th></tr>
+                 <th class="${headerClass('avgPrice')} text-right" data-sort="avgPrice">Đơn giá TB</th></tr>
             </thead>
             <tbody>${sortedData.map(item => `
                 <tr class="hover:bg-gray-50">
                     <td class="px-4 py-2 font-semibold">${item.name}</td>
                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatNumber(item.quantity)}</td>
-                    <td class="px-4 py-2 text-right font-bold text-blue-600">${uiComponents.formatRevenue(item.revenue)}</td>
+                     <td class="px-4 py-2 text-right font-bold text-blue-600">${uiComponents.formatRevenue(item.revenue)}</td>
                     <td class="px-4 py-2 text-right font-bold text-purple-600">${uiComponents.formatRevenue(item.revenueQuyDoi)}</td>
                     <td class="px-4 py-2 text-right font-bold text-green-600">${uiComponents.formatRevenue(item.donGia)}</td>
                 </tr>`).join('')}
@@ -242,7 +334,7 @@ export const uiRealtime = {
     },
     
     renderRealtimeEfficiencyTable: (data, goals) => {
-        const container = document.getElementById('realtime-efficiency-content');
+         const container = document.getElementById('realtime-efficiency-content');
         const cardHeader = document.getElementById('realtime-efficiency-title');
 
         if (!container || !cardHeader || !data || !goals) { 
@@ -266,7 +358,7 @@ export const uiRealtime = {
             .map(config => ({
                 ...config,
                 value: data[config.id],
-                target: goals[goalKeyMap[config.id]]
+                 target: goals[goalKeyMap[config.id]]
             }));
         
         const createRow = (label, value, target) => {
@@ -285,29 +377,29 @@ export const uiRealtime = {
             
             setTimeout(() => {
                 document.getElementById('settings-btn-rt-eff').addEventListener('click', () => {
-                    uiRealtime._showEfficiencySettingsModal();
+                    this._showEfficiencySettingsModal();
                 });
             }, 0);
         }
-        
+         
         container.innerHTML = `
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm table-bordered">
                     <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                         <tr>
-                            <th class="px-4 py-3 text-left">Chỉ số</th>
+                             <th class="px-4 py-3 text-left">Chỉ số</th>
                             <th class="px-4 py-3 text-right">Thực hiện</th>
-                            <th class="px-4 py-3 text-right">Mục tiêu</th>
+                             <th class="px-4 py-3 text-right">Mục tiêu</th>
                         </tr>
-                    </thead>
+                     </thead>
                     <tbody>
                         ${allItems
-                            .filter(item => item.visible) // Lọc theo cài đặt hiển thị
-                            .map(item => createRow(item.label, item.value, item.target))
+                             .filter(item => item.visible) // Lọc theo cài đặt hiển thị
+                             .map(item => createRow(item.label, item.value, item.target))
                             .join('')}
                     </tbody>
                 </table>
-            </div>`;
+             </div>`;
     },
 
     renderRealtimeQdcTable: (data) => {
@@ -326,11 +418,11 @@ export const uiRealtime = {
             .sort((a,b) => direction === 'asc' ? a[key] - b[key] : b[key] - a[key]);
         
         if (!cardHeader.querySelector('.settings-trigger-btn')) {
-            cardHeader.classList.add('flex', 'items-center', 'justify-between');
+             cardHeader.classList.add('flex', 'items-center', 'justify-between');
             cardHeader.innerHTML = `<span>NHÓM HÀNG QUY ĐỔI CAO</span>` + uiComponents.renderSettingsButton('rt-qdc');
             setTimeout(() => {
                 document.getElementById('settings-btn-rt-qdc').addEventListener('click', () => {
-                    uiRealtime._showQdcSettingsModal(data);
+                    this._showQdcSettingsModal(data);
                 });
             }, 0);
         }
@@ -343,21 +435,16 @@ export const uiRealtime = {
                 <th class="${headerClass('sl')} text-right" data-sort="sl">Số lượng</th>
                 <th class="${headerClass('dtqd')} text-right" data-sort="dtqd">DTQĐ (Tr)</th>
                 <th class="${headerClass('donGia')} text-right" data-sort="donGia">Đơn giá (Tr)</th>
-                </tr>
+                 </tr>
             </thead>
             <tbody>${sortedData.map(item => `
-                <tr class="hover:bg-gray-50">
+                 <tr class="hover:bg-gray-50">
                     <td class="px-4 py-2 font-semibold">${item.name}</td>
                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatNumber(item.sl)}</td>
-                    <td class="px-4 py-2 text-right font-bold text-blue-600">${uiComponents.formatRevenue(item.dtqd)}</td>
+                     <td class="px-4 py-2 text-right font-bold text-blue-600">${uiComponents.formatRevenue(item.dtqd)}</td>
                     <td class="px-4 py-2 text-right font-bold text-green-600">${uiComponents.formatRevenue(item.donGia)}</td>
                 </tr>`).join('')}
             </tbody></table></div>`;
-    },
-
-    updateRealtimeSupermarketTitle: (warehouse, dateTime) => {
-        const titleEl = document.getElementById('realtime-supermarket-title');
-        if(titleEl) titleEl.textContent = `Báo cáo Realtime ${warehouse ? 'kho ' + warehouse : 'toàn bộ'} - ${dateTime.toLocaleTimeString('vi-VN')} ${dateTime.toLocaleDateString('vi-VN')}`;
     },
 
     renderRealtimeEmployeeDetail: (detailData, employeeName, containerId = 'realtime-employee-detail-container') => {
@@ -376,7 +463,7 @@ export const uiRealtime = {
                         <span>Chụp ảnh</span>
                     </button>
                 </div>
-            `;
+             `;
         }
 
         if (!detailData) {
@@ -400,7 +487,7 @@ export const uiRealtime = {
         const renderCustomerAccordion = () => byCustomer.map((customer, index) => `
             <div class="rt-customer-group">
                 <details>
-                    <summary class="rt-customer-header">
+                     <summary class="rt-customer-header">
                         <span>${index + 1}. ${customer.name} (<span class="product-count">${customer.totalQuantity} sản phẩm</span>)</span><span class="arrow">▼</span>
                     </summary>
                     <div class="rt-customer-details">
@@ -424,16 +511,16 @@ export const uiRealtime = {
                     <div class="rt-infographic-summary">
                         <div class="rt-infographic-summary-card"><div class="label">Tổng DT Thực</div><div class="value">${uiComponents.formatRevenue(summary.totalRealRevenue, 1)}</div></div>
                         <div class="rt-infographic-summary-card"><div class="label">Tổng DTQĐ</div><div class="value">${uiComponents.formatRevenue(summary.totalConvertedRevenue, 1)}</div></div>
-                        <div class="rt-infographic-summary-card"><div class="label">Tỷ lệ QĐ</div><div class="value ${conversionRateClass}">${uiComponents.formatPercentage(summary.conversionRate)}</div></div>
+                         <div class="rt-infographic-summary-card"><div class="label">Tỷ lệ QĐ</div><div class="value ${conversionRateClass}">${uiComponents.formatPercentage(summary.conversionRate)}</div></div>
                         <div class="rt-infographic-summary-card"><div class="label">DT Chưa Xuất</div><div class="value">${uiComponents.formatRevenue(summary.unexportedRevenue, 1)}</div></div>
                         <div class="rt-infographic-summary-card"><div class="label">Tổng Đơn Hàng</div><div class="value">${summary.totalOrders}</div></div>
                         <div class="rt-infographic-summary-card"><div class="label">SL Đơn Bán Kèm</div><div class="value">${summary.bundledOrderCount}</div></div>
-                    </div>
+                     </div>
                     <div class="rt-infographic-grid">
                         <div class="rt-infographic-section"><h4>Nhóm hàng</h4>${renderProductGroupProgress()}</div>
                         <div class="rt-infographic-section"><h4>Chi tiết theo khách hàng</h4><div class="rt-customer-accordion">${renderCustomerAccordion()}</div></div>
                     </div>
-                </div>
+                 </div>
             </div>`;
         
         container.innerHTML = headerHtml + contentHtml;
@@ -450,7 +537,7 @@ export const uiRealtime = {
         }
 
         const renderTable = (title, items, headers, rowRenderer, sortStateKey) => {
-            const sortState = appState.sortState[sortStateKey] || { key: 'revenue', direction: 'desc' };
+             const sortState = appState.sortState[sortStateKey] || { key: 'revenue', direction: 'desc' };
             const { key, direction } = sortState;
             const sortedItems = [...items].sort((a,b) => direction === 'asc' ? (a[key] - b[key]) : (b[key] - a[key]));
 
@@ -458,7 +545,7 @@ export const uiRealtime = {
             return `<div class="overflow-x-auto"><h4 class="text-lg font-semibold text-gray-700 mb-2">${title}</h4>
                 <table class="min-w-full text-sm table-bordered table-striped" data-table-type="${sortStateKey}">
                     <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
-                        <tr>${headers.map(h => `<th class="${headerClass(h.key)}" data-sort="${h.key}">${h.label}<span class="sort-indicator"></span></th>`).join('')}</tr>
+                         <tr>${headers.map(h => `<th class="${headerClass(h.key)}" data-sort="${h.key}">${h.label}<span class="sort-indicator"></span></th>`).join('')}</tr>
                     </thead>
                     <tbody>${sortedItems.map(rowRenderer).join('')}</tbody>
                 </table></div>`;
@@ -472,7 +559,7 @@ export const uiRealtime = {
                 <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.revenue)}</td>
                 <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.avgPrice)}</td>
             </tr>`, 'realtime_brand'
-        );
+         );
 
         const employeeTable = renderTable('Thống kê theo nhân viên', byEmployee,
             [{label: 'Nhân viên', key: 'name'}, {label: 'Số lượng', key: 'quantity'}, {label: 'Doanh thu', key: 'revenue'}],

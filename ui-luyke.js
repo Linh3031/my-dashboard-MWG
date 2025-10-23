@@ -1,4 +1,4 @@
-// Version 2.9 - Filter efficiency table to show only percentages and rename title
+// Version 2.11 - Critical Fix: Restore all missing functions and add renderLuykeEmployeeDetail
 // MODULE: UI LUY KE
 // Chứa các hàm render giao diện cho tab "Sức khỏe Siêu thị (Lũy kế)".
 
@@ -10,12 +10,11 @@ import { settingsService } from './modules/settings.service.js';
 import { highlightService } from './modules/highlight.service.js';
 
 export const uiLuyke = {
-    // === CÁC HÀM MỞ MODAL CÀI ĐẶT CHO TỪNG BẢNG (Giữ nguyên) ===
+    // === CÁC HÀM MỞ MODAL CÀI ĐẶT CHO TỪNG BẢNG ===
     _showEfficiencySettingsModal() {
         const modal = document.getElementById('selection-modal');
         if (!modal) return;
 
-        // Lấy danh sách đầy đủ các mục từ settings service
         const allItemsConfig = settingsService.loadEfficiencyViewSettings();
         
         const listContainer = document.getElementById('selection-modal-list');
@@ -23,7 +22,7 @@ export const uiLuyke = {
             <div class="selection-item">
                 <input type="checkbox" id="select-item-lk-eff-${item.id}" value="${item.id}" ${item.visible ? 'checked' : ''}>
                 <label for="select-item-lk-eff-${item.id}">${item.label}</label>
-            </div>
+             </div>
         `).join('');
 
         document.getElementById('selection-modal-title').textContent = 'Tùy chỉnh hiển thị Hiệu quả khai thác';
@@ -79,8 +78,199 @@ export const uiLuyke = {
         
         uiComponents.toggleModal('selection-modal', true);
     },
+    
+    // === START: RESTORED FUNCTION FOR SKNV DETAIL VIEW ===
+    renderLuykeEmployeeDetail(detailData, employeeData, detailContainerId) {
+        const summaryContainer = document.getElementById('revenue-report-container-lk');
+        const detailContainer = document.getElementById(detailContainerId);
 
-    // === START: HÀM RENDER CHÍNH (FIXES) ===
+        if (!summaryContainer || !detailContainer) return;
+
+        summaryContainer.classList.add('hidden');
+        detailContainer.classList.remove('hidden');
+        
+        if (!detailData || !employeeData) {
+            detailContainer.innerHTML = `
+                <div class="mb-4">
+                     <button class="back-to-summary-btn text-blue-600 hover:underline font-semibold">‹ Quay lại bảng tổng hợp</button>
+                </div>
+                <p class="text-red-500">Không tìm thấy dữ liệu chi tiết cho nhân viên đã chọn.</p>
+            `;
+            return;
+        }
+
+        const { summary, topProductGroups, categoryChartData, byCustomer } = detailData;
+        const { mucTieu } = employeeData;
+        const conversionRateTarget = (mucTieu?.phanTramQD || 0) / 100;
+
+        const renderKpiCards = () => {
+             const conversionRateClass = summary.conversionRate >= conversionRateTarget ? 'is-positive' : 'is-negative';
+            return `
+            <div class="rt-infographic-summary mb-6">
+                <div class="rt-infographic-summary-card"><div class="label">Tổng DT Thực</div><div class="value">${uiComponents.formatRevenue(summary.totalRealRevenue, 1)}</div></div>
+                <div class="rt-infographic-summary-card"><div class="label">Tổng DTQĐ</div><div class="value">${uiComponents.formatRevenue(summary.totalConvertedRevenue, 1)}</div></div>
+                <div class="rt-infographic-summary-card"><div class="label">Tỷ lệ QĐ</div><div class="value ${conversionRateClass}">${uiComponents.formatPercentage(summary.conversionRate)}</div></div>
+                <div class="rt-infographic-summary-card"><div class="label">DT Chưa Xuất</div><div class="value">${uiComponents.formatRevenue(summary.unexportedRevenue, 1)}</div></div>
+                <div class="rt-infographic-summary-card"><div class="label">Tổng Đơn Hàng</div><div class="value">${summary.totalOrders}</div></div>
+                <div class="rt-infographic-summary-card"><div class="label">SL Đơn Bán Kèm</div><div class="value">${summary.bundledOrderCount}</div></div>
+            </div>
+            `;
+        };
+
+        const renderTopGroupsAsProgressBars = () => {
+            const top5Groups = topProductGroups.slice(0, 5);
+            if (!top5Groups || top5Groups.length === 0) return '<p class="text-sm text-gray-500">Không có doanh thu.</p>';
+            
+            const maxRevenue = top5Groups[0]?.realRevenue || 0;
+            
+            return top5Groups.map(group => {
+                const percentage = maxRevenue > 0 ? (group.realRevenue / maxRevenue) * 100 : 0;
+                return `
+                <div class="luyke-detail-progress-item">
+                    <div class="luyke-detail-progress-label">
+                         <span class="font-semibold">${group.name}</span>
+                        <span class="text-xs">SL: ${uiComponents.formatNumber(group.quantity)} | %QĐ: ${uiComponents.formatPercentage(group.conversionRate)}</span>
+                    </div>
+                    <div class="rt-progress-bar-container">
+                        <div class="rt-progress-bar" style="width: ${percentage}%;"></div>
+                     </div>
+                    <div class="luyke-detail-progress-values">
+                        <span>DT Thực: <strong>${uiComponents.formatRevenue(group.realRevenue)}</strong></span>
+                        <span>DTQĐ: <strong>${uiComponents.formatRevenue(group.convertedRevenue)}</strong></span>
+                    </div>
+                 </div>
+                `;
+            }).join('');
+        };
+
+        const renderCustomerAccordion = () => {
+            if (!byCustomer || byCustomer.length === 0) return '<p class="text-sm text-gray-500 mt-4">Không có đơn hàng nào.</p>';
+            
+            return byCustomer.map((customer, index) => {
+                const qdClass = customer.conversionRate >= conversionRateTarget ? 'qd-above-target' : 'qd-below-target';
+            
+                const productListHtml = customer.products.map(p => `
+                    <tr class="border-b last:border-b-0">
+                        <td class="py-1 pr-2">${p.productName}</td>
+                        <td class="py-1 px-2 text-right">SL: <strong>${p.quantity}</strong></td>
+                         <td class="py-1 px-2 text-right">DT: <strong>${uiComponents.formatRevenue(p.realRevenue, 1)}</strong></td>
+                        <td class="py-1 pl-2 text-right">DTQĐ: <strong>${uiComponents.formatRevenue(p.convertedRevenue, 1)}</strong></td>
+                    </tr>
+                `).join('');
+                
+                const tableContent = `<table class="min-w-full text-xs product-list-table"><tbody>${productListHtml}</tbody></table>`;
+                
+                const detailContent = customer.products.length > 8
+                    ? `<div class="product-list-scrollable">${tableContent}</div>`
+                    : tableContent;
+
+                return `
+                 <details class="bg-white rounded-lg shadow-sm border border-gray-200 mb-2">
+                    <summary>
+                        <span class="customer-name-small">${index + 1}. ${customer.name}</span>
+                        <div class="order-metrics">
+                             <span>SL: <strong>${customer.totalQuantity}</strong></span>
+                            <span>DT Thực: <strong class="text-gray-900">${uiComponents.formatRevenue(customer.totalRealRevenue, 1)} Tr</strong></span>
+                            <span>DTQĐ: <strong class="text-blue-600">${uiComponents.formatRevenue(customer.totalConvertedRevenue, 1)} Tr</strong></span>
+                            <span>%QĐ: <strong class="${qdClass}">${uiComponents.formatPercentage(customer.conversionRate)}</strong></span>
+                         </div>
+                        <span class="accordion-arrow">▼</span>
+                    </summary>
+                    <div class="border-t border-gray-200 p-3 bg-gray-50">
+                        ${detailContent}
+                     </div>
+                </details>
+                `;
+            }).join('');
+        };
+        
+        const headerHtml = `
+            <div class="mb-4 flex justify-between items-center">
+                <button class="back-to-summary-btn text-blue-600 hover:underline font-semibold">‹ Quay lại bảng tổng hợp</button>
+                <button id="capture-dtnv-lk-detail-btn" class="action-btn action-btn--capture" title="Chụp ảnh chi tiết">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15 12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1.172a3 3 0 0 0 2.12-.879l.83-.828A1 1 0 0 1 6.827 3h2.344a1 1 0 0 1 .707.293l.828.828A3 3 0 0 0 12.828 5H14a1 1 0 0 1 1 1v6zM2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828-.828A2 2 0 0 1 3.172 4H2z"/><path d="M8 11a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5zm0 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM3 6.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/></svg>
+                    <span>Chụp ảnh</span>
+                </button>
+            </div>
+            <div id="dtnv-lk-capture-area">
+                <div class="p-4 mb-6 bg-white text-gray-800 rounded-lg shadow-lg border luyke-detail-header">
+                    <h3>${employeeData.hoTen} - ${employeeData.maNV}</h3>
+                </div>
+                
+                ${renderKpiCards()}
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    
+                     <div class="bg-white p-4 rounded-lg shadow-md border">
+                        <h4 class="text-md font-bold text-gray-700 border-b pb-2 mb-3">Top 5 Nhóm Hàng Doanh Thu Cao</h4>
+                        <div class="space-y-3">
+                            ${renderTopGroupsAsProgressBars()}
+                         </div>
+                    </div>
+                    
+                    <div class="bg-white p-4 rounded-lg shadow-md border">
+                        <h4 class="text-md font-bold text-gray-700 mb-2">Tỷ Trọng Doanh Thu Ngành Hàng</h4>
+                         <div class="luyke-detail-chart-container">
+                            <canvas id="luyke-employee-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                 <div class="customer-accordion-luyke">
+                    <h4 class="text-lg font-bold text-gray-800 mb-3">Chi Tiết Theo Khách Hàng</h4>
+                    ${renderCustomerAccordion()}
+                </div>
+            </div>`;
+
+        detailContainer.innerHTML = headerHtml;
+
+        const ctx = document.getElementById('luyke-employee-chart')?.getContext('2d');
+        if (ctx && categoryChartData && categoryChartData.length > 0) {
+            if (appState.charts['luyke-employee-chart']) {
+                 appState.charts['luyke-employee-chart'].destroy();
+            }
+            const sortedChartData = [...categoryChartData].sort((a,b) => b.revenue - a.revenue);
+            const topData = sortedChartData.slice(0, 10);
+            
+            appState.charts['luyke-employee-chart'] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: topData.map(d => d.name),
+                     datasets: [{
+                        label: 'Doanh thu',
+                        data: topData.map(d => d.revenue / 1000000),
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 4,
+                     }]
+                },
+                options: {
+                    indexAxis: 'x',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                     plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                 label: context => `${context.label}: ${uiComponents.formatRevenue(context.raw * 1000000)} Tr`
+                            }
+                        },
+                        datalabels: {
+                             anchor: 'end',
+                            align: 'end',
+                            formatter: (value) => uiComponents.formatRevenue(value * 1000000),
+                            color: '#4b5563',
+                             font: { weight: 'bold', size: 10 }
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                     }
+                },
+                plugins: [ChartDataLabels]
+            });
+        }
+    },
+    // === END: RESTORED FUNCTION ===
+
     renderCompetitionSummaryCounter: (data) => {
         const summary = {
             total: data.length,
@@ -89,7 +279,6 @@ export const uiLuyke = {
             soLuongCount: data.filter(d => d.type === 'soLuong').length,
         };
         
-        // Sử dụng các lớp CSS đã định nghĩa trong dashboard.css để tăng size và màu sắc
         const totalHtml = `<strong class="text-blue-600">${summary.total}</strong>`;
         const datHtml = `<strong class="text-blue-600">${summary.dat}</strong>`;
         const chuaDatHtml = `<strong class="text-red-600">${summary.total - summary.dat}</strong>`;
@@ -146,13 +335,12 @@ export const uiLuyke = {
             dtThucLK, dtQdLK, dtGop, phanTramQd, phanTramGop, 
             phanTramTargetThuc, phanTramTargetQd,
             dtThucDuKien: dtDuKien * 1000000,
-            dtQdDuKien: dtqdDuKien * 1000000,
+             dtQdDuKien: dtqdDuKien * 1000000,
         };
         
         uiLuyke.renderLuykeKpiCards(luykeCardData, comparisonData, luotKhachData, appState.masterReportData.luyke, goals, competitionSummary);
     },
 
-    // === HÀM ĐƯỢC NÂNG CẤP (v2.4) ===
     displayCompetitionResultsFromLuyKe: (text, viewType = 'summary') => {
         const container = document.getElementById('luyke-competition-infographic-container');
         if (!container) return;
@@ -164,7 +352,6 @@ export const uiLuyke = {
 
         appState.competitionData = services.parseCompetitionDataFromLuyKe(text);
         
-        // Thêm trường hoanThanhValue để dễ dàng sắp xếp
         const data = appState.competitionData.map(item => {
             const hoanThanhValue = (parseFloat(String(item.hoanThanh).replace('%', '')) || 0);
             return { ...item, hoanThanhValue: hoanThanhValue };
@@ -177,18 +364,15 @@ export const uiLuyke = {
         
         const summaryEl = document.getElementById('luyke-competition-summary');
         if (summaryEl) {
-             // Cập nhật bộ đếm tổng thể bằng hàm mới
              summaryEl.innerHTML = uiLuyke.renderCompetitionSummaryCounter(data);
         }
         
         container.innerHTML = uiLuyke.renderLuykeCompetitionInfographic(data, viewType);
     },
     
-    // === HÀM RENDER INFOGRAPHIC (v2.4) ===
     renderLuykeCompetitionInfographic(data, viewType) {
         
         const sortData = (items) => {
-            // Fix #2: Sắp xếp giảm dần theo tỷ lệ hoàn thành
             return [...items].sort((a, b) => b.hoanThanhValue - a.hoanThanhValue);
         };
 
@@ -197,15 +381,13 @@ export const uiLuyke = {
     
             const today = new Date();
             const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-            const daysRemaining = Math.max(daysInMonth - today.getDate(), 1); // Tránh chia cho 0
+            const daysRemaining = Math.max(daysInMonth - today.getDate(), 1);
             
             const sortedItems = sortData(items);
 
-            // Fix #5: Tính toán bộ đếm cho tiêu đề nhóm
             const achievedCount = items.filter(item => item.hoanThanhValue >= 100).length;
             const unachievedCount = items.length - achievedCount;
             
-            // Fix #5 & #7: Áp dụng CSS class cho bộ đếm nhóm
             const achievedHtml = `<strong class="text-blue-600">${achievedCount}</strong>`;
             const unachievedHtml = `<strong class="text-red-600">${unachievedCount}</strong>`;
             const counterText = `<span class="text-sm font-normal text-gray-700">(Đạt: ${achievedHtml} / Cần nỗ lực: ${unachievedHtml})</span>`;
@@ -213,27 +395,26 @@ export const uiLuyke = {
             const itemsHtml = sortedItems.map(item => {
                 const hoanThanhValue = item.hoanThanhValue;
                 
-                // Fix #3: Cải tiến logic mục tiêu ngày
                 let dailyTarget = 0;
                 const targetRemaining = item.target - item.luyKe;
                 
                 if (item.target > 0 && targetRemaining > 0 && daysRemaining > 0) {
-                    dailyTarget = targetRemaining / daysRemaining;
+                     dailyTarget = targetRemaining / daysRemaining;
                 }
                 
                 const targetClass = dailyTarget > 0 ? 'text-red-600' : 'text-green-600';
     
                 return `
                     <div class="tdv-item-card">
-                        <p class="tdv-item-card__title">${item.name}</p>
+                         <p class="tdv-item-card__title">${item.name}</p>
                         <div class="tdv-progress-bar-container">
                             <div class="tdv-progress-bar ${hoanThanhValue >= 100 ? 'tdv-progress-bar--blue' : 'tdv-progress-bar--yellow'}" style="width: ${Math.min(hoanThanhValue, 100)}%;"></div>
-                            <span class="tdv-progress-bar__text">${uiComponents.formatPercentage(hoanThanhValue / 100)}</span>
+                             <span class="tdv-progress-bar__text">${uiComponents.formatPercentage(hoanThanhValue / 100)}</span>
                         </div>
                         <div class="tdv-item-card__details">
                             <span>Lũy kế: <strong>${uiComponents.formatNumberOrDash(item.luyKe)}</strong></span>
                             <span>Target: <strong>${uiComponents.formatNumberOrDash(item.target)}</strong></span>
-                            <span class="font-bold ${targetClass}">Mục tiêu/ngày: <strong>${uiComponents.formatNumberOrDash(dailyTarget)}</strong></span>
+                             <span class="font-bold ${targetClass}">Mục tiêu/ngày: <strong>${uiComponents.formatNumberOrDash(dailyTarget)}</strong></span>
                         </div>
                     </div>
                 `;
@@ -241,13 +422,13 @@ export const uiLuyke = {
     
             return `
                 <div class="tdv-row" data-capture-group="comp-row-${title.replace(/\s/g, '-')}" data-capture-columns="2">
-                    <h3 class="tdv-row-title ${titleClass}">${title} ${counterText}</h3>
+                     <h3 class="tdv-row-title ${titleClass}">${title} ${counterText}</h3>
                     <div class="tdv-row-body grid grid-cols-2 gap-4">${itemsHtml}</div>
                 </div>
             `;
         };
     
-        if (viewType === 'summary') { // Chế độ xem theo Phân Loại (Mặc định)
+        if (viewType === 'summary') {
             const dataDoanhThu = data.filter(d => d.type === 'doanhThu');
             const dataSoLuong = data.filter(d => d.type === 'soLuong');
             return `
@@ -256,15 +437,15 @@ export const uiLuyke = {
                     ${renderRow(dataSoLuong, 'Thi Đua Số Lượng', 'tdv-row-title--soon-prize')}
                 </div>
             `;
-        } else { // Chế độ xem theo Tỷ Lệ Hoàn Thành (completion)
-            const completed = data.filter(d => d.hoanThanhValue >= 100);
+        } else {
+             const completed = data.filter(d => d.hoanThanhValue >= 100);
             const pending = data.filter(d => d.hoanThanhValue < 100);
             return `
                 <div class="tdv-rows-container space-y-6">
                     ${renderRow(completed, 'Các Chương Trình Đã Đạt Mục Tiêu', 'tdv-row-title--prize')}
                     ${renderRow(pending, 'Các Chương Trình Cần Nỗ Lực Thêm', 'tdv-row-title--effort')}
                 </div>
-            `;
+             `;
         }
     },
     
@@ -279,7 +460,7 @@ export const uiLuyke = {
         const sortState = appState.sortState.luyke_chuaxuat || { key: 'doanhThuQuyDoi', direction: 'desc' };
         const { key, direction } = sortState;
         const sortedData = [...reportData].sort((a, b) => {
-            const valA = a[key] || 0; const valB = b[key] || 0;
+             const valA = a[key] || 0; const valB = b[key] || 0;
             return direction === 'asc' ? valA - valB : valB - valA;
         });
 
@@ -297,19 +478,19 @@ export const uiLuyke = {
                 <th class="${headerClass('nganhHang')}" data-sort="nganhHang">Ngành hàng</th>
                 <th class="${headerClass('soLuong')} text-right" data-sort="soLuong">Số lượng</th>
                 <th class="${headerClass('doanhThuThuc')} text-right" data-sort="doanhThuThuc">Doanh thu thực</th>
-                <th class="${headerClass('doanhThuQuyDoi')} text-right" data-sort="doanhThuQuyDoi">Doanh thu QĐ</th></tr>
+                 <th class="${headerClass('doanhThuQuyDoi')} text-right" data-sort="doanhThuQuyDoi">Doanh thu QĐ</th></tr>
             </thead>
             <tbody>${sortedData.map(item => `
                 <tr class="hover:bg-gray-50">
                     <td class="px-4 py-2 font-semibold">${item.nganhHang}</td>
                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatNumber(item.soLuong)}</td>
-                    <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThuThuc)}</td>
+                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThuThuc)}</td>
                     <td class="px-4 py-2 text-right font-bold text-blue-600">${uiComponents.formatRevenue(item.doanhThuQuyDoi)}</td>
                 </tr>`).join('')}
             </tbody>
             <tfoot class="table-footer font-bold"><tr>
                 <td class="px-4 py-2">Tổng</td>
-                <td class="px-4 py-2 text-right">${uiComponents.formatNumber(totals.soLuong)}</td>
+                 <td class="px-4 py-2 text-right">${uiComponents.formatNumber(totals.soLuong)}</td>
                 <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuThuc)}</td>
                 <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuQuyDoi)}</td>
             </tr></tfoot></table></div>`;
@@ -318,36 +499,27 @@ export const uiLuyke = {
     renderLuykeKpiCards: (luykeData, comparisonData, luotKhachData, masterReportDataLuyke, goals, competitionSummary) => {
         const { dtThucLK, dtQdLK, dtGop, phanTramQd, phanTramGop, phanTramTargetThuc, phanTramTargetQd, dtThucDuKien, dtQdDuKien } = luykeData;
 
-        // --- Thẻ 1: Doanh thu thực ---
         document.getElementById('luyke-kpi-dt-thuc-main').textContent = uiComponents.formatNumber((dtThucLK || 0) / 1000000, 0);
         document.getElementById('luyke-kpi-dt-thuc-sub1').innerHTML = `DK: <span class="font-bold">${uiComponents.formatNumber((dtThucDuKien || 0) / 1000000, 0)}</span> / Target: <span class="font-bold">${uiComponents.formatNumber(goals?.doanhThuThuc || 0)}</span>`;
 
-        // --- Thẻ 2: Doanh thu Quy đổi ---
         document.getElementById('luyke-kpi-dt-qd-main').textContent = uiComponents.formatNumber((dtQdLK || 0) / 1000000, 0);
         document.getElementById('luyke-kpi-dt-qd-sub1').innerHTML = `DK: <span class="font-bold">${uiComponents.formatNumber((dtQdDuKien || 0) / 1000000, 0)}</span> / Target: <span class="font-bold">${uiComponents.formatNumber(goals?.doanhThuQD || 0)}</span>`;
         
-        // --- Thẻ 3: Tỷ lệ HT Target ---
         document.getElementById('luyke-kpi-ht-target-qd-main').textContent = uiComponents.formatPercentage(phanTramTargetQd || 0);
         document.getElementById('luyke-kpi-ht-target-thuc-sub').innerHTML = `DT Thực: <span class="font-bold">${uiComponents.formatPercentage(phanTramTargetThuc || 0)}</span>`;
 
-        // --- Thẻ 4: Tỷ lệ quy đổi ---
         document.getElementById('luyke-kpi-tl-qd-main').textContent = uiComponents.formatPercentage(phanTramQd || 0);
         document.getElementById('luyke-kpi-tl-qd-sub').innerHTML = `Mục tiêu: <span class="font-bold">${uiComponents.formatNumber(goals?.phanTramQD || 0)}%</span>`;
-        
-        // --- Thẻ 5: Doanh thu trả chậm ---
         document.getElementById('luyke-kpi-dt-tc-main').textContent = uiComponents.formatNumber((dtGop || 0) / 1000000, 0);
         document.getElementById('luyke-kpi-dt-tc-sub').innerHTML = `% thực trả chậm: <span class="font-bold">${uiComponents.formatPercentage(phanTramGop || 0)}</span>`;
         
-        // --- Thẻ 6: DTQĐ Chưa xuất ---
         const chuaXuatQuyDoi = masterReportDataLuyke.reduce((sum, item) => sum + (item.doanhThuQuyDoiChuaXuat || 0), 0);
         document.getElementById('luyke-kpi-dtqd-chua-xuat-main').textContent = uiComponents.formatNumber(chuaXuatQuyDoi / 1000000, 0);
         
-        // --- Thẻ 7: Thi đua ngành hàng ---
         const tyLeThiDuaDat = competitionSummary.total > 0 ? competitionSummary.dat / competitionSummary.total : 0;
         document.getElementById('luyke-kpi-thidua-main').textContent = uiComponents.formatPercentage(tyLeThiDuaDat);
         document.getElementById('luyke-kpi-thidua-sub').innerHTML = `<span class="font-bold">${competitionSummary.dat}/${competitionSummary.total}</span> Ngành`;
 
-        // --- THẺ 8: Tăng/giảm cùng kỳ ---
         const formatComparisonPercentage = (percentageString) => {
             if (!percentageString || typeof percentageString !== 'string') return 'N/A';
             const numericValue = parseFloat(percentageString.replace('%', ''));
@@ -378,7 +550,7 @@ export const uiLuyke = {
         const { key, direction } = sortState;
         const sortedData = Object.entries(data.nganhHangChiTiet)
             .map(([name, values]) => ({ name, ...values }))
-            .filter(item => visibleItems.includes(item.name)) // Lọc theo cài đặt
+            .filter(item => visibleItems.includes(item.name)) 
             .sort((a, b) => direction === 'asc' ? a[key] - b[key] : b[key] - a[key]);
 
         const totals = sortedData.reduce((acc, item) => {
@@ -399,25 +571,25 @@ export const uiLuyke = {
 
         const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
         container.innerHTML = `<div class="overflow-x-auto"><table class="min-w-full text-sm table-bordered table-striped" data-table-type="luyke_nganhhang">
-            <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold"><tr>
+             <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold"><tr>
                 <th class="${headerClass('name')}" data-sort="name">Ngành hàng</th>
                 <th class="${headerClass('quantity')} text-right" data-sort="quantity">Số lượng</th>
                 <th class="${headerClass('revenue')} text-right" data-sort="revenue">Doanh thu</th>
                 <th class="${headerClass('avgQuantity')} text-right" data-sort="avgQuantity">SL TB/ngày</th>
                 <th class="${headerClass('avgPrice')} text-right" data-sort="avgPrice">Đơn giá TB</th></tr>
-            </thead>
+             </thead>
             <tbody>${sortedData.map(item => `
                 <tr class="hover:bg-gray-50">
                     <td class="px-4 py-2 font-semibold">${item.name}</td>
                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatNumber(item.quantity)}</td>
                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.revenue)}</td>
-                    <td class="px-4 py-2 text-right font-bold text-blue-600">${uiComponents.formatNumberOrDash(item.quantity / numDays, 1)}</td>
+                     <td class="px-4 py-2 text-right font-bold text-blue-600">${uiComponents.formatNumberOrDash(item.quantity / numDays, 1)}</td>
                     <td class="px-4 py-2 text-right font-bold text-green-600">${uiComponents.formatRevenue(item.donGia)}</td>
                 </tr>`).join('')}
             </tbody>
             <tfoot class="table-footer font-bold"><tr>
                 <td class="px-4 py-2">Tổng</td>
-                <td class="px-4 py-2 text-right">${uiComponents.formatNumber(totals.quantity)}</td>
+                 <td class="px-4 py-2 text-right">${uiComponents.formatNumber(totals.quantity)}</td>
                 <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.revenue)}</td>
                 <td colspan="2"></td>
             </tr></tfoot></table></div>`;
@@ -439,10 +611,10 @@ export const uiLuyke = {
             .sort((a,b) => direction === 'asc' ? a[key] - b[key] : b[key] - a[key]);
         
         if (!cardHeader.querySelector('.settings-trigger-btn')) {
-            cardHeader.classList.add('flex', 'items-center', 'justify-between');
+             cardHeader.classList.add('flex', 'items-center', 'justify-between');
             cardHeader.innerHTML = `<span>NHÓM HÀNG QUY ĐỔI CAO</span>` + uiComponents.renderSettingsButton('lk-qdc');
             setTimeout(() => {
-                document.getElementById('settings-btn-lk-qdc').addEventListener('click', () => {
+                 document.getElementById('settings-btn-lk-qdc').addEventListener('click', () => {
                     uiLuyke._showQdcSettingsModal(data);
                 });
             }, 0);
@@ -458,12 +630,12 @@ export const uiLuyke = {
                 <th class="${headerClass('avgSl')} text-right" data-sort="avgSl">SL TB/Ngày</th></tr>
             </thead>
             <tbody>${sortedData.map(item => `
-                <tr class="hover:bg-gray-50">
+                 <tr class="hover:bg-gray-50">
                     <td class="px-4 py-2 font-semibold">${item.name}</td>
                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatNumber(item.sl)}</td>
                     <td class="px-4 py-2 text-right font-bold text-blue-600">${uiComponents.formatRevenue(item.dtqd)}</td>
                     <td class="px-4 py-2 text-right font-bold text-green-600">${uiComponents.formatNumber(item.sl / numDays, 1)}</td></tr>`
-                ).join('')}
+                 ).join('')}
             </tbody></table></div>`;
     },
     
@@ -490,7 +662,7 @@ export const uiLuyke = {
         const allItems = allItemsConfig
             .filter(item => item.id.startsWith('pct'))
             .map(config => ({
-                ...config,
+                 ...config,
                 value: data[config.id],
                 target: goals[goalKeyMap[config.id]]
             }));
@@ -500,7 +672,7 @@ export const uiLuyke = {
             
             return `<tr class="border-t">
                 <td class="px-4 py-2 font-semibold text-gray-800">${label}</td>
-                <td class="px-4 py-2 text-right font-bold text-lg ${isBelow ? 'cell-performance is-below' : 'text-green-600'}">${uiComponents.formatPercentage(value || 0)}</td>
+                 <td class="px-4 py-2 text-right font-bold text-lg ${isBelow ? 'cell-performance is-below' : 'text-green-600'}">${uiComponents.formatPercentage(value || 0)}</td>
                 <td class="px-4 py-2 text-right text-gray-600">${target || 0}%</td>
             </tr>`;
         };
@@ -511,7 +683,7 @@ export const uiLuyke = {
             
             setTimeout(() => {
                 document.getElementById('settings-btn-lk-eff').addEventListener('click', () => {
-                    uiLuyke._showEfficiencySettingsModal();
+                     uiLuyke._showEfficiencySettingsModal();
                 });
             }, 0);
         }
@@ -521,19 +693,19 @@ export const uiLuyke = {
                 <table class="min-w-full text-sm table-bordered">
                     <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                         <tr>
-                            <th class="px-4 py-3 text-left">Chỉ số</th>
+                             <th class="px-4 py-3 text-left">Chỉ số</th>
                             <th class="px-4 py-3 text-right">Thực hiện</th>
-                            <th class="px-4 py-3 text-right">Mục tiêu</th>
+                             <th class="px-4 py-3 text-right">Mục tiêu</th>
                         </tr>
-                    </thead>
+                     </thead>
                     <tbody>
                         ${allItems
-                            .filter(item => item.visible) // Lọc theo cài đặt hiển thị
+                             .filter(item => item.visible) // Lọc theo cài đặt hiển thị
                             .map(item => createRow(item.label, item.value, item.target))
                             .join('')}
                     </tbody>
                 </table>
-            </div>`;
+             </div>`;
     },
 
     updateLuykeSupermarketTitle: (warehouse, date) => {
