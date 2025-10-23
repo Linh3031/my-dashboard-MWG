@@ -383,6 +383,13 @@ export const auth = {
 --- START FILE: ./changelog.json ---
 [
    {
+    "version": "3.5",
+    "date": "23/10/2025",
+    "notes": [
+      "Nâng cấp giao diện tab SKNV cho đẹp hơn"
+    ]
+  },  
+   {
     "version": "3.4",
     "date": "17/10/2025",
     "notes": [
@@ -1371,7 +1378,7 @@ createSnapshot();
 --- END FILE: ./create_snapshot.js ---
 
 --- START FILE: ./dashboard.css ---
-/* Version 6.4 - Finalize SKNV UI: 4-column layout, new detail header, name truncation, and medal styles */
+/* Version 6.6 - Compact SKNV detail view for better balance */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -1536,8 +1543,7 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #
 #notification.show { opacity: 1; transform: translateY(0); }
 .notification-success { background-color: #28a745; }
 .notification-error { background-color: #dc3545; }
-.placeholder-message { border: 2px dashed #f59e0b; background-color: #fffbeb; color: #b45309; padding: 2rem; border-radius: 0.75rem; text-align: center;
-font-weight: 600; }
+.placeholder-message { border: 2px dashed #f59e0b; background-color: #fffbeb; color: #b45309; padding: 2rem; border-radius: 0.75rem; text-align: center; font-weight: 600; }
 
 [id$='-subtabs-nav'] { flex-wrap: wrap; }
 .sortable { cursor: pointer; position: relative; user-select: none; }
@@ -2190,17 +2196,18 @@ solid #2563eb;
     background-color: #ffffff;
     border: 1px solid #e5e7eb;
     border-radius: 0.75rem;
-    padding: 1.25rem;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    padding: 1rem; /* UPDATED: Compact padding */
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* UPDATED: Softer shadow */
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.75rem; /* UPDATED: Reduced gap */
     transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
-    cursor: pointer; /* Added for clickability */
+    cursor: pointer;
+    position: relative; /* Added for medal positioning */
 }
 .sknv-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
 }
 
 .sknv-card__header {
@@ -2248,18 +2255,18 @@ solid #2563eb;
 
 .sknv-card__main-kpi {
     text-align: center;
-    margin: 0.5rem 0;
+    margin: 0.25rem 0; /* UPDATED: Reduced margin */
 }
 
 .sknv-card__main-kpi .value {
-    font-size: 3rem;
+    font-size: 2.5rem; /* UPDATED: Reduced font size */
     font-weight: 800;
     line-height: 1;
     color: #4b5563;
 }
 
 .sknv-card__main-kpi .total {
-    font-size: 1.5rem;
+    font-size: 1.25rem; /* UPDATED */
     font-weight: 600;
     color: #9ca3af;
 }
@@ -2272,50 +2279,58 @@ solid #2563eb;
     font-weight: 500;
 }
 
-.sknv-card-kpi-strong .value { color: #16a34a; } /* green-600 */
-.sknv-card-kpi-medium .value { color: #f59e0b; } /* amber-500 */
-.sknv-card-kpi-weak .value { color: #ef4444; } /* red-500 */
+.sknv-card-kpi-strong { border-top: 4px solid #16a34a; } /* UPDATED: Added top border */
+.sknv-card-kpi-medium { border-top: 4px solid #f59e0b; } /* UPDATED: Added top border */
+.sknv-card-kpi-weak { border-top: 4px solid #ef4444; } /* UPDATED: Added top border */
+.sknv-card-kpi-strong .value { color: #16a34a; }
+.sknv-card-kpi-medium .value { color: #f59e0b; }
+.sknv-card-kpi-weak .value { color: #ef4444; }
 
 .sknv-card__sub-kpi-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 0.75rem;
+    gap: 0.5rem; /* UPDATED: Reduced gap */
     border-top: 1px solid #f3f4f6;
-    padding-top: 1rem;
+    padding-top: 0.75rem; /* UPDATED: Reduced padding */
 }
 
 .sknv-card__sub-kpi-item {
     background-color: #f9fafb;
     border-radius: 0.5rem;
-    padding: 0.75rem 0.5rem;
+    padding: 0.5rem; /* UPDATED: Reduced padding */
     text-align: center;
-    border-top: 4px solid transparent;
     transition: background-color 0.2s ease-in-out;
 }
 
-.sknv-card__sub-kpi-item i.feather {
-    width: 1.25rem;
-    height: 1.25rem;
+/* === START: NEW SUB-KPI LAYOUT === */
+.sknv-card__sub-kpi-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+}
+.sknv-card__sub-kpi-header .feather {
+    width: 1rem;
+    height: 1rem;
     stroke-width: 2;
-    margin: 0 auto 0.25rem;
     color: #6b7280;
 }
-
-.sknv-card__sub-kpi-item .label {
-    font-size: 0.75rem;
+.sknv-card__sub-kpi-header .label {
+    font-size: 0.7rem;
     font-weight: 600;
     color: #4b5563;
 }
-
 .sknv-card__sub-kpi-item .value {
     font-size: 0.875rem;
     font-weight: 700;
     margin-top: 2px;
+    display: block; /* Ensures it's on a new line */
 }
+/* === END: NEW SUB-KPI LAYOUT === */
 
-.sknv-card__sub-kpi-item.strong { border-top-color: #22c55e; }
-.sknv-card__sub-kpi-item.medium { border-top-color: #f59e0b; }
-.sknv-card__sub-kpi-item.weak { border-top-color: #ef4444; }
+.sknv-card__sub-kpi-item.strong { border-bottom: 3px solid #22c55e; }
+.sknv-card__sub-kpi-item.medium { border-bottom: 3px solid #f59e0b; }
+.sknv-card__sub-kpi-item.weak { border-bottom: 3px solid #ef4444; }
 /* === END: SKNV INFOGRAPHIC CARD STYLES === */
 
 /* === START: SKNV Department Grouping Styles (V6.1) === */
@@ -2374,11 +2389,16 @@ solid #2563eb;
 /* === END: SKNV Department Grouping Styles === */
 
 /* === START: SKNV DETAIL VIEW & MEDALS (V6.4) === */
+/* NEW: Wrapper for compact detail view */
+#sknv-detail-capture-area {
+    max-width: 1100px;
+    margin: 0 auto;
+}
 .sknv-detail-header-card {
     display: flex;
     align-items: center;
     gap: 1.5rem;
-    padding: 1.5rem;
+    padding: 1rem; /* UPDATED: Compact padding */
     background-color: #eff6ff; /* blue-50 */
     border: 1px solid #dbeafe; /* blue-200 */
     border-top: 4px solid #3b82f6; /* blue-500 */
@@ -2399,7 +2419,9 @@ solid #2563eb;
     height: 32px;
     color: #1e40af; /* blue-800 */
 }
-.sknv-detail-info .name,
+.sknv-detail-info .name {
+    color: #1e40af; /* UPDATED: Dark blue color */
+}
 .sknv-detail-info .department,
 .sknv-detail-info .kpi-summary {
     color: #1f2937; /* dark text */
@@ -2425,7 +2447,7 @@ solid #2563eb;
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.75rem 1.25rem;
+    padding: 0.75rem 1rem; /* UPDATED: Compact padding */
     color: #ffffff;
 }
 .sknv-detail-card-header .header-icon {
@@ -2440,17 +2462,17 @@ solid #2563eb;
 .sknv-header-purple { background-color: #7e22ce; }
 
 .sknv-detail-grid-body {
-    padding: 1rem 1.25rem;
+    padding: 0.75rem 1rem; /* UPDATED: Compact padding */
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); /* UPDATED */
+    gap: 0.75rem; /* UPDATED */
 }
 .sknv-detail-metric-card {
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
-    padding: 1rem;
+    padding: 0.5rem; /* UPDATED: Compact padding */
     background-color: #f9fafb;
     border-radius: 0.5rem;
     border: 1px solid #f3f4f6;
@@ -2462,18 +2484,18 @@ solid #2563eb;
 }
 .sknv-detail-metric-card .label {
     font-weight: 600;
-    font-size: 0.875rem;
+    font-size: 0.8rem; /* UPDATED */
     color: #374151;
 }
 .sknv-detail-metric-card .value {
-    font-weight: 800;
-    font-size: 1.75rem;
+    font-weight: 700; /* UPDATED */
+    font-size: 1.375rem; /* UPDATED: Reduced font size */
     line-height: 1.2;
     color: #111827;
     margin: 0.25rem 0;
 }
 .sknv-detail-metric-card .average {
-    font-size: 0.75rem;
+    font-size: 0.7rem; /* UPDATED */
     color: #6b7280;
     font-style: italic;
 }
@@ -2482,22 +2504,33 @@ solid #2563eb;
     font-weight: 700;
     padding: 2px 8px;
     border-radius: 9999px;
-    font-size: 0.75rem;
+    font-size: 0.7rem; /* UPDATED */
 }
 .evaluation-badge.text-green-600 { background-color: #dcfce7; }
 .evaluation-badge.text-yellow-600 { background-color: #fef9c3; }
 
 .medal-container {
-    display: inline-block;
-    width: 48px;
-    height: 48px;
+    position: absolute; /* Changed for positioning */
+    top: -8px; /* Position it slightly outside the card */
+    left: 12px;
+    width: 32px; /* Reduced size */
+    height: 32px;
     flex-shrink: 0;
-    margin-left: 8px;
 }
 .medal-container svg {
     width: 100%;
     height: 100%;
     display: block;
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3)); /* Add a nice shadow */
+}
+
+/* NEW: Compact tables in detail view */
+#sknv-details-container .sknv-subtable-header {
+    font-size: 0.8rem;
+}
+#sknv-details-container .table-bordered td,
+#sknv-details-container .table-bordered th {
+    padding: 0.5rem;
 }
 /* === END: SKNV DETAIL VIEW & MEDALS === */
 --- END FILE: ./dashboard.css ---
@@ -4305,7 +4338,7 @@ if (tailwindScript && window.location.protocol !== "file:") {
             }
         });
     </script>
-    <script type="module" src="./main.js?v=3.4"></script>
+    <script type="module" src="./main.js?v=3.5"></script>
 
 </body>
 </html>
@@ -4341,7 +4374,7 @@ import { settingsService } from './modules/settings.service.js';
 import { highlightService } from './modules/highlight.service.js';
 
 const app = {
-    currentVersion: '3.4',
+    currentVersion: '3.5',
     storage: storage,
 
     async init() {
@@ -6331,6 +6364,13 @@ export const auth = {
 --- START FILE: ./changelog.json ---
 [
    {
+    "version": "3.5",
+    "date": "23/10/2025",
+    "notes": [
+      "Nâng cấp giao diện tab SKNV cho đẹp hơn"
+    ]
+  },  
+   {
     "version": "3.4",
     "date": "17/10/2025",
     "notes": [
@@ -7319,7 +7359,7 @@ createSnapshot();
 --- END FILE: ./create_snapshot.js ---
 
 --- START FILE: ./dashboard.css ---
-/* Version 6.4 - Finalize SKNV UI: 4-column layout, new detail header, name truncation, and medal styles */
+/* Version 6.6 - Compact SKNV detail view for better balance */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -7484,8 +7524,7 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #
 #notification.show { opacity: 1; transform: translateY(0); }
 .notification-success { background-color: #28a745; }
 .notification-error { background-color: #dc3545; }
-.placeholder-message { border: 2px dashed #f59e0b; background-color: #fffbeb; color: #b45309; padding: 2rem; border-radius: 0.75rem; text-align: center;
-font-weight: 600; }
+.placeholder-message { border: 2px dashed #f59e0b; background-color: #fffbeb; color: #b45309; padding: 2rem; border-radius: 0.75rem; text-align: center; font-weight: 600; }
 
 [id$='-subtabs-nav'] { flex-wrap: wrap; }
 .sortable { cursor: pointer; position: relative; user-select: none; }
@@ -8138,17 +8177,18 @@ solid #2563eb;
     background-color: #ffffff;
     border: 1px solid #e5e7eb;
     border-radius: 0.75rem;
-    padding: 1.25rem;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    padding: 1rem; /* UPDATED: Compact padding */
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* UPDATED: Softer shadow */
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.75rem; /* UPDATED: Reduced gap */
     transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
-    cursor: pointer; /* Added for clickability */
+    cursor: pointer;
+    position: relative; /* Added for medal positioning */
 }
 .sknv-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
 }
 
 .sknv-card__header {
@@ -8196,18 +8236,18 @@ solid #2563eb;
 
 .sknv-card__main-kpi {
     text-align: center;
-    margin: 0.5rem 0;
+    margin: 0.25rem 0; /* UPDATED: Reduced margin */
 }
 
 .sknv-card__main-kpi .value {
-    font-size: 3rem;
+    font-size: 2.5rem; /* UPDATED: Reduced font size */
     font-weight: 800;
     line-height: 1;
     color: #4b5563;
 }
 
 .sknv-card__main-kpi .total {
-    font-size: 1.5rem;
+    font-size: 1.25rem; /* UPDATED */
     font-weight: 600;
     color: #9ca3af;
 }
@@ -8220,50 +8260,58 @@ solid #2563eb;
     font-weight: 500;
 }
 
-.sknv-card-kpi-strong .value { color: #16a34a; } /* green-600 */
-.sknv-card-kpi-medium .value { color: #f59e0b; } /* amber-500 */
-.sknv-card-kpi-weak .value { color: #ef4444; } /* red-500 */
+.sknv-card-kpi-strong { border-top: 4px solid #16a34a; } /* UPDATED: Added top border */
+.sknv-card-kpi-medium { border-top: 4px solid #f59e0b; } /* UPDATED: Added top border */
+.sknv-card-kpi-weak { border-top: 4px solid #ef4444; } /* UPDATED: Added top border */
+.sknv-card-kpi-strong .value { color: #16a34a; }
+.sknv-card-kpi-medium .value { color: #f59e0b; }
+.sknv-card-kpi-weak .value { color: #ef4444; }
 
 .sknv-card__sub-kpi-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 0.75rem;
+    gap: 0.5rem; /* UPDATED: Reduced gap */
     border-top: 1px solid #f3f4f6;
-    padding-top: 1rem;
+    padding-top: 0.75rem; /* UPDATED: Reduced padding */
 }
 
 .sknv-card__sub-kpi-item {
     background-color: #f9fafb;
     border-radius: 0.5rem;
-    padding: 0.75rem 0.5rem;
+    padding: 0.5rem; /* UPDATED: Reduced padding */
     text-align: center;
-    border-top: 4px solid transparent;
     transition: background-color 0.2s ease-in-out;
 }
 
-.sknv-card__sub-kpi-item i.feather {
-    width: 1.25rem;
-    height: 1.25rem;
+/* === START: NEW SUB-KPI LAYOUT === */
+.sknv-card__sub-kpi-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+}
+.sknv-card__sub-kpi-header .feather {
+    width: 1rem;
+    height: 1rem;
     stroke-width: 2;
-    margin: 0 auto 0.25rem;
     color: #6b7280;
 }
-
-.sknv-card__sub-kpi-item .label {
-    font-size: 0.75rem;
+.sknv-card__sub-kpi-header .label {
+    font-size: 0.7rem;
     font-weight: 600;
     color: #4b5563;
 }
-
 .sknv-card__sub-kpi-item .value {
     font-size: 0.875rem;
     font-weight: 700;
     margin-top: 2px;
+    display: block; /* Ensures it's on a new line */
 }
+/* === END: NEW SUB-KPI LAYOUT === */
 
-.sknv-card__sub-kpi-item.strong { border-top-color: #22c55e; }
-.sknv-card__sub-kpi-item.medium { border-top-color: #f59e0b; }
-.sknv-card__sub-kpi-item.weak { border-top-color: #ef4444; }
+.sknv-card__sub-kpi-item.strong { border-bottom: 3px solid #22c55e; }
+.sknv-card__sub-kpi-item.medium { border-bottom: 3px solid #f59e0b; }
+.sknv-card__sub-kpi-item.weak { border-bottom: 3px solid #ef4444; }
 /* === END: SKNV INFOGRAPHIC CARD STYLES === */
 
 /* === START: SKNV Department Grouping Styles (V6.1) === */
@@ -8322,11 +8370,16 @@ solid #2563eb;
 /* === END: SKNV Department Grouping Styles === */
 
 /* === START: SKNV DETAIL VIEW & MEDALS (V6.4) === */
+/* NEW: Wrapper for compact detail view */
+#sknv-detail-capture-area {
+    max-width: 1100px;
+    margin: 0 auto;
+}
 .sknv-detail-header-card {
     display: flex;
     align-items: center;
     gap: 1.5rem;
-    padding: 1.5rem;
+    padding: 1rem; /* UPDATED: Compact padding */
     background-color: #eff6ff; /* blue-50 */
     border: 1px solid #dbeafe; /* blue-200 */
     border-top: 4px solid #3b82f6; /* blue-500 */
@@ -8347,7 +8400,9 @@ solid #2563eb;
     height: 32px;
     color: #1e40af; /* blue-800 */
 }
-.sknv-detail-info .name,
+.sknv-detail-info .name {
+    color: #1e40af; /* UPDATED: Dark blue color */
+}
 .sknv-detail-info .department,
 .sknv-detail-info .kpi-summary {
     color: #1f2937; /* dark text */
@@ -8373,7 +8428,7 @@ solid #2563eb;
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.75rem 1.25rem;
+    padding: 0.75rem 1rem; /* UPDATED: Compact padding */
     color: #ffffff;
 }
 .sknv-detail-card-header .header-icon {
@@ -8388,17 +8443,17 @@ solid #2563eb;
 .sknv-header-purple { background-color: #7e22ce; }
 
 .sknv-detail-grid-body {
-    padding: 1rem 1.25rem;
+    padding: 0.75rem 1rem; /* UPDATED: Compact padding */
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); /* UPDATED */
+    gap: 0.75rem; /* UPDATED */
 }
 .sknv-detail-metric-card {
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
-    padding: 1rem;
+    padding: 0.5rem; /* UPDATED: Compact padding */
     background-color: #f9fafb;
     border-radius: 0.5rem;
     border: 1px solid #f3f4f6;
@@ -8410,18 +8465,18 @@ solid #2563eb;
 }
 .sknv-detail-metric-card .label {
     font-weight: 600;
-    font-size: 0.875rem;
+    font-size: 0.8rem; /* UPDATED */
     color: #374151;
 }
 .sknv-detail-metric-card .value {
-    font-weight: 800;
-    font-size: 1.75rem;
+    font-weight: 700; /* UPDATED */
+    font-size: 1.375rem; /* UPDATED: Reduced font size */
     line-height: 1.2;
     color: #111827;
     margin: 0.25rem 0;
 }
 .sknv-detail-metric-card .average {
-    font-size: 0.75rem;
+    font-size: 0.7rem; /* UPDATED */
     color: #6b7280;
     font-style: italic;
 }
@@ -8430,22 +8485,33 @@ solid #2563eb;
     font-weight: 700;
     padding: 2px 8px;
     border-radius: 9999px;
-    font-size: 0.75rem;
+    font-size: 0.7rem; /* UPDATED */
 }
 .evaluation-badge.text-green-600 { background-color: #dcfce7; }
 .evaluation-badge.text-yellow-600 { background-color: #fef9c3; }
 
 .medal-container {
-    display: inline-block;
-    width: 48px;
-    height: 48px;
+    position: absolute; /* Changed for positioning */
+    top: -8px; /* Position it slightly outside the card */
+    left: 12px;
+    width: 32px; /* Reduced size */
+    height: 32px;
     flex-shrink: 0;
-    margin-left: 8px;
 }
 .medal-container svg {
     width: 100%;
     height: 100%;
     display: block;
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3)); /* Add a nice shadow */
+}
+
+/* NEW: Compact tables in detail view */
+#sknv-details-container .sknv-subtable-header {
+    font-size: 0.8rem;
+}
+#sknv-details-container .table-bordered td,
+#sknv-details-container .table-bordered th {
+    padding: 0.5rem;
 }
 /* === END: SKNV DETAIL VIEW & MEDALS === */
 --- END FILE: ./dashboard.css ---
@@ -10253,7 +10319,7 @@ if (tailwindScript && window.location.protocol !== "file:") {
             }
         });
     </script>
-    <script type="module" src="./main.js?v=3.4"></script>
+    <script type="module" src="./main.js?v=3.5"></script>
 
 </body>
 </html>
@@ -10289,7 +10355,7 @@ import { settingsService } from './modules/settings.service.js';
 import { highlightService } from './modules/highlight.service.js';
 
 const app = {
-    currentVersion: '3.4',
+    currentVersion: '3.5',
     storage: storage,
 
     async init() {
@@ -13953,7 +14019,7 @@ export { uiCompetition };
 --- END FILE: ./ui-competition.js ---
 
 --- START FILE: ./ui-components.js ---
-// Version 3.8 - Improve getShortEmployeeName logic
+// Version 3.9 - Fix click-to-detail bug in Luy Ke Revenue tab
 // MODULE: UI COMPONENTS
 // Chứa các hàm UI chung, tái sử dụng được trên toàn bộ ứng dụng.
 
@@ -13966,7 +14032,7 @@ export const uiComponents = {
     renderSettingsButton(idSuffix) {
         return `<button id="settings-btn-${idSuffix}" class="settings-trigger-btn" title="Tùy chỉnh hiển thị">
                       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                </button>`;
+                 </button>`;
     },
 
     renderCompetitionConfigUI() {
@@ -13982,15 +14048,15 @@ export const uiComponents = {
         container.innerHTML = configs.map((config, index) => {
             return `
                 <div class="p-3 border rounded-lg bg-white flex justify-between items-center shadow-sm">
-                    <div>
+                     <div>
                          <div class="flex items-center gap-x-2">
                              <p class="font-bold text-gray-800">${config.name}</p>
                         </div>
-                        <div class="text-xs text-gray-500 mt-1 space-y-1">
+                         <div class="text-xs text-gray-500 mt-1 space-y-1">
                              <p><strong>Hãng:</strong> <span class="font-semibold text-blue-600">${(config.brands || []).join(', ')}</span></p>
                              <p><strong>Nhóm hàng:</strong> <span class="font-semibold">${(config.groups || []).length} nhóm</span></p>
                         </div>
-                    </div>
+                     </div>
                      <div class="flex items-center gap-x-2 flex-shrink-0">
                         <button class="edit-competition-btn p-2 rounded-md hover:bg-gray-200 text-gray-600" data-index="${index}" title="Sửa chương trình">
                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
@@ -14134,7 +14200,7 @@ export const uiComponents = {
         
         let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="7">
                  <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
-                            <tr>
+                     <tr>
                                 <th class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('doanhThu')} text-right" data-sort="doanhThu">Doanh Thu <span class="sort-indicator"></span></th>
                                 <th class="${headerClass('doanhThuQuyDoi')} text-right" data-sort="doanhThuQuyDoi">Doanh Thu QĐ <span class="sort-indicator"></span></th>
@@ -14149,13 +14215,15 @@ export const uiComponents = {
             const qdClass = (mucTieu && item.hieuQuaQuyDoi < (mucTieu.phanTramQD / 100)) ? 'cell-performance is-below' : '';
             const tcClass = (mucTieu && item.tyLeTraCham < (mucTieu.phanTramTC / 100)) ? 'cell-performance is-below' : '';
             
+            // === START: BUG FIX LOGIC ===
             let sourceTab;
             if (sortStateKey === 'doanhthu_lk') sourceTab = 'dtnv-lk';
             else if (sortStateKey === 'realtime_dt_nhanvien') sourceTab = 'dtnv-rt';
             else sourceTab = 'sknv';
+            // === END: BUG FIX LOGIC ===
 
-            tableHTML += `<tr class="interactive-row">
-                    <td class="px-4 py-2 font-semibold line-clamp-2 employee-name-cell" data-employee-id="${item.maNV}" data-source-tab="${sourceTab}">
+            tableHTML += `<tr class="interactive-row" data-employee-id="${item.maNV}" data-source-tab="${sourceTab}">
+                    <td class="px-4 py-2 font-semibold line-clamp-2 employee-name-cell">
                         <a href="#">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</a>
                     </td>
                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThu)}</td>
@@ -14180,7 +14248,6 @@ export const uiComponents = {
     displayEmployeeEfficiencyReport: (reportData, containerId, sortStateKey) => {
         const container = document.getElementById(containerId);
         if (!container) return;
-
         if (!reportData || reportData.length === 0) {
             container.innerHTML = '<p class="text-gray-500">Không có dữ liệu hiệu quả cho lựa chọn này.</p>';
             return;
@@ -14193,14 +14260,14 @@ export const uiComponents = {
             <div id="efficiency-column-toggles" class="p-3 border-b border-gray-200 flex flex-wrap items-center gap-x-2 gap-y-2">
                 <span class="text-sm font-semibold mr-2 text-gray-700 non-draggable">Tùy chỉnh cột:</span>
                 ${columnSettings.map(col => `
-                     <button 
+                    <button 
                         class="column-toggle-btn draggable-tag flex items-center ${col.visible ? 'active' : ''}" 
                         data-column-id="${col.id}">
                         <svg class="drag-handle-icon mr-2 cursor-grab" width="12" height="12" viewBox="0 0 10 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M4 2a1 1 0 10-2 0 1 1 0 002 0zM2 9a1 1 0 110-2 1 1 0 010 2zm0 5a1 1 0 110-2 1 1 0 010 2zm5-12a1 1 0 10-2 0 1 1 0 002 0zM7 9a1 1 0 110-2 1 1 0 010 2zm0 5a1 1 0 110-2 1 1 0 010 2z" fill="currentColor"></path></svg>
                         <span>${col.label}</span>
                     </button>
                 `).join('')}
-             </div>
+            </div>
         `;
 
         let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
@@ -14310,7 +14377,7 @@ export const uiComponents = {
 
             tableHTML += `<tr class="interactive-row">
                 <td class="px-4 py-2 font-semibold line-clamp-2 employee-name-cell" data-employee-id="${item.maNV}" data-source-tab="sknv">
-                     <a href="#">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</a>
+                    <a href="#">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</a>
                 </td>
                 ${visibleColumns.map(col => {
                     const value = item[col.id];
@@ -14577,7 +14644,6 @@ export const uiComponents = {
         const overlay = document.getElementById('drawer-overlay');
 
         if (!drawer || !sidebar || !overlay) return;
-
         if (show) {
             drawer.classList.remove('hidden');
             setTimeout(() => {
@@ -16427,7 +16493,7 @@ export const uiRealtime = {
 --- END FILE: ./ui-realtime.js ---
 
 --- START FILE: ./ui-sknv.js ---
-// Version 6.7 - Critical Fix: Replace broken medals with high-quality, error-free SVG icons
+// Version 6.9 - Update medal SVGs to new high-quality, detailed versions
 // MODULE: UI SKNV
 // Chứa các hàm render giao diện cho tab "Sức khỏe nhân viên"
 
@@ -16780,9 +16846,58 @@ export const uiSknv = {
 
         let finalCardsHtml = '';
         
-        const gold_medal_svg = `<span class="medal-container"><svg viewBox="0 0 32 32" class="medal-icon gold" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M16,2 A14,14 0 1,0 16,30 A14,14 0 1,0 16,2 M16,5 A11,11 0 1,1 16,27 A11,11 0 1,1 16,5 Z" /><path d="M8,22 l-4,8 l8,-4 l-4,-4 Z" /><path d="M24,22 l4,8 l-8,-4 l4,-4 Z" /><text x="50%" y="52%" dominant-baseline="middle" text-anchor="middle" font-size="14" font-weight="bold" font-family="Arial, sans-serif" fill="#ffffff">1</text></svg></span>`;
-        const silver_medal_svg = `<span class="medal-container"><svg viewBox="0 0 32 32" class="medal-icon silver" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M16,2 A14,14 0 1,0 16,30 A14,14 0 1,0 16,2 M16,5 A11,11 0 1,1 16,27 A11,11 0 1,1 16,5 Z" /><path d="M8,22 l-4,8 l8,-4 l-4,-4 Z" /><path d="M24,22 l4,8 l-8,-4 l4,-4 Z" /><text x="50%" y="52%" dominant-baseline="middle" text-anchor="middle" font-size="14" font-weight="bold" font-family="Arial, sans-serif" fill="#ffffff">2</text></svg></span>`;
-        const bronze_medal_svg = `<span class="medal-container"><svg viewBox="0 0 32 32" class="medal-icon bronze" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M16,2 A14,14 0 1,0 16,30 A14,14 0 1,0 16,2 M16,5 A11,11 0 1,1 16,27 A11,11 0 1,1 16,5 Z" /><path d="M8,22 l-4,8 l8,-4 l-4,-4 Z" /><path d="M24,22 l4,8 l-8,-4 l4,-4 Z" /><text x="50%" y="52%" dominant-baseline="middle" text-anchor="middle" font-size="14" font-weight="bold" font-family="Arial, sans-serif" fill="#ffffff">3</text></svg></span>`;
+        // === START: NEW HIGH-QUALITY MEDAL SVGS ===
+        const gold_medal_svg = `<span class="medal-container"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="gold-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style="stop-color:#FFDF00;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#FFB800;stop-opacity:1" />
+                </linearGradient>
+                <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
+                    <feOffset dx="2" dy="2" result="offsetblur"/>
+                    <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
+            </defs>
+            <path d="M 20 75 L 35 95 L 35 75 L 50 90 L 65 75 L 65 95 L 80 75 L 50 85 Z" fill="#E53935"/>
+            <circle cx="50" cy="45" r="38" fill="#BDBDBD"/>
+            <circle cx="50" cy="45" r="35" fill="url(#gold-grad)"/>
+            <circle cx="50" cy="45" r="28" fill="#FFC107" stroke="#FFFFFF" stroke-width="2"/>
+            <text x="50" y="52" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="white" text-anchor="middle">1</text>
+            <path d="M 68 25 l 3 -6 l 3 6 l 6 3 l -6 3 l -3 6 l -3 -6 l -6 -3 Z" fill="white" opacity="0.8"/>
+            <path d="M 30 55 l 2 -4 l 2 4 l 4 2 l -4 2 l -2 4 l -2 -4 l -4 -2 Z" fill="white" opacity="0.5"/>
+        </svg></span>`;
+
+        const silver_medal_svg = `<span class="medal-container"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="silver-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style="stop-color:#F5F5F5;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#B0BEC5;stop-opacity:1" />
+                </linearGradient>
+            </defs>
+            <path d="M 20 75 L 35 95 L 35 75 L 50 90 L 65 75 L 65 95 L 80 75 L 50 85 Z" fill="#E53935"/>
+            <circle cx="50" cy="45" r="38" fill="#78909C"/>
+            <circle cx="50" cy="45" r="35" fill="url(#silver-grad)"/>
+            <circle cx="50" cy="45" r="28" fill="#B0BEC5" stroke="#FFFFFF" stroke-width="2"/>
+            <text x="50" y="52" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="white" text-anchor="middle">2</text>
+            <path d="M 68 25 l 3 -6 l 3 6 l 6 3 l -6 3 l -3 6 l -3 -6 l -6 -3 Z" fill="white" opacity="0.8"/>
+        </svg></span>`;
+
+        const bronze_medal_svg = `<span class="medal-container"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="bronze-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style="stop-color:#FFCC80;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#D84315;stop-opacity:1" />
+                </linearGradient>
+            </defs>
+            <path d="M 20 75 L 35 95 L 35 75 L 50 90 L 65 75 L 65 95 L 80 75 L 50 85 Z" fill="#E53935"/>
+            <circle cx="50" cy="45" r="38" fill="#A1887F"/>
+            <circle cx="50" cy="45" r="35" fill="url(#bronze-grad)"/>
+            <circle cx="50" cy="45" r="28" fill="#D84315" stroke="#FFFFFF" stroke-width="2"/>
+            <text x="50" y="52" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="white" text-anchor="middle">3</text>
+            <path d="M 68 25 l 3 -6 l 3 6 l 6 3 l -6 3 l -3 6 l -3 -6 l -6 -3 Z" fill="white" opacity="0.8"/>
+        </svg></span>`;
+        // === END: NEW HIGH-QUALITY MEDAL SVGS ===
 
         departmentOrder.forEach(deptName => {
             if (groupedByDept[deptName] && groupedByDept[deptName].length > 0) {
@@ -16809,13 +16924,15 @@ export const uiSknv = {
 
                         return `
                             <div class="sknv-card__sub-kpi-item ${subKpiColorClass}">
-                                <i data-feather="${group.icon}"></i>
-                                <span class="label">${group.label}</span>
+                                <div class="sknv-card__sub-kpi-header">
+                                    <i data-feather="${group.icon}"></i>
+                                    <span class="label">${group.label}</span>
+                                </div>
                                 <span class="value ${valueColorClass}">${item.summary[group.key].above}/${item.summary[group.key].total}</span>
                             </div>
                         `;
                     }).join('');
-
+                    
                     finalCardsHtml += `
                         <div class="sknv-card interactive-row" data-employee-id="${item.maNV}" data-source-tab="sknv">
                             ${medalHtml}
@@ -17196,7 +17313,7 @@ export const utils = {
 
 --- START FILE: ./version.json ---
 {
-  "version": "3.4"
+  "version": "3.5"
 }
 
 --- END FILE: ./version.json ---
