@@ -27,7 +27,7 @@ import { settingsService } from './modules/settings.service.js';
 import { highlightService } from './modules/highlight.service.js';
 
 const app = {
-    currentVersion: '3.4',
+    currentVersion: '3.5',
     storage: storage,
 
     async init() {
