@@ -1,4 +1,4 @@
-// Version 2.5 - Add cloud-based declaration properties
+// Version 2.8 - Merged features: Add warehouse state, user stats sort, and listener
 // MODULE 2: TỦ TRẠNG THÁI (APPSTATE)
 // File này chứa đối tượng trạng thái chung của ứng dụng, hoạt động như một "bộ nhớ".
 
@@ -20,6 +20,8 @@ const appState = {
     },
 
     // --- Dữ liệu & Trạng thái ---
+    selectedWarehouse: null, // <<< GIAI ĐOẠN 1
+    unsubscribeDataListener: null, // <<< GIAI ĐOẠN 2
     danhSachNhanVien: [],
     categoryStructure: [],
     brandList: [], // Master list of all brands
@@ -77,6 +79,7 @@ const appState = {
         competition_brand: null,
     },
     sortState: {
+        user_stats: { key: 'lastLogin', direction: 'desc' }, // <<< GIAI ĐOẠN 4
         luyke_chuaxuat: { key: 'doanhThuQuyDoi', direction: 'desc' },
         sknv_summary: { key: 'totalAbove', direction: 'desc' },
         doanhthu_lk: { key: 'doanhThu', direction: 'desc' },

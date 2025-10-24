@@ -1,4 +1,4 @@
-// Version 2.6 - Fix: Remove specific exclusion for 'Xuất dịch vụ thu hộ bảo hiểm' in revenue calculation
+// Version 2.7 - Remove debug logs after fixing revenue calculation
 // MODULE: SERVICES FACADE
 // File này đóng vai trò điều phối, nhập khẩu các module logic con và export chúng ra ngoài.
 
@@ -181,20 +181,18 @@ const reportGeneration = {
 
                             const nganhHangName = utils.cleanCategoryName(row.nganhHang);
 
-                            // ---- REMOVED EXCLUSION ----
-                            // if (row.hinhThucXuat !== 'Xuất dịch vụ thu hộ bảo hiểm') {
-                                data.doanhThu += thanhTien;
-                                data.doanhThuQuyDoi += thanhTien * heSo;
+                            // Revenue calculation no longer excludes specific HTX
+                            data.doanhThu += thanhTien;
+                            data.doanhThuQuyDoi += thanhTien * heSo;
 
-                                if (isRealtime && row.ngayTao && row.ngayHenGiao) {
-                                    const diffTime = row.ngayHenGiao - row.ngayTao;
-                                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                                    if (diffDays >= 2) {
-                                        data.doanhThuGiaoXa += thanhTien;
-                                        data.doanhThuQuyDoiGiaoXa += thanhTien * heSo;
-                                    }
+                            if (isRealtime && row.ngayTao && row.ngayHenGiao) {
+                                const diffTime = row.ngayHenGiao - row.ngayTao;
+                                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                                if (diffDays >= 2) {
+                                    data.doanhThuGiaoXa += thanhTien;
+                                    data.doanhThuQuyDoiGiaoXa += thanhTien * heSo;
                                 }
-                            // } // ---- END REMOVED EXCLUSION ----
+                            }
 
                             if (hinhThucXuatTraGop.has(row.hinhThucXuat)) { data.doanhThuTraGop += thanhTien; data.doanhThuTraGopQuyDoi += thanhTien * heSo; }
 

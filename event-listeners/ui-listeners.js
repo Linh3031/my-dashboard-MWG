@@ -1,4 +1,4 @@
-// Version 3.12 - Critical Fix: Correct all import paths and update click listener
+// Version 3.16 - Final Merge: Add local UI feedback for cloud sync
 // MODULE: EVENT LISTENERS INITIALIZER
 // File này đóng vai trò là điểm khởi đầu, import và khởi chạy tất cả các module listener con.
 
@@ -16,6 +16,7 @@ import { initializeSettingsListeners } from './listeners-settings.js';
 import { initializeSortingListeners } from './listeners-sorting.js';
 import { dragDroplisteners } from './listeners-dragdrop.js';
 import { captureService } from '../modules/capture.service.js';
+import { firebase } from '../firebase.js'; // Thêm import cho Giai đoạn 2
 
 let appController = null;
 
@@ -44,16 +45,30 @@ async function handleFileInputChange(e) {
             if (stateKey === 'danhSachNhanVien') {
                 services.updateEmployeeMaps();
                 ui.populateAllFilters();
+                ui.populateWarehouseSelector(); // <<< GIAI ĐOẠN 1
             }
+            
+            // Cập nhật trạng thái file local trước
             ui.updateFileStatus(fileType, file.name, `✓ Đã tải ${normalizedData.length} dòng.`, 'success');
             ui.showNotification(`Tải thành công file "${dataName}"!`, 'success');
             
             if (fileInput.dataset.saveKey) {
                 await appController.storage.setItem(fileInput.dataset.saveKey, rawData);
-                const savedStatusSpan = document.getElementById(`${fileType}-saved-status`);
-                if (savedStatusSpan) savedStatusSpan.textContent = `Đã lưu ${normalizedData.length} dòng.`;
                 ui.showNotification(`Đã lưu "${dataName}" vào bộ nhớ đệm của trình duyệt.`, 'success');
             }
+
+            // === START: GIAI ĐOẠN 2 (Sửa lỗi "bảng trắng") ===
+            if (appState.selectedWarehouse && ['ycx', 'giocong', 'thuongnong'].includes(fileType)) {
+                // Gửi dữ liệu đã được xử lý (normalizedData) lên cloud
+                await firebase.saveDataByWarehouse(appState.selectedWarehouse, fileType, normalizedData); 
+                
+                // === THAY ĐỔI MỚI (V3.16) ===
+                // Cập nhật giao diện ngay lập tức cho người tải lên
+                ui.updateFileStatus(fileType, `Cloud (Bạn)`, `✓ Vừa đồng bộ`, 'success');
+                // === KẾT THÚC THAY ĐỔI MỚI ===
+            }
+            // === END: GIAI ĐOẠN 2 ===
+
             appController.updateAndRenderCurrentTab();
         } else {
             const errorMessage = `Lỗi file "${dataName}": Thiếu cột: ${missingColumns.join(', ')}.`;
@@ -90,7 +105,6 @@ export function initializeEventListeners(mainAppController) {
             placeholderValue: 'Chọn hoặc gõ để tìm...',
             searchPlaceholderValue: 'Tìm kiếm...'
         };
-
         const competitionMultiSelectConfig = {
             removeItemButton: true,
             placeholder: true,
@@ -206,17 +220,35 @@ export function initializeEventListeners(mainAppController) {
          document.getElementById(`${prefix}-filter-name`)?.addEventListener('change', () => handleFilterChange(prefix));
     });
     
+    // === START: GIAI ĐOẠN 1 (Đã gộp GĐ 2) ===
+    document.getElementById('data-warehouse-selector')?.addEventListener('change', (e) => {
+        const selectedKho = e.target.value;
+        if (selectedKho) {
+            appState.selectedWarehouse = selectedKho;
+            localStorage.setItem('selectedWarehouse', selectedKho);
+            ui.showNotification(`Đã chuyển sang làm việc với kho ${selectedKho}.`, 'success');
+            // Bắt đầu lắng nghe dữ liệu mới cho kho này
+            if(appController.unsubscribeDataListener) appController.unsubscribeDataListener(); // Hủy listener cũ
+            appController.unsubscribeDataListener = firebase.listenForDataChanges(selectedKho, (cloudData) => {
+                appController.handleCloudDataUpdate(cloudData);
+            });
+        } else {
+            appState.selectedWarehouse = null;
+            localStorage.removeItem('selectedWarehouse');
+            // Dừng lắng nghe
+            if(appController.unsubscribeDataListener) appController.unsubscribeDataListener();
+        }
+    });
+    // === END: GIAI ĐOẠN 1 ===
+
     document.getElementById('sknv-view-selector')?.addEventListener('click', (e) => appController.handleSknvViewChange(e));
     document.getElementById('sknv-employee-filter')?.addEventListener('change', () => sknvTab.render());
     
     document.body.addEventListener('click', (e) => {
-        // === START: UPDATED CLICK LOGIC (V3.12) ===
-        // This now targets '.interactive-row' which is on both summary cards and table rows
         const interactiveRow = e.target.closest('.interactive-row');
         if (interactiveRow && interactiveRow.dataset.employeeId) {
             e.preventDefault();
             
-            // Prevent re-triggering if already viewing the same employee's detail
             if (appState.viewingDetailFor && appState.viewingDetailFor.employeeId === interactiveRow.dataset.employeeId) {
                 return;
             }
@@ -228,7 +260,6 @@ export function initializeEventListeners(mainAppController) {
             appController.updateAndRenderCurrentTab();
             return;
         }
-        // === END: UPDATED CLICK LOGIC ===
 
         const backButton = e.target.closest('.back-to-summary-btn');
         if (backButton) {

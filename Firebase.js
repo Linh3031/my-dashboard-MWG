@@ -1,4 +1,4 @@
-// Version 1.7 - Add function to get QR code URL from Storage
+// Version 2.1 - Final Merge: Integrated Auth, Warehouse Sync, and Admin features
 // MODULE: FIREBASE
 // Chịu trách nhiệm kết nối, thiết lập listener với Firebase.
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -49,7 +49,7 @@ const firebase = {
                 appState.feedbackList.push({ id: doc.id, ...data, timestamp: data.timestamp?.toDate() });
             });
             if (document.getElementById('home-section')?.classList.contains('hidden') === false) {
-                ui.renderFeedbackSection();
+                 ui.renderFeedbackSection();
             }
         }, (error) => {
             console.error("Error listening to feedback collection: ", error);
@@ -66,7 +66,7 @@ const firebase = {
                 }
             });
             if (contentUpdated && appState.isAdmin && document.getElementById('declaration-section')?.classList.contains('hidden') === false) {
-                ui.renderAdminHelpEditors();
+                 ui.renderAdminHelpEditors();
             }
         }, (error) => {
             console.error("Error listening to help_content collection: ", error);
@@ -76,7 +76,7 @@ const firebase = {
         const statsRef = doc(appState.db, "analytics", "site_stats");
         onSnapshot(statsRef, (docSnap) => {
             if (docSnap.exists()) {
-                const statsData = docSnap.data();
+               const statsData = docSnap.data();
                 ui.updateUsageCounter(statsData);
             } else {
                 console.log("Không tìm thấy document thống kê.");
@@ -88,12 +88,13 @@ const firebase = {
         if (!appState.db || !fieldName) return;
         const statsRef = doc(appState.db, "analytics", "site_stats");
         try {
-            await setDoc(statsRef, { [fieldName]: increment(1) }, { merge: true });
+             await setDoc(statsRef, { [fieldName]: increment(1) }, { merge: true });
         } catch (error) {
             console.error(`Lỗi khi tăng bộ đếm cho '${fieldName}':`, error);
         }
     },
 
+    // === START: CẬP NHẬT (GĐ 1) - Dùng email thay vì UID ===
     async submitFeedback(content) {
         if (!content || !appState.db || !appState.currentUser) {
              ui.showNotification("Không thể gửi góp ý: Người dùng chưa được xác thực.", "error");
@@ -101,13 +102,12 @@ const firebase = {
         }
         try {
             await addDoc(collection(appState.db, "feedback"), {
-                user: {
-                    uid: appState.currentUser.uid,
-                    isAnonymous: appState.currentUser.isAnonymous,
+               user: {
+                    email: appState.currentUser.email, // Thay đổi từ UID sang email
                 },
                 content: content,
                 timestamp: serverTimestamp(),
-                replies: []
+                 replies: []
             });
             ui.showNotification("Góp ý của bạn đã được gửi!", "success");
             return true;
@@ -117,13 +117,14 @@ const firebase = {
             return false;
         }
     },
+    // === END: CẬP NHẬT (GĐ 1) ===
 
     async submitReply(docId, content) {
         if (!docId || !content || !appState.db) return false;
         try {
             const feedbackRef = doc(appState.db, "feedback", docId);
             await updateDoc(feedbackRef, {
-                replies: arrayUnion({
+             replies: arrayUnion({
                     content: content,
                     timestamp: new Date()
                 })
@@ -144,7 +145,7 @@ const firebase = {
                 setDoc(doc(appState.db, "help_content", "data"), { content: contents.data }),
                 setDoc(doc(appState.db, "help_content", "luyke"), { content: contents.luyke }),
                 setDoc(doc(appState.db, "help_content", "sknv"), { content: contents.sknv }),
-                setDoc(doc(appState.db, "help_content", "realtime"), { content: contents.realtime })
+             setDoc(doc(appState.db, "help_content", "realtime"), { content: contents.realtime })
             ]);
             ui.showNotification('Đã cập nhật nội dung hướng dẫn thành công!', 'success');
         } catch (error) {
@@ -184,7 +185,7 @@ const firebase = {
                     categories = doc.data().data || [];
                 } else if (doc.id === "brandList") {
                     brands = doc.data().data || [];
-                }
+               }
             });
 
             console.log(`Loaded ${categories.length} categories and ${brands.length} brands from Firestore.`);
@@ -196,7 +197,6 @@ const firebase = {
         }
     },
 
-    // --- START: CÁC HÀM MỚI ĐỂ QUẢN LÝ DỮ LIỆU KHAI BÁO TÍNH TOÁN ---
     async loadDeclarationsFromFirestore() {
         if (!appState.db) return {};
         console.log("Loading calculation declarations from Firestore...");
@@ -207,7 +207,6 @@ const firebase = {
                 const docRef = doc(appState.db, "declarations", id);
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
-                    // Dữ liệu được lưu dưới dạng một chuỗi dài, phân tách bằng \n
                     declarations[id] = docSnap.data().content || '';
                 } else {
                     declarations[id] = '';
@@ -237,7 +236,6 @@ const firebase = {
             ui.showNotification('Lỗi khi đồng bộ khai báo tính toán.', 'error');
         }
     },
-    // --- END: CÁC HÀM MỚI ---
 
     async getTemplateDownloadURL() {
         if (!appState.storage) {
@@ -270,12 +268,10 @@ const firebase = {
         }
     },
 
-    // === START: HÀM MỚI ĐỂ LẤY URL MÃ QR ===
     async getQrCodeDownloadURL() {
         if (!appState.storage) {
             throw new Error("Firebase Storage chưa được khởi tạo.");
         }
-        // --- LƯU Ý: File ảnh QR của bạn PHẢI được tải lên đúng đường dẫn này ---
         const filePath = 'qrcodes/main-qr.jpg'; 
         const storageRef = ref(appState.storage, filePath);
         try {
@@ -283,14 +279,100 @@ const firebase = {
             return url;
         } catch (error) {
             console.error("Lỗi khi lấy URL của mã QR: ", error);
-            // Xử lý lỗi cụ thể khi không tìm thấy file
             if (error.code === 'storage/object-not-found') {
                 throw new Error(`Không tìm thấy file mã QR tại đường dẫn '${filePath}'. Vui lòng kiểm tra lại Firebase Storage.`);
             }
             throw new Error("Không thể tải được mã QR từ server.");
         }
+    },
+
+    // === START: HÀM MỚI (GĐ 1) - Quản lý Người dùng ===
+    async upsertUserRecord(email) {
+        if (!appState.db || !email) return;
+        const userRef = doc(appState.db, "users", email); // Sử dụng email làm ID tài liệu
+        try {
+            await setDoc(userRef, {
+                email: email,
+                lastLogin: serverTimestamp(),
+                loginCount: increment(1)
+            }, { merge: true });
+            console.log(`User record for ${email} updated successfully.`);
+        } catch (error) {
+            console.error("Error upserting user record:", error);
+            // Không hiển thị notification cho người dùng vì đây là tác vụ nền
+        }
+    },
+    // === END: HÀM MỚI (GĐ 1) ===
+
+    // === START: HÀM MỚI (GĐ 2) - Đồng bộ Dữ liệu Kho ===
+    async saveDataByWarehouse(kho, dataType, data) {
+        if (!appState.db || !kho || !dataType || !data) return;
+        const khoRef = doc(appState.db, "warehouseData", kho);
+        try {
+            await setDoc(khoRef, {
+                [dataType]: {
+                    data: data, // Lưu dữ liệu đã xử lý (normalized)
+                    updatedAt: serverTimestamp(),
+                    updatedBy: appState.currentUser.email || 'Unknown'
+                }
+            }, { merge: true });
+            ui.showNotification(`Đã đồng bộ dữ liệu "${dataType}" cho kho ${kho} lên cloud.`, 'success');
+        } catch (error) {
+            console.error(`Lỗi khi đồng bộ dữ liệu kho ${kho}:`, error);
+            ui.showNotification(`Lỗi đồng bộ dữ liệu lên cloud.`, 'error');
+        }
+    },
+
+    listenForDataChanges(kho, callback) {
+        if (!appState.db || !kho || typeof callback !== 'function') return null;
+        const khoRef = doc(appState.db, "warehouseData", kho);
+        
+        console.log(`Bắt đầu lắng nghe thay đổi dữ liệu cho kho: ${kho}`);
+
+        const unsubscribe = onSnapshot(khoRef, (docSnap) => {
+            if (docSnap.exists()) {
+                console.log(`Phát hiện dữ liệu mới cho kho ${kho}.`);
+                const allData = docSnap.data();
+                callback(allData); // Gọi callback với toàn bộ dữ liệu của kho
+            } else {
+                console.log(`Chưa có dữ liệu nào trên cloud cho kho ${kho}.`);
+                callback({}); // Gọi callback với object rỗng
+            }
+        }, (error) => {
+            console.error(`Lỗi khi lắng nghe dữ liệu kho ${kho}:`, error);
+            ui.showNotification("Mất kết nối đồng bộ dữ liệu.", "error");
+        });
+
+        return unsubscribe; // Trả về hàm để có thể hủy lắng nghe sau này
+    },
+    // === END: HÀM MỚI (GĐ 2) ===
+
+    // === START: HÀM MỚI (GĐ 4) - Lấy Dữ liệu Admin ===
+    async getAllUsers() {
+        if (!appState.db || !appState.isAdmin) {
+            ui.showNotification("Bạn không có quyền truy cập chức năng này.", "error");
+            return [];
+        }
+        try {
+            const usersCollection = collection(appState.db, "users");
+            const querySnapshot = await getDocs(usersCollection);
+            const users = [];
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                users.push({
+                    email: data.email,
+                    loginCount: data.loginCount || 0,
+                    lastLogin: data.lastLogin?.toDate() // Chuyển đổi Timestamp sang Date object
+                });
+            });
+            return users;
+        } catch (error) {
+            console.error("Lỗi khi lấy danh sách người dùng:", error);
+            ui.showNotification("Không thể tải danh sách người dùng.", "error");
+            return [];
+        }
     }
-    // === END: HÀM MỚI ===
+    // === END: HÀM MỚI (GĐ 4) ===
 };
 
 export { firebase };

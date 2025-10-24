@@ -1,74 +1,86 @@
-// Version 1.1 - Add totalUsers counter on new user creation
+// Version 2.0 - Final Merge: Implement Email-based identification flow
 // MODULE: AUTH
-// Chịu trách nhiệm xử lý tất cả logic liên quan đến xác thực người dùng.
+// Chịu trách nhiệm xử lý logic định danh người dùng qua email.
 
-import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-// === START: THÊM IMPORT MỚI ===
-import { doc, setDoc, serverTimestamp, getDoc, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-// === END: THÊM IMPORT MỚI ===
 import { appState } from './state.js';
+import { ui } from './ui.js';
+import { firebase } from './firebase.js';
 
 export const auth = {
     /**
      * Khởi tạo module xác thực.
-     * Thiết lập một listener để theo dõi trạng thái đăng nhập và tự động đăng nhập ẩn danh nếu cần.
+     * Kiểm tra email trong localStorage. Nếu không có, hiển thị modal đăng nhập.
+     * Nếu có, tiến hành xác thực và chạy callback khi thành công.
+     * @param {Function} onSuccessCallback - Hàm sẽ được gọi sau khi định danh người dùng thành công.
      */
-    init() {
-        const authInstance = getAuth();
-        
-        onAuthStateChanged(authInstance, (user) => {
-            if (user) {
-                appState.currentUser = user;
-                console.log("Người dùng đã xác thực với UID:", user.uid);
-                
-                // Tạo một bản ghi trong Firestore cho người dùng này nếu chưa có
-                this.createUserRecord(user);
-            } else {
-                console.log("Chưa có người dùng, đang tiến hành đăng nhập ẩn danh...");
-                signInAnonymously(authInstance).catch((error) => {
-                    console.error("Lỗi đăng nhập ẩn danh:", error);
-                });
-            }
-        });
+    init(onSuccessCallback) {
+        const savedEmail = localStorage.getItem('userEmail');
+        if (savedEmail && this._isValidEmail(savedEmail)) {
+            appState.currentUser = { email: savedEmail };
+            // Cập nhật thầm lặng số lần đăng nhập và thời gian trên server
+            firebase.upsertUserRecord(savedEmail);
+            // Tiếp tục khởi tạo ứng dụng
+            onSuccessCallback();
+        } else {
+            // Hiển thị modal và chờ người dùng nhập email
+            ui.toggleModal('login-modal', true);
+            this._setupLoginListener(onSuccessCallback);
+        }
     },
 
     /**
-     * Tạo một bản ghi trong collection 'users' VÀ tăng bộ đếm người dùng.
-     * Chỉ thực hiện nếu bản ghi người dùng chưa tồn tại.
-     * @param {object} user - Đối tượng user trả về từ Firebase Auth.
+     * @private
+     * Thiết lập trình nghe sự kiện cho form đăng nhập.
+     * @param {Function} onSuccessCallback - Hàm callback để chạy sau khi đăng nhập thành công.
      */
-    async createUserRecord(user) {
-        if (!appState.db || !user) return;
+    _setupLoginListener(onSuccessCallback) {
+        const submitBtn = document.getElementById('login-submit-btn');
+        const emailInput = document.getElementById('login-email-input');
+        const errorMsg = document.getElementById('login-error-msg');
 
-        const userRef = doc(appState.db, "users", user.uid);
-
-        try {
-            const userDoc = await getDoc(userRef);
-
-            // === START: LOGIC MỚI - CHỈ THỰC HIỆN KHI LÀ NGƯỜI DÙNG MỚI ===
-            if (!userDoc.exists()) {
-                console.log(`Phát hiện người dùng mới (${user.uid}). Đang tạo hồ sơ và cập nhật bộ đếm...`);
-                
-                // 1. Tạo hồ sơ người dùng
-                const userData = {
-                    uid: user.uid,
-                    email: user.email || null,
-                    createdAt: serverTimestamp(),
-                    role: 'free_user'
-                };
-                await setDoc(userRef, userData);
-
-                // 2. Tăng bộ đếm tổng số người dùng
-                const statsRef = doc(appState.db, "analytics", "site_stats");
-                await setDoc(statsRef, {
-                    totalUsers: increment(1)
-                }, { merge: true });
-                
-                console.log("-> Đã tăng bộ đếm totalUsers.");
-            }
-            // === END: LOGIC MỚI ===
-        } catch (error) {
-            console.error("Lỗi khi kiểm tra hoặc tạo bản ghi người dùng:", error);
+        if (!submitBtn || !emailInput || !errorMsg) {
+            console.error("Không tìm thấy các thành phần của modal đăng nhập. Đã render modal-login.js chưa?");
+            return;
         }
+
+        // Xử lý sự kiện click
+        submitBtn.onclick = async () => {
+            const email = emailInput.value.trim();
+            if (this._isValidEmail(email)) {
+                errorMsg.classList.add('hidden');
+                submitBtn.disabled = true;
+                submitBtn.textContent = "Đang xử lý...";
+                
+                localStorage.setItem('userEmail', email);
+                appState.currentUser = { email: email };
+
+                ui.showNotification(`Chào mừng ${email}!`, 'success');
+                await firebase.upsertUserRecord(email);
+
+                ui.toggleModal('login-modal', false);
+                onSuccessCallback(); // Chạy phần còn lại của quá trình khởi tạo ứng dụng
+            } else {
+                errorMsg.classList.remove('hidden');
+            }
+        };
+
+        // Xử lý sự kiện nhấn Enter
+        emailInput.onkeydown = (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                submitBtn.click();
+            }
+        };
+    },
+
+    /**
+     * @private
+     * Kiểm tra định dạng email đơn giản.
+     * @param {string} email
+     * @returns {boolean}
+     */
+    _isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return email && emailRegex.test(email);
     }
 };

@@ -1,261 +1,312 @@
-// Version 4.0 - Major Refactor: Merge tab-realtime logic and fix all TypeErrors
+// Version 4.2 - Add uiCompetition import
 // MODULE: UI REALTIME
 // Chứa TOÀN BỘ logic và hàm render giao diện cho tab "Doanh thu Realtime".
 
 import { appState } from './state.js';
-import { ui } from './ui.js';
+import { ui } from './ui.js'; // Vẫn cần import ui chính để dùng các hàm common
 import { services } from './services.js';
 import { settingsService } from './modules/settings.service.js';
 import { highlightService } from './modules/highlight.service.js';
 import { dragDroplisteners } from './event-listeners/listeners-dragdrop.js';
-import { uiComponents } from './ui-components.js';
+import { uiComponents } from './ui-components.js'; // Import uiComponents thay vì ui
+import { utils } from './utils.js'; // Import utils
+import { uiCompetition } from './ui-competition.js'; // <<< *** ĐÃ THÊM IMPORT ***
 
 export const uiRealtime = {
     render() {
-        console.log("[CHẨN ĐOÁN] Bắt đầu render() trong 'ui-realtime.js' (đã gộp).");
+        console.log("[CHẨN ĐOÁN] Bắt đầu render() trong 'ui-realtime.js' (đã gộp)."); //
 
         if (appState.danhSachNhanVien.length === 0) {
-            ui.togglePlaceholder('realtime-section', true);
-            return;
+            uiComponents.togglePlaceholder('realtime-section', true); // Sử dụng uiComponents
+            return; //
         }
-        ui.togglePlaceholder('realtime-section', false);
+        uiComponents.togglePlaceholder('realtime-section', false); // Sử dụng uiComponents
 
-        const selectedWarehouse = document.getElementById('realtime-filter-warehouse').value;
-        this.updateRealtimeSupermarketTitle(selectedWarehouse, new Date());
-        
-        const activeSubTabBtn = document.querySelector('#realtime-subtabs-nav .sub-tab-btn.active');
-        const activeSubTabId = activeSubTabBtn ? activeSubTabBtn.dataset.target : 'subtab-realtime-sieu-thi';
+        const selectedWarehouse = document.getElementById('realtime-filter-warehouse')?.value || ''; // Thêm ? và || ''
+        this.updateRealtimeSupermarketTitle(selectedWarehouse, new Date()); //
+
+        const activeSubTabBtn = document.querySelector('#realtime-subtabs-nav .sub-tab-btn.active'); //
+        const activeSubTabId = activeSubTabBtn ? activeSubTabBtn.dataset.target : 'subtab-realtime-sieu-thi'; //
 
         if (appState.realtimeYCXData.length === 0) {
-             this.renderRealtimeKpiCards({}, { goals: {}, timing: {} });
-             document.getElementById('realtime-category-details-content').innerHTML = '<p class="text-gray-500 font-bold">Vui lòng tải file realtime để xem chi tiết.</p>';
-             document.getElementById('realtime-efficiency-content').innerHTML = '<p class="text-gray-500 font-bold">Vui lòng tải file realtime để xem chi tiết.</p>';
-             document.getElementById('realtime-qdc-content').innerHTML = '<p class="text-gray-500 font-bold">Vui lòng tải file realtime để xem chi tiết.</p>';
-             document.getElementById('realtime-unexported-revenue-content').innerHTML = '<p class="text-gray-500 font-bold">Vui lòng tải file realtime để xem chi tiết.</p>';
-             document.getElementById('realtime-revenue-report-container').innerHTML = '';
-             document.getElementById('realtime-employee-detail-container').innerHTML = '';
-             document.getElementById('realtime-brand-report-container').innerHTML = '<p class="text-gray-500">Vui lòng tải file realtime và chọn bộ lọc để xem dữ liệu.</p>';
-             document.getElementById('competition-report-container-rt').innerHTML = '<p class="text-gray-500">Vui lòng tải file realtime để xem chi tiết.</p>';
-             return;
+             this.renderRealtimeKpiCards({}, { goals: {}, timing: {} }); //
+             const catDetailEl = document.getElementById('realtime-category-details-content');
+             if(catDetailEl) catDetailEl.innerHTML = '<p class="text-gray-500 font-bold">Vui lòng tải file realtime để xem chi tiết.</p>'; //
+             const efficiencyEl = document.getElementById('realtime-efficiency-content');
+             if(efficiencyEl) efficiencyEl.innerHTML = '<p class="text-gray-500 font-bold">Vui lòng tải file realtime để xem chi tiết.</p>'; //
+             const qdcEl = document.getElementById('realtime-qdc-content');
+             if(qdcEl) qdcEl.innerHTML = '<p class="text-gray-500 font-bold">Vui lòng tải file realtime để xem chi tiết.</p>'; //
+             const unexportedEl = document.getElementById('realtime-unexported-revenue-content');
+             if(unexportedEl) unexportedEl.innerHTML = '<p class="text-gray-500 font-bold">Vui lòng tải file realtime để xem chi tiết.</p>'; //
+             const revenueReportEl = document.getElementById('realtime-revenue-report-container');
+             if(revenueReportEl) revenueReportEl.innerHTML = ''; //
+             const employeeDetailEl = document.getElementById('realtime-employee-detail-container');
+             if(employeeDetailEl) employeeDetailEl.innerHTML = ''; //
+             const brandReportEl = document.getElementById('realtime-brand-report-container');
+             if(brandReportEl) brandReportEl.innerHTML = '<p class="text-gray-500">Vui lòng tải file realtime và chọn bộ lọc để xem dữ liệu.</p>'; //
+             const competitionRtEl = document.getElementById('competition-report-container-rt');
+             if(competitionRtEl) competitionRtEl.innerHTML = '<p class="text-gray-500">Vui lòng tải file realtime để xem chi tiết.</p>'; //
+            return; //
         };
 
-        const selectedDept = document.getElementById('realtime-filter-department').value;
-        const selectedEmployees = appState.choices.realtime_employee ? appState.choices.realtime_employee.getValue(true) : [];
-        
-        const settings = settingsService.getRealtimeGoalSettings(selectedWarehouse);
-        
-        appState.masterReportData.realtime = services.generateMasterReportData(appState.realtimeYCXData, settings.goals, true);
-        
-        let filteredReport = appState.masterReportData.realtime;
-        if (selectedWarehouse) filteredReport = filteredReport.filter(nv => nv.maKho == selectedWarehouse);
-        if (selectedDept) filteredReport = filteredReport.filter(nv => nv.boPhan === selectedDept);
-        if (selectedEmployees && selectedEmployees.length > 0) filteredReport = filteredReport.filter(nv => selectedEmployees.includes(String(nv.maNV)));
+        const deptEl = document.getElementById('realtime-filter-department');
+        const selectedDept = deptEl ? deptEl.value : ''; //
+        const selectedEmployees = appState.choices.realtime_employee ? appState.choices.realtime_employee.getValue(true) : []; //
 
-        const visibleEmployees = new Set(filteredReport.map(nv => String(nv.maNV)));
-        const filteredRealtimeYCX = appState.realtimeYCXData.filter(row => {
-            const msnvMatch = String(row.nguoiTao || '').match(/(\d+)/);
-            return msnvMatch && visibleEmployees.has(msnvMatch[1].trim());
+        const settings = settingsService.getRealtimeGoalSettings(selectedWarehouse); //
+
+        appState.masterReportData.realtime = services.generateMasterReportData(appState.realtimeYCXData, settings.goals, true); //
+
+        let filteredReport = appState.masterReportData.realtime; //
+        if (selectedWarehouse) filteredReport = filteredReport.filter(nv => nv.maKho == selectedWarehouse); //
+        if (selectedDept) filteredReport = filteredReport.filter(nv => nv.boPhan === selectedDept); //
+        if (selectedEmployees && selectedEmployees.length > 0) filteredReport = filteredReport.filter(nv => selectedEmployees.includes(String(nv.maNV))); //
+
+        const visibleEmployees = new Set(filteredReport.map(nv => String(nv.maNV))); //
+        const filteredRealtimeYCX = appState.realtimeYCXData.filter(row => { //
+            const msnvMatch = String(row.nguoiTao || '').match(/(\d+)/); //
+            return msnvMatch && visibleEmployees.has(msnvMatch[1].trim()); //
         });
-        
-        const detailInfo = appState.viewingDetailFor;
-        const isViewingDetail = detailInfo && detailInfo.sourceTab === 'dtnv-rt';
-        
-        if (activeSubTabId === 'subtab-realtime-nhan-vien') {
+
+        const detailInfo = appState.viewingDetailFor; //
+        const isViewingDetail = detailInfo && detailInfo.sourceTab === 'dtnv-rt'; //
+        if (activeSubTabId === 'subtab-realtime-nhan-vien') { //
             if (isViewingDetail) {
-                this.handleEmployeeDetailChange(detailInfo.employeeId);
+                this.handleEmployeeDetailChange(detailInfo.employeeId); //
             } else {
-                ui.displayEmployeeRevenueReport(filteredReport, 'realtime-revenue-report-container', 'realtime_dt_nhanvien');
-                this.handleEmployeeDetailChange(null); 
+                uiComponents.displayEmployeeRevenueReport(filteredReport, 'realtime-revenue-report-container', 'realtime_dt_nhanvien'); // Sử dụng uiComponents
+                this.handleEmployeeDetailChange(null); //
             }
         }
 
-        const supermarketReport = services.aggregateReport(filteredReport, selectedWarehouse);
-        this.renderRealtimeKpiCards(supermarketReport, settings);
-        this.renderRealtimeCategoryDetailsTable(supermarketReport);
-        this.renderRealtimeEfficiencyTable(supermarketReport, settings.goals);
-        this.renderRealtimeQdcTable(supermarketReport);
-        const realtimeChuaXuatReport = services.generateRealtimeChuaXuatReport(filteredRealtimeYCX);
-        this.renderRealtimeChuaXuatTable(realtimeChuaXuatReport);
-        ui.displayEmployeeEfficiencyReport(filteredReport, 'realtime-efficiency-report-container', 'realtime_hieuqua_nhanvien');
-        ui.displayCategoryRevenueReport(filteredReport, 'realtime-category-revenue-report-container', 'realtime');
-        this.handleBrandFilterChange();
-        
-        const competitionReportData = services.calculateCompetitionFocusReport(
-            appState.realtimeYCXData,
-            appState.competitionConfigs
+        const supermarketReport = services.aggregateReport(filteredReport, selectedWarehouse); //
+        this.renderRealtimeKpiCards(supermarketReport, settings); //
+        this.renderRealtimeCategoryDetailsTable(supermarketReport); //
+        this.renderRealtimeEfficiencyTable(supermarketReport, settings.goals); //
+        this.renderRealtimeQdcTable(supermarketReport); //
+        const realtimeChuaXuatReport = services.generateRealtimeChuaXuatReport(filteredRealtimeYCX); //
+        this.renderRealtimeChuaXuatTable(realtimeChuaXuatReport); //
+        uiComponents.displayEmployeeEfficiencyReport(filteredReport, 'realtime-efficiency-report-container', 'realtime_hieuqua_nhanvien'); // Sử dụng uiComponents
+        uiComponents.displayCategoryRevenueReport(filteredReport, 'realtime-category-revenue-report-container', 'realtime'); // Sử dụng uiComponents
+        this.handleBrandFilterChange(); //
+
+        const competitionReportData = services.calculateCompetitionFocusReport( //
+            appState.realtimeYCXData, //
+            appState.competitionConfigs //
         );
-        ui.renderCompetitionUI('competition-report-container-rt', competitionReportData);
-        
-        highlightService.populateHighlightFilters('realtime', filteredRealtimeYCX, filteredReport);
-        highlightService.applyHighlights('realtime');
-        
+        // *** FIX: Call uiCompetition directly ***
+        uiCompetition.renderCompetitionUI('competition-report-container-rt', competitionReportData); // Sử dụng uiCompetition
+
+        highlightService.populateHighlightFilters('realtime', filteredRealtimeYCX, filteredReport); //
+        highlightService.applyHighlights('realtime'); //
+
         if (!isViewingDetail) {
-            const efficiencyReportContainer = document.getElementById('realtime-efficiency-report-container');
+            const efficiencyReportContainer = document.getElementById('realtime-efficiency-report-container'); //
             if (efficiencyReportContainer) {
-                dragDroplisteners.initializeForContainer('realtime-efficiency-report-container');
+                dragDroplisteners.initializeForContainer('realtime-efficiency-report-container'); //
             }
          }
     },
 
+    // *** START: HÀM BỊ THIẾU ĐÃ ĐƯỢC THÊM ***
+    populateRealtimeBrandCategoryFilter() {
+        const categoryFilter = document.getElementById('realtime-brand-category-filter');
+        if (!categoryFilter) return;
+
+        // Lấy danh sách ngành hàng duy nhất từ dữ liệu realtime đã tải
+        const categories = [...new Set(appState.realtimeYCXData
+            .map(row => utils.cleanCategoryName(row.nganhHang)) // Chuẩn hóa tên ngành hàng
+            .filter(Boolean)) // Loại bỏ các giá trị rỗng/null
+        ].sort(); // Sắp xếp theo alphabet
+
+        // Tạo HTML cho các options
+        let html = '<option value="">Tất cả ngành hàng</option>'; // Option mặc định
+        html += categories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+
+        // Cập nhật nội dung của select box
+        categoryFilter.innerHTML = html;
+        categoryFilter.value = ''; // Reset về giá trị mặc định
+
+        // Sau khi cập nhật category, gọi hàm cập nhật brand để đảm bảo danh sách hãng cũng được cập nhật tương ứng
+        this.handleBrandFilterChange();
+    },
+    // *** END: HÀM BỊ THIẾU ĐÃ ĐƯỢC THÊM ***
+
     handleEmployeeDetailChange(employeeId) {
-        const revenueContainer = document.getElementById('realtime-revenue-report-container');
-        const detailContainer = document.getElementById('realtime-employee-detail-container');
-        
-        if (!revenueContainer || !detailContainer) return;
-        
+        const revenueContainer = document.getElementById('realtime-revenue-report-container'); //
+        const detailContainer = document.getElementById('realtime-employee-detail-container'); //
+
+        if (!revenueContainer || !detailContainer) return; //
+
         if (!employeeId) {
-            revenueContainer.classList.remove('hidden');
-            detailContainer.classList.add('hidden');
-            detailContainer.innerHTML = '';
-            return;
+            revenueContainer.classList.remove('hidden'); //
+            detailContainer.classList.add('hidden'); //
+            detailContainer.innerHTML = ''; //
+            return; //
         }
 
-        revenueContainer.classList.add('hidden');
-        detailContainer.classList.remove('hidden');
+        revenueContainer.classList.add('hidden'); //
+        detailContainer.classList.remove('hidden'); //
 
-        const employeeInfo = appState.employeeMaNVMap.get(String(employeeId));
-        const employeeName = employeeInfo ? ui.getShortEmployeeName(employeeInfo.hoTen, employeeInfo.maNV) : `NV ${employeeId}`;
-        const detailData = services.generateRealtimeEmployeeDetailReport(employeeId, appState.realtimeYCXData);
-        
-        this.renderRealtimeEmployeeDetail(detailData, employeeName);
+        const employeeInfo = appState.employeeMaNVMap.get(String(employeeId)); //
+        const employeeName = employeeInfo ? uiComponents.getShortEmployeeName(employeeInfo.hoTen, employeeInfo.maNV) : `NV ${employeeId}`; // Sử dụng uiComponents
+        const detailData = services.generateRealtimeEmployeeDetailReport(employeeId, appState.realtimeYCXData); //
+
+        this.renderRealtimeEmployeeDetail(detailData, employeeName); //
     },
 
     handleBrandFilterChange() {
-        const categoryFilter = document.getElementById('realtime-brand-category-filter');
-        const brandFilter = document.getElementById('realtime-brand-filter');
-        const activeDthangViewBtn = document.querySelector('#dthang-realtime-view-selector .view-switcher__btn.active');
-        const dthangViewType = activeDthangViewBtn ? activeDthangViewBtn.dataset.view : 'brand';
+        const categoryFilter = document.getElementById('realtime-brand-category-filter'); //
+        const brandFilter = document.getElementById('realtime-brand-filter'); //
+        const activeDthangViewBtn = document.querySelector('#dthang-realtime-view-selector .view-switcher__btn.active'); //
+        const dthangViewType = activeDthangViewBtn ? activeDthangViewBtn.dataset.view : 'brand'; //
 
-        if (!categoryFilter || !brandFilter) return;
+        if (!categoryFilter || !brandFilter) return; //
 
-        const selectedCategory = categoryFilter.value;
-        
-        ui.updateBrandFilterOptions(selectedCategory);
+        const selectedCategory = categoryFilter.value; //
 
-        const selectedBrand = brandFilter.value;
-        const reportData = services.generateRealtimeBrandReport(appState.realtimeYCXData, selectedCategory, selectedBrand);
-        this.renderRealtimeBrandReport(reportData, dthangViewType);
+        uiComponents.updateBrandFilterOptions(selectedCategory); // Gọi hàm updateBrandFilterOptions từ uiComponents
+
+        const selectedBrand = brandFilter.value; //
+        const reportData = services.generateRealtimeBrandReport(appState.realtimeYCXData, selectedCategory, selectedBrand); //
+        this.renderRealtimeBrandReport(reportData, dthangViewType); //
     },
 
     updateRealtimeSupermarketTitle: (warehouse, dateTime) => {
-        const titleEl = document.getElementById('realtime-supermarket-title');
-        if(titleEl) titleEl.textContent = `Báo cáo Realtime ${warehouse ? 'kho ' + warehouse : 'toàn bộ'} - ${dateTime.toLocaleTimeString('vi-VN')} ${dateTime.toLocaleDateString('vi-VN')}`;
+        const titleEl = document.getElementById('realtime-supermarket-title'); //
+        if(titleEl) titleEl.textContent = `Báo cáo Realtime ${warehouse ? 'kho ' + warehouse : 'toàn bộ'} - ${dateTime.toLocaleTimeString('vi-VN')} ${dateTime.toLocaleDateString('vi-VN')}`; //
     },
 
-    _showEfficiencySettingsModal() {
-        const modal = document.getElementById('selection-modal');
-        if (!modal) return;
+    _showEfficiencySettingsModal() { //
+        const modal = document.getElementById('selection-modal'); //
+        if (!modal) return; //
 
-        const allItemsConfig = settingsService.loadEfficiencyViewSettings();
-        
-        const listContainer = document.getElementById('selection-modal-list');
+        const allItemsConfig = settingsService.loadEfficiencyViewSettings(); //
+
+        const listContainer = document.getElementById('selection-modal-list'); //
+        if (!listContainer) return;
         listContainer.innerHTML = allItemsConfig.map(item => `
             <div class="selection-item">
                 <input type="checkbox" id="select-item-rt-eff-${item.id}" value="${item.id}" ${item.visible ? 'checked' : ''}>
                 <label for="select-item-rt-eff-${item.id}">${item.label}</label>
             </div>
-        `).join('');
+        `).join(''); //
 
-        document.getElementById('selection-modal-title').textContent = 'Tùy chỉnh hiển thị Hiệu quả khai thác';
-        modal.dataset.settingType = 'efficiencyView';
-        const searchInput = document.getElementById('selection-modal-search');
-        if (searchInput) searchInput.value = '';
-        
-        uiComponents.toggleModal('selection-modal', true);
+        const modalTitleEl = document.getElementById('selection-modal-title');
+        if(modalTitleEl) modalTitleEl.textContent = 'Tùy chỉnh hiển thị Hiệu quả khai thác'; //
+        modal.dataset.settingType = 'efficiencyView'; //
+        const searchInput = document.getElementById('selection-modal-search'); //
+        if (searchInput) searchInput.value = ''; //
+
+        uiComponents.toggleModal('selection-modal', true); // Sử dụng uiComponents
     },
 
-    _showQdcSettingsModal(supermarketReport) {
-        const modal = document.getElementById('selection-modal');
-        if (!modal || !supermarketReport || !supermarketReport.qdc) return;
+    _showQdcSettingsModal(supermarketReport) { //
+        const modal = document.getElementById('selection-modal'); //
+        if (!modal || !supermarketReport || !supermarketReport.qdc) return; //
 
-        const allItems = Object.values(supermarketReport.qdc).map(item => item.name).sort();
-        const savedSettings = settingsService.loadQdcViewSettings(allItems);
-        
-        const listContainer = document.getElementById('selection-modal-list');
+        const allItems = Object.values(supermarketReport.qdc).map(item => item.name).sort(); //
+        const savedSettings = settingsService.loadQdcViewSettings(allItems); //
+
+        const listContainer = document.getElementById('selection-modal-list'); //
+        if (!listContainer) return;
         listContainer.innerHTML = allItems.map(item => `
             <div class="selection-item">
                 <input type="checkbox" id="select-item-rt-qdc-${item.replace(/[^a-zA-Z0-9]/g, '')}" value="${item}" ${savedSettings.includes(item) ? 'checked' : ''}>
                 <label for="select-item-rt-qdc-${item.replace(/[^a-zA-Z0-9]/g, '')}">${item}</label>
             </div>
-        `).join('');
+        `).join(''); //
 
-        document.getElementById('selection-modal-title').textContent = 'Tùy chỉnh hiển thị Nhóm hàng QĐC';
-        modal.dataset.settingType = 'qdcView';
-        const searchInput = document.getElementById('selection-modal-search');
-        if (searchInput) searchInput.value = '';
-        
-        uiComponents.toggleModal('selection-modal', true);
+        const modalTitleEl = document.getElementById('selection-modal-title');
+        if(modalTitleEl) modalTitleEl.textContent = 'Tùy chỉnh hiển thị Nhóm hàng QĐC'; //
+        modal.dataset.settingType = 'qdcView'; //
+        const searchInput = document.getElementById('selection-modal-search'); //
+        if (searchInput) searchInput.value = ''; //
+
+        uiComponents.toggleModal('selection-modal', true); // Sử dụng uiComponents
     },
 
-    _showCategorySettingsModal(supermarketReport) {
-        const modal = document.getElementById('selection-modal');
-        if (!modal || !supermarketReport || !supermarketReport.nganhHangChiTiet) return;
+    _showCategorySettingsModal(supermarketReport) { //
+        const modal = document.getElementById('selection-modal'); //
+        if (!modal || !supermarketReport || !supermarketReport.nganhHangChiTiet) return; //
 
-        const allItems = Object.keys(supermarketReport.nganhHangChiTiet).sort();
-        const savedSettings = settingsService.loadCategoryViewSettings(allItems);
-        
-        const listContainer = document.getElementById('selection-modal-list');
+        const allItems = Object.keys(supermarketReport.nganhHangChiTiet).sort(); //
+        const savedSettings = settingsService.loadCategoryViewSettings(allItems); //
+
+        const listContainer = document.getElementById('selection-modal-list'); //
+        if (!listContainer) return;
         listContainer.innerHTML = allItems.map(item => `
             <div class="selection-item">
                 <input type="checkbox" id="select-item-rt-cat-${item.replace(/[^a-zA-Z0-9]/g, '')}" value="${item}" ${savedSettings.includes(item) ? 'checked' : ''}>
                 <label for="select-item-rt-cat-${item.replace(/[^a-zA-Z0-9]/g, '')}">${item}</label>
             </div>
-        `).join('');
+        `).join(''); //
 
-        document.getElementById('selection-modal-title').textContent = 'Tùy chỉnh hiển thị Ngành hàng chi tiết';
-        modal.dataset.settingType = 'categoryView';
-        const searchInput = document.getElementById('selection-modal-search');
-        if (searchInput) searchInput.value = '';
-        
-        uiComponents.toggleModal('selection-modal', true);
+        const modalTitleEl = document.getElementById('selection-modal-title');
+        if(modalTitleEl) modalTitleEl.textContent = 'Tùy chỉnh hiển thị Ngành hàng chi tiết'; //
+        modal.dataset.settingType = 'categoryView'; //
+        const searchInput = document.getElementById('selection-modal-search'); //
+        if (searchInput) searchInput.value = ''; //
+
+        uiComponents.toggleModal('selection-modal', true); // Sử dụng uiComponents
     },
 
-    renderRealtimeKpiCards: (data, settings) => {
-        const { doanhThu, doanhThuQuyDoi, doanhThuChuaXuat, doanhThuQuyDoiChuaXuat, doanhThuTraGop, hieuQuaQuyDoi, tyLeTraCham } = data;
-        const { goals: rtGoals } = settings;
+    renderRealtimeKpiCards: (data, settings) => { //
+        const { doanhThu, doanhThuQuyDoi, doanhThuChuaXuat, doanhThuQuyDoiChuaXuat, doanhThuTraGop, hieuQuaQuyDoi, tyLeTraCham } = data; //
+        const { goals: rtGoals } = settings; //
 
-        const targetDTT = parseFloat(rtGoals?.doanhThuThuc) || 0;
-        const targetDTQD = parseFloat(rtGoals?.doanhThuQD) || 0;
+        const targetDTT = parseFloat(rtGoals?.doanhThuThuc) || 0; //
+        const targetDTQD = parseFloat(rtGoals?.doanhThuQD) || 0; //
 
-        document.getElementById('rt-kpi-dt-thuc-main').textContent = uiComponents.formatNumber((doanhThu || 0) / 1000000, 1);
-        document.getElementById('rt-kpi-dt-thuc-sub1').innerHTML = `% HT: <span class="font-bold">${uiComponents.formatPercentage(targetDTT > 0 ? ((doanhThu || 0) / 1000000) / targetDTT : 0)}</span> / Target ngày: <span class="font-bold">${uiComponents.formatNumber(targetDTT || 0)}</span>`;
-        document.getElementById('rt-kpi-dt-thuc-sub2').innerHTML = `DT Chưa xuất: <span class="font-bold">${uiComponents.formatNumber((doanhThuChuaXuat || 0) / 1000000, 1)}</span>`;
+        const dtThucMainEl = document.getElementById('rt-kpi-dt-thuc-main');
+        if(dtThucMainEl) dtThucMainEl.textContent = uiComponents.formatNumber((doanhThu || 0) / 1000000, 1); //
+        const dtThucSub1El = document.getElementById('rt-kpi-dt-thuc-sub1');
+        if(dtThucSub1El) dtThucSub1El.innerHTML = `% HT: <span class="font-bold">${uiComponents.formatPercentage(targetDTT > 0 ? ((doanhThu || 0) / 1000000) / targetDTT : 0)}</span> / Target ngày: <span class="font-bold">${uiComponents.formatNumber(targetDTT || 0)}</span>`; //
+        const dtThucSub2El = document.getElementById('rt-kpi-dt-thuc-sub2');
+        if(dtThucSub2El) dtThucSub2El.innerHTML = `DT Chưa xuất: <span class="font-bold">${uiComponents.formatNumber((doanhThuChuaXuat || 0) / 1000000, 1)}</span>`; //
 
-        document.getElementById('rt-kpi-dt-qd-main').textContent = uiComponents.formatNumber((doanhThuQuyDoi || 0) / 1000000, 1);
-        document.getElementById('rt-kpi-dt-qd-sub1').innerHTML = `% HT: <span class="font-bold">${uiComponents.formatPercentage(targetDTQD > 0 ? ((doanhThuQuyDoi || 0) / 1000000) / targetDTQD : 0)}</span> / Target ngày: <span class="font-bold">${uiComponents.formatNumber(targetDTQD || 0)}</span>`;
-        document.getElementById('rt-kpi-dt-qd-sub2').innerHTML = `DTQĐ Chưa xuất: <span class="font-bold">${uiComponents.formatNumber((doanhThuQuyDoiChuaXuat || 0) / 1000000, 1)}</span>`;
+        const dtQdMainEl = document.getElementById('rt-kpi-dt-qd-main');
+        if(dtQdMainEl) dtQdMainEl.textContent = uiComponents.formatNumber((doanhThuQuyDoi || 0) / 1000000, 1); //
+        const dtQdSub1El = document.getElementById('rt-kpi-dt-qd-sub1');
+        if(dtQdSub1El) dtQdSub1El.innerHTML = `% HT: <span class="font-bold">${uiComponents.formatPercentage(targetDTQD > 0 ? ((doanhThuQuyDoi || 0) / 1000000) / targetDTQD : 0)}</span> / Target ngày: <span class="font-bold">${uiComponents.formatNumber(targetDTQD || 0)}</span>`; //
+        const dtQdSub2El = document.getElementById('rt-kpi-dt-qd-sub2');
+        if(dtQdSub2El) dtQdSub2El.innerHTML = `DTQĐ Chưa xuất: <span class="font-bold">${uiComponents.formatNumber((doanhThuQuyDoiChuaXuat || 0) / 1000000, 1)}</span>`; //
 
-        document.getElementById('rt-kpi-tl-qd-main').textContent = uiComponents.formatPercentage(hieuQuaQuyDoi);
-        document.getElementById('rt-kpi-tl-qd-sub').innerHTML = `Mục tiêu: <span class="font-bold">${uiComponents.formatNumber(rtGoals?.phanTramQD || 0)}%</span>`;
+        const tlQdMainEl = document.getElementById('rt-kpi-tl-qd-main');
+        if(tlQdMainEl) tlQdMainEl.textContent = uiComponents.formatPercentage(hieuQuaQuyDoi); //
+        const tlQdSubEl = document.getElementById('rt-kpi-tl-qd-sub');
+        if(tlQdSubEl) tlQdSubEl.innerHTML = `Mục tiêu: <span class="font-bold">${uiComponents.formatNumber(rtGoals?.phanTramQD || 0)}%</span>`; //
 
-        document.getElementById('rt-kpi-dt-tc-main').textContent = uiComponents.formatNumber((doanhThuTraGop || 0) / 1000000, 1);
-        document.getElementById('rt-kpi-dt-tc-sub').innerHTML = `% thực trả chậm: <span class="font-bold">${uiComponents.formatPercentage(tyLeTraCham)}</span>`;
+        const dtTcMainEl = document.getElementById('rt-kpi-dt-tc-main');
+        if(dtTcMainEl) dtTcMainEl.textContent = uiComponents.formatNumber((doanhThuTraGop || 0) / 1000000, 1); //
+        const dtTcSubEl = document.getElementById('rt-kpi-dt-tc-sub');
+        if(dtTcSubEl) dtTcSubEl.innerHTML = `% thực trả chậm: <span class="font-bold">${uiComponents.formatPercentage(tyLeTraCham)}</span>`; //
     },
 
-    renderRealtimeChuaXuatTable: (reportData) => {
-        const container = document.getElementById('realtime-unexported-revenue-content');
-        if (!container) return;
+    renderRealtimeChuaXuatTable: (reportData) => { //
+        const container = document.getElementById('realtime-unexported-revenue-content'); //
+        if (!container) return; //
         if (!reportData || reportData.length === 0) {
-            container.innerHTML = '<p class="text-gray-500 text-center font-bold">Không có đơn hàng nào chưa xuất trong ngày.</p>';
-            return;
+            container.innerHTML = '<p class="text-gray-500 text-center font-bold">Không có đơn hàng nào chưa xuất trong ngày.</p>'; //
+            return; //
         }
 
-        const sortState = appState.sortState.realtime_chuaxuat || { key: 'doanhThuQuyDoi', direction: 'desc' };
-        const { key, direction } = sortState;
-        const sortedData = [...reportData].sort((a, b) => {
-            const valA = a[key] || 0; const valB = b[key] || 0;
-            return direction === 'asc' ? valA - valB : valB - valA;
+        const sortState = appState.sortState.realtime_chuaxuat || { key: 'doanhThuQuyDoi', direction: 'desc' }; //
+        const { key, direction } = sortState; //
+        const sortedData = [...reportData].sort((a, b) => { //
+            const valA = a[key] || 0; const valB = b[key] || 0; //
+            return direction === 'asc' ? valA - valB : valB - valA; //
         });
 
-        const totals = reportData.reduce((acc, item) => {
-             acc.soLuong += item.soLuong;
-            acc.doanhThuThuc += item.doanhThuThuc;
-            acc.doanhThuQuyDoi += item.doanhThuQuyDoi;
-            return acc;
-        }, { soLuong: 0, doanhThuThuc: 0, doanhThuQuyDoi: 0 });
+        const totals = reportData.reduce((acc, item) => { //
+            acc.soLuong += item.soLuong; //
+            acc.doanhThuThuc += item.doanhThuThuc; //
+            acc.doanhThuQuyDoi += item.doanhThuQuyDoi; //
+            return acc; //
+        }, { soLuong: 0, doanhThuThuc: 0, doanhThuQuyDoi: 0 }); //
 
-        const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
-        
+        const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`; //
+
         container.innerHTML = `<div class="overflow-x-auto"><table class="min-w-full text-sm table-bordered table-striped" data-table-type="realtime_chuaxuat">
             <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold"><tr>
                 <th class="${headerClass('nganhHang')}" data-sort="nganhHang">Ngành hàng</th>
@@ -276,43 +327,44 @@ export const uiRealtime = {
                  <td class="px-4 py-2 text-right">${uiComponents.formatNumber(totals.soLuong)}</td>
                 <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuThuc)}</td>
                 <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuQuyDoi)}</td>
-             </tr></tfoot></table></div>`;
+             </tr></tfoot></table></div>`; //
     },
 
-    renderRealtimeCategoryDetailsTable: (data) => {
-        const container = document.getElementById('realtime-category-details-content');
-        const cardHeader = document.getElementById('realtime-category-title');
-        if (!container || !cardHeader ||!data || !data.nganhHangChiTiet) { container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; return; }
-        
-        const { nganhHangChiTiet } = data;
-        const allItems = Object.keys(nganhHangChiTiet).sort();
-        const visibleItems = settingsService.loadCategoryViewSettings(allItems);
+    renderRealtimeCategoryDetailsTable: (data) => { //
+        const container = document.getElementById('realtime-category-details-content'); //
+        const cardHeader = document.getElementById('realtime-category-title'); //
+        if (!container || !cardHeader ||!data || !data.nganhHangChiTiet) { if(container) container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; return; } //
+
+        const { nganhHangChiTiet } = data; //
+        const allItems = Object.keys(nganhHangChiTiet).sort(); //
+        const visibleItems = settingsService.loadCategoryViewSettings(allItems); //
 
         if (Object.keys(nganhHangChiTiet).length === 0) {
-            container.innerHTML = '<p class="text-gray-500 font-bold">Không có dữ liệu.</p>'; return;
+            container.innerHTML = '<p class="text-gray-500 font-bold">Không có dữ liệu.</p>'; return; //
         }
 
-        const sortState = appState.sortState.realtime_nganhhang || { key: 'revenue', direction: 'desc' };
-        const { key, direction } = sortState;
+        const sortState = appState.sortState.realtime_nganhhang || { key: 'revenue', direction: 'desc' }; //
+        const { key, direction } = sortState; //
 
-        const sortedData = Object.entries(nganhHangChiTiet)
-            .map(([name, values]) => ({ name, ...values }))
+        const sortedData = Object.entries(nganhHangChiTiet) //
+            .map(([name, values]) => ({ name, ...values })) //
             .filter(item => visibleItems.includes(item.name)) // Lọc theo cài đặt
-            .sort((a, b) => b.revenue - a.revenue)
-            .slice(0, 15)
-            .sort((a, b) => direction === 'asc' ? a[key] - b[key] : b[key] - a[key]);
+            .sort((a, b) => b.revenue - a.revenue) //
+            .slice(0, 15) //
+            .sort((a, b) => direction === 'asc' ? a[key] - b[key] : b[key] - a[key]); //
 
         if (!cardHeader.querySelector('.settings-trigger-btn')) {
-             cardHeader.classList.add('flex', 'items-center', 'justify-between');
-            cardHeader.innerHTML = `<span>NGÀNH HÀNG CHI TIẾT</span>` + uiComponents.renderSettingsButton('rt-cat');
-            setTimeout(() => {
-                document.getElementById('settings-btn-rt-cat').addEventListener('click', () => {
-                    this._showCategorySettingsModal(data);
+             cardHeader.classList.add('flex', 'items-center', 'justify-between'); //
+            cardHeader.innerHTML = `<span>NGÀNH HÀNG CHI TIẾT</span>` + uiComponents.renderSettingsButton('rt-cat'); //
+            setTimeout(() => { //
+                const settingsBtn = document.getElementById('settings-btn-rt-cat');
+                if(settingsBtn) settingsBtn.addEventListener('click', () => { //
+                    this._showCategorySettingsModal(data); //
                 });
             }, 0);
         }
 
-        const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
+        const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`; //
 
         container.innerHTML = `<div class="overflow-x-auto"><table class="min-w-full text-sm table-bordered table-striped" data-table-type="realtime_nganhhang">
             <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold"><tr>
@@ -328,60 +380,61 @@ export const uiRealtime = {
                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatNumber(item.quantity)}</td>
                      <td class="px-4 py-2 text-right font-bold text-blue-600">${uiComponents.formatRevenue(item.revenue)}</td>
                     <td class="px-4 py-2 text-right font-bold text-purple-600">${uiComponents.formatRevenue(item.revenueQuyDoi)}</td>
-                    <td class="px-4 py-2 text-right font-bold text-green-600">${uiComponents.formatRevenue(item.donGia)}</td>
+                     <td class="px-4 py-2 text-right font-bold text-green-600">${uiComponents.formatRevenue(item.donGia)}</td>
                 </tr>`).join('')}
-            </tbody></table></div>`;
+            </tbody></table></div>`; //
     },
-    
-    renderRealtimeEfficiencyTable: (data, goals) => {
-         const container = document.getElementById('realtime-efficiency-content');
-        const cardHeader = document.getElementById('realtime-efficiency-title');
 
-        if (!container || !cardHeader || !data || !goals) { 
-            if (container) container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`;
-            return; 
+    renderRealtimeEfficiencyTable: (data, goals) => { //
+         const container = document.getElementById('realtime-efficiency-content'); //
+        const cardHeader = document.getElementById('realtime-efficiency-title'); //
+
+        if (!container || !cardHeader || !data || !goals) { //
+            if (container) container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; //
+            return; //
         }
-        
-        const allItemsConfig = settingsService.loadEfficiencyViewSettings();
-        
+
+        const allItemsConfig = settingsService.loadEfficiencyViewSettings(); //
+
         const goalKeyMap = {
-            pctPhuKien: 'phanTramPhuKien',
-            pctGiaDung: 'phanTramGiaDung',
-            pctMLN: 'phanTramMLN',
-            pctSim: 'phanTramSim',
-            pctVAS: 'phanTramVAS',
-            pctBaoHiem: 'phanTramBaoHiem'
+            pctPhuKien: 'phanTramPhuKien', //
+            pctGiaDung: 'phanTramGiaDung', //
+            pctMLN: 'phanTramMLN', //
+            pctSim: 'phanTramSim', //
+            pctVAS: 'phanTramVAS', //
+            pctBaoHiem: 'phanTramBaoHiem' //
         };
 
-        const allItems = allItemsConfig
-            .filter(item => item.id.startsWith('pct'))
-            .map(config => ({
-                ...config,
-                value: data[config.id],
-                 target: goals[goalKeyMap[config.id]]
+        const allItems = allItemsConfig //
+            .filter(item => item.id.startsWith('pct')) //
+            .map(config => ({ //
+                ...config, //
+                value: data[config.id], //
+                 target: goals[goalKeyMap[config.id]] //
             }));
-        
-        const createRow = (label, value, target) => {
-            const isBelow = value < ((target || 0) / 100); 
-            
+
+        const createRow = (label, value, target) => { //
+            const isBelow = value < ((target || 0) / 100); //
+
             return `<tr class="border-t">
                 <td class="px-4 py-2 font-semibold text-gray-800">${label}</td>
                 <td class="px-4 py-2 text-right font-bold text-lg ${isBelow ? 'cell-performance is-below' : 'text-green-600'}">${uiComponents.formatPercentage(value || 0)}</td>
                 <td class="px-4 py-2 text-right text-gray-600">${target || 0}%</td>
-            </tr>`;
+            </tr>`; //
         };
-        
+
         if (!cardHeader.querySelector('.settings-trigger-btn')) {
-            cardHeader.classList.add('flex', 'items-center', 'justify-between');
-            cardHeader.innerHTML = `<span>HIỆU QUẢ KHAI THÁC</span>` + uiComponents.renderSettingsButton('rt-eff');
-            
-            setTimeout(() => {
-                document.getElementById('settings-btn-rt-eff').addEventListener('click', () => {
-                    this._showEfficiencySettingsModal();
+            cardHeader.classList.add('flex', 'items-center', 'justify-between'); //
+            cardHeader.innerHTML = `<span>HIỆU QUẢ KHAI THÁC</span>` + uiComponents.renderSettingsButton('rt-eff'); //
+
+            setTimeout(() => { //
+                const settingsBtn = document.getElementById('settings-btn-rt-eff');
+                if(settingsBtn) settingsBtn.addEventListener('click', () => { //
+                    this._showEfficiencySettingsModal(); //
                 });
             }, 0);
         }
-         
+
         container.innerHTML = `
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm table-bordered">
@@ -395,39 +448,40 @@ export const uiRealtime = {
                     <tbody>
                         ${allItems
                              .filter(item => item.visible) // Lọc theo cài đặt hiển thị
-                             .map(item => createRow(item.label, item.value, item.target))
+                            .map(item => createRow(item.label, item.value, item.target)) //
                             .join('')}
                     </tbody>
                 </table>
-             </div>`;
+             </div>`; //
     },
 
-    renderRealtimeQdcTable: (data) => {
-        const container = document.getElementById('realtime-qdc-content');
-        const cardHeader = document.getElementById('realtime-qdc-title');
-        if (!container || !cardHeader || !data || !data.qdc) { container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; return; }
-        
-        const qdcData = Object.entries(data.qdc).map(([key, value]) => ({ id: key, ...value }));
-        const allItems = qdcData.map(item => item.name);
-        const visibleItems = settingsService.loadQdcViewSettings(allItems);
-        
-        const sortState = appState.sortState.realtime_qdc || { key: 'dtqd', direction: 'desc' };
-        const { key, direction } = sortState;
-        const sortedData = [...qdcData]
+    renderRealtimeQdcTable: (data) => { //
+        const container = document.getElementById('realtime-qdc-content'); //
+        const cardHeader = document.getElementById('realtime-qdc-title'); //
+        if (!container || !cardHeader || !data || !data.qdc) { if(container) container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; return; } //
+
+        const qdcData = Object.entries(data.qdc).map(([key, value]) => ({ id: key, ...value })); //
+        const allItems = qdcData.map(item => item.name); //
+        const visibleItems = settingsService.loadQdcViewSettings(allItems); //
+
+        const sortState = appState.sortState.realtime_qdc || { key: 'dtqd', direction: 'desc' }; //
+        const { key, direction } = sortState; //
+        const sortedData = [...qdcData] //
             .filter(item => visibleItems.includes(item.name)) // Lọc theo cài đặt
-            .sort((a,b) => direction === 'asc' ? a[key] - b[key] : b[key] - a[key]);
-        
+            .sort((a,b) => direction === 'asc' ? a[key] - b[key] : b[key] - a[key]); //
+
         if (!cardHeader.querySelector('.settings-trigger-btn')) {
-             cardHeader.classList.add('flex', 'items-center', 'justify-between');
-            cardHeader.innerHTML = `<span>NHÓM HÀNG QUY ĐỔI CAO</span>` + uiComponents.renderSettingsButton('rt-qdc');
-            setTimeout(() => {
-                document.getElementById('settings-btn-rt-qdc').addEventListener('click', () => {
-                    this._showQdcSettingsModal(data);
+             cardHeader.classList.add('flex', 'items-center', 'justify-between'); //
+            cardHeader.innerHTML = `<span>NHÓM HÀNG QUY ĐỔI CAO</span>` + uiComponents.renderSettingsButton('rt-qdc'); //
+            setTimeout(() => { //
+                const settingsBtn = document.getElementById('settings-btn-rt-qdc');
+                if(settingsBtn) settingsBtn.addEventListener('click', () => { //
+                    this._showQdcSettingsModal(data); //
                 });
             }, 0);
         }
 
-        const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
+        const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`; //
 
         container.innerHTML = `<div class="overflow-x-auto"><table class="min-w-full text-sm table-bordered table-striped" data-table-type="realtime_qdc">
             <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
@@ -441,138 +495,138 @@ export const uiRealtime = {
                  <tr class="hover:bg-gray-50">
                     <td class="px-4 py-2 font-semibold">${item.name}</td>
                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatNumber(item.sl)}</td>
-                     <td class="px-4 py-2 text-right font-bold text-blue-600">${uiComponents.formatRevenue(item.dtqd)}</td>
+                    <td class="px-4 py-2 text-right font-bold text-blue-600">${uiComponents.formatRevenue(item.dtqd)}</td>
                     <td class="px-4 py-2 text-right font-bold text-green-600">${uiComponents.formatRevenue(item.donGia)}</td>
                 </tr>`).join('')}
-            </tbody></table></div>`;
+            </tbody></table></div>`; //
     },
 
-    renderRealtimeEmployeeDetail: (detailData, employeeName, containerId = 'realtime-employee-detail-container') => {
-        const container = document.getElementById(containerId);
-        if (!container) return;
-        
-        let headerHtml = '';
-        const isMainContainer = containerId === 'realtime-employee-detail-container' || containerId.includes('luyke');
+    renderRealtimeEmployeeDetail: (detailData, employeeName, containerId = 'realtime-employee-detail-container') => { //
+        const container = document.getElementById(containerId); //
+        if (!container) return; //
+
+        let headerHtml = ''; //
+        const isMainContainer = containerId === 'realtime-employee-detail-container' || containerId.includes('luyke'); //
 
         if (isMainContainer) {
-            headerHtml = `
+             headerHtml = `
                 <div class="mb-4 flex justify-between items-center">
                     <button class="back-to-summary-btn text-blue-600 hover:underline font-semibold">‹ Quay lại bảng tổng hợp</button>
-                    <button id="capture-${containerId}-btn" class="action-btn action-btn--capture" title="Chụp ảnh chi tiết">
+                    <button id="capture-dtnv-rt-detail-btn" class="action-btn action-btn--capture" title="Chụp ảnh chi tiết">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15 12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1.172a3 3 0 0 0 2.12-.879l.83-.828A1 1 0 0 1 6.827 3h2.344a1 1 0 0 1 .707.293l.828.828A3 3 0 0 0 12.828 5H14a1 1 0 0 1 1 1v6zM2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828-.828A2 2 0 0 1 3.172 4H2z"/><path d="M8 11a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5zm0 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM3 6.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/></svg>
                         <span>Chụp ảnh</span>
                     </button>
                 </div>
-             `;
+             `; //
         }
 
         if (!detailData) {
-            container.innerHTML = headerHtml + `<div class="rt-infographic-container"><p class="text-center text-gray-500">Không có dữ liệu doanh thu cho nhân viên ${employeeName}.</p></div>`;
-            return;
+            container.innerHTML = headerHtml + `<div class="rt-infographic-container"><p class="text-center text-gray-500">Không có dữ liệu doanh thu cho nhân viên ${employeeName}.</p></div>`; //
+            return; //
         }
 
-        const selectedWarehouse = document.getElementById('realtime-filter-warehouse')?.value || document.getElementById('sknv-filter-warehouse')?.value;
-        const { goals } = containerId.includes('luyke') ? settingsService.getLuykeGoalSettings(selectedWarehouse) : settingsService.getRealtimeGoalSettings(selectedWarehouse);
-        const { summary, byProductGroup, byCustomer } = detailData;
-        const totalRevenue = byProductGroup.reduce((sum, g) => sum + g.realRevenue, 0);
+        const selectedWarehouse = document.getElementById('realtime-filter-warehouse')?.value || ''; //
+        const { goals } = settingsService.getRealtimeGoalSettings(selectedWarehouse); //
+        const { summary, byProductGroup, byCustomer } = detailData; //
+        const totalRevenue = byProductGroup.reduce((sum, g) => sum + g.realRevenue, 0); //
 
-        const renderProductGroupProgress = () => byProductGroup.map(group => {
-            const percentage = totalRevenue > 0 ? (group.realRevenue / totalRevenue) * 100 : 0;
+        const renderProductGroupProgress = () => byProductGroup.map(group => { //
+            const percentage = totalRevenue > 0 ? (group.realRevenue / totalRevenue) * 100 : 0; //
             return `<div class="rt-progress-bar-item">
                 <div class="rt-progress-bar-label"><span>${group.name}</span><span>${uiComponents.formatRevenue(group.realRevenue, 0)}</span></div>
                 <div class="rt-progress-bar-container"><div class="rt-progress-bar" style="width: ${percentage}%;"></div></div>
-            </div>`;
-        }).join('');
+            </div>`; //
+        }).join(''); //
 
         const renderCustomerAccordion = () => byCustomer.map((customer, index) => `
             <div class="rt-customer-group">
                 <details>
                      <summary class="rt-customer-header">
                         <span>${index + 1}. ${customer.name} (<span class="product-count">${customer.totalQuantity} sản phẩm</span>)</span><span class="arrow">▼</span>
-                    </summary>
+                     </summary>
                     <div class="rt-customer-details">
                         <table class="w-full">
                             ${customer.products.map(p => `<tr><td>${p.productName}</td><td class="text-right font-semibold">${uiComponents.formatNumber(p.realRevenue)}</td></tr>`).join('')}
                         </table>
                     </div>
                 </details>
-            </div>`).join('');
+            </div>`).join(''); //
 
-        const conversionRateTarget = (goals?.phanTramQD || 0) / 100;
-        const conversionRateClass = summary.conversionRate >= conversionRateTarget ? 'is-positive' : 'is-negative';
+        const conversionRateTarget = (goals?.phanTramQD || 0) / 100; //
+        const conversionRateClass = summary.conversionRate >= conversionRateTarget ? 'is-positive' : 'is-negative'; //
 
         const contentHtml = `
-            <div id="employee-detail-capture-area">
+            <div id="dtnv-rt-capture-area">
                 <div class="rt-infographic-container" data-capture-group="dtnv-infographic">
                     <div class="rt-infographic-header text-center">
-                        <h3 class="employee-name">${employeeName}</h3>
+                         <h3 class="employee-name">${employeeName}</h3>
                         <p class="employee-title">Chi tiết doanh thu</p>
                     </div>
                     <div class="rt-infographic-summary">
                         <div class="rt-infographic-summary-card"><div class="label">Tổng DT Thực</div><div class="value">${uiComponents.formatRevenue(summary.totalRealRevenue, 1)}</div></div>
-                        <div class="rt-infographic-summary-card"><div class="label">Tổng DTQĐ</div><div class="value">${uiComponents.formatRevenue(summary.totalConvertedRevenue, 1)}</div></div>
+                         <div class="rt-infographic-summary-card"><div class="label">Tổng DTQĐ</div><div class="value">${uiComponents.formatRevenue(summary.totalConvertedRevenue, 1)}</div></div>
                          <div class="rt-infographic-summary-card"><div class="label">Tỷ lệ QĐ</div><div class="value ${conversionRateClass}">${uiComponents.formatPercentage(summary.conversionRate)}</div></div>
                         <div class="rt-infographic-summary-card"><div class="label">DT Chưa Xuất</div><div class="value">${uiComponents.formatRevenue(summary.unexportedRevenue, 1)}</div></div>
                         <div class="rt-infographic-summary-card"><div class="label">Tổng Đơn Hàng</div><div class="value">${summary.totalOrders}</div></div>
-                        <div class="rt-infographic-summary-card"><div class="label">SL Đơn Bán Kèm</div><div class="value">${summary.bundledOrderCount}</div></div>
+                         <div class="rt-infographic-summary-card"><div class="label">SL Đơn Bán Kèm</div><div class="value">${summary.bundledOrderCount}</div></div>
                      </div>
                     <div class="rt-infographic-grid">
                         <div class="rt-infographic-section"><h4>Nhóm hàng</h4>${renderProductGroupProgress()}</div>
                         <div class="rt-infographic-section"><h4>Chi tiết theo khách hàng</h4><div class="rt-customer-accordion">${renderCustomerAccordion()}</div></div>
-                    </div>
+                     </div>
                  </div>
-            </div>`;
-        
-        container.innerHTML = headerHtml + contentHtml;
+            </div>`; //
+
+        container.innerHTML = headerHtml + contentHtml; //
     },
 
-    renderRealtimeBrandReport: (data, viewType = 'brand') => {
-        const container = document.getElementById('realtime-brand-report-container');
-        if (!container) return;
-        const { byBrand, byEmployee } = data;
+    renderRealtimeBrandReport: (data, viewType = 'brand') => { //
+        const container = document.getElementById('realtime-brand-report-container'); //
+        if (!container) return; //
+        const { byBrand, byEmployee } = data; //
 
         if (byBrand.length === 0 && byEmployee.length === 0) {
-            container.innerHTML = '<p class="text-gray-500">Không có dữ liệu cho bộ lọc này.</p>';
-            return;
+            container.innerHTML = '<p class="text-gray-500">Không có dữ liệu cho bộ lọc này.</p>'; //
+            return; //
         }
 
-        const renderTable = (title, items, headers, rowRenderer, sortStateKey) => {
-             const sortState = appState.sortState[sortStateKey] || { key: 'revenue', direction: 'desc' };
-            const { key, direction } = sortState;
-            const sortedItems = [...items].sort((a,b) => direction === 'asc' ? (a[key] - b[key]) : (b[key] - a[key]));
+        const renderTable = (title, items, headers, rowRenderer, sortStateKey) => { //
+             const sortState = appState.sortState[sortStateKey] || { key: 'revenue', direction: 'desc' }; //
+            const { key, direction } = sortState; //
+            const sortedItems = [...items].sort((a,b) => direction === 'asc' ? (a[key] - b[key]) : (b[key] - a[key])); //
 
-            const headerClass = (sortKey) => `px-4 py-2 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
+            const headerClass = (sortKey) => `px-4 py-2 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`; //
             return `<div class="overflow-x-auto"><h4 class="text-lg font-semibold text-gray-700 mb-2">${title}</h4>
                 <table class="min-w-full text-sm table-bordered table-striped" data-table-type="${sortStateKey}">
-                    <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
+                     <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                          <tr>${headers.map(h => `<th class="${headerClass(h.key)}" data-sort="${h.key}">${h.label}<span class="sort-indicator"></span></th>`).join('')}</tr>
                     </thead>
                     <tbody>${sortedItems.map(rowRenderer).join('')}</tbody>
-                </table></div>`;
+                </table></div>`; //
         };
 
-        const brandTable = renderTable('Thống kê theo hãng', byBrand,
-            [{label: 'Hãng', key: 'name'}, {label: 'Số lượng', key: 'quantity'}, {label: 'Doanh thu', key: 'revenue'}, {label: 'Đơn giá TB', key: 'avgPrice'}],
+        const brandTable = renderTable('Thống kê theo hãng', byBrand, //
+            [{label: 'Hãng', key: 'name'}, {label: 'Số lượng', key: 'quantity'}, {label: 'Doanh thu', key: 'revenue'}, {label: 'Đơn giá TB', key: 'avgPrice'}], //
             item => `<tr class="border-t">
                 <td class="px-4 py-2 font-medium">${item.name}</td>
                 <td class="px-4 py-2 text-right font-bold">${uiComponents.formatNumber(item.quantity)}</td>
                 <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.revenue)}</td>
                 <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.avgPrice)}</td>
-            </tr>`, 'realtime_brand'
+             </tr>`, 'realtime_brand' //
          );
 
-        const employeeTable = renderTable('Thống kê theo nhân viên', byEmployee,
-            [{label: 'Nhân viên', key: 'name'}, {label: 'Số lượng', key: 'quantity'}, {label: 'Doanh thu', key: 'revenue'}],
+        const employeeTable = renderTable('Thống kê theo nhân viên', byEmployee, //
+            [{label: 'Nhân viên', key: 'name'}, {label: 'Số lượng', key: 'quantity'}, {label: 'Doanh thu', key: 'revenue'}], //
             item => `<tr class="border-t">
                 <td class="px-4 py-2 font-medium">${item.name}</td>
                 <td class="px-4 py-2 text-right font-bold">${uiComponents.formatNumber(item.quantity)}</td>
                 <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.revenue)}</td>
-            </tr>`, 'realtime_brand_employee'
+             </tr>`, 'realtime_brand_employee' //
         );
 
-        const brandTableHtml = `<div id="realtime-brand-table-container" class="${viewType !== 'brand' ? 'hidden' : ''}">${brandTable}</div>`;
-        const employeeTableHtml = `<div id="realtime-employee-table-container" class="${viewType !== 'employee' ? 'hidden' : ''}">${employeeTable}</div>`;
+        const brandTableHtml = `<div id="realtime-brand-table-container" class="${viewType !== 'brand' ? 'hidden' : ''}">${brandTable}</div>`; //
+        const employeeTableHtml = `<div id="realtime-employee-table-container" class="${viewType !== 'employee' ? 'hidden' : ''}">${employeeTable}</div>`; //
 
-        container.innerHTML = brandTableHtml + employeeTableHtml;
+        container.innerHTML = brandTableHtml + employeeTableHtml; //
     }
 };

@@ -1,4 +1,4 @@
-/* Version 6.6 - Compact SKNV detail view for better balance */
+/* Version 6.7 - Add login modal styles to v6.6 base */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -1153,3 +1153,19 @@ solid #2563eb;
     padding: 0.5rem;
 }
 /* === END: SKNV DETAIL VIEW & MEDALS === */
+
+/* === START: LOGIN MODAL STYLES (V6.7) === */
+#login-modal .modal__overlay {
+    cursor: not-allowed;
+}
+
+#login-modal .modal__container {
+    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+}
+
+#login-modal input[type="email"]:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+    outline: none;
+}
+/* === END: LOGIN MODAL STYLES === */
