@@ -1,4 +1,4 @@
-// Version 6.9 - Update medal SVGs to new high-quality, detailed versions
+// Version 6.11 - Add detailed logging to main render functions
 // MODULE: UI SKNV
 // Chứa các hàm render giao diện cho tab "Sức khỏe nhân viên"
 
@@ -9,16 +9,24 @@ import { utils } from './utils.js';
 
 export const uiSknv = {
     displayEmployeeIncomeReport: (reportData) => {
+        console.log("[ui-sknv.js displayEmployeeIncomeReport] === Starting render ==="); // Log mới
         const container = document.getElementById('income-report-container');
         const placeholder = document.getElementById('income-report-placeholder');
-        if (!container || !placeholder) return;
-        const hasIncomeData = reportData.some(item => item.tongThuNhap > 0 || item.gioCong > 0);
+        if (!container || !placeholder) {
+            console.error("[ui-sknv.js displayEmployeeIncomeReport] Container or placeholder not found."); // Log mới
+            return;
+        }
+        const hasIncomeData = reportData.some(item => (item.tongThuNhap || 0) > 0 || (item.gioCong || 0) > 0);
+        console.log(`[ui-sknv.js displayEmployeeIncomeReport] Input reportData length: ${reportData?.length}, hasIncomeData: ${hasIncomeData}`); // Log mới
+
         if (!reportData || reportData.length === 0 || !hasIncomeData) {
+            console.warn("[ui-sknv.js displayEmployeeIncomeReport] No valid income data, showing placeholder."); // Log mới
             placeholder.classList.remove('hidden'); container.innerHTML = ''; return;
         }
         placeholder.classList.add('hidden');
+
         let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"><div class="p-4 header-group-2 text-gray-800"><h3 class="text-xl font-bold uppercase">Thu nhập nhân viên</h3><p class="text-sm italic text-gray-600">(đơn vị tính: Triệu đồng)</p></div>`;
-        
+
         const groupedByDept = {};
         reportData.forEach(item => {
             const dept = item.boPhan;
@@ -26,33 +34,40 @@ export const uiSknv = {
             groupedByDept[dept].push(item);
         });
         const departmentOrder = utils.getSortedDepartmentList(reportData);
-        
+        console.log("[ui-sknv.js displayEmployeeIncomeReport] Department order:", departmentOrder); // Log mới
+
         departmentOrder.forEach(deptName => {
-            if (groupedByDept[deptName]) finalHTML += uiSknv.renderIncomeTableForDepartment(deptName, groupedByDept[deptName]);
+            if (groupedByDept[deptName]) {
+                 console.log(`[ui-sknv.js displayEmployeeIncomeReport] Rendering table for department: ${deptName}`); // Log mới
+                 finalHTML += uiSknv.renderIncomeTableForDepartment(deptName, groupedByDept[deptName]);
+            }
         });
-        
+
         finalHTML += `</div>`;
         container.innerHTML = finalHTML;
+        console.log("[ui-sknv.js displayEmployeeIncomeReport] === Render complete ==="); // Log mới
     },
 
     renderIncomeTableForDepartment: (title, data) => {
+        console.log(`[ui-sknv.js renderIncomeTableForDepartment] Rendering for: ${title}, Data length: ${data?.length}`); // Log mới
         const sortState = appState.sortState.thunhap || { key: 'tongThuNhap', direction: 'desc' };
         const { key, direction } = sortState;
         const sortedData = [...data].sort((a, b) => {
             const valA = a[key] || 0; const valB = b[key] || 0;
             return direction === 'asc' ? valA - valB : valB - valA;
         });
-        
+
         const totals = data.reduce((acc, item) => {
-            acc.gioCong += item.gioCong;
-            acc.thuongNong += item.thuongNong;
-            acc.thuongERP += item.thuongERP;
-            acc.tongThuNhap += item.tongThuNhap;
-            acc.thuNhapDuKien += item.thuNhapDuKien;
-            acc.thuNhapThangTruoc += item.thuNhapThangTruoc;
-            acc.chenhLechThuNhap += item.chenhLechThuNhap;
+            acc.gioCong += item.gioCong || 0; // Ensure NaN safety
+            acc.thuongNong += item.thuongNong || 0;
+            acc.thuongERP += item.thuongERP || 0;
+            acc.tongThuNhap += item.tongThuNhap || 0;
+            acc.thuNhapDuKien += item.thuNhapDuKien || 0;
+            acc.thuNhapThangTruoc += item.thuNhapThangTruoc || 0;
+            acc.chenhLechThuNhap += item.chenhLechThuNhap || 0;
             return acc;
         }, { gioCong: 0, thuongNong: 0, thuongERP: 0, tongThuNhap: 0, thuNhapDuKien: 0, thuNhapThangTruoc: 0, chenhLechThuNhap: 0 });
+        console.log(`[ui-sknv.js renderIncomeTableForDepartment] Calculated totals for ${title}:`, totals); // Log mới
 
         const averageProjectedIncome = data.length > 0 ? totals.thuNhapDuKien / data.length : 0;
         let titleClass = '';
@@ -74,7 +89,8 @@ export const uiSknv = {
                  </thead><tbody>`;
         sortedData.forEach(nv => {
             const incomeDkCellClass = nv.thuNhapDuKien < averageProjectedIncome ? 'cell-performance is-below' : '';
-            const incomeDiffClass = nv.chenhLechThuNhap < 0 ? 'income-negative' : 'income-positive';
+            const incomeDiffClass = (nv.chenhLechThuNhap || 0) < 0 ? 'income-negative' : 'income-positive'; // Handle undefined/NaN
+
             tableHTML += `<tr class="interactive-row" data-employee-id="${nv.maNV}" data-source-tab="sknv">
                     <td class="px-4 py-2 font-semibold line-clamp-2 employee-name-cell">
                         <a href="#">${uiComponents.getShortEmployeeName(nv.hoTen, nv.maNV)}</a>
@@ -100,24 +116,41 @@ export const uiSknv = {
     },
 
     displaySknvReport: (filteredReport, forceDetail = false) => {
+        console.log(`[ui-sknv.js displaySknvReport] === Starting render === Force detail: ${forceDetail}`); // Log mới
         const summaryContainer = document.getElementById('sknv-summary-container');
         const detailsContainer = document.getElementById('sknv-details-container');
-        if (!summaryContainer || !detailsContainer) return;
-    
+        if (!summaryContainer || !detailsContainer) {
+            console.error("[ui-sknv.js displaySknvReport] Summary or details container not found."); // Log mới
+            return;
+        }
+
         const isViewingDetail = appState.viewingDetailFor && appState.viewingDetailFor.sourceTab === 'sknv';
-    
         const shouldShowDetail = forceDetail || isViewingDetail;
-    
+        console.log(`[ui-sknv.js displaySknvReport] Should show detail: ${shouldShowDetail}`); // Log mới
+
         summaryContainer.classList.toggle('hidden', shouldShowDetail);
         detailsContainer.classList.toggle('hidden', !shouldShowDetail);
-    
+
         if (shouldShowDetail) {
             const employeeId = appState.viewingDetailFor.employeeId;
+            console.log(`[ui-sknv.js displaySknvReport] Finding data for employee ID: ${employeeId}`); // Log mới
             const employeeData = appState.masterReportData.sknv.find(nv => String(nv.maNV).trim() === String(employeeId).trim());
-            uiSknv.renderSknvDetailForEmployee(employeeData, filteredReport);
+            if(employeeData) {
+                console.log(`[ui-sknv.js displaySknvReport] Employee data found. Calling renderSknvDetailForEmployee.`); // Log mới
+                uiSknv.renderSknvDetailForEmployee(employeeData, filteredReport);
+            } else {
+                 console.warn(`[ui-sknv.js displaySknvReport] Employee data NOT FOUND for ID: ${employeeId}`); // Log mới
+                 detailsContainer.innerHTML = `
+                    <div class="mb-4">
+                        <button class="back-to-summary-btn text-blue-600 hover:underline font-semibold">‹ Quay lại bảng tổng hợp</button>
+                    </div>
+                    <p class="text-red-500">Không tìm thấy dữ liệu chi tiết cho nhân viên đã chọn.</p>`;
+            }
         } else {
+            console.log("[ui-sknv.js displaySknvReport] Calling displaySknvSummaryReport."); // Log mới
             uiSknv.displaySknvSummaryReport(filteredReport);
         }
+        console.log("[ui-sknv.js displaySknvReport] === Render complete ==="); // Log mới
     },
     
     _createDetailMetricGrid(title, colorClass, icon, data) {
@@ -147,21 +180,27 @@ export const uiSknv = {
     },
 
     renderSknvDetailForEmployee(employeeData, filteredReport) {
+        console.log("[ui-sknv.js renderSknvDetailForEmployee] === Starting render ==="); // Log mới
         const detailsContainer = document.getElementById('sknv-details-container');
-        if (!detailsContainer) return;
+        if (!detailsContainer) {
+            console.error("[ui-sknv.js renderSknvDetailForEmployee] Details container not found."); // Log mới
+            return;
+        }
 
         if (!employeeData) {
+            console.warn("[ui-sknv.js renderSknvDetailForEmployee] No employee data provided."); // Log mới
             detailsContainer.innerHTML = `
                 <div class="mb-4">
                     <button class="back-to-summary-btn text-blue-600 hover:underline font-semibold">‹ Quay lại bảng tổng hợp</button>
                 </div>
-                <p class="text-red-500">Không tìm thấy dữ liệu cho nhân viên đã chọn. Vui lòng tải lại dữ liệu YCX nếu cần.</p>
-            `;
+                <p class="text-red-500">Không tìm thấy dữ liệu cho nhân viên đã chọn.</p>`;
             return;
         }
-    
+        console.log("[ui-sknv.js renderSknvDetailForEmployee] Employee data:", employeeData); // Log mới
+
         const departmentAverages = services.calculateDepartmentAverages(employeeData.boPhan, filteredReport);
-        
+        console.log("[ui-sknv.js renderSknvDetailForEmployee] Department averages:", departmentAverages); // Log mới
+
         const evaluationCounts = {
             doanhthu: { above: 0, total: 7 },
             nangsuat: { above: 0, total: 7 },
@@ -178,6 +217,7 @@ export const uiSknv = {
         
         const { mucTieu } = employeeData;
 
+        // --- Tạo dữ liệu cho các grid (Giữ nguyên logic tạo mảng doanhThuData, nangSuatData, hieuQuaData, donGiaData) ---
         const doanhThuData = [
             { label: 'Doanh thu thực', value: uiComponents.formatRevenue(employeeData.doanhThu), average: uiComponents.formatRevenue(departmentAverages.doanhThu || 0), rawValue: employeeData.doanhThu, rawAverage: departmentAverages.doanhThu },
             { label: 'Doanh thu quy đổi', value: uiComponents.formatRevenue(employeeData.doanhThuQuyDoi), average: uiComponents.formatRevenue(departmentAverages.doanhThuQuyDoi || 0), rawValue: employeeData.doanhThuQuyDoi, rawAverage: departmentAverages.doanhThuQuyDoi },
@@ -220,10 +260,12 @@ export const uiSknv = {
             { label: 'Đơn giá Laptop', value: uiComponents.formatRevenue(employeeData.donGiaLaptop), average: uiComponents.formatRevenue(departmentAverages.donGiaLaptop), rawValue: employeeData.donGiaLaptop, rawAverage: departmentAverages.donGiaLaptop },
         ];
         donGiaData.forEach(d => countEvaluation('dongia', d.rawValue, d.rawAverage));
-
+        
         const totalAbove = evaluationCounts.doanhthu.above + evaluationCounts.nangsuat.above + evaluationCounts.hieuqua.above + evaluationCounts.dongia.above + evaluationCounts.qdc.above;
         const totalCriteria = evaluationCounts.doanhthu.total + evaluationCounts.nangsuat.total + evaluationCounts.hieuqua.total + evaluationCounts.dongia.total + evaluationCounts.qdc.total;
+        console.log(`[ui-sknv.js renderSknvDetail] Evaluation Counts:`, evaluationCounts, `Total Above: ${totalAbove}, Total Criteria: ${totalCriteria}`); // Log mới
         
+        console.log("[ui-sknv.js renderSknvDetail] Generating HTML..."); // Log mới
         detailsContainer.innerHTML = `
             <div class="mb-4 flex justify-between items-center">
                 <button class="back-to-summary-btn text-blue-600 hover:underline font-semibold">‹ Quay lại bảng tổng hợp</button>
@@ -260,16 +302,23 @@ export const uiSknv = {
                 </div>
             </div>`;
             feather.replace();
+        console.log("[ui-sknv.js renderSknvDetail] === Render complete ==="); // Log mới
     },
     
     displaySknvSummaryReport: (reportData) => {
+        console.log("[ui-sknv.js displaySknvSummaryReport] === Starting render ==="); // Log mới
         const container = document.getElementById('sknv-summary-container');
-        if (!container) return;
+        if (!container) {
+            console.error("[ui-sknv.js displaySknvSummaryReport] Summary container not found."); // Log mới
+            return;
+        }
 
         if (!reportData || reportData.length === 0) {
+            console.warn("[ui-sknv.js displaySknvSummaryReport] No report data provided."); // Log mới
             container.innerHTML = '<p class="text-gray-500 font-bold p-4">Không có dữ liệu hiệu suất để hiển thị.</p>';
             return;
         }
+        console.log(`[ui-sknv.js displaySknvSummaryReport] Input reportData length: ${reportData.length}`); // Log mới
 
         const summarizedData = reportData.map(employee => {
             const departmentAverages = services.calculateDepartmentAverages(employee.boPhan, reportData);
@@ -280,12 +329,10 @@ export const uiSknv = {
                 dongia: { above: 0, total: 7 },
                 qdc: { above: 0, total: 0 }
             };
-
             const check = (group, value, avg, higherIsBetter = true) => {
                 if (!isFinite(value) || avg === undefined || !isFinite(avg)) return;
                 if (higherIsBetter ? (value >= avg) : (value <= avg)) counts[group].above++;
             };
-
             check('doanhthu', employee.doanhThu, departmentAverages.doanhThu);
             check('doanhthu', employee.doanhThuQuyDoi, departmentAverages.doanhThuQuyDoi);
             check('doanhthu', employee.hieuQuaQuyDoi, departmentAverages.hieuQuaQuyDoi);
@@ -293,7 +340,6 @@ export const uiSknv = {
             check('doanhthu', employee.dtICT, departmentAverages.dtICT);
             check('doanhthu', employee.doanhThuTraGop, departmentAverages.doanhThuTraGop);
             check('doanhthu', employee.tyLeTraCham, departmentAverages.tyLeTraCham);
-
             check('nangsuat', employee.tongThuNhap, departmentAverages.tongThuNhap);
             check('nangsuat', employee.thuNhapDuKien, departmentAverages.thuNhapDuKien);
             check('nangsuat', employee.gioCong, departmentAverages.gioCong);
@@ -301,14 +347,12 @@ export const uiSknv = {
             check('nangsuat', employee.gioCong > 0 ? employee.doanhThuQuyDoi / employee.gioCong : 0, departmentAverages.gioCong > 0 ? departmentAverages.doanhThuQuyDoi / departmentAverages.gioCong : 0);
             check('nangsuat', employee.thuongNong, departmentAverages.thuongNong);
             check('nangsuat', employee.thuongERP, departmentAverages.thuongERP);
-
             check('hieuqua', employee.pctPhuKien, departmentAverages.pctPhuKien);
             check('hieuqua', employee.pctGiaDung, departmentAverages.pctGiaDung);
             check('hieuqua', employee.pctMLN, departmentAverages.pctMLN);
             check('hieuqua', employee.pctSim, departmentAverages.pctSim);
             check('hieuqua', employee.pctVAS, departmentAverages.pctVAS);
             check('hieuqua', employee.pctBaoHiem, departmentAverages.pctBaoHiem);
-
             check('dongia', employee.donGiaTrungBinh, departmentAverages.donGiaTrungBinh);
             check('dongia', employee.donGiaTivi, departmentAverages.donGiaTivi);
             check('dongia', employee.donGiaTuLanh, departmentAverages.donGiaTuLanh);
@@ -316,7 +360,6 @@ export const uiSknv = {
             check('dongia', employee.donGiaMayLanh, departmentAverages.donGiaMayLanh);
             check('dongia', employee.donGiaDienThoai, departmentAverages.donGiaDienThoai);
             check('dongia', employee.donGiaLaptop, departmentAverages.donGiaLaptop);
-
             if(employee.qdc && departmentAverages.qdc) {
                 for (const key in employee.qdc) {
                     if(departmentAverages.qdc[key] && employee.qdc[key].dtqd > 0) {
@@ -325,14 +368,13 @@ export const uiSknv = {
                     }
                 }
             }
-
             const totalAbove = counts.doanhthu.above + counts.nangsuat.above + counts.hieuqua.above + counts.dongia.above + counts.qdc.above;
             const totalCriteria = counts.doanhthu.total + counts.nangsuat.total + counts.hieuqua.total + counts.dongia.total + counts.qdc.total;
-            
             return { ...employee, summary: counts, totalAbove, totalCriteria };
         });
+        console.log(`[ui-sknv.js displaySknvSummaryReport] Summarized data generated. First item:`, summarizedData[0]); // Log mới
 
-        const subKpiGroups = [
+        const subKpiGroups = [ 
             { key: 'doanhthu', label: 'Doanh Thu', icon: 'trending-up' },
             { key: 'nangsuat', label: 'Năng Suất', icon: 'dollar-sign' },
             { key: 'hieuqua', label: 'Hiệu Quả', icon: 'award' },
@@ -340,92 +382,44 @@ export const uiSknv = {
             { key: 'qdc', label: 'QĐC', icon: 'star' }
         ];
         
-        const groupedByDept = {};
-        summarizedData.forEach(item => {
-            const dept = item.boPhan;
-            if (!groupedByDept[dept]) groupedByDept[dept] = [];
-            groupedByDept[dept].push(item);
+        const groupedByDept = {}; 
+        summarizedData.forEach(item => { 
+            const dept = item.boPhan; 
+            if (!groupedByDept[dept]) groupedByDept[dept] = []; 
+            groupedByDept[dept].push(item); 
         });
 
-        const departmentOrder = utils.getSortedDepartmentList(reportData);
+        const departmentOrder = utils.getSortedDepartmentList(reportData); 
+        console.log("[ui-sknv.js displaySknvSummaryReport] Department order:", departmentOrder); // Log mới
 
-        let finalCardsHtml = '';
-        
-        // === START: NEW HIGH-QUALITY MEDAL SVGS ===
-        const gold_medal_svg = `<span class="medal-container"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-                <linearGradient id="gold-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" style="stop-color:#FFDF00;stop-opacity:1" />
-                    <stop offset="100%" style="stop-color:#FFB800;stop-opacity:1" />
-                </linearGradient>
-                <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
-                    <feOffset dx="2" dy="2" result="offsetblur"/>
-                    <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
-                </filter>
-            </defs>
-            <path d="M 20 75 L 35 95 L 35 75 L 50 90 L 65 75 L 65 95 L 80 75 L 50 85 Z" fill="#E53935"/>
-            <circle cx="50" cy="45" r="38" fill="#BDBDBD"/>
-            <circle cx="50" cy="45" r="35" fill="url(#gold-grad)"/>
-            <circle cx="50" cy="45" r="28" fill="#FFC107" stroke="#FFFFFF" stroke-width="2"/>
-            <text x="50" y="52" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="white" text-anchor="middle">1</text>
-            <path d="M 68 25 l 3 -6 l 3 6 l 6 3 l -6 3 l -3 6 l -3 -6 l -6 -3 Z" fill="white" opacity="0.8"/>
-            <path d="M 30 55 l 2 -4 l 2 4 l 4 2 l -4 2 l -2 4 l -2 -4 l -4 -2 Z" fill="white" opacity="0.5"/>
-        </svg></span>`;
+        let finalCardsHtml = ''; 
+        const gold_medal_svg = `<span class="medal-container"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="gold-grad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#FFDF00;stop-opacity:1" /><stop offset="100%" style="stop-color:#FFB800;stop-opacity:1" /></linearGradient><filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur in="SourceAlpha" stdDeviation="3"/><feOffset dx="2" dy="2" result="offsetblur"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><path d="M 20 75 L 35 95 L 35 75 L 50 90 L 65 75 L 65 95 L 80 75 L 50 85 Z" fill="#E53935"/><circle cx="50" cy="45" r="38" fill="#BDBDBD"/><circle cx="50" cy="45" r="35" fill="url(#gold-grad)"/><circle cx="50" cy="45" r="28" fill="#FFC107" stroke="#FFFFFF" stroke-width="2"/><text x="50" y="52" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="white" text-anchor="middle">1</text><path d="M 68 25 l 3 -6 l 3 6 l 6 3 l -6 3 l -3 6 l -3 -6 l -6 -3 Z" fill="white" opacity="0.8"/><path d="M 30 55 l 2 -4 l 2 4 l 4 2 l -4 2 l -2 4 l -2 -4 l -4 -2 Z" fill="white" opacity="0.5"/></svg></span>`;
+        const silver_medal_svg = `<span class="medal-container"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="silver-grad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#F5F5F5;stop-opacity:1" /><stop offset="100%" style="stop-color:#B0BEC5;stop-opacity:1" /></linearGradient></defs><path d="M 20 75 L 35 95 L 35 75 L 50 90 L 65 75 L 65 95 L 80 75 L 50 85 Z" fill="#E53935"/><circle cx="50" cy="45" r="38" fill="#78909C"/><circle cx="50" cy="45" r="35" fill="url(#silver-grad)"/><circle cx="50" cy="45" r="28" fill="#B0BEC5" stroke="#FFFFFF" stroke-width="2"/><text x="50" y="52" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="white" text-anchor="middle">2</text><path d="M 68 25 l 3 -6 l 3 6 l 6 3 l -6 3 l -3 6 l -3 -6 l -6 -3 Z" fill="white" opacity="0.8"/></svg></span>`;
+        const bronze_medal_svg = `<span class="medal-container"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="bronze-grad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#FFCC80;stop-opacity:1" /><stop offset="100%" style="stop-color:#D84315;stop-opacity:1" /></linearGradient></defs><path d="M 20 75 L 35 95 L 35 75 L 50 90 L 65 75 L 65 95 L 80 75 L 50 85 Z" fill="#E53935"/><circle cx="50" cy="45" r="38" fill="#A1887F"/><circle cx="50" cy="45" r="35" fill="url(#bronze-grad)"/><circle cx="50" cy="45" r="28" fill="#D84315" stroke="#FFFFFF" stroke-width="2"/><text x="50" y="52" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="white" text-anchor="middle">3</text><path d="M 68 25 l 3 -6 l 3 6 l 6 3 l -6 3 l -3 6 l -3 -6 l -6 -3 Z" fill="white" opacity="0.8"/></svg></span>`;
 
-        const silver_medal_svg = `<span class="medal-container"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-                <linearGradient id="silver-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" style="stop-color:#F5F5F5;stop-opacity:1" />
-                    <stop offset="100%" style="stop-color:#B0BEC5;stop-opacity:1" />
-                </linearGradient>
-            </defs>
-            <path d="M 20 75 L 35 95 L 35 75 L 50 90 L 65 75 L 65 95 L 80 75 L 50 85 Z" fill="#E53935"/>
-            <circle cx="50" cy="45" r="38" fill="#78909C"/>
-            <circle cx="50" cy="45" r="35" fill="url(#silver-grad)"/>
-            <circle cx="50" cy="45" r="28" fill="#B0BEC5" stroke="#FFFFFF" stroke-width="2"/>
-            <text x="50" y="52" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="white" text-anchor="middle">2</text>
-            <path d="M 68 25 l 3 -6 l 3 6 l 6 3 l -6 3 l -3 6 l -3 -6 l -6 -3 Z" fill="white" opacity="0.8"/>
-        </svg></span>`;
+        departmentOrder.forEach(deptName => { 
+            if (groupedByDept[deptName] && groupedByDept[deptName].length > 0) { 
+                console.log(`[ui-sknv.js displaySknvSummaryReport] Rendering department group: ${deptName}`); 
+                const sortedDeptEmployees = [...groupedByDept[deptName]].sort((a, b) => (b.totalAbove || 0) - (a.totalAbove || 0)); 
 
-        const bronze_medal_svg = `<span class="medal-container"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-                <linearGradient id="bronze-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" style="stop-color:#FFCC80;stop-opacity:1" />
-                    <stop offset="100%" style="stop-color:#D84315;stop-opacity:1" />
-                </linearGradient>
-            </defs>
-            <path d="M 20 75 L 35 95 L 35 75 L 50 90 L 65 75 L 65 95 L 80 75 L 50 85 Z" fill="#E53935"/>
-            <circle cx="50" cy="45" r="38" fill="#A1887F"/>
-            <circle cx="50" cy="45" r="35" fill="url(#bronze-grad)"/>
-            <circle cx="50" cy="45" r="28" fill="#D84315" stroke="#FFFFFF" stroke-width="2"/>
-            <text x="50" y="52" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="white" text-anchor="middle">3</text>
-            <path d="M 68 25 l 3 -6 l 3 6 l 6 3 l -6 3 l -3 6 l -3 -6 l -6 -3 Z" fill="white" opacity="0.8"/>
-        </svg></span>`;
-        // === END: NEW HIGH-QUALITY MEDAL SVGS ===
+                finalCardsHtml += `<div class="sknv-department-group">`; 
+                finalCardsHtml += `<h4 class="sknv-department-header ${deptName.includes('Tư Vấn - ĐM') ? 'sknv-department-header--priority' : ''}">${deptName}</h4>`; 
+                finalCardsHtml += `<div class="sknv-summary-grid">`; 
 
-        departmentOrder.forEach(deptName => {
-            if (groupedByDept[deptName] && groupedByDept[deptName].length > 0) {
-                const sortedDeptEmployees = [...groupedByDept[deptName]].sort((a, b) => (b.totalAbove || 0) - (a.totalAbove || 0));
+                sortedDeptEmployees.forEach((item, index) => { 
+                    const performancePercentage = item.totalCriteria > 0 ? (item.totalAbove / item.totalCriteria) : 0; 
+                    const performanceColorClass = performancePercentage >= 0.7 ? 'sknv-card-kpi-strong' : performancePercentage >= 0.4 ? 'sknv-card-kpi-medium' : 'sknv-card-kpi-weak'; 
 
-                finalCardsHtml += `<div class="sknv-department-group">`;
-                finalCardsHtml += `<h4 class="sknv-department-header ${deptName.includes('Tư Vấn - ĐM') ? 'sknv-department-header--priority' : ''}">${deptName}</h4>`;
-                finalCardsHtml += `<div class="sknv-summary-grid">`;
+                    let medalHtml = ''; 
+                    if (index === 0) medalHtml = gold_medal_svg; 
+                    else if (index === 1) medalHtml = silver_medal_svg; 
+                    else if (index === 2) medalHtml = bronze_medal_svg; 
 
-                sortedDeptEmployees.forEach((item, index) => {
-                    const performancePercentage = item.totalCriteria > 0 ? (item.totalAbove / item.totalCriteria) : 0;
-                    const performanceColorClass = performancePercentage >= 0.7 ? 'sknv-card-kpi-strong' : performancePercentage >= 0.4 ? 'sknv-card-kpi-medium' : 'sknv-card-kpi-weak';
-                    
-                    let medalHtml = '';
-                    if (index === 0) medalHtml = gold_medal_svg;
-                    else if (index === 1) medalHtml = silver_medal_svg;
-                    else if (index === 2) medalHtml = bronze_medal_svg;
-
-                    const subKpisHtml = subKpiGroups.map(group => {
-                        if (item.summary[group.key].total === 0) return '';
-                        const subKpiPerf = item.summary[group.key].total > 0 ? item.summary[group.key].above / item.summary[group.key].total : 0;
-                        const subKpiColorClass = subKpiPerf >= 0.7 ? 'strong' : subKpiPerf >= 0.4 ? 'medium' : 'weak';
-                        const valueColorClass = subKpiPerf >= 0.5 ? 'text-blue-600' : 'text-red-600';
+                    const subKpisHtml = subKpiGroups.map(group => { 
+                        if (!item.summary || !item.summary[group.key] || item.summary[group.key].total === 0) return ''; 
+                        const subKpiPerf = item.summary[group.key].total > 0 ? item.summary[group.key].above / item.summary[group.key].total : 0; 
+                        const subKpiColorClass = subKpiPerf >= 0.7 ? 'strong' : subKpiPerf >= 0.4 ? 'medium' : 'weak'; 
+                        const valueColorClass = subKpiPerf >= 0.5 ? 'text-blue-600' : 'text-red-600'; 
 
                         return `
                             <div class="sknv-card__sub-kpi-item ${subKpiColorClass}">
@@ -435,9 +429,9 @@ export const uiSknv = {
                                 </div>
                                 <span class="value ${valueColorClass}">${item.summary[group.key].above}/${item.summary[group.key].total}</span>
                             </div>
-                        `;
-                    }).join('');
-                    
+                        `; 
+                    }).join(''); 
+
                     finalCardsHtml += `
                         <div class="sknv-card interactive-row" data-employee-id="${item.maNV}" data-source-tab="sknv">
                             ${medalHtml}
@@ -458,16 +452,17 @@ export const uiSknv = {
                             <div class="sknv-card__sub-kpi-grid">
                                 ${subKpisHtml}
                             </div>
-                        </div>`;
+                        </div>`; 
                 });
-                finalCardsHtml += `</div></div>`;
+                finalCardsHtml += `</div></div>`; 
             }
         });
-        container.innerHTML = `<div data-capture-group="1">${finalCardsHtml}</div>`;
-        
-        if (typeof feather !== 'undefined') {
-            feather.replace();
+        container.innerHTML = `<div data-capture-group="1">${finalCardsHtml}</div>`; 
+
+        if (typeof feather !== 'undefined') { 
+            feather.replace(); 
         }
+        console.log("[ui-sknv.js displaySknvSummaryReport] === Render complete ==="); 
     },
     
     getSknvEvaluation: (value, avgValue, higherIsBetter = true) => {
@@ -480,17 +475,19 @@ export const uiSknv = {
     },
     
     renderSknvNganhHangTable(employeeData) {
+        console.log("[ui-sknv.js renderSknvNganhHangTable] Starting render..."); 
         const { doanhThuTheoNganhHang } = employeeData;
         const sortState = appState.sortState.sknv_nganhhang_chitiet || { key: 'revenue', direction: 'desc' };
         const { key, direction } = sortState;
         
-        const dataArray = Object.entries(doanhThuTheoNganhHang)
+        const dataArray = Object.entries(doanhThuTheoNganhHang || {}) 
             .map(([name, values]) => ({ name, ...values }))
-            .filter(item => item.revenue > 0);
+            .filter(item => (item.revenue || 0) > 0); 
+        console.log(`[ui-sknv.js renderSknvNganhHangTable] Data array length: ${dataArray.length}`); 
 
         if (dataArray.length === 0) return '<div class="bg-white rounded-xl shadow-md border border-gray-200 p-4"><div class="sknv-detail-card-header sknv-header-purple"><i data-feather="list" class="header-icon"></i><h4 class="text-lg font-bold">Doanh thu theo Ngành hàng</h4></div><p class="p-4 text-gray-500">Không có dữ liệu.</p></div>';
 
-        const sortedData = [...dataArray].sort((a,b) => direction === 'asc' ? a[key] - b[key] : b[key] - a[key]);
+        const sortedData = [...dataArray].sort((a,b) => direction === 'asc' ? (a[key] || 0) - (b[key] || 0) : (b[key] || 0) - (a[key] || 0)); 
         const headerClass = (sortKey) => `px-4 py-2 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
 
         return `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"><div class="sknv-detail-card-header sknv-header-purple"><i data-feather="list" class="header-icon"></i><h4 class="text-lg font-bold">Doanh thu theo Ngành hàng</h4></div><div class="overflow-x-auto" style="max-height: 400px;"><table class="min-w-full text-sm table-bordered table-striped" data-table-type="sknv_nganhhang_chitiet">
@@ -511,21 +508,29 @@ export const uiSknv = {
     },
 
     renderSknvQdcTable(employeeData, departmentAverages, countCallback, evaluationCounts) {
+        console.log("[ui-sknv.js renderSknvQdcTable] Starting render..."); 
         const qdcData = employeeData.qdc;
         const avgQdcData = departmentAverages.qdc;
+
+        if (!qdcData) { 
+             console.warn("[ui-sknv.js renderSknvQdcTable] Employee QDC data is missing.");
+             evaluationCounts.qdc.total = 0;
+             return '<div class="bg-white rounded-xl shadow-md border border-gray-200 p-4"><div class="sknv-detail-card-header sknv-header-indigo"><i data-feather="star" class="header-icon"></i><h4 class="text-lg font-bold">Nhóm hàng Quy đổi cao</h4></div><p class="p-4 text-gray-500">Không có dữ liệu.</p></div>';
+        }
 
         const sortState = appState.sortState.sknv_qdc || { key: 'dtqd', direction: 'desc' };
         const { key, direction } = sortState;
         const sortedData = Object.entries(qdcData)
             .map(([id, values]) => ({ id, ...values }))
-            .filter(item => item.sl > 0)
-            .sort((a,b) => direction === 'asc' ? a[key] - b[key] : b[key] - a[key]);
+            .filter(item => (item.sl || 0) > 0) 
+            .sort((a,b) => direction === 'asc' ? (a[key] || 0) - (b[key] || 0) : (b[key] || 0) - (a[key] || 0)); 
+        console.log(`[ui-sknv.js renderSknvQdcTable] Sorted QDC data length: ${sortedData.length}`); 
 
         if (sortedData.length === 0) {
             evaluationCounts.qdc.total = 0;
             return '<div class="bg-white rounded-xl shadow-md border border-gray-200 p-4"><div class="sknv-detail-card-header sknv-header-indigo"><i data-feather="star" class="header-icon"></i><h4 class="text-lg font-bold">Nhóm hàng Quy đổi cao</h4></div><p class="p-4 text-gray-500">Không có dữ liệu.</p></div>';
         }
-        
+
         evaluationCounts.qdc.total = sortedData.length;
 
         const headerClass = (sortKey) => `px-4 py-2 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
