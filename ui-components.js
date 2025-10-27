@@ -1,4 +1,5 @@
-// Version 3.11 - Add populateCompetitionFilters and populateCompetitionBrandFilter functions
+// Version 3.14 - Modify updateFileStatus to include download button
+// Version 3.13 - Fix syntax error (missing comma after applyInterfaceSettings)
 // MODULE: UI COMPONENTS
 // Chứa các hàm UI chung, tái sử dụng được trên toàn bộ ứng dụng.
 
@@ -12,7 +13,7 @@ export const uiComponents = {
     renderSettingsButton(idSuffix) {
         return `<button id="settings-btn-${idSuffix}" class="settings-trigger-btn" title="Tùy chỉnh hiển thị">
                       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                  </button>`;
+                 </button>`;
     },
 
     renderCompetitionConfigUI() {
@@ -28,7 +29,7 @@ export const uiComponents = {
         container.innerHTML = configs.map((config, index) => {
              return `
                  <div class="p-3 border rounded-lg bg-white flex justify-between items-center shadow-sm">
-                       <div>
+                      <div>
                           <div class="flex items-center gap-x-2">
                               <p class="font-bold text-gray-800">${config.name}</p>
                           </div>
@@ -36,7 +37,7 @@ export const uiComponents = {
                               <p><strong>Hãng:</strong> <span class="font-semibold text-blue-600">${(config.brands || []).join(', ')}</span></p>
                               <p><strong>Nhóm hàng:</strong> <span class="font-semibold">${(config.groups || []).length > 0 ? (config.groups || []).join(', ') : 'Tất cả'}</span></p>
                           </div>
-                       </div>
+                      </div>
                       <div class="flex items-center gap-x-2 flex-shrink-0">
                          <button class="edit-competition-btn p-2 rounded-md hover:bg-gray-200 text-gray-600" data-index="${index}" title="Sửa chương trình">
                               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
@@ -50,49 +51,27 @@ export const uiComponents = {
         }).join('');
     },
 
-    // *** START: HÀM MỚI ***
     populateCompetitionFilters() {
         const groupSelectInstance = appState.choices['competition_group'];
         if (!groupSelectInstance) return;
-
-        // Lấy danh sách nhóm hàng duy nhất từ cấu trúc đã load
         const uniqueGroups = [...new Set(appState.categoryStructure.map(item => utils.cleanCategoryName(item.nhomHang)).filter(Boolean))].sort();
-
-        const groupOptions = uniqueGroups.map(group => ({
-            value: group,
-            label: group
-        }));
-
-        // Cập nhật choices.js
+        const groupOptions = uniqueGroups.map(group => ({ value: group, label: group }));
         groupSelectInstance.clearStore();
-        groupSelectInstance.setChoices(groupOptions, 'value', 'label', true); // `true` để xóa các lựa chọn cũ
+        groupSelectInstance.setChoices(groupOptions, 'value', 'label', true);
     },
-    // *** END: HÀM MỚI ***
 
-    // *** START: HÀM MỚI ***
     populateCompetitionBrandFilter() {
         const brandSelectInstance = appState.choices['competition_brand'];
         if (!brandSelectInstance) return;
-
-        // Lấy danh sách hãng từ appState
         const brands = appState.brandList || [];
-
-        const brandOptions = brands.map(brand => ({
-            value: brand,
-            label: brand
-        }));
-
-        // Cập nhật choices.js
+        const brandOptions = brands.map(brand => ({ value: brand, label: brand }));
         brandSelectInstance.clearStore();
-        brandSelectInstance.setChoices(brandOptions, 'value', 'label', true); // `true` để xóa các lựa chọn cũ
+        brandSelectInstance.setChoices(brandOptions, 'value', 'label', true);
     },
-    // *** END: HÀM MỚI ***
-
 
     populateComposerDetailTags(supermarketReport) {
          const qdcContainer = document.getElementById('composer-qdc-tags-container');
          const nganhHangContainer = document.getElementById('composer-nganhhang-tags-container');
-
          if (!qdcContainer || !nganhHangContainer) return;
 
          qdcContainer.innerHTML = '<h5 class="composer__tag-group-title">Chọn Nhóm Hàng QĐC</h5>';
@@ -115,13 +94,11 @@ export const uiComponents = {
                  qdcContainer.appendChild(createTagButton(tag, item.name));
              });
          }
-
          if (supermarketReport && supermarketReport.nganhHangChiTiet) {
              const nganhHangItems = Object.values(supermarketReport.nganhHangChiTiet)
                  .filter(item => item.quantity > 0)
                  .sort((a, b) => b.revenue - a.revenue)
                  .slice(0, 15);
-
              nganhHangItems.forEach(item => {
                  const cleanName = utils.cleanCategoryName(item.name);
                  const tag = `[NH_INFO_${cleanName}]`;
@@ -134,7 +111,7 @@ export const uiComponents = {
         const container = document.getElementById(containerId);
         if (!container) return;
 
-        container.innerHTML = ''; // Clear previous content
+        container.innerHTML = '';
 
         let detailContainerId;
         if (sortStateKey === 'doanhthu_lk') {
@@ -150,14 +127,14 @@ export const uiComponents = {
              detailContainer.innerHTML = '';
             detailContainer.classList.add('hidden');
         }
-        container.classList.remove('hidden'); // Ensure summary is visible initially
+        container.classList.remove('hidden');
 
         if (!reportData || reportData.length === 0) {
             container.innerHTML = '<p class="text-gray-500">Không có dữ liệu doanh thu cho lựa chọn này.</p>';
             return;
         }
         let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden" data-capture-group="1">
-            <div class="p-4 header-group-1 text-gray-800">
+             <div class="p-4 header-group-1 text-gray-800">
                 <h3 class="text-xl font-bold uppercase">Doanh thu nhân viên</h3>
                 <p class="text-sm italic text-gray-600">(đơn vị tính: Triệu đồng)</p>
              </div>`;
@@ -179,7 +156,6 @@ export const uiComponents = {
         finalHTML += `</div>`;
         container.innerHTML = finalHTML;
     },
-
     renderRevenueTableForDepartment: (title, data, sortStateKey) => {
         const sortState = appState.sortState[sortStateKey] || { key: 'doanhThu', direction: 'desc' };
         const { key, direction } = sortState;
@@ -241,7 +217,7 @@ export const uiComponents = {
 
              tableHTML += `<tr class="interactive-row" data-employee-id="${item.maNV}" data-source-tab="${sourceTab}">
                     <td class="px-4 py-2 font-semibold line-clamp-2 employee-name-cell">
-                        <a href="#">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</a>
+                     <a href="#">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</a>
                      </td>
                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThu)}</td>
                      <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThuQuyDoi)}</td>
@@ -254,14 +230,13 @@ export const uiComponents = {
                      <td class="px-4 py-2">Tổng</td>
                     <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThu)}</td>
                     <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuQuyDoi)}</td>
-                    <td class="px-4 py-2 text-right">${uiComponents.formatPercentage(totals.hieuQuaQuyDoi)}</td>
+                     <td class="px-4 py-2 text-right">${uiComponents.formatPercentage(totals.hieuQuaQuyDoi)}</td>
                     <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuTraGop)}</td>
                      <td class="px-4 py-2 text-right">${uiComponents.formatPercentage(totals.tyLeTraCham)}</td>
                     <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuChuaXuat)}</td>
                  </tr></tfoot></table></div></div>`;
         return tableHTML;
     },
-
     displayEmployeeEfficiencyReport: (reportData, containerId, sortStateKey) => {
          const container = document.getElementById(containerId);
          if (!container) return;
@@ -314,7 +289,6 @@ export const uiComponents = {
                          </div>`;
          container.innerHTML = finalHTML;
     },
-
     renderEfficiencyTableForDepartment: (title, data, sortStateKey, visibleColumns) => {
         const sortState = appState.sortState[sortStateKey] || { key: 'dtICT', direction: 'desc' };
         const { key, direction } = sortState;
@@ -374,7 +348,7 @@ export const uiComponents = {
         const captureColumnCount = 1 + visibleColumns.length;
         let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="${captureColumnCount}">
             <thead class="text-xs text-slate-800 uppercase font-bold">
-                 <tr>
+                  <tr>
                     <th class="${headerClass('hoTen')}" data-sort="hoTen">Tên nhân viên <span class="sort-indicator"></span></th>
                     ${visibleColumns.map(col => `<th class="${headerClass(col.id)} ${allHeaders[col.id]?.class || ''}" data-sort="${col.id}">${allHeaders[col.id]?.label || col.id} <span class="sort-indicator"></span></th>`).join('')}
                  </tr>
@@ -383,7 +357,7 @@ export const uiComponents = {
         sortedData.forEach(item => {
             const { mucTieu } = item;
             const classMap = {
-                pctPhuKien: (mucTieu && item.pctPhuKien < (mucTieu.phanTramPhuKien / 100)) ? 'cell-performance is-below' : '',
+                 pctPhuKien: (mucTieu && item.pctPhuKien < (mucTieu.phanTramPhuKien / 100)) ? 'cell-performance is-below' : '',
                 pctGiaDung: (mucTieu && item.pctGiaDung < (mucTieu.phanTramGiaDung / 100)) ? 'cell-performance is-below' : '',
                 pctMLN: (mucTieu && item.pctMLN < (mucTieu.phanTramMLN / 100)) ? 'cell-performance is-below' : '',
                 pctSim: (mucTieu && item.pctSim < (mucTieu.phanTramSim / 100)) ? 'cell-performance is-below' : '',
@@ -395,7 +369,7 @@ export const uiComponents = {
                 <td class="px-4 py-2 font-semibold line-clamp-2 employee-name-cell">
                     <a href="#">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</a>
                  </td>
-                ${visibleColumns.map(col => {
+                 ${visibleColumns.map(col => {
                     const value = item[col.id];
                     const className = classMap[col.id] || '';
                     const formatter = formatMap[col.id] || formatMap.defaultPercent;
@@ -416,7 +390,6 @@ export const uiComponents = {
         </tfoot></table></div></div>`;
         return tableHTML;
     },
-
     renderCategoryTable(title, sortStateKey, reportData, mainRevenueKey, mainQuantityKey, subQuantityKeys, subQuantityLabels) {
         const sortState = appState.sortState[sortStateKey] || { key: mainRevenueKey, direction: 'desc' };
         const { key, direction } = sortState;
@@ -434,12 +407,12 @@ export const uiComponents = {
                 acc[subKey] = (acc[subKey] || 0) + (item[subKey] || 0);
             });
             return acc;
-        }, {}); // Initialize with empty object
+        }, {});
 
         const headerClass = (sortKey) => `px-2 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
         const titleClass = {
             'ICT': 'category-header-ict',
-            'PHỤ KIỆN': 'category-header-phukien',
+             'PHỤ KIỆN': 'category-header-phukien',
             'GIA DỤNG': 'category-header-giadung',
             'CE': 'category-header-ce',
             'BẢO HIỂM': 'category-header-baohiem',
@@ -449,14 +422,13 @@ export const uiComponents = {
 
         const tableRows = [];
         sortedData.forEach(item => {
-            // Check if either main revenue or main quantity is greater than 0
             if ((item[mainRevenueKey] || 0) > 0 || (item[mainQuantityKey] || 0) > 0) {
                  tableRows.push(`
                     <tr class="interactive-row" data-employee-id="${item.maNV}" data-source-tab="sknv">
                         <td class="px-2 py-2 font-semibold line-clamp-2 employee-name-cell">
                              <a href="#">${this.getShortEmployeeName(item.hoTen, item.maNV)}</a>
                         </td>
-                         <td class="px-2 py-2 text-right font-bold">${this.formatRevenue(item[mainRevenueKey])}</td>
+                        <td class="px-2 py-2 text-right font-bold">${this.formatRevenue(item[mainRevenueKey])}</td>
                         <td class="px-2 py-2 text-right font-bold">${this.formatNumberOrDash(item[mainQuantityKey])}</td>
                          ${subQuantityKeys.map(subKey => `<td class="px-2 py-2 text-right">${this.formatNumberOrDash(item[subKey])}</td>`).join('')}
                     </tr>
@@ -464,7 +436,6 @@ export const uiComponents = {
             }
         });
 
-        // Only render the table if there are rows to display
         if (tableRows.length === 0) {
              return `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
                         <h4 class="text-lg font-bold p-3 border-b ${titleClass}">${title}</h4>
@@ -472,27 +443,26 @@ export const uiComponents = {
                      </div>`;
         }
 
-
         const html = `
             <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
                 <h4 class="text-lg font-bold p-3 border-b ${titleClass}">${title}</h4>
                  <div class="overflow-x-auto">
                     <table class="min-w-full text-sm table-bordered table-striped" data-table-type="${sortStateKey}">
                          <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
-                            <tr>
+                             <tr>
                                 <th rowspan="2" class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên</th>
                                 <th rowspan="2" class="${headerClass(mainRevenueKey)} text-right" data-sort="${mainRevenueKey}">DT</th>
                                  <th rowspan="2" class="${headerClass(mainQuantityKey)} text-right" data-sort="${mainQuantityKey}">Tổng SL</th>
-                                <th colspan="${subQuantityKeys.length}" class="px-2 py-2 text-center">Chi tiết SL</th>
+                                 <th colspan="${subQuantityKeys.length}" class="px-2 py-2 text-center">Chi tiết SL</th>
                             </tr>
                             <tr>${subHeaders}</tr>
                         </thead>
-                        <tbody>
+                         <tbody>
                             ${tableRows.join('')}
                         </tbody>
                          <tfoot class="table-footer font-bold">
                             <tr>
-                                <td class="px-2 py-2">Tổng</td>
+                                 <td class="px-2 py-2">Tổng</td>
                                 <td class="px-2 py-2 text-right">${this.formatRevenue(totals[mainRevenueKey] || 0)}</td>
                                  <td class="px-2 py-2 text-right">${this.formatNumberOrDash(totals[mainQuantityKey] || 0)}</td>
                                 ${subQuantityKeys.map(subKey => `<td class="px-2 py-2 text-right">${this.formatNumberOrDash(totals[subKey] || 0)}</td>`).join('')}
@@ -503,8 +473,6 @@ export const uiComponents = {
             </div>`;
         return html;
     },
-
-
     displayCategoryRevenueReport(reportData, containerId, sortStatePrefix) {
          const container = document.getElementById(containerId);
          if (!container) return;
@@ -526,12 +494,6 @@ export const uiComponents = {
          ];
          container.innerHTML = htmlParts.join('');
     },
-
-    // --- START: HÀM MỚI ---
-    /**
-     * Điền danh sách kho vào ô chọn #data-warehouse-selector.
-     * Tự động chọn kho đã lưu trong localStorage nếu có.
-     */
     populateWarehouseSelector() {
         const selector = document.getElementById('data-warehouse-selector');
         if (!selector) {
@@ -546,41 +508,46 @@ export const uiComponents = {
             return;
         }
 
-        const uniqueWarehouses = [...new Set(appState.danhSachNhanVien.map(nv => nv.maKho).filter(Boolean))].sort();
-        console.log("populateWarehouseSelector: Các kho tìm thấy:", uniqueWarehouses);
+        const uniqueWarehouses = [...new Set(appState.danhSachNhanVien.map(nv => String(nv.maKho).trim()).filter(Boolean))].sort();
+        console.log("populateWarehouseSelector: Các kho tìm thấy (dạng chuỗi):", uniqueWarehouses);
 
-        let optionsHTML = '<option value="">-- Chọn Kho --</option>'; // Thêm option mặc định
+        let optionsHTML = '<option value="">-- Chọn Kho --</option>';
         optionsHTML += uniqueWarehouses.map(kho => `<option value="${kho}">${kho}</option>`).join('');
         selector.innerHTML = optionsHTML;
         selector.disabled = false;
 
-        // Tự động chọn kho đã lưu (ưu tiên state trước, rồi đến localStorage)
-        const currentSelected = appState.selectedWarehouse || localStorage.getItem('selectedWarehouse');
-        console.log("populateWarehouseSelector: Kho đang chọn (state/local):", currentSelected);
+        let currentSelected = appState.selectedWarehouse ? String(appState.selectedWarehouse).trim() : null;
+        if (!currentSelected) {
+            const storedValue = localStorage.getItem('selectedWarehouse');
+            currentSelected = storedValue ? String(storedValue).trim() : '';
+        }
+        console.log("populateWarehouseSelector: Kho đang chọn (state/local, dạng chuỗi):", currentSelected);
 
         if (currentSelected && uniqueWarehouses.includes(currentSelected)) {
             selector.value = currentSelected;
-            // Cập nhật lại state nếu nó chưa khớp (ví dụ: state là null nhưng localStorage có)
             if (appState.selectedWarehouse !== currentSelected) {
                  appState.selectedWarehouse = currentSelected;
                  console.log("populateWarehouseSelector: Đã cập nhật state.selectedWarehouse thành:", currentSelected);
             }
              console.log("populateWarehouseSelector: Đã chọn kho:", selector.value);
         } else {
-             // Nếu kho đã lưu không hợp lệ hoặc không có, reset state và localStorage
-             if (appState.selectedWarehouse && !uniqueWarehouses.includes(appState.selectedWarehouse)) {
-                 console.log("populateWarehouseSelector: Kho đã lưu không hợp lệ, đang reset.");
+             if (currentSelected && !uniqueWarehouses.includes(currentSelected)) {
+                 console.log(`populateWarehouseSelector: Kho đã lưu '${currentSelected}' không hợp lệ (không có trong ${uniqueWarehouses.join(',')}), đang reset.`);
                  appState.selectedWarehouse = null;
                  localStorage.removeItem('selectedWarehouse');
+                 selector.value = "";
+                 console.log("populateWarehouseSelector: Reset state về null và selector về '-- Chọn Kho --'.");
+             } else if (!currentSelected) {
+                 console.log("populateWarehouseSelector: Không có kho nào được lưu.");
+                 appState.selectedWarehouse = null;
+                 selector.value = "";
+                 console.log("populateWarehouseSelector: Reset state về null và selector về '-- Chọn Kho --'.");
+             } else {
+                 console.log(`populateWarehouseSelector: Kho '${currentSelected}' hợp lệ hoặc không có gì để reset.`);
              }
-             selector.value = ""; // Đặt về giá trị mặc định "-- Chọn Kho --"
-             appState.selectedWarehouse = null; // Cập nhật state thành null
-             console.log("populateWarehouseSelector: Reset về '-- Chọn Kho --'.");
         }
     },
-    // --- END: HÀM MỚI ---
-
-    // ... (Các hàm format, showNotification, etc. giữ nguyên) ...
+    
     showProgressBar: (elementId) => { const el = document.getElementById(`progress-${elementId}`); if(el) el.classList.remove('hidden'); },
     hideProgressBar: (elementId) => { const el = document.getElementById(`progress-${elementId}`); if(el) el.classList.add('hidden'); },
     showNotification: (message, type = 'success') => {
@@ -608,7 +575,7 @@ export const uiComponents = {
              }
         }
     },
-    updateUsageCounter: (statsData) => {
+     updateUsageCounter: (statsData) => {
         const visitorCountEl = document.getElementById('visitor-count');
          const actionCountEl = document.getElementById('action-count');
          const userCountEl = document.getElementById('user-count');
@@ -616,15 +583,35 @@ export const uiComponents = {
          if (actionCountEl) actionCountEl.textContent = statsData?.actionsTaken ? uiComponents.formatNumber(statsData.actionsTaken) : '0';
          if (userCountEl) userCountEl.textContent = statsData?.totalUsers ? uiComponents.formatNumber(statsData.totalUsers) : '0';
      },
-    updateFileStatus(fileType, fileName, statusText, statusType = 'default') {
+
+    // *** START: MODIFIED FUNCTION (v3.14) ***
+    updateFileStatus(fileType, fileName, statusText, statusType = 'default', showDownloadButton = false, dataType = '', warehouse = '') {
          const fileNameSpan = document.getElementById(`file-name-${fileType}`);
          const fileStatusSpan = document.getElementById(`file-status-${fileType}`);
+         
          if (fileNameSpan) fileNameSpan.textContent = fileName || 'Chưa thêm file';
+         
          if (fileStatusSpan) {
-             fileStatusSpan.textContent = statusText;
-             fileStatusSpan.className = `data-input-group__status-text data-input-group__status-text--${statusType}`;
+             let buttonHTML = '';
+             // If showDownloadButton is true, and we have the necessary data attributes, create the button
+             if (showDownloadButton && dataType && warehouse) {
+                 buttonHTML = `
+                     <button 
+                         class="download-data-btn ml-2 px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200"
+                         data-type="${dataType}" 
+                         data-warehouse="${warehouse}"
+                         title="Tải và xử lý phiên bản dữ liệu mới này">
+                         Tải & Xử lý
+                     </button>
+                 `;
+             }
+             
+             // Set innerHTML to render the text span and the button (if any)
+             fileStatusSpan.innerHTML = `<span class="data-input-group__status-text data-input-group__status-text--${statusType}">${statusText}</span>${buttonHTML}`;
          }
      },
+    // *** END MODIFIED FUNCTION ***
+
     updatePasteStatus(elementId, statusText = '✓ Đã nhận dữ liệu.') {
          const statusSpan = document.getElementById(elementId);
          if (statusSpan) {
@@ -657,7 +644,7 @@ export const uiComponents = {
          }).format(roundedValue);
      },
      formatNumberOrDash: (value, decimals = 1) => {
-          if (!isFinite(value) || value === null || value === 0) return '-';
+         if (!isFinite(value) || value === null || value === 0) return '-';
           const roundedValue = parseFloat(value.toFixed(decimals));
           if (roundedValue === 0 && value !== 0) {
                return value > 0 ? '> 0' : '< 0';
@@ -669,7 +656,7 @@ export const uiComponents = {
           }).format(roundedValue);
       },
      formatPercentage: (value, decimals = 0) => {
-          if (!isFinite(value) || value === null) return '-';
+         if (!isFinite(value) || value === null) return '-';
           if (value === 0) return '-';
           const percentageValue = value * 100;
           const roundedValue = parseFloat(percentageValue.toFixed(decimals));
@@ -720,19 +707,18 @@ export const uiComponents = {
             drawer.classList.remove('hidden');
             setTimeout(() => {
                 drawer.classList.add('open');
-                sidebar.classList.add('menu-locked');
+                 sidebar.classList.add('menu-locked');
                 overlay.classList.remove('hidden');
             }, 10);
         } else {
             drawer.classList.remove('open');
             sidebar.classList.remove('menu-locked');
             overlay.classList.add('hidden');
-            // Wait for transition before hiding completely
             setTimeout(() => {
-                 if (!drawer.classList.contains('open')) { // Double check if another drawer was opened quickly
+                 if (!drawer.classList.contains('open')) {
                      drawer.classList.add('hidden');
                  }
-            }, 300); // Match transition duration
+            }, 300);
         }
     },
     closeAllDrawers() {
@@ -777,7 +763,6 @@ export const uiComponents = {
         const title = `Hướng dẫn cho Tab ${helpId.charAt(0).toUpperCase() + helpId.slice(1)}`;
         const content = appState.helpContent[helpId] || "Nội dung hướng dẫn không có sẵn.";
         titleEl.textContent = title;
-        // Use innerHTML carefully, assuming help content is trusted or sanitized
         contentEl.innerHTML = content.replace(/\n/g, '<br>');
         this.toggleModal('help-modal', true);
     },
@@ -812,7 +797,7 @@ export const uiComponents = {
             })
              .catch(err => {
                 console.error('Lỗi sao chép:', err);
-                uiComponents.showNotification('Lỗi khi sao chép.', 'error');
+                 uiComponents.showNotification('Lỗi khi sao chép.', 'error');
              });
     },
     renderAdminHelpEditors() {
@@ -842,7 +827,7 @@ export const uiComponents = {
                 <div class="bg-white rounded-xl shadow-md p-5 border border-gray-200">
                      <h4 class="font-bold text-blue-600 mb-2">Phiên bản ${item.version} (${item.date})</h4>
                      <ul class="list-disc list-inside text-gray-700 space-y-1 text-sm">
-                        ${item.notes.map(note => `<li>${note}</li>`).join('')}
+                         ${item.notes.map(note => `<li>${note}</li>`).join('')}
                     </ul>
                 </div>`).join('');
         } catch (error) {
@@ -856,7 +841,7 @@ export const uiComponents = {
         if (!composerContainer || !listContainer) return;
 
         composerContainer.innerHTML = `
-            <h4 class="text-lg font-semibold text-gray-800 mb-3">Gửi góp ý của bạn</h4>
+             <h4 class="text-lg font-semibold text-gray-800 mb-3">Gửi góp ý của bạn</h4>
             <textarea id="feedback-textarea" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-3" rows="4" placeholder="Chúng tôi luôn lắng nghe ý kiến của bạn để cải thiện công cụ tốt hơn..."></textarea>
             <button id="submit-feedback-btn" class="w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-indigo-700 transition">Gửi góp ý</button>
         `;
@@ -867,36 +852,35 @@ export const uiComponents = {
         }
 
         listContainer.innerHTML = appState.feedbackList.map(item => {
-             // Logic xác định userNameDisplay đã bị xóa ở phiên bản này, cần thêm lại nếu muốn hiển thị email/ID
-             const userNameDisplay = item.user?.email || 'Người dùng ẩn danh'; // Sử dụng email nếu có
-
+            const userNameDisplay = item.user?.email || 'Người dùng ẩn danh';
             return `
                 <div class="feedback-item bg-white rounded-xl shadow-md p-5 border border-gray-200" data-id="${item.id}">
                     <p class="text-gray-800">${item.content}</p>
                     <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">
                         <span class="font-semibold">${userNameDisplay}</span>
-                         <span>${this.formatTimeAgo(item.timestamp)}</span>
+                        <span>${this.formatTimeAgo(item.timestamp)}</span>
                         ${appState.isAdmin ? `<button class="reply-btn text-blue-600 hover:underline">Trả lời</button>` : ''}
                     </div>
                     <div class="ml-6 mt-4 space-y-3">
                          ${(item.replies || []).map(reply => `
-                             <div class="bg-gray-100 rounded-lg p-3">
+                            <div class="bg-gray-100 rounded-lg p-3">
                                 <p class="text-gray-700 text-sm">${reply.content}</p>
                                  <div class="text-xs text-gray-500 mt-2">
-                                     <strong>Admin</strong> - ${this.formatTimeAgo(reply.timestamp instanceof Date ? reply.timestamp : reply.timestamp?.toDate())}
+                                    <strong>Admin</strong> - ${this.formatTimeAgo(reply.timestamp instanceof Date ? reply.timestamp : reply.timestamp?.toDate())}
                                 </div>
                             </div>`).join('')}
                     </div>
                     <div class="reply-form-container hidden ml-6 mt-4">
-                         <textarea class="w-full p-2 border rounded-lg text-sm" rows="2" placeholder="Viết câu trả lời..."></textarea>
+                        <textarea class="w-full p-2 border rounded-lg text-sm" rows="2" placeholder="Viết câu trả lời..."></textarea>
                          <div class="flex justify-end gap-2 mt-2">
                             <button class="cancel-reply-btn text-sm text-gray-600 px-3 py-1 rounded-md hover:bg-gray-100">Hủy</button>
                              <button class="submit-reply-btn text-sm bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700">Gửi</button>
-                        </div>
+                         </div>
                      </div>
                 </div>`;
         }).join('');
     },
+    
     applyInterfaceSettings(settings) {
          const root = document.documentElement;
          if (settings.kpiCard1Bg) root.style.setProperty('--kpi-card-1-bg', settings.kpiCard1Bg);
@@ -910,8 +894,8 @@ export const uiComponents = {
          if (settings.kpiTitleColor) root.style.setProperty('--kpi-title-color', settings.kpiTitleColor);
          if (settings.kpiMainColor) root.style.setProperty('--kpi-main-color', settings.kpiMainColor);
          if (settings.kpiSubColor) root.style.setProperty('--kpi-sub-color', settings.kpiSubColor);
-         // Font size application handled by settingsService.applyFontSettings
-     },
+     }, 
+
     displayDebugInfo(fileType) {
          const resultsContainer = document.getElementById('debug-results-container');
          if (!fileType) {
@@ -924,7 +908,7 @@ export const uiComponents = {
          if (!debugData) return;
 
          const fileInputEl = document.querySelector(`#file-${fileType}`);
-         const fileName = fileInputEl?.dataset.name || fileType; // Lấy tên từ data-name
+         const fileName = fileInputEl?.dataset.name || fileType;
          let tableHTML = `<div class="p-2 border rounded-md bg-white mb-4"><h4 class="font-bold text-gray-800 mb-2">${fileName}</h4><table class="min-w-full text-sm">
              <thead class="bg-gray-100"><tr><th class="px-2 py-1 text-left font-semibold text-gray-600">Yêu cầu</th><th class="px-2 py-1 text-left font-semibold text-gray-600">Cột tìm thấy</th><th class="px-2 py-1 text-center font-semibold text-gray-600">Trạng thái</th></tr></thead><tbody>`;
          (debugData.required || []).forEach(res => {
@@ -953,7 +937,7 @@ export const uiComponents = {
 
          const debugData = appState.debugInfo[dataType];
          if (!debugData) {
-             container.innerHTML = ''; // Clear if no data
+             container.innerHTML = '';
              return;
          }
 
@@ -971,7 +955,7 @@ export const uiComponents = {
          content += `<p class="text-xs italic mt-2"><strong>Trạng thái xử lý:</strong> ${debugData.status}</p></div>`;
          container.innerHTML = content;
      },
-    displayThiDuaVungDebugInfo() { // Giữ nguyên hàm này
+    displayThiDuaVungDebugInfo() {
         const resultsContainer = document.getElementById('debug-results-container');
         if (!resultsContainer) return;
 
@@ -979,7 +963,7 @@ export const uiComponents = {
             if (!data || data.length === 0) {
                 return `<div class="p-2 border rounded-md bg-white mb-4">
                      <h4 class="font-bold text-gray-800 mb-2">${title}</h4>
-                    <p class="text-gray-500">Không có dữ liệu để hiển thị.</p>
+                     <p class="text-gray-500">Không có dữ liệu để hiển thị.</p>
                  </div>`;
             }
 
@@ -988,13 +972,13 @@ export const uiComponents = {
                 <h4 class="font-bold text-gray-800 mb-2">${title}</h4>
                 <div class="overflow-x-auto">
                      <table class="min-w-full text-xs">
-                         <thead class="bg-gray-100">
+                        <thead class="bg-gray-100">
                             <tr>${headers.map(h => `<th class="px-2 py-1 text-left font-semibold text-gray-600 whitespace-nowrap">${h}</th>`).join('')}</tr>
                         </thead>
                         <tbody>`;
             data.forEach(row => {
                 tableHTML += `<tr class="border-t">`;
-                 headers.forEach(header => {
+                headers.forEach(header => {
                     tableHTML += `<td class="px-2 py-1 font-mono">${row[header] !== undefined ? row[header] : ''}</td>`;
                 });
                 tableHTML += `</tr>`;
@@ -1020,7 +1004,7 @@ export const uiComponents = {
             resultsContainer.appendChild(wrapper);
         }
     },
-    renderCompetitionDebugReport(debugResults) { // Giữ nguyên
+    renderCompetitionDebugReport(debugResults) {
         const container = document.getElementById('debug-competition-results');
         if (!container) return;
 
@@ -1039,7 +1023,7 @@ export const uiComponents = {
                 <h4 class="font-bold text-lg mb-2">Kết quả Phân tích File: <span class="text-green-600">${validCount}</span> / ${totalCount} dòng hợp lệ</h4>
                 <div class="overflow-x-auto max-h-[600px]">
                     <table class="min-w-full text-xs table-bordered competition-debug-table">
-                        <thead class="bg-gray-100 sticky top-0">
+                         <thead class="bg-gray-100 sticky top-0">
                             <tr>
                                 <th class="p-2">Người tạo</th>
                                  <th class="p-2">Nhóm hàng</th>
@@ -1051,7 +1035,7 @@ export const uiComponents = {
                                 ${checkHeaders.map(h => `<th class="p-2">${h}</th>`).join('')}
                                 <th class="p-2">Tổng thể</th>
                             </tr>
-                        </thead>
+                         </thead>
                         <tbody>`;
 
         const renderCheck = (status) => `<td class="text-center font-bold text-lg">${status ? '<span class="text-green-500">✅</span>' : '<span class="text-red-500">❌</span>'}</td>`;
@@ -1073,7 +1057,7 @@ export const uiComponents = {
                     ${renderCheck(checks.isChuaHuy)}
                     ${renderCheck(checks.isChuaTra)}
                     ${renderCheck(checks.isDaXuat)}
-                    ${renderCheck(isOverallValid)}
+                     ${renderCheck(isOverallValid)}
                 </tr>
             `;
         });
@@ -1137,7 +1121,7 @@ export const uiComponents = {
         );
 
         if (multiSelectInstance) {
-            const currentMultiSelectValues = multiSelectInstance.getValue(true);
+             const currentMultiSelectValues = multiSelectInstance.getValue(true);
             const multiSelectOptions = filteredEmployees.map(nv => ({
                  value: String(nv.maNV), // Ensure value is string
                 label: `${uiComponents.getShortEmployeeName(nv.hoTen, nv.maNV)}`,
@@ -1173,7 +1157,6 @@ export const uiComponents = {
          if (prefix === 'sknv') {
              updateSingleSelect('thidua_employee_detail');
          }
-         // Add other single selects if needed
     },
     updateBrandFilterOptions(selectedCategory) {
         const brandFilter = document.getElementById('realtime-brand-filter');
@@ -1195,10 +1178,9 @@ export const uiComponents = {
             const sortedDates = selectedDates.sort((a,b) => a - b);
             summaryEl.textContent = `Đang chọn ${selectedDates.length} ngày: ${datePickerInstance.formatDate(sortedDates[0], "d/m")} - ${datePickerInstance.formatDate(sortedDates[sortedDates.length - 1], "d/m")}`;
         } else if (selectedDates.length === 1) {
-            summaryEl.textContent = `Đang chọn 1 ngày: ${datePickerInstance.formatDate(selectedDates[0], "d/m")}`;
+             summaryEl.textContent = `Đang chọn 1 ngày: ${datePickerInstance.formatDate(selectedDates[0], "d/m")}`;
         } else {
             summaryEl.textContent = '';
         }
     },
-
 };

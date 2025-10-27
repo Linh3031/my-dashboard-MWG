@@ -1,4 +1,4 @@
-// Version 1.0 - Component: Login Modal
+// Version 1.2 - Add logging to render function
 // Chứa mã HTML cho modal yêu cầu email người dùng khi truy cập lần đầu.
 
 const modalLoginHTML = `
@@ -26,10 +26,22 @@ const modalLoginHTML = `
 `;
 
 export const modalLogin = {
-    render(containerSelector) {
+    async render(containerSelector) {
+        console.log(`[modalLogin.render] Attempting to render into: ${containerSelector}`); // Log mới
         const container = document.querySelector(containerSelector);
         if (container) {
+            console.log(`[modalLogin.render] Container found. Setting innerHTML.`); // Log mới
             container.innerHTML = modalLoginHTML;
+            console.log(`[modalLogin.render] innerHTML set. Waiting for next tick.`); // Log mới
+            // Return a promise that resolves after the next tick, ensuring DOM update
+            return new Promise(resolve => setTimeout(() => {
+                console.log(`[modalLogin.render] Next tick resolved.`); // Log mới
+                resolve();
+            }, 0));
+        } else {
+            console.error(`[modalLogin.render] Container ${containerSelector} NOT FOUND.`); // Log lỗi mới
         }
+        // Return a resolved promise if container not found to avoid breaking await
+        return Promise.resolve();
     }
 };
