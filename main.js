@@ -1,3 +1,7 @@
+// Version 4.37 - Add EXTREMELY granular logging and try/catch before sync check
+// Version 4.36 - Add even more detailed logging around the cloud sync check block
+// Version 4.35 - Add MORE specific logging for '-thangtruoc' files sync check
+// Version 4.34 - Add specific logging for '-thangtruoc' files before cloud sync check
 // Version 4.33 - Fix syntax errors introduced in v4.32 during status function call updates
 // Version 4.32 - Update calls to status functions with metadata/count for simplified messages
 // Version 4.31 - Fix parameter error in _handlePastedDataSync, fix sync condition for prev month files
@@ -34,7 +38,6 @@ const LOCAL_DATA_VERSIONS_KEY = '_localDataVersions';
 const LOCAL_METADATA_PREFIX = '_localMetadata_';
 const LOCAL_DSNV_FILENAME_KEY = '_localDsnvFilename'; // Key for DSNV filename
 
-// *** NEW (v4.29): Global data mapping ***
 const ALL_DATA_MAPPING = {
     // Daily Files
     'ycx': { stateKey: 'ycxData', saveKey: 'saved_ycx', isPasted: false, uiId: 'ycx', firestoreKey: 'ycx' },
@@ -50,16 +53,16 @@ const ALL_DATA_MAPPING = {
     // Previous Month Pasted
     'pastedThuongERPThangTruoc': { stateKey: 'thuongERPDataThangTruoc', saveKey: 'saved_thuongerp_thangtruoc', isPasted: true, uiId: 'status-thuongerp-thangtruoc', firestoreKey: 'pastedThuongERPThangTruoc', processFunc: services.processThuongERP }
 };
-// *** END NEW ***
 
 const app = {
     currentVersion: '3.5',
     storage: storage,
     unsubscribeDataListener: null,
     _isInitialized: false,
-    _localDataVersions: {}, // Structure: { warehouseId: { dataType: { version_number, timestamp_ms } } }
+    _localDataVersions: {},
 
     async init() {
+        // ... (Giữ nguyên init)
         try {
             await firebase.initCore();
             console.log("Rendering static UI components...");
@@ -102,6 +105,7 @@ const app = {
     },
 
     async continueInit() {
+        // ... (Giữ nguyên continueInit)
         if (!appState.currentUser || !appState.currentUser.email) {
              console.error("continueInit called without user email in appState.");
              ui.showNotification("Lỗi: Không tìm thấy thông tin người dùng.", "error");
@@ -157,7 +161,6 @@ const app = {
         }
 
          initializeEventListeners(this);
-        // *** Load data BEFORE checking sync status ***
         await this.loadDataFromStorage();
 
         const savedWarehouse = localStorage.getItem('selectedWarehouse');
@@ -169,7 +172,6 @@ const app = {
                 this.handleCloudDataUpdate(cloudData);
             });
 
-            // *** Check Sync Status AFTER loading data ***
             console.log(`%c[continueInit] Checking sync status for warehouse ${savedWarehouse} (AFTER loadDataFromStorage)...`, "color: teal; font-weight: bold;");
 
             const fileDataTypes = Object.keys(ALL_DATA_MAPPING).filter(k => !ALL_DATA_MAPPING[k].isPasted);
@@ -187,25 +189,21 @@ const app = {
                 console.log(`%c    Local Version Info (_localDataVersions):`, "color: teal;", `v${localVersionInfo.version}, ts ${localVersionInfo.timestamp}`);
 
                 const fileStatusSpan = document.getElementById(`file-status-${uiId}`);
-                const currentStatusIsCache = fileStatusSpan?.textContent?.includes('(cache'); // Keep checking cache status from loadDataFromStorage
+                const currentStatusIsCache = fileStatusSpan?.textContent?.includes('cache');
 
                 if (currentStatusIsCache) {
-                    // ** NEW v4.33: If cache status is shown, still check if cloud is newer **
                      if (metadata && metadata.version > localVersionInfo.version) {
                         console.log(`%c[continueInit] Cache loaded for ${firestoreKey}, but cloud v${metadata.version} is newer. Showing download button.`, "color: orange;");
-                        // Pass metadata to show download button with context
                         uiComponents.updateFileStatus(uiId, metadata.fileName || 'Cloud', '', 'default', true, metadata, firestoreKey, savedWarehouse);
                      } else {
                         console.log(`%c[continueInit] UI status for ${firestoreKey} was set by loadDataFromStorage (cache) and is up-to-date. Keeping it.`, "color: green;");
                      }
                 } else if (metadata) {
                     if (metadata.version > localVersionInfo.version) {
-                        // Pass metadata
                         uiComponents.updateFileStatus(uiId, metadata.fileName || 'Cloud', '', 'default', true, metadata, firestoreKey, savedWarehouse);
                         console.log(`%c[continueInit] UI status for ${firestoreKey} requires download (Cloud v${metadata.version} > Local v${localVersionInfo.version}).`, "color: green;");
                     } else {
-                        // Pass metadata
-                        uiComponents.updateFileStatus(uiId, metadata.fileName || 'Cloud', '', 'default', true, metadata, firestoreKey, savedWarehouse); // Still show download button
+                        uiComponents.updateFileStatus(uiId, metadata.fileName || 'Cloud', '', 'default', true, metadata, firestoreKey, savedWarehouse);
                         console.log(`%c[continueInit] UI status for ${firestoreKey} requires download (v${metadata.version}). Cache empty or not loaded.`, "color: orange;");
                     }
                 } else {
@@ -222,8 +220,6 @@ const app = {
              const dsnvFilename = localStorage.getItem(LOCAL_DSNV_FILENAME_KEY);
              if (!dsnvFilename) {
                  uiComponents.updateFileStatus('danhsachnv', '', 'Chưa thêm file', 'default');
-             } else {
-                 // Status handled by loadDataFromStorage
              }
         }
 
@@ -250,8 +246,8 @@ const app = {
         setInterval(() => this.checkForUpdates(), 15 * 60 * 1000);
     },
 
-    // *** MODIFIED FUNCTION (v4.32) ***
     async handleCloudDataUpdate(cloudData) {
+        // ... (Giữ nguyên)
         const receivedTime = new Date().toLocaleTimeString();
         console.log(`%c[handleCloudDataUpdate @ ${receivedTime}] Received data snapshot from Firestore listener:`, "color: blue; font-weight: bold;", JSON.stringify(cloudData).substring(0, 500) + "...");
         let showSyncNotification = false;
@@ -274,7 +270,10 @@ const app = {
 
                 const updatedBy = cloudMetadata.updatedBy;
                 const cloudServerTimestampObj = cloudMetadata.updatedAt;
-                const updatedTime = cloudServerTimestampObj ? ui.formatTimeAgo(cloudServerTimestampObj.toDate()) : 'vừa xong';
+                 const updatedTime = cloudServerTimestampObj
+                    ? ui.formatTimeAgo(cloudServerTimestampObj.toDate ? cloudServerTimestampObj.toDate() : new Date(cloudServerTimestampObj))
+                    : 'vừa xong';
+
 
                 const cloudVersion = cloudMetadata.version || 0;
                 const cloudLocalTimestamp = cloudMetadata.timestamp || 0;
@@ -302,7 +301,6 @@ const app = {
                     }
 
                     if (appState.currentUser && updatedBy === appState.currentUser.email) {
-                        // Self-update
                         if (isPasted) {
                             let processedCount = 0;
                             if (stateKey && processFunc && cloudMetadata.content) {
@@ -371,8 +369,8 @@ const app = {
         }
     },
 
-    // *** MODIFIED FUNCTION (v4.32) ***
     async handleDownloadAndProcessData(dataType, warehouse) {
+        // ... (Giữ nguyên)
         console.log(`%c[handleDownloadAndProcessData] User requested download for ${dataType} @ ${warehouse}`, "color: darkcyan; font-weight: bold;");
         const metadataKey = `${LOCAL_METADATA_PREFIX}${warehouse}_${dataType}`;
 
@@ -443,7 +441,6 @@ const app = {
                  console.error("[handleDownloadAndProcessData] Error saving updated versions/timestamps to localStorage:", e);
             }
 
-            // Pass metadata for status update
             uiComponents.updateFileStatus(uiId, expectedFileName, '', 'success', false, metadata);
             ui.showNotification(`Đã tải và xử lý thành công dữ liệu ${dataType} (v${expectedVersion})!`, 'success');
 
@@ -470,6 +467,7 @@ const app = {
     },
 
     _getSavedMetadata(warehouse, dataType) {
+        // ... (Giữ nguyên)
         const metadataKey = `${LOCAL_METADATA_PREFIX}${warehouse}_${dataType}`;
         try {
             const storedMetadata = localStorage.getItem(metadataKey);
@@ -481,6 +479,7 @@ const app = {
     },
 
     async setupMarquee() {
+        // ... (Giữ nguyên)
         const marqueeContainer = document.getElementById('version-marquee-container');
         const marqueeText = marqueeContainer?.querySelector('.marquee-text');
         if (!marqueeContainer || !marqueeText) return;
@@ -510,6 +509,7 @@ const app = {
     },
 
     _formatChangelogForModal(changelogData) {
+        // ... (Giữ nguyên)
         if (!changelogData || changelogData.length === 0) return '<p>Không có lịch sử cập nhật.</p>';
         return changelogData.map(item => `
             <div class="mb-4 pb-4 border-b last:border-b-0">
@@ -522,6 +522,7 @@ const app = {
     },
 
     async checkForUpdates() {
+        // ... (Giữ nguyên)
         try {
             const response = await fetch(`./version.json?v=${new Date().getTime()}`);
             if (!response.ok) return;
@@ -551,8 +552,8 @@ const app = {
         }
     },
 
-    // *** MODIFIED FUNCTION (v4.32) ***
     async loadDataFromStorage() {
+        // ... (Giữ nguyên)
         let dsnvLoadSuccess = false;
         const loadSavedFile = async (saveKey, stateKey, fileType, uiId) => {
             console.log(`[main.js loadDataFromStorage] Attempting to load ${saveKey} from IndexedDB...`);
@@ -591,7 +592,7 @@ const app = {
                     appState[stateKey] = normalizedData;
 
                     let fileNameToShow = `Cache (${normalizedData.length} dòng)`;
-                    let statusText = `✓ Đã tải từ cache`; // Simplified
+                    let statusText = `✓ Đã tải từ cache`;
                     let statusType = 'success';
                     let metadata = null;
 
@@ -616,7 +617,6 @@ const app = {
                          }
                     }
 
-                    // Pass metadata to updateFileStatus
                     uiComponents.updateFileStatus(uiId, fileNameToShow, statusText, statusType, false, metadata);
 
                     if (stateKey === 'danhSachNhanVien') {
@@ -681,8 +681,8 @@ const app = {
         } catch (e) { console.error("Lỗi đọc cài đặt từ localStorage:", e); }
     },
 
-    // *** MODIFIED FUNCTION (v4.32) ***
     loadPastedDataFromStorage() {
+        // ... (Giữ nguyên)
         const loadPasted = (saveKey, stateKey, uiId, processFunc) => {
             const pastedText = localStorage.getItem(saveKey);
             if (pastedText) {
@@ -702,7 +702,6 @@ const app = {
                 if (kho && mappingInfo) {
                     metadata = this._getSavedMetadata(kho, mappingInfo.firestoreKey);
                     if (metadata) {
-                         // Pass metadata & count
                          uiComponents.updatePasteStatus(uiId, '', 'success', metadata, processedCount);
                     } else {
                          uiComponents.updatePasteStatus(uiId, '✓ Đã tải từ cache (chưa đồng bộ)', 'success');
@@ -719,7 +718,7 @@ const app = {
         loadPasted('daily_paste_thuongerp', 'thuongERPData', 'status-thuongerp', services.processThuongERP);
     },
 
-    // *** MODIFIED FUNCTION (v4.32) ***
+    // *** MODIFIED FUNCTION (v4.36) ***
     async handleFileInputChange(e) {
         const fileInput = e.target;
         const file = fileInput.files[0];
@@ -767,72 +766,94 @@ const app = {
             if (saveKey) {
                 console.log(`[handleFileInputChange] Saving normalized data (${normalizedData.length} rows) to cache: ${saveKey}`);
                 await this.storage.setItem(saveKey, normalizedData);
+                console.log(`%c[DEBUG POST-CACHE] Successfully saved ${fileType} to cache. Proceeding...`, "color: brown;");
             }
 
-            const warehouseToSync = appState.selectedWarehouse;
-            if (warehouseToSync && firestoreKey) {
-                console.log(`[DEBUG] Preparing Cloud Sync for ${fileType} (as ${firestoreKey}), kho: ${warehouseToSync}`);
-                uiComponents.updateFileStatus(fileType, file.name, `Đang chuẩn bị đồng bộ cloud...`, 'default');
+            // --- Section before sync check ---
+            let warehouseToSync = null;
+            let currentFirestoreKey = null;
+            try {
+                console.log("[DEBUG STEP 1] Getting warehouseToSync..."); // Log added
+                warehouseToSync = appState.selectedWarehouse;
+                console.log(`[DEBUG STEP 2] warehouseToSync = ${warehouseToSync}`); // Log added
+                console.log("[DEBUG STEP 3] Getting firestoreKey..."); // Log added
+                currentFirestoreKey = firestoreKey; // Use the firestoreKey from mappingInfo
+                console.log(`[DEBUG STEP 4] firestoreKey = ${currentFirestoreKey}`); // Log added
 
-                let localDataVersions = this._localDataVersions;
-                const currentVersion = localDataVersions?.[warehouseToSync]?.[firestoreKey]?.version || 0;
-                const newVersion = currentVersion + 1;
-                const uploadTimestamp = Date.now();
+                console.log(`%c[DEBUG PRE-SYNC CHECK] File Type: ${fileType}, Warehouse: ${warehouseToSync}, Firestore Key: ${currentFirestoreKey}`, "color: purple; font-weight: bold;");
 
-                const fileExtension = file.name.substring(file.name.lastIndexOf('.'));
-                const storagePath = `uploads/${warehouseToSync}/${firestoreKey}_v${newVersion}${fileExtension}`;
+                if (warehouseToSync && currentFirestoreKey) {
+                     console.log(`%c[DEBUG SYNC BLOCK START] Entering cloud sync block for ${fileType} (Firestore Key: ${currentFirestoreKey})`, "color: magenta;");
 
-                console.log(`%c[handleFileInputChange] Cloud Upload for ${firestoreKey}:`, "color: magenta; font-weight: bold;");
+                    uiComponents.updateFileStatus(fileType, file.name, `Đang chuẩn bị đồng bộ cloud...`, 'default');
 
-                const onProgress = (progress) => {
-                     uiComponents.updateFileStatus(fileType, file.name, `Đang tải lên cloud... ${Math.round(progress)}%`, 'default');
-                };
+                    let localDataVersions = this._localDataVersions;
+                    const currentVersion = localDataVersions?.[warehouseToSync]?.[currentFirestoreKey]?.version || 0;
+                    const newVersion = currentVersion + 1;
+                    const uploadTimestamp = Date.now();
 
-                try {
-                    const downloadURL = await firebase.uploadFileToStorage(file, storagePath, onProgress);
-                    uiComponents.updateFileStatus(fileType, file.name, `Upload xong, đang lưu thông tin...`, 'default');
+                    const fileExtension = file.name.substring(file.name.lastIndexOf('.'));
+                    const storagePath = `uploads/${warehouseToSync}/${currentFirestoreKey}_v${newVersion}${fileExtension}`;
 
-                    const metadata = {
-                        storagePath: storagePath,
-                        downloadURL: downloadURL,
-                        version: newVersion,
-                          timestamp: uploadTimestamp,
-                        rowCount: normalizedData.length,
-                        fileName: file.name
+                    console.log(`%c[handleFileInputChange] Cloud Upload for ${currentFirestoreKey}:`, "color: magenta; font-weight: bold;");
+
+                    const onProgress = (progress) => {
+                         uiComponents.updateFileStatus(fileType, file.name, `Đang tải lên cloud... ${Math.round(progress)}%`, 'default');
                     };
 
-                    await firebase.saveMetadataToFirestore(warehouseToSync, firestoreKey, metadata);
-
-                    const metadataKey = `${LOCAL_METADATA_PREFIX}${warehouseToSync}_${firestoreKey}`;
-                    const metadataToSaveLocally = { ...metadata, updatedAt: new Date() }; // Add timestamp before saving
                     try {
-                        localStorage.setItem(metadataKey, JSON.stringify(metadataToSaveLocally));
-                        console.log(`[handleFileInputChange] Saved metadata for ${firestoreKey} to localStorage ('${metadataKey}') immediately.`);
-                    } catch(lsError) {
-                          console.error(`[handleFileInputChange] Error saving metadata for ${firestoreKey} to localStorage:`, lsError);
+                        const downloadURL = await firebase.uploadFileToStorage(file, storagePath, onProgress);
+                        uiComponents.updateFileStatus(fileType, file.name, `Upload xong, đang lưu thông tin...`, 'default');
+
+                        const metadata = {
+                            storagePath: storagePath,
+                            downloadURL: downloadURL,
+                            version: newVersion,
+                            timestamp: uploadTimestamp,
+                            rowCount: normalizedData.length,
+                            fileName: file.name
+                        };
+
+                        await firebase.saveMetadataToFirestore(warehouseToSync, currentFirestoreKey, metadata);
+
+                        const metadataKey = `${LOCAL_METADATA_PREFIX}${warehouseToSync}_${currentFirestoreKey}`;
+                        const metadataToSaveLocally = { ...metadata, updatedAt: new Date() };
+                        try {
+                            localStorage.setItem(metadataKey, JSON.stringify(metadataToSaveLocally));
+                            console.log(`[handleFileInputChange] Saved metadata for ${currentFirestoreKey} to localStorage ('${metadataKey}') immediately.`);
+                        } catch(lsError) {
+                              console.error(`[handleFileInputChange] Error saving metadata for ${currentFirestoreKey} to localStorage:`, lsError);
+                        }
+
+                        if (!localDataVersions[warehouseToSync]) localDataVersions[warehouseToSync] = {};
+                        localDataVersions[warehouseToSync][currentFirestoreKey] = { version: newVersion, timestamp: uploadTimestamp };
+                        localStorage.setItem(LOCAL_DATA_VERSIONS_KEY, JSON.stringify(localDataVersions));
+                        this._localDataVersions = localDataVersions;
+
+                        console.log(`%c[handleFileInputChange] Successfully uploaded ${currentFirestoreKey} (v${newVersion}).`, "color: magenta;");
+
+                         uiComponents.updateFileStatus(fileType, file.name, '', 'success', false, metadataToSaveLocally);
+
+                     } catch (syncError) {
+                        console.error(`%c[handleFileInputChange] Cloud sync failed for ${currentFirestoreKey}:`, "color: red;", syncError);
+                        uiComponents.updateFileStatus(fileType, file.name, `Lỗi đồng bộ cloud: ${syncError.message}`, 'error');
                     }
-
-                    if (!localDataVersions[warehouseToSync]) localDataVersions[warehouseToSync] = {};
-                    localDataVersions[warehouseToSync][firestoreKey] = { version: newVersion, timestamp: uploadTimestamp };
-                    localStorage.setItem(LOCAL_DATA_VERSIONS_KEY, JSON.stringify(localDataVersions));
-                    this._localDataVersions = localDataVersions;
-
-                    console.log(`%c[handleFileInputChange] Successfully uploaded ${firestoreKey} (v${newVersion}).`, "color: magenta;");
-
-                    // Pass metadata for immediate status update
-                     uiComponents.updateFileStatus(fileType, file.name, '', 'success', false, metadataToSaveLocally);
-
-                 } catch (syncError) {
-                    console.error(`%c[handleFileInputChange] Cloud sync failed for ${firestoreKey}:`, "color: red;", syncError);
-                    uiComponents.updateFileStatus(fileType, file.name, `Lỗi đồng bộ cloud: ${syncError.message}`, 'error');
+                     console.log(`%c[DEBUG SYNC BLOCK END] Finished cloud sync block for ${fileType}`, "color: magenta;");
+                } else {
+                     console.log(`%c[DEBUG SYNC SKIP] Skipping cloud sync for ${fileType}. Warehouse selected: ${!!warehouseToSync}, Firestore key exists: ${!!currentFirestoreKey}`, "color: orange;");
+                     if (currentFirestoreKey) {
+                        uiComponents.updateFileStatus(fileType, file.name, `✓ Đã tải ${normalizedData.length} dòng (Chưa đồng bộ).`, 'success', false, null);
+                     }
                 }
-            } else {
-                 if (firestoreKey) {
-                    // Pass null for metadata as it's not synced yet
-                    uiComponents.updateFileStatus(fileType, file.name, `✓ Đã tải ${normalizedData.length} dòng (Chưa đồng bộ).`, 'success', false, null);
-                 }
+
+            } catch(preSyncError) {
+                 // ** ADDED v4.36: Catch errors before sync check **
+                 console.error(`%c[DEBUG PRE-SYNC ERROR] Error before sync check for ${fileType}:`, "color: red; font-weight: bold;", preSyncError);
+                 uiComponents.updateFileStatus(fileType, file.name, `Lỗi chuẩn bị đồng bộ: ${preSyncError.message}`, 'error');
+                 // ** END ADDED **
             }
 
+            console.log(`%c[DEBUG PRE-RENDER] About to call updateAndRenderCurrentTab for ${fileType}`, "color: blue;");
             this.updateAndRenderCurrentTab();
 
         } catch (error) {
@@ -842,11 +863,12 @@ const app = {
         } finally {
             ui.hideProgressBar(fileType);
             fileInput.value = '';
+            console.log(`%c[DEBUG FUNCTION END] handleFileInputChange finished for ${fileType}`, "color: gray;");
         }
     },
 
-    // *** MODIFIED FUNCTION (v4.32) ***
     async handleDsnvUpload(e, file) {
+        // ... (Giữ nguyên handleDsnvUpload)
         const fileType = 'danhsachnv';
         const dataName = 'Danh sách nhân viên';
         const stateKey = 'danhSachNhanVien';
@@ -890,7 +912,6 @@ const app = {
                  await this.storage.setItem(saveKey, normalizedData);
             }
 
-            // DSNV does not sync, so no metadata
             uiComponents.updateFileStatus(fileType, file.name, `✓ Đã tải ${normalizedData.length} dòng.`, 'success', false, null);
             this.updateAndRenderCurrentTab();
 
@@ -904,8 +925,9 @@ const app = {
         }
     },
 
-    // ... (Các hàm còn lại giữ nguyên như v4.31) ...
+
     handleFileRead(file) {
+        // ... (Giữ nguyên)
         return new Promise((resolve, reject) => {
             if (!file) return reject(new Error("No file provided."));
             const reader = new FileReader();
@@ -922,6 +944,7 @@ const app = {
     },
 
     updateAndRenderCurrentTab() {
+        // ... (Giữ nguyên)
         uiComponents.renderCompetitionConfigUI();
         const activeTab = document.querySelector('.page-section:not(.hidden)');
         if (!activeTab) {
@@ -936,6 +959,7 @@ const app = {
     },
 
     switchTab(targetId) {
+        // ... (Giữ nguyên)
         document.querySelectorAll('.page-section').forEach(section => section.classList.toggle('hidden', section.id !== targetId));
         document.querySelectorAll('.nav-link').forEach(link => {
             const isActive = link.getAttribute('href') === `#${targetId}`;
@@ -951,6 +975,7 @@ const app = {
     },
 
     async loadAndApplyBookmarkLink() {
+        // ... (Giữ nguyên)
          try {
             const bookmarkUrl = await firebase.getBookmarkDownloadURL();
             const linkElement = document.getElementById('download-bookmark-link');
@@ -963,6 +988,7 @@ const app = {
     },
 
     async _handlePastedDataSync(pastedText, kho, dataType, uiId, localStorageKey, stateKey = null, processFunc = null) {
+        // ... (Giữ nguyên)
         localStorage.setItem(localStorageKey, pastedText);
 
         let processedData = null;
@@ -973,7 +999,6 @@ const app = {
             processedCount = processedData?.length || 0;
         } else if (uiId === 'status-thiduanv') {
              sknvTab.render();
-             // Estimate count later if needed
         }
 
         if (!kho) {
@@ -1022,12 +1047,13 @@ const app = {
 
 
     async handleLuykePaste() {
+        // ... (Giữ nguyên)
         const pastedText = document.getElementById('paste-luyke')?.value || '';
         const kho = appState.selectedWarehouse;
         const mappingInfo = ALL_DATA_MAPPING['pastedLuykeBI'];
 
         localStorage.setItem(mappingInfo.saveKey, pastedText);
-        uiComponents.updatePasteStatus(mappingInfo.uiId, '✓ Đã nhận dữ liệu.', 'success'); // Keep basic status initially
+        uiComponents.updatePasteStatus(mappingInfo.uiId, '✓ Đã nhận dữ liệu.', 'success');
 
         if (kho) {
              await this._handlePastedDataSync(
@@ -1042,6 +1068,7 @@ const app = {
     },
 
     async handleThiduaNVPaste() {
+        // ... (Giữ nguyên)
         const pastedText = document.getElementById('paste-thiduanv')?.value || '';
         const kho = appState.selectedWarehouse;
         const mappingInfo = ALL_DATA_MAPPING['pastedThiduaNVBI'];
@@ -1055,6 +1082,7 @@ const app = {
     },
 
     async handleErpPaste() {
+        // ... (Giữ nguyên)
         const pastedText = document.getElementById('paste-thuongerp')?.value || '';
         const kho = appState.selectedWarehouse;
         const mappingInfo = ALL_DATA_MAPPING['pastedThuongERP'];
@@ -1070,6 +1098,7 @@ const app = {
     },
 
     async handleErpThangTruocPaste(e) {
+        // ... (Giữ nguyên)
          const pastedText = e.target.value;
          const kho = appState.selectedWarehouse;
          const mappingInfo = ALL_DATA_MAPPING['pastedThuongERPThangTruoc'];
@@ -1085,6 +1114,7 @@ const app = {
     },
 
     async handleRealtimeFileInput(e) {
+        // ... (Giữ nguyên)
         const file = e.target.files[0];
         if (!file) return;
         ui.showNotification('Đang xử lý file realtime...', 'success');
@@ -1111,6 +1141,7 @@ const app = {
     },
 
     async handleCategoryFile(e) {
+        // ... (Giữ nguyên)
         const fileInput = e.target;
         const file = fileInput.files[0];
         if (!file) return;
@@ -1145,6 +1176,7 @@ const app = {
     },
 
     async handleThiDuaVungFileInput(e) {
+        // ... (Giữ nguyên)
         const fileInput = e.target;
         const file = fileInput.files[0];
         if (!file) return;
@@ -1169,6 +1201,7 @@ const app = {
     },
 
     handleThiDuaVungFilterChange() {
+        // ... (Giữ nguyên)
         const choicesInstance = appState.choices.thiDuaVung_sieuThi;
         if (!choicesInstance) return;
         const selectedValue = choicesInstance.getValue(true);
@@ -1182,6 +1215,7 @@ const app = {
     },
 
     handleDthangRealtimeViewChange(e) {
+        // ... (Giữ nguyên)
         const button = e.target.closest('.view-switcher__btn');
         if (button) {
             document.querySelectorAll('#dthang-realtime-view-selector .view-switcher__btn').forEach(btn => btn.classList.remove('active'));
@@ -1191,6 +1225,7 @@ const app = {
     },
 
     handleLuykeThiDuaViewChange(e) {
+        // ... (Giữ nguyên)
         const button = e.target.closest('.view-switcher__btn');
         if (button) {
             document.querySelectorAll('#luyke-thidua-view-selector .view-switcher__btn').forEach(btn => btn.classList.remove('active'));
@@ -1200,6 +1235,7 @@ const app = {
     },
 
     handleThiDuaViewChange(e) {
+        // ... (Giữ nguyên)
          const button = e.target.closest('.view-switcher__btn');
         if (button) {
              document.querySelectorAll('#thidua-view-selector .view-switcher__btn').forEach(btn => btn.classList.remove('active'));
@@ -1212,6 +1248,7 @@ const app = {
     },
 
     async handleCompetitionDebugFile(e) {
+        // ... (Giữ nguyên)
         const file = e.target.files[0];
         if (!file) return;
         ui.showNotification('Đang phân tích file gỡ lỗi...', 'success');
@@ -1226,6 +1263,7 @@ const app = {
     },
 
     _handleCompetitionFormShow(show = true, isEdit = false) {
+        // ... (Giữ nguyên)
         const form = document.getElementById('competition-form');
         const addBtn = document.getElementById('add-competition-btn');
         if (!form || !addBtn) return;
@@ -1246,6 +1284,7 @@ const app = {
     },
 
     _handleCompetitionFormEdit(index) {
+        // ... (Giữ nguyên)
         const config = appState.competitionConfigs[index];
         if (!config) return;
         this._handleCompetitionFormShow(true, true);
@@ -1274,6 +1313,7 @@ const app = {
     },
 
     _handleCompetitionDelete(index) {
+        // ... (Giữ nguyên)
         appState.competitionConfigs.splice(index, 1);
         this._saveCompetitionConfigs();
         this.updateAndRenderCurrentTab();
@@ -1281,6 +1321,7 @@ const app = {
     },
 
     _handleCompetitionFormSubmit(e) {
+        // ... (Giữ nguyên)
         e.preventDefault();
         const id = document.getElementById('competition-id').value;
         const name = document.getElementById('competition-name').value.trim();
@@ -1314,10 +1355,12 @@ const app = {
 
 
      _saveCompetitionConfigs() {
+        // ... (Giữ nguyên)
         localStorage.setItem('competitionConfigs', JSON.stringify(appState.competitionConfigs));
     },
 
     async handleTemplateDownload() {
+        // ... (Giữ nguyên)
         ui.showNotification('Đang chuẩn bị file mẫu...', 'success');
         try {
              const url = await firebase.getTemplateDownloadURL();
@@ -1334,6 +1377,7 @@ const app = {
     },
 
     handleAdminLogin() {
+        // ... (Giữ nguyên)
         const passInputEl = document.getElementById('admin-password-input');
         const errorMsgEl = document.getElementById('admin-error-msg');
         if (passInputEl?.value === config.ADMIN_PASSWORD) {
@@ -1350,12 +1394,14 @@ const app = {
     },
 
     handleContrastChange(e) {
+        // ... (Giữ nguyên)
           const level = e.target.value;
          localStorage.setItem('contrastLevel', level);
          document.documentElement.dataset.contrast = level;
     },
 
     handleHighlightColorChange(prefix) {
+        // ... (Giữ nguyên)
         const activeType = appState.highlightSettings[prefix]?.type;
         if (activeType) {
              const choicesInstance = appState.choices[`${prefix}_highlight_${activeType}`];
@@ -1371,6 +1417,7 @@ const app = {
     },
 
     handleClearHighlight(prefix) {
+        // ... (Giữ nguyên)
         appState.highlightSettings[prefix] = {};
         localStorage.setItem('highlightSettings', JSON.stringify(appState.highlightSettings));
         ['nhanhang', 'nhomhang', 'employee'].forEach(type => {
@@ -1380,6 +1427,7 @@ const app = {
     },
 
     async saveDeclarations() {
+        // ... (Giữ nguyên)
         const ycxEl = document.getElementById('declaration-ycx');
         const ycxGopEl = document.getElementById('declaration-ycx-gop');
         const heSoEl = document.getElementById('declaration-heso');
@@ -1396,6 +1444,7 @@ const app = {
     },
 
     saveHelpContent() {
+        // ... (Giữ nguyên)
         const dataEl = document.getElementById('edit-help-data');
         const luykeEl = document.getElementById('edit-help-luyke');
         const sknvEl = document.getElementById('edit-help-sknv');
@@ -1410,6 +1459,7 @@ const app = {
     },
 
     async handleSubmitFeedback() {
+        // ... (Giữ nguyên)
         const textarea = document.getElementById('feedback-textarea');
         if(textarea){
             const success = await firebase.submitFeedback(textarea.value.trim());
@@ -1418,6 +1468,7 @@ const app = {
     },
 
     async handleFeedbackReplyActions(e, feedbackItem) {
+        // ... (Giữ nguyên)
         const docId = feedbackItem.dataset.id;
         const replyForm = feedbackItem.querySelector('.reply-form-container');
         if (!replyForm) return;
@@ -1433,6 +1484,7 @@ const app = {
     },
 
     _getFilteredReportData(sectionId) {
+        // ... (Giữ nguyên)
         const masterData = appState.masterReportData[sectionId] || [];
         if (masterData.length === 0) return [];
         const warehouseEl = document.getElementById(`${sectionId}-filter-warehouse`);
@@ -1448,6 +1500,7 @@ const app = {
     },
 
     async prepareAndShowComposer(sectionId) {
+        // ... (Giữ nguyên)
         const modal = document.getElementById('composer-modal');
         if (!modal) return;
         modal.dataset.sectionId = sectionId;
@@ -1500,6 +1553,7 @@ const app = {
     },
 
     handleComposerActions(e, modal) {
+        // ... (Giữ nguyên)
         const sectionId = modal.dataset.sectionId;
         const activeContextPane = modal.querySelector('.composer__context-pane:not(.hidden)');
         const activeTextarea = activeContextPane ? activeContextPane.querySelector('textarea') : null;
@@ -1554,6 +1608,7 @@ const app = {
     },
 
     async loadAndDisplayQrCode() {
+        // ... (Giữ nguyên)
          try {
             const qrUrl = await firebase.getQrCodeDownloadURL();
             const imgEl = document.getElementById('header-qr-image');

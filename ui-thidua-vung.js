@@ -1,3 +1,5 @@
+// Version 1.7 - Fix syntax error (remove semicolon after arrow function)
+// Version 1.6 - Add conditional coloring for 'Tỷ lệ đạt' summary value
 // Version 1.5 - Display 'Lay Top' data and finalize UI
 // MODULE: UI THI ĐUA VÙNG
 // Chứa các hàm render giao diện cho tab "Thi đua vùng".
@@ -17,10 +19,12 @@ export const uiThiDuaVung = {
 
         // --- Helper function to find correct key regardless of case ---
         const findKey = (item, keyword) => {
-            if (!item) return keyword;
-            return Object.keys(item).find(k => k.trim().toLowerCase().includes(keyword.toLowerCase())) || keyword;
-        };
-        
+            if (!item) return keyword; // Return keyword if item is null/undefined
+            // Find the key in the item that includes the keyword (case-insensitive)
+            return Object.keys(item).find(k => k.trim().toLowerCase().includes(keyword.toLowerCase())) || keyword; // Return keyword if no match found
+        } // <<< *** ĐÃ XÓA DẤU ; Ở ĐÂY ***
+
+        // Find the first item with data to reliably get keys
         const firstItem = coGiai[0] || sapCoGiai[0] || tiemNang[0] || canCoGangNhieu[0];
         const keyMap = {
             sieuThi: findKey(summary, 'siêu thị'),
@@ -74,7 +78,7 @@ export const uiThiDuaVung = {
             let html = `<div class="tdv-row">
                 <h3 class="tdv-row-title tdv-row-title--effort">Nhóm còn lại (${potentialItems.length + majorItems.length})</h3>
                 <div class="tdv-row-body tdv-row-body--effort">`;
-            
+
             if (potentialItems.length > 0) {
                 html += `<div class="tdv-effort-subgroup">
                     <h4 class="tdv-effort-subgroup__title tdv-effort-subgroup__title--potential">Tiềm năng (cách 21-40 hạng)</h4>
@@ -96,9 +100,14 @@ export const uiThiDuaVung = {
             html += `</div></div>`;
             return html;
         };
-        
+
         const totalSoonPrize = sapCoGiai.reduce((sum, item) => sum + (item.thuongTiemNang || 0), 0);
         const soonPrizeTitleText = totalSoonPrize > 0 ? ` - DK: ${uiComponents.formatNumber(totalSoonPrize)}đ` : '';
+
+        // *** START: Thêm logic xác định class màu cho Tỷ lệ đạt ***
+        const tyLeDatValue = summary[keyMap.tyLeDat] || 0; // Lấy giá trị tỷ lệ
+        const tyLeDatClass = tyLeDatValue >= 0.6 ? 'tdv-tyledat-high' : 'tdv-tyledat-low'; // Xác định class
+        // *** END: Thêm logic ***
 
         const html = `
             <div class="tdv-infographic-card">
@@ -120,7 +129,9 @@ export const uiThiDuaVung = {
                         <span class="tdv-summary-label">Ngành >100%</span>
                     </div>
                     <div class="tdv-summary-item">
-                        <span class="tdv-summary-value">${uiComponents.formatPercentage(summary[keyMap.tyLeDat])}</span>
+                 
+                        <span class="tdv-summary-value ${tyLeDatClass}">${uiComponents.formatPercentage(tyLeDatValue)}</span>
+                    
                         <span class="tdv-summary-label">Tỷ lệ đạt</span>
                     </div>
                      <div class="tdv-summary-item">
@@ -138,12 +149,12 @@ export const uiThiDuaVung = {
                         <h3 class="tdv-row-title tdv-row-title--prize">Ngành hàng có giải (${coGiai.length})</h3>
                         <div class="tdv-row-body">${coGiai.map(renderCoGiaiItem).join('') || '<p class="text-xs text-gray-500">Không có.</p>'}</div>
                     </div>
-                    
+
                     <div class="tdv-row">
                         <h3 class="tdv-row-title tdv-row-title--soon-prize">Sắp có giải (${sapCoGiai.length})<span class="tdv-row-subtitle">${soonPrizeTitleText}</span></h3>
                         <div class="tdv-row-body">${sapCoGiai.map(renderSapCoGiaiItem).join('') || '<p class="text-xs text-gray-500">Không có.</p>'}</div>
                     </div>
-                    
+
                     ${renderNeedsEffortRow(tiemNang, canCoGangNhieu)}
                 </div>
             </div>
