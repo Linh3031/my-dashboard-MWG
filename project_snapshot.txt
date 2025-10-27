@@ -669,6 +669,18 @@ export const auth = {
 
 --- START FILE: ./changelog.json ---
 [
+     {
+    "version": "3.6",
+    "date": "27/10/2025",
+    "notes": [
+      "Nâng cấp tính nâng đồng bộ cloud theo mã kho:",
+      "- Cần cập nhập E-mail(không cần đăng nhập) vàchọn mã kho trước khi up file dữ liệu lên, hệ thống sẽ tự đồng bộ lên cloud",
+      "- QL/TC cùng siêu thị sẽ thấy được dữ liệu dùng chung như YCX lũy kế,giờ công,thưởng nóng...",
+      "- Dữ liệu cũng sẽ được đồng bộ khi xem giữa điện thoại, laptop",
+      "Sửa lỗi không tính bảo hiểm vào tỷ lệ quy đổi",
+      "Khôi phục tính năng xử lý file thi đua vùng TNB"
+    ]
+  },  
    {
     "version": "3.5",
     "date": "23/10/2025",
@@ -1726,6 +1738,9 @@ createSnapshot();
 --- END FILE: ./create_snapshot.js ---
 
 --- START FILE: ./dashboard.css ---
+/* Version 6.10 - Fix CSS selector for Thi đua vùng 4-column layout */
+/* Version 6.9 - Fix missing curly brace for .modal__container--large */
+/* Version 6.8 - Adjust Thi đua vùng layout (4 cols) & summary colors */
 /* Version 6.7 - Add login modal styles to v6.6 base */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
@@ -2004,8 +2019,7 @@ color: #3730a3; }
 .header-highlight-special { background-color: hsl(25, 90%, var(--header-lightness)) !important; }
 .competition-row-below-100 td { background-color: #fee2e2; color: #991b1b; }
 
-.header-highlight { background-color: hsl(50, 95%,
-var(--special-header-lightness)) !important; }
+.header-highlight { background-color: hsl(50, 95%, var(--special-header-lightness)) !important; }
 
 #dtnv-realtime-employee-selector-container .choices__inner { min-width: 300px; }
 #dtnv-realtime-employee-selector-container .choices__list--single { min-width: 300px; }
@@ -2066,12 +2080,13 @@ background-color: #ede9fe; color: #5b21b6; border-color: #c4b5fd; }
 .modal { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; }
 .modal.hidden { display: none; }
 .modal__overlay { position: absolute; inset: 0; background-color: rgba(17, 24, 39, 0.6); backdrop-filter: blur(4px); cursor: pointer; }
-.modal__container { position: relative; z-index: 1001; background-color: white; border-radius: 0.75rem; box-shadow: 0 20px
-25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); width: 90%; max-width: 600px; max-height: 90vh; display: flex; flex-direction: column; }
+.modal__container { position: relative; z-index: 1001; background-color: white; border-radius: 0.75rem; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); width: 90%; max-width: 600px; max-height: 90vh; display: flex; flex-direction: column; }
 
 #force-update-modal .modal__overlay { cursor: not-allowed; }
 
-.modal__container--large { max-width: 900px; }
+.modal__container--large {
+    max-width: 900px;
+}
 .modal__header { padding: 1rem 1.5rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
 .modal__title { font-size: 1.25rem; font-weight: 600; color: #1f2937; }
 .modal__close-btn { font-size: 1.75rem; line-height: 1; color: #6b7280; background: none; border: none; cursor: pointer; }
@@ -2101,7 +2116,8 @@ display: none; }
 .composer__tag-group-title { font-weight: 600; font-size: 0.875em; color: #4b5563; margin-bottom: 0.75rem; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.5rem; }
 .composer__tag-btn { background-color: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; border-radius: 9999px; padding: 0.25rem 0.75rem; font-size: 0.8rem; font-weight: 500; cursor: pointer; margin: 0.25rem; }
 .composer__icon-btn { background-color: #f3f4f6; color: #1f2937; border: 1px solid #d1d5db; border-radius: 9999px; padding: 0.25rem 0.75rem; font-size: 1.1rem; font-weight: 500; cursor: pointer; margin: 0.25rem; line-height: 1; }
-.composer__filter-group { margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #e5e7eb; }
+.composer__filter-group { margin-bottom: 1rem;
+padding-bottom: 1rem; border-bottom: 1px solid #e5e7eb; }
 .composer__select { width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; background-color: white; }
 @media (min-width: 768px) { .composer { flex-direction: row; } .composer__tags { width: 350px; flex-shrink: 0; border-left: 1px
 solid #e5e7eb; padding-left: 1.5rem; } }
@@ -2184,8 +2200,19 @@ details[open] > summary
 @media (min-width: 768px) { .tdv-summary-grid { grid-template-columns: repeat(5, 1fr); } }
 .tdv-summary-item { background-color: #ffffff; border-radius: 8px;
 padding: 1rem; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e5e7eb; }
-.tdv-summary-value { display: block; font-size: 1.75em; font-weight: 700; color: #0a9396; }
+/* === START: Sửa màu và font-weight cho .tdv-summary-value === */
+.tdv-summary-value {
+    display: block;
+    font-size: 1.75em;
+    font-weight: 800; /* Tăng độ đậm */
+    color: #005f73; /* Đổi màu xanh đậm hơn */
+}
+/* === END: Sửa màu === */
 .tdv-summary-label { display: block; font-size: 0.9em; color: #4a5568; margin-top: 0.25rem; }
+/* === START: Thêm class màu cho tỷ lệ đạt === */
+.tdv-tyledat-high { color: #2563eb !important; } /* blue-600 */
+.tdv-tyledat-low { color: #dc2626 !important; } /* red-600 */
+/* === END: Thêm class màu === */
 
 .tdv-row { background-color: #fdfdfd; border-radius: 8px; padding: 1rem; border: 1px solid #dee2e6; }
 .tdv-row-title { font-size: 1.2em; font-weight: bold; padding-bottom: 0.75rem; margin-bottom: 1rem; border-bottom: 2px solid; line-height: 1.3; }
@@ -2194,12 +2221,30 @@ padding: 1rem; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); borde
 .tdv-row-title--effort { border-color: #6c757d; color: #6c757d; }
 .tdv-row-subtitle { font-size: 0.8em; font-weight: normal; color: #d90429; }
 
-#subtab-thidua-vung .tdv-row-body { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
+/* === START: Sửa layout 4 cột cho Thi đua vùng (SỬA LẠI SELECTOR) === */
+/* *** FIX: Corrected CSS selector to use #subtab-luyke-thidua-vung *** */
+#subtab-luyke-thidua-vung .tdv-row-body {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr); /* 1 cột cho mobile */
+    gap: 1rem;
+}
+@media (min-width: 768px) { /* 2 cột cho tablet */
+    #subtab-luyke-thidua-vung .tdv-row-body {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+@media (min-width: 1280px) { /* 4 cột cho desktop lớn */
+    #subtab-luyke-thidua-vung .tdv-row-body {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+/* === END: Sửa layout === */
 .tdv-row-body--effort { display: block; }
 
 .tdv-item-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 6px;
 padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden; }
-.tdv-item-card__title { font-weight: bold; margin: 0 0 10px 0; color: #333; }
+.tdv-item-card__title { font-weight: bold;
+margin: 0 0 10px 0; color: #333; }
 .tdv-progress-bar-container {
     width: 100%;
     background-color: #e9ecef;
@@ -2495,7 +2540,8 @@ solid #2563eb;
     background-color: #f9fafb;
 }
 .customer-accordion-luyke .customer-name-small {
-    font-weight: 600; font-size: 0.9rem; color: #1f2937; flex-grow:
+    font-weight: 600;
+font-size: 0.9rem; color: #1f2937; flex-grow:
 1; min-width: 120px;
 }
 .customer-accordion-luyke .order-metrics {
@@ -2531,7 +2577,7 @@ solid #2563eb;
 @media (min-width: 768px) { /* 2 columns for tablets */
     .sknv-summary-grid {
         grid-template-columns: repeat(2, 1fr);
-    }
+}
 }
 
 @media (min-width: 1280px) { /* 4 columns for large desktops */
@@ -4215,7 +4261,7 @@ export function initializeEventListeners(mainAppController) {
                                 </button>
                                 <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-luyke-thidua-vung" data-title="ThiDuaVung">
                                     <i data-feather="map"></i>
-                                    <span>Thi đua Vùng</span>
+                                    <span>Thi Đua Vùng TNB</span>
                                 </button>
                             </nav>
                              <div class="flex items-center gap-x-2">
@@ -4899,18 +4945,12 @@ export function initializeEventListeners(mainAppController) {
             }
         });
     </script>
-    <script type="module" src="./main.js?v=4.0"></script> </body>
+    <script type="module" src="./main.js?v=3.6"></script> </body>
 </html>
 --- END FILE: ./index.html ---
 
 --- START FILE: ./main.js ---
 // Version 4.37 - Add EXTREMELY granular logging and try/catch before sync check
-// Version 4.36 - Add even more detailed logging around the cloud sync check block
-// Version 4.35 - Add MORE specific logging for '-thangtruoc' files sync check
-// Version 4.34 - Add specific logging for '-thangtruoc' files before cloud sync check
-// Version 4.33 - Fix syntax errors introduced in v4.32 during status function call updates
-// Version 4.32 - Update calls to status functions with metadata/count for simplified messages
-// Version 4.31 - Fix parameter error in _handlePastedDataSync, fix sync condition for prev month files
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -7957,6 +7997,18 @@ export const auth = {
 
 --- START FILE: ./changelog.json ---
 [
+     {
+    "version": "3.6",
+    "date": "27/10/2025",
+    "notes": [
+      "Nâng cấp tính nâng đồng bộ cloud theo mã kho:",
+      "- Cần cập nhập E-mail(không cần đăng nhập) vàchọn mã kho trước khi up file dữ liệu lên, hệ thống sẽ tự đồng bộ lên cloud",
+      "- QL/TC cùng siêu thị sẽ thấy được dữ liệu dùng chung như YCX lũy kế,giờ công,thưởng nóng...",
+      "- Dữ liệu cũng sẽ được đồng bộ khi xem giữa điện thoại, laptop",
+      "Sửa lỗi không tính bảo hiểm vào tỷ lệ quy đổi",
+      "Khôi phục tính năng xử lý file thi đua vùng TNB"
+    ]
+  },  
    {
     "version": "3.5",
     "date": "23/10/2025",
@@ -9014,6 +9066,9 @@ createSnapshot();
 --- END FILE: ./create_snapshot.js ---
 
 --- START FILE: ./dashboard.css ---
+/* Version 6.10 - Fix CSS selector for Thi đua vùng 4-column layout */
+/* Version 6.9 - Fix missing curly brace for .modal__container--large */
+/* Version 6.8 - Adjust Thi đua vùng layout (4 cols) & summary colors */
 /* Version 6.7 - Add login modal styles to v6.6 base */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
@@ -9292,8 +9347,7 @@ color: #3730a3; }
 .header-highlight-special { background-color: hsl(25, 90%, var(--header-lightness)) !important; }
 .competition-row-below-100 td { background-color: #fee2e2; color: #991b1b; }
 
-.header-highlight { background-color: hsl(50, 95%,
-var(--special-header-lightness)) !important; }
+.header-highlight { background-color: hsl(50, 95%, var(--special-header-lightness)) !important; }
 
 #dtnv-realtime-employee-selector-container .choices__inner { min-width: 300px; }
 #dtnv-realtime-employee-selector-container .choices__list--single { min-width: 300px; }
@@ -9354,12 +9408,13 @@ background-color: #ede9fe; color: #5b21b6; border-color: #c4b5fd; }
 .modal { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; }
 .modal.hidden { display: none; }
 .modal__overlay { position: absolute; inset: 0; background-color: rgba(17, 24, 39, 0.6); backdrop-filter: blur(4px); cursor: pointer; }
-.modal__container { position: relative; z-index: 1001; background-color: white; border-radius: 0.75rem; box-shadow: 0 20px
-25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); width: 90%; max-width: 600px; max-height: 90vh; display: flex; flex-direction: column; }
+.modal__container { position: relative; z-index: 1001; background-color: white; border-radius: 0.75rem; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); width: 90%; max-width: 600px; max-height: 90vh; display: flex; flex-direction: column; }
 
 #force-update-modal .modal__overlay { cursor: not-allowed; }
 
-.modal__container--large { max-width: 900px; }
+.modal__container--large {
+    max-width: 900px;
+}
 .modal__header { padding: 1rem 1.5rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
 .modal__title { font-size: 1.25rem; font-weight: 600; color: #1f2937; }
 .modal__close-btn { font-size: 1.75rem; line-height: 1; color: #6b7280; background: none; border: none; cursor: pointer; }
@@ -9389,7 +9444,8 @@ display: none; }
 .composer__tag-group-title { font-weight: 600; font-size: 0.875em; color: #4b5563; margin-bottom: 0.75rem; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.5rem; }
 .composer__tag-btn { background-color: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; border-radius: 9999px; padding: 0.25rem 0.75rem; font-size: 0.8rem; font-weight: 500; cursor: pointer; margin: 0.25rem; }
 .composer__icon-btn { background-color: #f3f4f6; color: #1f2937; border: 1px solid #d1d5db; border-radius: 9999px; padding: 0.25rem 0.75rem; font-size: 1.1rem; font-weight: 500; cursor: pointer; margin: 0.25rem; line-height: 1; }
-.composer__filter-group { margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #e5e7eb; }
+.composer__filter-group { margin-bottom: 1rem;
+padding-bottom: 1rem; border-bottom: 1px solid #e5e7eb; }
 .composer__select { width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; background-color: white; }
 @media (min-width: 768px) { .composer { flex-direction: row; } .composer__tags { width: 350px; flex-shrink: 0; border-left: 1px
 solid #e5e7eb; padding-left: 1.5rem; } }
@@ -9472,8 +9528,19 @@ details[open] > summary
 @media (min-width: 768px) { .tdv-summary-grid { grid-template-columns: repeat(5, 1fr); } }
 .tdv-summary-item { background-color: #ffffff; border-radius: 8px;
 padding: 1rem; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e5e7eb; }
-.tdv-summary-value { display: block; font-size: 1.75em; font-weight: 700; color: #0a9396; }
+/* === START: Sửa màu và font-weight cho .tdv-summary-value === */
+.tdv-summary-value {
+    display: block;
+    font-size: 1.75em;
+    font-weight: 800; /* Tăng độ đậm */
+    color: #005f73; /* Đổi màu xanh đậm hơn */
+}
+/* === END: Sửa màu === */
 .tdv-summary-label { display: block; font-size: 0.9em; color: #4a5568; margin-top: 0.25rem; }
+/* === START: Thêm class màu cho tỷ lệ đạt === */
+.tdv-tyledat-high { color: #2563eb !important; } /* blue-600 */
+.tdv-tyledat-low { color: #dc2626 !important; } /* red-600 */
+/* === END: Thêm class màu === */
 
 .tdv-row { background-color: #fdfdfd; border-radius: 8px; padding: 1rem; border: 1px solid #dee2e6; }
 .tdv-row-title { font-size: 1.2em; font-weight: bold; padding-bottom: 0.75rem; margin-bottom: 1rem; border-bottom: 2px solid; line-height: 1.3; }
@@ -9482,12 +9549,30 @@ padding: 1rem; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); borde
 .tdv-row-title--effort { border-color: #6c757d; color: #6c757d; }
 .tdv-row-subtitle { font-size: 0.8em; font-weight: normal; color: #d90429; }
 
-#subtab-thidua-vung .tdv-row-body { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
+/* === START: Sửa layout 4 cột cho Thi đua vùng (SỬA LẠI SELECTOR) === */
+/* *** FIX: Corrected CSS selector to use #subtab-luyke-thidua-vung *** */
+#subtab-luyke-thidua-vung .tdv-row-body {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr); /* 1 cột cho mobile */
+    gap: 1rem;
+}
+@media (min-width: 768px) { /* 2 cột cho tablet */
+    #subtab-luyke-thidua-vung .tdv-row-body {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+@media (min-width: 1280px) { /* 4 cột cho desktop lớn */
+    #subtab-luyke-thidua-vung .tdv-row-body {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+/* === END: Sửa layout === */
 .tdv-row-body--effort { display: block; }
 
 .tdv-item-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 6px;
 padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden; }
-.tdv-item-card__title { font-weight: bold; margin: 0 0 10px 0; color: #333; }
+.tdv-item-card__title { font-weight: bold;
+margin: 0 0 10px 0; color: #333; }
 .tdv-progress-bar-container {
     width: 100%;
     background-color: #e9ecef;
@@ -9783,7 +9868,8 @@ solid #2563eb;
     background-color: #f9fafb;
 }
 .customer-accordion-luyke .customer-name-small {
-    font-weight: 600; font-size: 0.9rem; color: #1f2937; flex-grow:
+    font-weight: 600;
+font-size: 0.9rem; color: #1f2937; flex-grow:
 1; min-width: 120px;
 }
 .customer-accordion-luyke .order-metrics {
@@ -9819,7 +9905,7 @@ solid #2563eb;
 @media (min-width: 768px) { /* 2 columns for tablets */
     .sknv-summary-grid {
         grid-template-columns: repeat(2, 1fr);
-    }
+}
 }
 
 @media (min-width: 1280px) { /* 4 columns for large desktops */
@@ -11503,7 +11589,7 @@ export function initializeEventListeners(mainAppController) {
                                 </button>
                                 <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-luyke-thidua-vung" data-title="ThiDuaVung">
                                     <i data-feather="map"></i>
-                                    <span>Thi đua Vùng</span>
+                                    <span>Thi Đua Vùng TNB</span>
                                 </button>
                             </nav>
                              <div class="flex items-center gap-x-2">
@@ -12187,18 +12273,12 @@ export function initializeEventListeners(mainAppController) {
             }
         });
     </script>
-    <script type="module" src="./main.js?v=4.0"></script> </body>
+    <script type="module" src="./main.js?v=3.6"></script> </body>
 </html>
 --- END FILE: ./index.html ---
 
 --- START FILE: ./main.js ---
 // Version 4.37 - Add EXTREMELY granular logging and try/catch before sync check
-// Version 4.36 - Add even more detailed logging around the cloud sync check block
-// Version 4.35 - Add MORE specific logging for '-thangtruoc' files sync check
-// Version 4.34 - Add specific logging for '-thangtruoc' files before cloud sync check
-// Version 4.33 - Fix syntax errors introduced in v4.32 during status function call updates
-// Version 4.32 - Update calls to status functions with metadata/count for simplified messages
-// Version 4.31 - Fix parameter error in _handlePastedDataSync, fix sync condition for prev month files
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -19938,6 +20018,8 @@ export const uiSknv = {
 --- END FILE: ./ui-sknv.js ---
 
 --- START FILE: ./ui-thidua-vung.js ---
+// Version 1.7 - Fix syntax error (remove semicolon after arrow function)
+// Version 1.6 - Add conditional coloring for 'Tỷ lệ đạt' summary value
 // Version 1.5 - Display 'Lay Top' data and finalize UI
 // MODULE: UI THI ĐUA VÙNG
 // Chứa các hàm render giao diện cho tab "Thi đua vùng".
@@ -19957,10 +20039,12 @@ export const uiThiDuaVung = {
 
         // --- Helper function to find correct key regardless of case ---
         const findKey = (item, keyword) => {
-            if (!item) return keyword;
-            return Object.keys(item).find(k => k.trim().toLowerCase().includes(keyword.toLowerCase())) || keyword;
-        };
-        
+            if (!item) return keyword; // Return keyword if item is null/undefined
+            // Find the key in the item that includes the keyword (case-insensitive)
+            return Object.keys(item).find(k => k.trim().toLowerCase().includes(keyword.toLowerCase())) || keyword; // Return keyword if no match found
+        } // <<< *** ĐÃ XÓA DẤU ; Ở ĐÂY ***
+
+        // Find the first item with data to reliably get keys
         const firstItem = coGiai[0] || sapCoGiai[0] || tiemNang[0] || canCoGangNhieu[0];
         const keyMap = {
             sieuThi: findKey(summary, 'siêu thị'),
@@ -20014,7 +20098,7 @@ export const uiThiDuaVung = {
             let html = `<div class="tdv-row">
                 <h3 class="tdv-row-title tdv-row-title--effort">Nhóm còn lại (${potentialItems.length + majorItems.length})</h3>
                 <div class="tdv-row-body tdv-row-body--effort">`;
-            
+
             if (potentialItems.length > 0) {
                 html += `<div class="tdv-effort-subgroup">
                     <h4 class="tdv-effort-subgroup__title tdv-effort-subgroup__title--potential">Tiềm năng (cách 21-40 hạng)</h4>
@@ -20036,9 +20120,14 @@ export const uiThiDuaVung = {
             html += `</div></div>`;
             return html;
         };
-        
+
         const totalSoonPrize = sapCoGiai.reduce((sum, item) => sum + (item.thuongTiemNang || 0), 0);
         const soonPrizeTitleText = totalSoonPrize > 0 ? ` - DK: ${uiComponents.formatNumber(totalSoonPrize)}đ` : '';
+
+        // *** START: Thêm logic xác định class màu cho Tỷ lệ đạt ***
+        const tyLeDatValue = summary[keyMap.tyLeDat] || 0; // Lấy giá trị tỷ lệ
+        const tyLeDatClass = tyLeDatValue >= 0.6 ? 'tdv-tyledat-high' : 'tdv-tyledat-low'; // Xác định class
+        // *** END: Thêm logic ***
 
         const html = `
             <div class="tdv-infographic-card">
@@ -20060,7 +20149,9 @@ export const uiThiDuaVung = {
                         <span class="tdv-summary-label">Ngành >100%</span>
                     </div>
                     <div class="tdv-summary-item">
-                        <span class="tdv-summary-value">${uiComponents.formatPercentage(summary[keyMap.tyLeDat])}</span>
+                 
+                        <span class="tdv-summary-value ${tyLeDatClass}">${uiComponents.formatPercentage(tyLeDatValue)}</span>
+                    
                         <span class="tdv-summary-label">Tỷ lệ đạt</span>
                     </div>
                      <div class="tdv-summary-item">
@@ -20078,12 +20169,12 @@ export const uiThiDuaVung = {
                         <h3 class="tdv-row-title tdv-row-title--prize">Ngành hàng có giải (${coGiai.length})</h3>
                         <div class="tdv-row-body">${coGiai.map(renderCoGiaiItem).join('') || '<p class="text-xs text-gray-500">Không có.</p>'}</div>
                     </div>
-                    
+
                     <div class="tdv-row">
                         <h3 class="tdv-row-title tdv-row-title--soon-prize">Sắp có giải (${sapCoGiai.length})<span class="tdv-row-subtitle">${soonPrizeTitleText}</span></h3>
                         <div class="tdv-row-body">${sapCoGiai.map(renderSapCoGiaiItem).join('') || '<p class="text-xs text-gray-500">Không có.</p>'}</div>
                     </div>
-                    
+
                     ${renderNeedsEffortRow(tiemNang, canCoGangNhieu)}
                 </div>
             </div>
