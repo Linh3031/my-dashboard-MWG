@@ -1,3 +1,6 @@
+// Version 3.19 - Remove unused/incorrect elementPrefix variable definition
+// Version 3.18 - Fix syntax error (remove extraneous semicolon) in formatPercentage
+// Version 3.17 - Simplify status messages in updateFileStatus and updatePasteStatus
 // Version 3.16 - Fix missing semicolon in formatPercentage
 // Version 3.15 - Update status functions to show row/employee count
 // Version 3.14 - Modify updateFileStatus to include download button
@@ -33,7 +36,7 @@ export const uiComponents = {
                  <div class="p-3 border rounded-lg bg-white flex justify-between items-center shadow-sm">
                       <div>
                           <div class="flex items-center gap-x-2">
-                              <p class="font-bold text-gray-800">${config.name}</p>
+                               <p class="font-bold text-gray-800">${config.name}</p>
                           </div>
                           <div class="text-xs text-gray-500 mt-1 space-y-1">
                               <p><strong>Hãng:</strong> <span class="font-semibold text-blue-600">${(config.brands || []).join(', ')}</span></p>
@@ -42,7 +45,7 @@ export const uiComponents = {
                       </div>
                       <div class="flex items-center gap-x-2 flex-shrink-0">
                          <button class="edit-competition-btn p-2 rounded-md hover:bg-gray-200 text-gray-600" data-index="${index}" title="Sửa chương trình">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                           </button>
                          <button class="delete-competition-btn p-2 rounded-md hover:bg-red-100 text-red-600" data-index="${index}" title="Xóa chương trình">
                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
@@ -88,7 +91,7 @@ export const uiComponents = {
          };
 
          if (supermarketReport && supermarketReport.qdc) {
-             const qdcItems = Object.values(supermarketReport.qdc)
+              const qdcItems = Object.values(supermarketReport.qdc)
                  .filter(item => item.sl > 0)
                  .sort((a,b) => b.dtqd - a.dtqd);
              qdcItems.forEach(item => {
@@ -127,12 +130,12 @@ export const uiComponents = {
         const detailContainer = document.getElementById(detailContainerId);
         if (detailContainer) {
              detailContainer.innerHTML = '';
-            detailContainer.classList.add('hidden');
+             detailContainer.classList.add('hidden');
         }
         container.classList.remove('hidden');
 
         if (!reportData || reportData.length === 0) {
-            container.innerHTML = '<p class="text-gray-500">Không có dữ liệu doanh thu cho lựa chọn này.</p>';
+             container.innerHTML = '<p class="text-gray-500">Không có dữ liệu doanh thu cho lựa chọn này.</p>';
             return;
         }
         let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden" data-capture-group="1">
@@ -144,8 +147,8 @@ export const uiComponents = {
         const groupedByDept = {};
         reportData.forEach(item => {
             const dept = item.boPhan;
-            if (!groupedByDept[dept]) groupedByDept[dept] = [];
-            groupedByDept[dept].push(item);
+             if (!groupedByDept[dept]) groupedByDept[dept] = [];
+             groupedByDept[dept].push(item);
         });
 
         const departmentOrder = utils.getSortedDepartmentList(reportData);
@@ -162,8 +165,8 @@ export const uiComponents = {
         const sortState = appState.sortState[sortStateKey] || { key: 'doanhThu', direction: 'desc' };
         const { key, direction } = sortState;
         const sortedData = [...data].sort((a, b) => {
-            const valA = a[key] || 0; const valB = b[key] || 0;
-            return direction === 'asc' ? valA - valB : valB - valA;
+             const valA = a[key] || 0; const valB = b[key] || 0;
+             return direction === 'asc' ? valA - valB : valB - valA;
         });
 
         const totals = data.reduce((acc, item) => {
@@ -198,14 +201,14 @@ export const uiComponents = {
         let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="7">
                  <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                      <tr>
-                                <th class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('doanhThu')} text-right" data-sort="doanhThu">Doanh Thu <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('doanhThuQuyDoi')} text-right" data-sort="doanhThuQuyDoi">Doanh Thu QĐ <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('hieuQuaQuyDoi')} text-right" data-sort="hieuQuaQuyDoi">% QĐ <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('doanhThuTraGop')} text-right" data-sort="doanhThuTraGop">DT trả chậm <span class="sort-indicator"></span></th>
-                                 <th class="${headerClass('tyLeTraCham')} text-right" data-sort="tyLeTraCham">% trả chậm <span class="sort-indicator"></span></th>
-                                 <th class="${headerClass('doanhThuChuaXuat')} text-right" data-sort="doanhThuChuaXuat">DT Chưa Xuất <span class="sort-indicator"></span></th>
-                            </tr>
+                             <th class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên <span class="sort-indicator"></span></th>
+                             <th class="${headerClass('doanhThu')} text-right" data-sort="doanhThu">Doanh Thu <span class="sort-indicator"></span></th>
+                             <th class="${headerClass('doanhThuQuyDoi')} text-right" data-sort="doanhThuQuyDoi">Doanh Thu QĐ <span class="sort-indicator"></span></th>
+                             <th class="${headerClass('hieuQuaQuyDoi')} text-right" data-sort="hieuQuaQuyDoi">% QĐ <span class="sort-indicator"></span></th>
+                             <th class="${headerClass('doanhThuTraGop')} text-right" data-sort="doanhThuTraGop">DT trả chậm <span class="sort-indicator"></span></th>
+                              <th class="${headerClass('tyLeTraCham')} text-right" data-sort="tyLeTraCham">% trả chậm <span class="sort-indicator"></span></th>
+                              <th class="${headerClass('doanhThuChuaXuat')} text-right" data-sort="doanhThuChuaXuat">DT Chưa Xuất <span class="sort-indicator"></span></th>
+                          </tr>
                  </thead><tbody>`;
         sortedData.forEach(item => {
             const { mucTieu } = item;
@@ -222,7 +225,7 @@ export const uiComponents = {
                      <a href="#">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</a>
                     </td>
                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThu)}</td>
-                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThuQuyDoi)}</td>
+                      <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThuQuyDoi)}</td>
                     <td class="px-4 py-2 text-right font-bold ${qdClass}">${uiComponents.formatPercentage(item.hieuQuaQuyDoi)}</td>
                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThuTraGop)}</td>
                      <td class="px-4 py-2 text-right font-bold ${tcClass}">${uiComponents.formatPercentage(item.tyLeTraCham)}</td>
@@ -230,13 +233,13 @@ export const uiComponents = {
         });
          tableHTML += `</tbody><tfoot class="table-footer font-bold"><tr>
                      <td class="px-4 py-2">Tổng</td>
-                    <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThu)}</td>
+                     <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThu)}</td>
                     <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuQuyDoi)}</td>
                      <td class="px-4 py-2 text-right">${uiComponents.formatPercentage(totals.hieuQuaQuyDoi)}</td>
                     <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuTraGop)}</td>
                      <td class="px-4 py-2 text-right">${uiComponents.formatPercentage(totals.tyLeTraCham)}</td>
                     <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuChuaXuat)}</td>
-                 </tr></tfoot></table></div></div>`;
+                  </tr></tfoot></table></div></div>`;
         return tableHTML;
     },
     displayEmployeeEfficiencyReport: (reportData, containerId, sortStateKey) => {
@@ -253,7 +256,7 @@ export const uiComponents = {
          const columnTogglesHTML = `
             <div id="efficiency-column-toggles" class="p-3 border-b border-gray-200 flex flex-wrap items-center gap-x-2 gap-y-2">
                  <span class="text-sm font-semibold mr-2 text-gray-700 non-draggable">Tùy chỉnh cột:</span>
-                 ${columnSettings.map(col => `
+                  ${columnSettings.map(col => `
                      <button
                          class="column-toggle-btn draggable-tag flex items-center ${col.visible ? 'active' : ''}"
                          data-column-id="${col.id}">
@@ -265,11 +268,11 @@ export const uiComponents = {
          `;
 
          let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-                             ${columnTogglesHTML}
+                          ${columnTogglesHTML}
                              <div data-capture-group="efficiency-table">
                                  <div class="p-4 header-group-3 text-gray-800">
                                      <h3 class="text-xl font-bold uppercase">HIỆU QUẢ KHAI THÁC THEO NHÂN VIÊN</h3>
-                                     <p class="text-sm italic text-gray-600">(đơn vị tính: Triệu đồng)</p>
+                                      <p class="text-sm italic text-gray-600">(đơn vị tính: Triệu đồng)</p>
                                  </div>`;
 
          const groupedByDept = {};
@@ -282,7 +285,7 @@ export const uiComponents = {
          const departmentOrder = utils.getSortedDepartmentList(reportData);
 
          departmentOrder.forEach(deptName => {
-             if (groupedByDept[deptName]) {
+            if (groupedByDept[deptName]) {
                  finalHTML += uiComponents.renderEfficiencyTableForDepartment(deptName, groupedByDept[deptName], sortStateKey, visibleColumns);
              }
          });
@@ -308,17 +311,17 @@ export const uiComponents = {
         };
 
         const totals = data.reduce((acc, item) => {
-            acc.dtICT += item.dtICT || 0;
-            acc.dtPhuKien += item.dtPhuKien || 0;
-            acc.dtCE += item.dtCE || 0;
-            acc.dtGiaDung += item.dtGiaDung || 0;
-            acc.dtMLN += item.dtMLN || 0;
-            acc.slSmartphone += item.slSmartphone || 0;
-            acc.slSimOnline += item.slSimOnline || 0;
-            acc.slUDDD += item.slUDDD || 0;
-            acc.slBaoHiemDenominator += item.slBaoHiemDenominator || 0;
-            acc.slBaoHiemVAS += item.slBaoHiemVAS || 0;
-            return acc;
+             acc.dtICT += item.dtICT || 0;
+             acc.dtPhuKien += item.dtPhuKien || 0;
+             acc.dtCE += item.dtCE || 0;
+             acc.dtGiaDung += item.dtGiaDung || 0;
+             acc.dtMLN += item.dtMLN || 0;
+             acc.slSmartphone += item.slSmartphone || 0;
+             acc.slSimOnline += item.slSimOnline || 0;
+             acc.slUDDD += item.slUDDD || 0;
+             acc.slBaoHiemDenominator += item.slBaoHiemDenominator || 0;
+             acc.slBaoHiemVAS += item.slBaoHiemVAS || 0;
+             return acc;
         }, { dtICT: 0, dtPhuKien: 0, dtCE: 0, dtGiaDung: 0, dtMLN: 0, slSmartphone: 0, slSimOnline: 0, slUDDD: 0, slBaoHiemDenominator: 0, slBaoHiemVAS: 0 });
 
         totals.pctPhuKien = totals.dtICT > 0 ? totals.dtPhuKien / totals.dtICT : 0;
@@ -332,7 +335,6 @@ export const uiComponents = {
         if (title.includes('Tư Vấn')) titleClass = 'department-header-tv';
         else if (title.includes('Kho')) titleClass = 'department-header-kho';
         else if (title.includes('Trang Trí')) titleClass = 'department-header-tt';
-
         const allHeaders = {
             dtICT: { label: 'DT ICT', class: 'text-right header-group-10' },
             dtPhuKien: { label: 'DT Phụ kiện', class: 'text-right header-group-10' },
@@ -350,7 +352,7 @@ export const uiComponents = {
         const captureColumnCount = 1 + visibleColumns.length;
         let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="${captureColumnCount}">
             <thead class="text-xs text-slate-800 uppercase font-bold">
-                  <tr>
+                 <tr>
                     <th class="${headerClass('hoTen')}" data-sort="hoTen">Tên nhân viên <span class="sort-indicator"></span></th>
                     ${visibleColumns.map(col => `<th class="${headerClass(col.id)} ${allHeaders[col.id]?.class || ''}" data-sort="${col.id}">${allHeaders[col.id]?.label || col.id} <span class="sort-indicator"></span></th>`).join('')}
                  </tr>
@@ -360,11 +362,11 @@ export const uiComponents = {
             const { mucTieu } = item;
             const classMap = {
                  pctPhuKien: (mucTieu && item.pctPhuKien < (mucTieu.phanTramPhuKien / 100)) ? 'cell-performance is-below' : '',
-                pctGiaDung: (mucTieu && item.pctGiaDung < (mucTieu.phanTramGiaDung / 100)) ? 'cell-performance is-below' : '',
-                pctMLN: (mucTieu && item.pctMLN < (mucTieu.phanTramMLN / 100)) ? 'cell-performance is-below' : '',
-                pctSim: (mucTieu && item.pctSim < (mucTieu.phanTramSim / 100)) ? 'cell-performance is-below' : '',
-                pctVAS: (mucTieu && item.pctVAS < (mucTieu.phanTramVAS / 100)) ? 'cell-performance is-below' : '',
-                pctBaoHiem: (mucTieu && item.pctBaoHiem < (mucTieu.phanTramBaoHiem / 100)) ? 'cell-performance is-below' : ''
+                 pctGiaDung: (mucTieu && item.pctGiaDung < (mucTieu.phanTramGiaDung / 100)) ? 'cell-performance is-below' : '',
+                 pctMLN: (mucTieu && item.pctMLN < (mucTieu.phanTramMLN / 100)) ? 'cell-performance is-below' : '',
+                 pctSim: (mucTieu && item.pctSim < (mucTieu.phanTramSim / 100)) ? 'cell-performance is-below' : '',
+                 pctVAS: (mucTieu && item.pctVAS < (mucTieu.phanTramVAS / 100)) ? 'cell-performance is-below' : '',
+                 pctBaoHiem: (mucTieu && item.pctBaoHiem < (mucTieu.phanTramBaoHiem / 100)) ? 'cell-performance is-below' : ''
             };
 
              tableHTML += `<tr class="interactive-row" data-employee-id="${item.maNV}" data-source-tab="sknv">
@@ -386,7 +388,7 @@ export const uiComponents = {
                 ${visibleColumns.map(col => {
                     const value = totals[col.id];
                     const formatter = formatMap[col.id] || formatMap.defaultPercent;
-                    return `<td class="px-4 py-2 text-right">${formatter(value)}</td>`;
+                     return `<td class="px-4 py-2 text-right">${formatter(value)}</td>`;
                 }).join('')}
              </tr>
         </tfoot></table></div></div>`;
@@ -399,7 +401,7 @@ export const uiComponents = {
         const sortedData = [...reportData].sort((a, b) => {
             const valA = a[key] || 0;
             const valB = b[key] || 0;
-            return direction === 'asc' ? valA - valB : valB - valA;
+             return direction === 'asc' ? valA - valB : valB - valA;
         });
 
         const totals = reportData.reduce((acc, item) => {
@@ -430,7 +432,7 @@ export const uiComponents = {
                         <td class="px-2 py-2 font-semibold line-clamp-2 employee-name-cell">
                           <a href="#">${this.getShortEmployeeName(item.hoTen, item.maNV)}</a>
                         </td>
-                        <td class="px-2 py-2 text-right font-bold">${this.formatRevenue(item[mainRevenueKey])}</td>
+                         <td class="px-2 py-2 text-right font-bold">${this.formatRevenue(item[mainRevenueKey])}</td>
                         <td class="px-2 py-2 text-right font-bold">${this.formatNumberOrDash(item[mainQuantityKey])}</td>
                          ${subQuantityKeys.map(subKey => `<td class="px-2 py-2 text-right">${this.formatNumberOrDash(item[subKey])}</td>`).join('')}
                     </tr>
@@ -453,7 +455,7 @@ export const uiComponents = {
                          <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                             <tr>
                                 <th rowspan="2" class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên</th>
-                                <th rowspan="2" class="${headerClass(mainRevenueKey)} text-right" data-sort="${mainRevenueKey}">DT</th>
+                                 <th rowspan="2" class="${headerClass(mainRevenueKey)} text-right" data-sort="${mainRevenueKey}">DT</th>
                                  <th rowspan="2" class="${headerClass(mainQuantityKey)} text-right" data-sort="${mainQuantityKey}">Tổng SL</th>
                                  <th colspan="${subQuantityKeys.length}" class="px-2 py-2 text-center">Chi tiết SL</th>
                             </tr>
@@ -462,12 +464,12 @@ export const uiComponents = {
                          <tbody>
                             ${tableRows.join('')}
                         </tbody>
-                         <tfoot class="table-footer font-bold">
+                          <tfoot class="table-footer font-bold">
                             <tr>
                                  <td class="px-2 py-2">Tổng</td>
                                  <td class="px-2 py-2 text-right">${this.formatRevenue(totals[mainRevenueKey] || 0)}</td>
                                  <td class="px-2 py-2 text-right">${this.formatNumberOrDash(totals[mainQuantityKey] || 0)}</td>
-                                ${subQuantityKeys.map(subKey => `<td class="px-2 py-2 text-right">${this.formatNumberOrDash(totals[subKey] || 0)}</td>`).join('')}
+                                 ${subQuantityKeys.map(subKey => `<td class="px-2 py-2 text-right">${this.formatNumberOrDash(totals[subKey] || 0)}</td>`).join('')}
                             </tr>
                         </tfoot>
                      </table>
@@ -520,8 +522,8 @@ export const uiComponents = {
 
         let currentSelected = appState.selectedWarehouse ? String(appState.selectedWarehouse).trim() : null;
         if (!currentSelected) {
-            const storedValue = localStorage.getItem('selectedWarehouse');
-            currentSelected = storedValue ? String(storedValue).trim() : '';
+             const storedValue = localStorage.getItem('selectedWarehouse');
+             currentSelected = storedValue ? String(storedValue).trim() : '';
         }
         console.log("populateWarehouseSelector: Kho đang chọn (state/local, dạng chuỗi):", currentSelected);
 
@@ -586,16 +588,48 @@ export const uiComponents = {
          if (userCountEl) userCountEl.textContent = statsData?.totalUsers ? uiComponents.formatNumber(statsData.totalUsers) : '0';
      },
 
-    // *** MODIFIED FUNCTION (v3.15) ***
-    updateFileStatus(fileType, fileName, statusText, statusType = 'default', showDownloadButton = false, dataType = '', warehouse = '') {
-         const fileNameSpan = document.getElementById(`file-name-${fileType}`);
-         const fileStatusSpan = document.getElementById(`file-status-${fileType}`);
+    /**
+     * Cập nhật trạng thái hiển thị cho một input file.
+     * @param {string} uiId ID gốc của phần tử (ví dụ: 'ycx').
+     * @param {string} [fileName=''] Tên file.
+     * @param {string} statusText Text trạng thái chính cần hiển thị.
+     * @param {string} [statusType='default'] Loại trạng thái.
+     * @param {boolean} [showDownloadButton=false] Có hiển thị nút tải xuống không.
+     * @param {object} [metadata=null] Metadata từ Firestore (chứa rowCount, updatedAt, updatedBy).
+     * @param {string} [dataType=''] DataType (firestoreKey) cho nút download.
+     * @param {string} [warehouse=''] Mã kho cho nút download.
+     */
+    updateFileStatus(uiId, fileName = '', statusText, statusType = 'default', showDownloadButton = false, metadata = null, dataType = '', warehouse = '') {
+         const correctedUiId = uiId; // Đã sửa lỗi logic ở đây trong version 3.19
+
+         const fileNameSpan = document.getElementById(`file-name-${correctedUiId}`);
+         const fileStatusSpan = document.getElementById(`file-status-${correctedUiId}`);
 
          if (fileNameSpan) fileNameSpan.textContent = fileName || 'Chưa thêm file';
 
          if (fileStatusSpan) {
+             let finalStatusText = statusText;
+             let timeAgo = '';
              let buttonHTML = '';
-             // If showDownloadButton is true, and we have the necessary data attributes, create the button
+             let countText = '';
+
+             if (metadata && metadata.updatedAt) {
+                 const timestampDate = metadata.updatedAt.toDate ? metadata.updatedAt.toDate() : new Date(metadata.updatedAt);
+                 if (!isNaN(timestampDate)) {
+                     timeAgo = this.formatTimeAgo(timestampDate);
+                 }
+             }
+
+             // --- Logic hiển thị thông báo mới ---
+             if (statusType === 'success' && metadata) {
+                 countText = metadata.rowCount ? `${uiComponents.formatNumber(metadata.rowCount)} dòng` : '';
+                 finalStatusText = `✓ Đã đồng bộ cloud ${countText} ${timeAgo}`.trim();
+             } else if (statusType === 'default' && showDownloadButton && metadata) { // Cập nhật từ người khác
+                 finalStatusText = `Có cập nhật mới từ ${metadata.updatedBy || 'ai đó'} ${timeAgo}`;
+             }
+             // Giữ nguyên statusText cho các trường hợp khác (loading, error, cache...)
+
+             // Nút download
              if (showDownloadButton && dataType && warehouse) {
                  buttonHTML = `
                      <button
@@ -608,22 +642,48 @@ export const uiComponents = {
                  `;
              }
 
-             // Set innerHTML to render the text span and the button (if any)
-             fileStatusSpan.innerHTML = `<span class="data-input-group__status-text data-input-group__status-text--${statusType}">${statusText}</span>${buttonHTML}`;
+             fileStatusSpan.innerHTML = `<span class="data-input-group__status-text data-input-group__status-text--${statusType}">${finalStatusText}</span>${buttonHTML}`;
          }
      },
-    // *** END MODIFIED FUNCTION ***
 
-    // *** MODIFIED FUNCTION (v3.15) ***
-    updatePasteStatus(elementId, statusText, statusType = 'success') {
-         const statusSpan = document.getElementById(elementId);
+    /**
+     * Cập nhật trạng thái cho khu vực dán dữ liệu.
+     * @param {string} uiId ID của phần tử status (ví dụ: 'status-luyke').
+     * @param {string} statusText Text trạng thái chính.
+     * @param {string} [statusType='success'] Loại trạng thái.
+     * @param {object} [metadata=null] Metadata từ Firestore.
+     * @param {number} [processedCount=0] Số lượng item đã xử lý (ví dụ: số nhân viên).
+     */
+    updatePasteStatus(uiId, statusText, statusType = 'success', metadata = null, processedCount = 0) {
+         const statusSpan = document.getElementById(uiId);
          if (statusSpan) {
-             statusSpan.textContent = statusText;
-             // Ensure correct status class is applied
+             let finalStatusText = statusText;
+             let timeAgo = '';
+             let countText = '';
+
+             if (metadata && metadata.updatedAt) {
+                 const timestampDate = metadata.updatedAt.toDate ? metadata.updatedAt.toDate() : new Date(metadata.updatedAt);
+                 if (!isNaN(timestampDate)) {
+                     timeAgo = this.formatTimeAgo(timestampDate);
+                 }
+             }
+
+             if (statusType === 'success' && metadata) {
+                 // Chỉ hiển thị số lượng cho ERP và Thi đua NV
+                 if ((uiId === 'status-thuongerp' || uiId === 'status-thuongerp-thangtruoc' || uiId === 'status-thiduanv') && processedCount > 0) {
+                     countText = `${processedCount} nhân viên`;
+                 } else if (uiId === 'status-luyke') {
+                    // Không hiển thị count cho LuyKe BI
+                    countText = '';
+                 }
+                 finalStatusText = `✓ Đã đồng bộ cloud ${countText} ${timeAgo}`.trim();
+             }
+             // Giữ nguyên statusText cho các trường hợp khác
+
+             statusSpan.textContent = finalStatusText;
              statusSpan.className = `data-input-group__status-text data-input-group__status-text--${statusType}`;
          }
      },
-    // *** END MODIFIED FUNCTION ***
 
     togglePlaceholder: (sectionId, show) => {
          const placeholder = document.getElementById(`${sectionId}-placeholder`);
@@ -642,7 +702,7 @@ export const uiComponents = {
          const millions = value / 1000000;
          const roundedValue = parseFloat(millions.toFixed(decimals));
          if (roundedValue === 0 && millions !== 0) {
-             return millions > 0 ? '> 0' : '< 0';
+              return millions > 0 ? '> 0' : '< 0';
          }
          return new Intl.NumberFormat('vi-VN', {
              minimumFractionDigits: 0,
@@ -655,7 +715,7 @@ export const uiComponents = {
           if (roundedValue === 0 && value !== 0) {
                return value > 0 ? '> 0' : '< 0';
           }
-          if (roundedValue === 0) return '-';
+           if (roundedValue === 0) return '-';
           return new Intl.NumberFormat('vi-VN', {
               minimumFractionDigits: 0,
               maximumFractionDigits: decimals
@@ -668,8 +728,8 @@ export const uiComponents = {
           const roundedValue = parseFloat(percentageValue.toFixed(decimals));
           if (roundedValue === 0 && percentageValue !== 0) {
              return percentageValue > 0 ? '> 0%' : '< 0%';
-          }; // <<< *** LỖI ĐÃ SỬA: Thêm dấu ; ***
-          return new Intl.NumberFormat('vi-VN', {
+          } // <<< *** ĐÃ SỬA LỖI: Xóa dấu ; ***
+         return new Intl.NumberFormat('vi-VN', {
               minimumFractionDigits: decimals,
               maximumFractionDigits: decimals
           }).format(roundedValue) + '%';
@@ -710,11 +770,11 @@ export const uiComponents = {
 
         if (!drawer || !sidebar || !overlay) return;
         if (show) {
-            drawer.classList.remove('hidden');
+              drawer.classList.remove('hidden');
             setTimeout(() => {
                 drawer.classList.add('open');
                  sidebar.classList.add('menu-locked');
-                overlay.classList.remove('hidden');
+                 overlay.classList.remove('hidden');
             }, 10);
         } else {
             drawer.classList.remove('open');
@@ -723,7 +783,7 @@ export const uiComponents = {
             setTimeout(() => {
                  if (!drawer.classList.contains('open')) {
                      drawer.classList.add('hidden');
-                 }
+                  }
             }, 300);
         }
     },
@@ -773,7 +833,7 @@ export const uiComponents = {
         this.toggleModal('help-modal', true);
     },
     showComposerModal(sectionId) {
-        this.toggleModal('composer-modal', true);
+         this.toggleModal('composer-modal', true);
         const firstTextarea = document.querySelector('#composer-context-content textarea');
         firstTextarea?.focus();
     },
@@ -799,7 +859,7 @@ export const uiComponents = {
         navigator.clipboard.writeText(content)
              .then(() => {
                 uiComponents.showNotification('Đã sao chép nội dung!', 'success');
-                uiComponents.toggleModal('preview-modal', false);
+                 uiComponents.toggleModal('preview-modal', false);
             })
              .catch(err => {
                 console.error('Lỗi sao chép:', err);
@@ -831,7 +891,7 @@ export const uiComponents = {
             const updateHistory = await response.json();
             container.innerHTML = updateHistory.map(item => `
                 <div class="bg-white rounded-xl shadow-md p-5 border border-gray-200">
-                     <h4 class="font-bold text-blue-600 mb-2">Phiên bản ${item.version} (${item.date})</h4>
+                      <h4 class="font-bold text-blue-600 mb-2">Phiên bản ${item.version} (${item.date})</h4>
                      <ul class="list-disc list-inside text-gray-700 space-y-1 text-sm">
                          ${item.notes.map(note => `<li>${note}</li>`).join('')}
                     </ul>
@@ -842,9 +902,9 @@ export const uiComponents = {
         }
     },
     renderFeedbackSection() {
-        const composerContainer = document.getElementById('feedback-composer');
-        const listContainer = document.getElementById('feedback-list');
-        if (!composerContainer || !listContainer) return;
+         const composerContainer = document.getElementById('feedback-composer');
+         const listContainer = document.getElementById('feedback-list');
+         if (!composerContainer || !listContainer) return;
 
         composerContainer.innerHTML = `
              <h4 class="text-lg font-semibold text-gray-800 mb-3">Gửi góp ý của bạn</h4>
@@ -857,23 +917,23 @@ export const uiComponents = {
             return;
         }
 
-        listContainer.innerHTML = appState.feedbackList.map(item => {
+         listContainer.innerHTML = appState.feedbackList.map(item => {
             const userNameDisplay = item.user?.email || 'Người dùng ẩn danh';
             return `
                 <div class="feedback-item bg-white rounded-xl shadow-md p-5 border border-gray-200" data-id="${item.id}">
                     <p class="text-gray-800">${item.content}</p>
                     <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">
                          <span class="font-semibold">${userNameDisplay}</span>
-                        <span>${this.formatTimeAgo(item.timestamp)}</span>
-                        ${appState.isAdmin ? `<button class="reply-btn text-blue-600 hover:underline">Trả lời</button>` : ''}
+                         <span>${this.formatTimeAgo(item.timestamp)}</span>
+                         ${appState.isAdmin ? `<button class="reply-btn text-blue-600 hover:underline">Trả lời</button>` : ''}
                     </div>
                     <div class="ml-6 mt-4 space-y-3">
                          ${(item.replies || []).map(reply => `
-                            <div class="bg-gray-100 rounded-lg p-3">
+                             <div class="bg-gray-100 rounded-lg p-3">
                                 <p class="text-gray-700 text-sm">${reply.content}</p>
                                  <div class="text-xs text-gray-500 mt-2">
                                     <strong>Admin</strong> - ${this.formatTimeAgo(reply.timestamp instanceof Date ? reply.timestamp : reply.timestamp?.toDate())}
-                                </div>
+                                 </div>
                             </div>`).join('')}
                     </div>
                     <div class="reply-form-container hidden ml-6 mt-4">
@@ -887,7 +947,7 @@ export const uiComponents = {
         }).join('');
     },
 
-    applyInterfaceSettings(settings) {
+     applyInterfaceSettings(settings) {
          const root = document.documentElement;
          if (settings.kpiCard1Bg) root.style.setProperty('--kpi-card-1-bg', settings.kpiCard1Bg);
          if (settings.kpiCard2Bg) root.style.setProperty('--kpi-card-2-bg', settings.kpiCard2Bg);
@@ -966,22 +1026,22 @@ export const uiComponents = {
         if (!resultsContainer) return;
 
         const renderDebugTable = (title, data) => {
-            if (!data || data.length === 0) {
-                return `<div class="p-2 border rounded-md bg-white mb-4">
-                     <h4 class="font-bold text-gray-800 mb-2">${title}</h4>
-                     <p class="text-gray-500">Không có dữ liệu để hiển thị.</p>
-                 </div>`;
+             if (!data || data.length === 0) {
+                 return `<div class="p-2 border rounded-md bg-white mb-4">
+                      <h4 class="font-bold text-gray-800 mb-2">${title}</h4>
+                      <p class="text-gray-500">Không có dữ liệu để hiển thị.</p>
+                  </div>`;
             }
 
             const headers = Object.keys(data[0]);
             let tableHTML = `<div class="p-2 border rounded-md bg-white mb-4">
-                <h4 class="font-bold text-gray-800 mb-2">${title}</h4>
+                 <h4 class="font-bold text-gray-800 mb-2">${title}</h4>
                 <div class="overflow-x-auto">
                      <table class="min-w-full text-xs">
                         <thead class="bg-gray-100">
                             <tr>${headers.map(h => `<th class="px-2 py-1 text-left font-semibold text-gray-600 whitespace-nowrap">${h}</th>`).join('')}</tr>
                         </thead>
-                        <tbody>`;
+                         <tbody>`;
             data.forEach(row => {
                 tableHTML += `<tr class="border-t">`;
                 headers.forEach(header => {
@@ -1030,15 +1090,15 @@ export const uiComponents = {
                 <div class="overflow-x-auto max-h-[600px]">
                      <table class="min-w-full text-xs table-bordered competition-debug-table">
                          <thead class="bg-gray-100 sticky top-0">
-                            <tr>
+                              <tr>
                                 <th class="p-2">Người tạo</th>
                                  <th class="p-2">Nhóm hàng</th>
                                  <th class="p-2">HT Xuất</th>
-                                <th class="p-2">TT Thu tiền</th>
+                                 <th class="p-2">TT Thu tiền</th>
                                  <th class="p-2">TT Hủy</th>
                                 <th class="p-2">TT Trả</th>
                                  <th class="p-2">TT Xuất</th>
-                                ${checkHeaders.map(h => `<th class="p-2">${h}</th>`).join('')}
+                                 ${checkHeaders.map(h => `<th class="p-2">${h}</th>`).join('')}
                                 <th class="p-2">Tổng thể</th>
                             </tr>
                          </thead>
@@ -1060,7 +1120,7 @@ export const uiComponents = {
                     <td class="p-2">${rowData.trangThaiXuat || ''}</td>
                     ${renderCheck(checks.isDoanhThuHTX)}
                     ${renderCheck(checks.isThuTien)}
-                    ${renderCheck(checks.isChuaHuy)}
+                     ${renderCheck(checks.isChuaHuy)}
                     ${renderCheck(checks.isChuaTra)}
                     ${renderCheck(checks.isDaXuat)}
                      ${renderCheck(isOverallValid)}
@@ -1071,7 +1131,6 @@ export const uiComponents = {
         tableHTML += '</tbody></table></div></div>';
         container.innerHTML = tableHTML;
     },
-
     populateAllFilters: () => {
         const { danhSachNhanVien } = appState;
         if (danhSachNhanVien.length === 0) return;
@@ -1094,7 +1153,7 @@ export const uiComponents = {
             const warehouseInstance = appState.choices[`${prefix}_warehouse`];
             if (warehouseInstance) {
                 warehouseInstance.clearStore();
-                warehouseInstance.setChoices(warehouseChoicesOptions, 'value', 'label', true);
+                 warehouseInstance.setChoices(warehouseChoicesOptions, 'value', 'label', true);
             }
 
             const departmentInstance = appState.choices[`${prefix}_department`];
@@ -1131,8 +1190,8 @@ export const uiComponents = {
              const currentMultiSelectValues = multiSelectInstance.getValue(true);
             const multiSelectOptions = filteredEmployees.map(nv => ({
                  value: String(nv.maNV), // Ensure value is string
-                label: `${uiComponents.getShortEmployeeName(nv.hoTen, nv.maNV)}`,
-                selected: currentMultiSelectValues.includes(String(nv.maNV))
+                 label: `${uiComponents.getShortEmployeeName(nv.hoTen, nv.maNV)}`,
+                 selected: currentMultiSelectValues.includes(String(nv.maNV))
             }));
             multiSelectInstance.clearStore();
             multiSelectInstance.setChoices(multiSelectOptions, 'value', 'label', false);
@@ -1146,7 +1205,7 @@ export const uiComponents = {
          }));
 
          const updateSingleSelect = (instanceKey) => {
-             const instance = appState.choices[instanceKey];
+              const instance = appState.choices[instanceKey];
              if (instance) {
                  const currentValue = instance.getValue(true);
                  instance.clearStore();
@@ -1162,7 +1221,7 @@ export const uiComponents = {
          };
 
          if (prefix === 'sknv') {
-             updateSingleSelect('thidua_employee_detail');
+              updateSingleSelect('thidua_employee_detail');
          }
     },
     updateBrandFilterOptions(selectedCategory) {
