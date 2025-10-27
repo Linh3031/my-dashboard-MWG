@@ -1,18 +1,4 @@
 // Version 4.31 - Fix parameter error in _handlePastedDataSync, fix sync condition for prev month files
-// Version 4.30 - Fix "Invalid parameters" error when calling savePastedDataToFirestore
-// Version 4.29 - Implement cloud sync for Pasted Data and Previous Month Data
-// Version 4.28 - Display version and row count in status after self-upload success
-// Version 4.27 - Fix duplicate variable declaration in _handleCompetitionFormSubmit
-// Version 4.26 - Fix missing comma syntax error in _handleCompetitionFormSubmit
-// Version 4.25 - Improve status display consistency after F5/reload using cache + metadata.
-// Version 4.24 - Fix metadata timestamp check in handleCloudDataUpdate
-// Version 4.23 - Add extensive logging for DSNV storage and sync timing issues
-// Version 4.22 - CRITICAL FIX: Only update local version *after* successful download and process.
-// Version 4.21 - Fix syntax error in comment for _localDataVersions
-// Version 4.20 - Fix syntax error in comment for _localDataVersions
-// Version 4.19 - Handle metadata from listener, save metadata locally, add download button logic
-// Version 4.18 - Fix async/await error in handleCloudDataUpdate
-// Version 4.17 - Implement version + timestamp comparison for sync logic
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 

@@ -20,7 +20,7 @@ const firebase = {
           apiKey: "AIzaSyAQ3TWcpa4AnTN-32igGseYDlXrCf1BVew", // Replace with your actual config if needed
           authDomain: "qlst-9e6bd.firebaseapp.com",
           projectId: "qlst-9e6bd",
-          storageBucket: "qlst-9e6bd.appspot.com", // *** Sửa lại tên bucket chuẩn ***
+          storageBucket: "qlst-9e6bd.firebasestorage.app", // *** Sửa lại tên bucket chuẩn ***
           messagingSenderId: "2316705291",
           appId: "1:2316705291:web:ebec2963816aea7585b10e",
           measurementId: "G-M0SM0XHCEK"
