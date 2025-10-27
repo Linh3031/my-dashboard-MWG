@@ -1,10 +1,4 @@
 // Version 4.37 - Add EXTREMELY granular logging and try/catch before sync check
-// Version 4.36 - Add even more detailed logging around the cloud sync check block
-// Version 4.35 - Add MORE specific logging for '-thangtruoc' files sync check
-// Version 4.34 - Add specific logging for '-thangtruoc' files before cloud sync check
-// Version 4.33 - Fix syntax errors introduced in v4.32 during status function call updates
-// Version 4.32 - Update calls to status functions with metadata/count for simplified messages
-// Version 4.31 - Fix parameter error in _handlePastedDataSync, fix sync condition for prev month files
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
