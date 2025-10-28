@@ -1,3 +1,4 @@
+// Version 4.38 - Add upsertUserRecord call in continueInit to correctly count visits
 // Version 4.37 - Add EXTREMELY granular logging and try/catch before sync check
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
@@ -49,14 +50,13 @@ const ALL_DATA_MAPPING = {
 };
 
 const app = {
-    currentVersion: '3.5',
+    currentVersion: '3.5', // Giữ nguyên version này, bạn có thể tự cập nhật sau khi tích hợp xong
     storage: storage,
     unsubscribeDataListener: null,
     _isInitialized: false,
     _localDataVersions: {},
 
     async init() {
-        // ... (Giữ nguyên init)
         try {
             await firebase.initCore();
             console.log("Rendering static UI components...");
@@ -99,13 +99,16 @@ const app = {
     },
 
     async continueInit() {
-        // ... (Giữ nguyên continueInit)
         if (!appState.currentUser || !appState.currentUser.email) {
              console.error("continueInit called without user email in appState.");
              ui.showNotification("Lỗi: Không tìm thấy thông tin người dùng.", "error");
              return;
         }
         console.log(`Email identification complete: ${appState.currentUser.email}. Continuing app initialization...`);
+
+        // *** >>> SỬA LỖI ĐẾM LƯỢT TRUY CẬP: GỌI HÀM ĐẾM Ở ĐÂY <<< ***
+        firebase.upsertUserRecord(appState.currentUser.email);
+        // *** >>> KẾT THÚC SỬA LỖI <<< ***
 
         appState.competitionConfigs = [];
         appState.viewingDetailFor = null;
@@ -130,7 +133,7 @@ const app = {
         await this.storage.openDB();
         console.log("Loading category data from Firestore...");
         try {
-            const { categories, brands } = await firebase.loadCategoryDataFromFirestore();
+             const { categories, brands } = await firebase.loadCategoryDataFromFirestore();
             appState.categoryStructure = categories;
             appState.brandList = brands;
             console.log(`Successfully populated ${appState.categoryStructure.length} categories and ${appState.brandList.length} brands from Firestore.`);
@@ -240,7 +243,8 @@ const app = {
         setInterval(() => this.checkForUpdates(), 15 * 60 * 1000);
     },
 
-    async handleCloudDataUpdate(cloudData) {
+    //... (Các hàm khác: handleCloudDataUpdate, handleDownloadAndProcessData, _getSavedMetadata, etc. giữ nguyên như phiên bản bạn cung cấp)
+     async handleCloudDataUpdate(cloudData) {
         // ... (Giữ nguyên)
         const receivedTime = new Date().toLocaleTimeString();
         console.log(`%c[handleCloudDataUpdate @ ${receivedTime}] Received data snapshot from Firestore listener:`, "color: blue; font-weight: bold;", JSON.stringify(cloudData).substring(0, 500) + "...");
@@ -348,7 +352,7 @@ const app = {
                          const statusText = `✓ Đã đồng bộ cloud ${updatedTime} ${reasonText}`.trim();
                          isPasted ? uiComponents.updatePasteStatus(uiId, statusText, 'success', cloudMetadata) : uiComponents.updateFileStatus(uiId, fileName, statusText, 'success', false, cloudMetadata);
                     } else {
-                          const statusText = `ⓘ ${updatedBy} cập nhật ${updatedTime} ${reasonText}`.trim();
+                         const statusText = `ⓘ ${updatedBy} cập nhật ${updatedTime} ${reasonText}`.trim();
                           isPasted ? uiComponents.updatePasteStatus(uiId, statusText, 'default', cloudMetadata) : uiComponents.updateFileStatus(uiId, fileName, statusText, 'default', false, cloudMetadata);
                     }
                 }
@@ -712,8 +716,9 @@ const app = {
         loadPasted('daily_paste_thuongerp', 'thuongERPData', 'status-thuongerp', services.processThuongERP);
     },
 
-    // *** MODIFIED FUNCTION (v4.36) ***
+
     async handleFileInputChange(e) {
+        // ... (Giữ nguyên như phiên bản bạn cung cấp - đã có log chi tiết)
         const fileInput = e.target;
         const file = fileInput.files[0];
         const fileType = fileInput.id.replace('file-', '');
@@ -724,7 +729,7 @@ const app = {
 
         if (!mappingInfo) {
             if (fileType === 'danhsachnv') {
-                  return this.handleDsnvUpload(e, file);
+                return this.handleDsnvUpload(e, file);
             }
             console.error(`[handleFileInputChange] No mapping info found for fileType: ${fileType}`);
             return;
@@ -862,7 +867,7 @@ const app = {
     },
 
     async handleDsnvUpload(e, file) {
-        // ... (Giữ nguyên handleDsnvUpload)
+        // ... (Giữ nguyên)
         const fileType = 'danhsachnv';
         const dataName = 'Danh sách nhân viên';
         const stateKey = 'danhSachNhanVien';
@@ -1335,7 +1340,7 @@ const app = {
             brands: brands,
             groups: groups,
             type: compTypeEl ? compTypeEl.value : 'doanhthu',
-             minPrice: (parseFloat(minPriceEl?.value) || 0) * 1000000,
+            minPrice: (parseFloat(minPriceEl?.value) || 0) * 1000000,
             maxPrice: (parseFloat(maxPriceEl?.value) || 0) * 1000000,
             excludeApple: excludeAppleEl ? excludeAppleEl.checked : false,
         };
@@ -1469,7 +1474,7 @@ const app = {
         if (e.target.classList.contains('reply-btn')) { replyForm.classList.remove('hidden'); }
          if (e.target.classList.contains('cancel-reply-btn')) { replyForm.classList.add('hidden'); }
         if (e.target.classList.contains('submit-reply-btn')) {
-             const textarea = replyForm.querySelector('textarea');
+            const textarea = replyForm.querySelector('textarea');
              if(textarea){
                 const success = await firebase.submitReply(docId, textarea.value.trim());
                 if (success) { textarea.value = ''; replyForm.classList.add('hidden'); }
@@ -1510,7 +1515,7 @@ const app = {
         if(contextTabsContainer) contextTabsContainer.innerHTML = '';
         if(contextContentContainer) contextContentContainer.innerHTML = '';
         if (mainViewNav && contextTabsContainer && contextContentContainer) {
-              const subTabButtons = mainViewNav.querySelectorAll('.sub-tab-btn');
+             const subTabButtons = mainViewNav.querySelectorAll('.sub-tab-btn');
             subTabButtons.forEach(btn => {
                 const subTabId = btn.dataset.target;
                 const isActive = btn.classList.contains('active');
