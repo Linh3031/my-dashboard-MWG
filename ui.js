@@ -1,3 +1,4 @@
+// Version 3.9 - Call renderCompetitionNameMappingTable in renderAdminPage
 // Version 3.8 - Final Merge: Add renderAdminPage
 // MODULE: UI FACADE (Mặt tiền Giao diện)
 
@@ -19,7 +20,7 @@ const ui = {
     ...uiThiDuaVung,
     ...uiCompetition,
 
-    // === START: GIAI ĐOẠN 4 ===
+    // === START: GIAI ĐOẠN 4 (MODIFIED v3.9) ===
     async renderAdminPage() {
         if (!appState.isAdmin) return;
         
@@ -29,6 +30,11 @@ const ui = {
         
         // Render các trình chỉnh sửa hướng dẫn (hàm cũ)
         this.renderAdminHelpEditors(); // Hàm này nằm trong ui-components
+
+        // *** NEW (v3.9) ***
+        // Render bảng ánh xạ tên thi đua
+        this.renderCompetitionNameMappingTable(); // Hàm này nằm trong ui-components
+        // *** END NEW ***
     }
     // === END: GIAI ĐOẠN 4 ===
 };

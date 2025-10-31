@@ -1,3 +1,4 @@
+// Version 3.3 - Add cloud functions for competitionNameMappings
 // Version 3.2 - Modify incrementCounter to support user-specific actionsTaken
 // Version 3.1 - Add savePastedDataToFirestore for text content sync
 // Version 3.0 - Implement Cloud Storage upload & save metadata to Firestore
@@ -264,6 +265,46 @@ const firebase = {
             ui.showNotification('Lỗi khi đồng bộ khai báo tính toán.', 'error');
         }
     },
+
+    // *** START: NEW FUNCTIONS (v3.3) ***
+    async loadCompetitionNameMappings() {
+        if (!appState.db) {
+            console.warn("loadCompetitionNameMappings called before DB initialization.");
+            return {};
+        }
+        console.log("Loading competition name mappings from Firestore...");
+        try {
+            const docRef = doc(appState.db, "declarations", "competitionNameMappings");
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                console.log("Successfully loaded competition name mappings.");
+                return docSnap.data().mappings || {};
+            } else {
+                console.log("No competition name mappings found in Firestore, returning empty object.");
+                return {};
+            }
+        } catch (error) {
+            console.error("Lỗi khi tải Bảng Ánh Xạ Tên Thi Đua từ Firestore:", error);
+            return {};
+        }
+    },
+
+    async saveCompetitionNameMappings(mappings) {
+        if (!appState.db || !appState.isAdmin) {
+            console.warn("Save competition name mappings skipped: Not admin or DB not initialized.");
+            return;
+        }
+        console.log("Saving competition name mappings to Firestore...");
+        try {
+            const docRef = doc(appState.db, "declarations", "competitionNameMappings");
+            await setDoc(docRef, { mappings: mappings });
+            console.log("Successfully saved competition name mappings.");
+        } catch (error) {
+            console.error("Lỗi khi lưu Bảng Ánh Xạ Tên Thi Đua:", error);
+            ui.showNotification('Lỗi khi lưu tên rút gọn lên cloud.', 'error');
+        }
+    },
+    // *** END: NEW FUNCTIONS (v3.3) ***
 
     async getTemplateDownloadURL() {
         if (!appState.storage) throw new Error("Firebase Storage chưa được khởi tạo.");

@@ -1,3 +1,5 @@
+// Version 3.30 - Initialize choices.js for realtime brand/category filters
+// Version 3.29 - Add event listener for sknv-thidua-view-selector
 // Version 3.28 - Call incrementCounter with email for user-specific actionsTaken
 // Version 3.27 - Add actionsTaken counter increment on successful file upload
 // Version 3.26 - Fix incorrect import paths (./ changed to ../)
@@ -37,7 +39,7 @@ async function handleFileInputChange(e) {
         // Clear status if user cancels file selection
         const fileType = fileInput.id.replace('file-', '');
         // Find mapping info using appController if available, otherwise might need direct access or different approach
-        const mappingInfo = appController?.ALL_DATA_MAPPING
+         const mappingInfo = appController?.ALL_DATA_MAPPING
             ? Object.values(appController.ALL_DATA_MAPPING).find(m => m.uiId === fileType)
             : null; // Fallback if appController isn't ready or doesn't have the mapping yet
         if (mappingInfo && mappingInfo.uiId) {
@@ -80,7 +82,7 @@ async function handleFileInputChange(e) {
             uiComponents.updateFileStatus(fileType, file.name, `Lỗi: Thiếu cột dữ liệu.`, 'error');
             ui.showNotification(errorMessage, 'error');
             if (document.getElementById('debug-tool-container')?.classList.contains('hidden')) {
-                document.getElementById('toggle-debug-btn')?.click();
+                 document.getElementById('toggle-debug-btn')?.click();
             }
              fileInput.value = ''; // Reset input on error
             return;
@@ -169,7 +171,7 @@ async function handleFileInputChange(e) {
             }
             console.log(`%c[DEBUG SYNC BLOCK END] Finished cloud sync block for ${fileType}`, "color: magenta;");
         } else {
-            console.log(`%c[DEBUG SYNC SKIP] Skipping cloud sync for ${fileType}. Warehouse selected: ${!!warehouseToSync}, Firestore key exists: ${!!currentFirestoreKey}`, "color: orange;");
+             console.log(`%c[DEBUG SYNC SKIP] Skipping cloud sync for ${fileType}. Warehouse selected: ${!!warehouseToSync}, Firestore key exists: ${!!currentFirestoreKey}`, "color: orange;");
             uiComponents.updateFileStatus(fileType, file.name, `✓ Đã tải ${normalizedData.length} dòng (Chưa đồng bộ).`, 'success', false, null);
         }
 
@@ -208,7 +210,7 @@ export function initializeEventListeners(mainAppController) {
             const employeeEl = document.getElementById(`${prefix}-filter-name`);
             if (employeeEl) appState.choices[`${prefix}_employee`] = new Choices(employeeEl, multiSelectConfig);
             ['warehouse', 'department'].forEach(type => {
-                const el = document.getElementById(`${prefix}-filter-${type}`);
+                 const el = document.getElementById(`${prefix}-filter-${type}`);
                 if(el) appState.choices[`${prefix}_${type}`] = new Choices(el, { searchEnabled: true, removeItemButton: false, itemSelectText: 'Chọn' });
             });
             ['nhanhang', 'nhomhang', 'employee'].forEach(type => {
@@ -220,11 +222,19 @@ export function initializeEventListeners(mainAppController) {
         if (competitionBrandEl) appState.choices['competition_brand'] = new Choices(competitionBrandEl, competitionMultiSelectConfig);
         const competitionGroupEl = document.getElementById('competition-group');
         if (competitionGroupEl) appState.choices['competition_group'] = new Choices(competitionGroupEl, competitionMultiSelectConfig);
+        
         const singleSelectConfig = { searchEnabled: true, removeItemButton: false, itemSelectText: 'Chọn', searchPlaceholderValue: 'Tìm kiếm...' };
+        
+        // === FIX 4 (Sửa) ===
+        // Thêm 2 ID bộ lọc của tab Realtime vào đây
         const singleSelects = {
              'thidua-employee-filter': 'thidua_employee_detail',
             'thidua-vung-filter-supermarket': 'thiDuaVung_sieuThi',
+            'realtime-brand-category-filter': 'realtime_brand_category_filter', // Đã thêm
+            'realtime-brand-filter': 'realtime_brand_filter' // Đã thêm
         };
+        // === END FIX 4 ===
+
         for (const [id, key] of Object.entries(singleSelects)) {
              const el = document.getElementById(id);
              if (el) appState.choices[key] = new Choices(el, singleSelectConfig);
@@ -239,9 +249,9 @@ export function initializeEventListeners(mainAppController) {
                 mode: "multiple", dateFormat: "d/m", maxDate: "today",
                 onClose: (selectedDates, dateStr, instance) => {
                     if (selectedDates.length === 2) {
-                        const [start, end] = selectedDates.sort((a,b) => a - b);
+                         const [start, end] = selectedDates.sort((a,b) => a - b);
                         const dateRange = Array.from({length: (end - start) / 86400000 + 1}, (_, i) => new Date(start.getTime() + i * 86400000));
-                        instance.setDate(dateRange, false);
+                         instance.setDate(dateRange, false);
                     }
                     uiComponents.updateDateSummary(document.getElementById(`${prefix}-date-summary`), instance);
                     appState.viewingDetailFor = null;
@@ -311,7 +321,7 @@ export function initializeEventListeners(mainAppController) {
             appState.selectedWarehouse = selectedKho;
             localStorage.setItem('selectedWarehouse', selectedKho);
             ui.showNotification(`Đã chuyển sang làm việc với kho ${selectedKho}.`, 'success');
-            if(appController.unsubscribeDataListener) {
+             if(appController.unsubscribeDataListener) {
                 console.log("[DEBUG] Unsubscribing from previous warehouse listener.");
                 appController.unsubscribeDataListener();
             }
@@ -373,6 +383,24 @@ export function initializeEventListeners(mainAppController) {
             appController.handleLuykeThiDuaViewChange(e);
             return;
         }
+
+        // *** NEW (v3.29) ***
+        const sknvThiDuaViewSwitcherBtn = e.target.closest('#sknv-thidua-view-selector .view-switcher__btn');
+        if (sknvThiDuaViewSwitcherBtn) {
+            e.preventDefault();
+            // Xử lý chuyển đổi view trực tiếp
+            const viewSelector = sknvThiDuaViewSwitcherBtn.closest('#sknv-thidua-view-selector');
+            if (viewSelector) {
+                 viewSelector.querySelectorAll('.view-switcher__btn').forEach(btn => btn.classList.remove('active'));
+            }
+            sknvThiDuaViewSwitcherBtn.classList.add('active');
+            
+            // Render lại tab SKNV (nó sẽ đọc nút active này)
+            appController.updateAndRenderCurrentTab(); 
+            return;
+        }
+        // *** END NEW ***
+
         const thiDuaViewSwitcherBtn = e.target.closest('#thidua-view-selector .view-switcher__btn');
         if (thiDuaViewSwitcherBtn) {
             e.preventDefault();

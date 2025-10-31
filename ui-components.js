@@ -1,3 +1,6 @@
+// Version 3.25 - Add missing functions: populateAllFilters (fixes F5 crash) and updateBrandFilterOptions (fixes Realtime crash)
+// Version 3.24 - Add updateBrandFilterOptions to fix realtime tab crash
+// Version 3.23 - Add renderCompetitionNameMappingTable
 // Version 3.22 - Fix syntax error in renderUserStatsTable causing comments to display
 // Version 3.21 - Add 'actionsTaken' column to renderUserStatsTable
 // Version 3.20 - Add renderUserStatsTable for admin panel
@@ -12,7 +15,117 @@ import { settingsService } from './modules/settings.service.js';
 import { ui } from './ui.js';
 
 export const uiComponents = {
-    // ... (Các hàm khác như renderSettingsButton, renderCompetitionConfigUI, etc. giữ nguyên) ...
+    // === START: NEW FUNCTION (FIX FOR VẤN ĐỀ 1) ===
+    /**
+     * Điền dữ liệu vào tất cả các bộ lọc (Kho, Bộ phận, Nhân viên) trên các tab.
+     * Được gọi sau khi DSNV được tải.
+     */
+    populateAllFilters() {
+        console.log("[ui-components.js populateAllFilters] Đang điền dữ liệu vào tất cả bộ lọc...");
+        if (!appState.danhSachNhanVien || appState.danhSachNhanVien.length === 0) {
+            console.warn("[ui-components.js populateAllFilters] DSNV trống, không thể điền bộ lọc.");
+            return;
+        }
+
+        try {
+            const uniqueWarehouses = [...new Set(appState.danhSachNhanVien.map(nv => nv.maKho).filter(Boolean))].sort();
+            const uniqueDepartments = [...new Set(appState.danhSachNhanVien.map(nv => nv.boPhan).filter(Boolean))].sort();
+            const allEmployees = [...appState.danhSachNhanVien].sort((a, b) => a.hoTen.localeCompare(b.hoTen));
+
+            const warehouseOptions = [{ value: '', label: 'Tất cả Kho', selected: true }]
+                .concat(uniqueWarehouses.map(item => ({ value: item, label: item })));
+            
+            const departmentOptions = [{ value: '', label: 'Tất cả Bộ phận', selected: true }]
+                .concat(uniqueDepartments.map(item => ({ value: item, label: item })));
+
+            const employeeOptions = allEmployees.map(item => ({
+                value: String(item.maNV),
+                label: `${item.hoTen} - ${item.maNV} (${item.boPhan})`
+            }));
+
+            ['luyke', 'sknv', 'realtime'].forEach(prefix => {
+                const whChoices = appState.choices[`${prefix}_warehouse`];
+                if (whChoices) {
+                    const currentVal = whChoices.getValue(true);
+                    whChoices.clearStore();
+                    whChoices.setChoices(warehouseOptions, 'value', 'label', true);
+                    if (currentVal) whChoices.setValue([currentVal]);
+                }
+                
+                const deptChoices = appState.choices[`${prefix}_department`];
+                if (deptChoices) {
+                    const currentVal = deptChoices.getValue(true);
+                    deptChoices.clearStore();
+                    deptChoices.setChoices(departmentOptions, 'value', 'label', true);
+                    if (currentVal) deptChoices.setValue([currentVal]);
+                }
+
+                const empChoices = appState.choices[`${prefix}_employee`];
+                if (empChoices) {
+                    const currentVal = empChoices.getValue(true);
+                    empChoices.clearStore();
+                    empChoices.setChoices(employeeOptions, 'value', 'label', true);
+                    if (currentVal) empChoices.setValue(currentVal);
+                }
+            });
+
+            console.log("[ui-components.js populateAllFilters] Đã điền xong bộ lọc.");
+        } catch (error) {
+            console.error("[ui-components.js populateAllFilters] Lỗi nghiêm trọng khi điền bộ lọc:", error);
+        }
+    },
+    // === END: NEW FUNCTION ===
+
+    // === START: NEW FUNCTION (FIX FOR VẤN ĐỀ 4) ===
+    /**
+     * Cập nhật danh sách 'Hãng' dựa trên 'Ngành hàng' đã chọn trong tab Realtime.
+     * @param {string} selectedCategory - Ngành hàng đã chọn.
+     */
+    updateBrandFilterOptions(selectedCategory) {
+        const brandFilterEl = document.getElementById('realtime-brand-filter');
+        const brandChoices = appState.choices['realtime_brand_filter']; 
+        
+        if (!brandFilterEl || !brandChoices) {
+            console.warn("[updateBrandFilterOptions] Lỗi: Brand filter hoặc Choices instance chưa sẵn sàng.");
+            return;
+        }
+
+        let availableBrands = [];
+        if (selectedCategory) {
+            // Lọc các hãng dựa trên ngành hàng đã chọn trong dữ liệu realtime
+            availableBrands = [...new Set(appState.realtimeYCXData
+                .filter(row => utils.cleanCategoryName(row.nganhHang) === selectedCategory)
+                .map(row => row.nhaSanXuat || 'Hãng khác')
+                .filter(Boolean))
+            ].sort();
+        } else {
+            // Nếu không chọn ngành hàng, hiển thị tất cả hãng có trong dữ liệu realtime
+            availableBrands = [...new Set(appState.realtimeYCXData
+                .map(row => row.nhaSanXuat || 'Hãng khác')
+                .filter(Boolean))
+            ].sort();
+        }
+
+        // Tạo danh sách options
+        let brandOptions = [{ value: '', label: 'Tất cả các hãng', selected: true }];
+        brandOptions = brandOptions.concat(availableBrands.map(brand => ({ value: brand, label: brand })));
+        
+        // Lấy giá trị hiện tại để cố gắng bảo toàn lựa chọn
+        const currentValue = brandChoices.getValue(true);
+        
+        // Cập nhật Choices.js
+        brandChoices.clearStore();
+        brandChoices.setChoices(brandOptions, 'value', 'label', true);
+        
+        // Cố gắng đặt lại giá trị cũ nếu nó vẫn tồn tại trong danh sách mới
+        if (currentValue && availableBrands.includes(currentValue)) {
+            brandChoices.setValue([currentValue]);
+        } else {
+             brandChoices.setValue(['']); // Reset về "Tất cả"
+        }
+    },
+    // === END: NEW FUNCTION ===
+
     renderSettingsButton(idSuffix) {
         return `<button id="settings-btn-${idSuffix}" class="settings-trigger-btn" title="Tùy chỉnh hiển thị">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
@@ -35,7 +148,7 @@ export const uiComponents = {
                  <div class="p-3 border rounded-lg bg-white flex justify-between items-center shadow-sm">
                       <div>
                           <div class="flex items-center gap-x-2">
-                               <p class="font-bold text-gray-800">${config.name}</p>
+                             <p class="font-bold text-gray-800">${config.name}</p>
                           </div>
                           <div class="text-xs text-gray-500 mt-1 space-y-1">
                               <p><strong>Hãng:</strong> <span class="font-semibold text-blue-600">${(config.brands || []).join(', ')}</span></p>
@@ -48,7 +161,7 @@ export const uiComponents = {
                           </button>
                          <button class="delete-competition-btn p-2 rounded-md hover:bg-red-100 text-red-600" data-index="${index}" title="Xóa chương trình">
                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                         </button>
+                          </button>
                       </div>
                  </div>
              `;
@@ -107,7 +220,7 @@ export const uiComponents = {
                  const cleanName = utils.cleanCategoryName(item.name);
                  const tag = `[NH_INFO_${cleanName}]`;
                  nganhHangContainer.appendChild(createTagButton(tag, cleanName));
-             });
+            });
          }
     },
     displayEmployeeRevenueReport: (reportData, containerId, sortStateKey) => {
@@ -139,7 +252,7 @@ export const uiComponents = {
         }
         let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden" data-capture-group="1">
              <div class="p-4 header-group-1 text-gray-800">
-                <h3 class="text-xl font-bold uppercase">Doanh thu nhân viên</h3>
+                 <h3 class="text-xl font-bold uppercase">Doanh thu nhân viên</h3>
                  <p class="text-sm italic text-gray-600">(đơn vị tính: Triệu đồng)</p>
              </div>`;
 
@@ -189,7 +302,7 @@ export const uiComponents = {
         const headerClasses = {
             hoTen: '',
             doanhThu: isRealtime ? 'header-group-4' : 'header-bg-blue',
-            doanhThuQuyDoi: isRealtime ? 'header-group-4' : 'header-bg-blue',
+             doanhThuQuyDoi: isRealtime ? 'header-group-4' : 'header-bg-blue',
             hieuQuaQuyDoi: isRealtime ? 'header-group-4' : 'header-bg-blue',
             doanhThuTraGop: isRealtime ? 'header-group-5' : 'header-bg-green',
             tyLeTraCham: isRealtime ? 'header-group-5' : 'header-bg-green',
@@ -199,7 +312,7 @@ export const uiComponents = {
         const headerClass = (sortKey) => `px-4 py-3 sortable ${headerClasses[sortKey] || ''} ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
 
         let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="7">
-                 <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
+             <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                      <tr>
                              <th class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên <span class="sort-indicator"></span></th>
                              <th class="${headerClass('doanhThu')} text-right" data-sort="doanhThu">Doanh Thu <span class="sort-indicator"></span></th>
@@ -208,7 +321,7 @@ export const uiComponents = {
                              <th class="${headerClass('doanhThuTraGop')} text-right" data-sort="doanhThuTraGop">DT trả chậm <span class="sort-indicator"></span></th>
                              <th class="${headerClass('tyLeTraCham')} text-right" data-sort="tyLeTraCham">% trả chậm <span class="sort-indicator"></span></th>
                              <th class="${headerClass('doanhThuChuaXuat')} text-right" data-sort="doanhThuChuaXuat">DT Chưa Xuất <span class="sort-indicator"></span></th>
-                          </tr>
+                      </tr>
                  </thead><tbody>`;
         sortedData.forEach(item => {
             const { mucTieu } = item;
@@ -217,7 +330,7 @@ export const uiComponents = {
 
             let sourceTab;
             if (sortStateKey === 'doanhthu_lk') sourceTab = 'dtnv-lk';
-            else if (sortStateKey === 'realtime_dt_nhanvien') sourceTab = 'dtnv-rt';
+             else if (sortStateKey === 'realtime_dt_nhanvien') sourceTab = 'dtnv-rt';
             else sourceTab = 'sknv';
 
              tableHTML += `<tr class="interactive-row" data-employee-id="${item.maNV}" data-source-tab="${sourceTab}">
@@ -226,19 +339,19 @@ export const uiComponents = {
                     </td>
                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThu)}</td>
                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThuQuyDoi)}</td>
-                    <td class="px-4 py-2 text-right font-bold ${qdClass}">${uiComponents.formatPercentage(item.hieuQuaQuyDoi)}</td>
+                     <td class="px-4 py-2 text-right font-bold ${qdClass}">${uiComponents.formatPercentage(item.hieuQuaQuyDoi)}</td>
                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThuTraGop)}</td>
                     <td class="px-4 py-2 text-right font-bold ${tcClass}">${uiComponents.formatPercentage(item.tyLeTraCham)}</td>
                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThuChuaXuat)}</td></tr>`;
         });
          tableHTML += `</tbody><tfoot class="table-footer font-bold"><tr>
-                     <td class="px-4 py-2">Tổng</td>
+                      <td class="px-4 py-2">Tổng</td>
                      <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThu)}</td>
-                    <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuQuyDoi)}</td>
+                     <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuQuyDoi)}</td>
                    <td class="px-4 py-2 text-right">${uiComponents.formatPercentage(totals.hieuQuaQuyDoi)}</td>
                    <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuTraGop)}</td>
                      <td class="px-4 py-2 text-right">${uiComponents.formatPercentage(totals.tyLeTraCham)}</td>
-                    <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuChuaXuat)}</td>
+                     <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuChuaXuat)}</td>
                   </tr></tfoot></table></div></div>`;
         return tableHTML;
     },
@@ -270,11 +383,11 @@ export const uiComponents = {
 
          let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
                           ${columnTogglesHTML}
-                             <div data-capture-group="efficiency-table">
+                              <div data-capture-group="efficiency-table">
                                  <div class="p-4 header-group-3 text-gray-800">
                                      <h3 class="text-xl font-bold uppercase">HIỆU QUẢ KHAI THÁC THEO NHÂN VIÊN</h3>
                                       <p class="text-sm italic text-gray-600">(đơn vị tính: Triệu đồng)</p>
-                                </div>`;
+                                 </div>`;
 
          const groupedByDept = {};
          reportData.forEach(item => {
@@ -292,7 +405,7 @@ export const uiComponents = {
          });
 
          finalHTML += `   </div>
-                       </div>`;
+                      </div>`;
          container.innerHTML = finalHTML;
     },
     renderEfficiencyTableForDepartment: (title, data, sortStateKey, visibleColumns) => {
@@ -361,7 +474,7 @@ export const uiComponents = {
             </thead><tbody>`;
 
         sortedData.forEach(item => {
-            const { mucTieu } = item;
+             const { mucTieu } = item;
             const classMap = {
                  pctPhuKien: (mucTieu && item.pctPhuKien < (mucTieu.phanTramPhuKien / 100)) ? 'cell-performance is-below' : '',
                  pctGiaDung: (mucTieu && item.pctGiaDung < (mucTieu.phanTramGiaDung / 100)) ? 'cell-performance is-below' : '',
@@ -374,7 +487,7 @@ export const uiComponents = {
              tableHTML += `<tr class="interactive-row" data-employee-id="${item.maNV}" data-source-tab="sknv">
                 <td class="px-4 py-2 font-semibold line-clamp-2 employee-name-cell">
                      <a href="#">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</a>
-                </td>
+                 </td>
                  ${visibleColumns.map(col => {
                     const value = item[col.id];
                     const className = classMap[col.id] || '';
@@ -388,8 +501,8 @@ export const uiComponents = {
             <tr>
                  <td class="px-4 py-2">Tổng</td>
                  ${visibleColumns.map(col => {
-                    const value = totals[col.id];
-                    const formatter = formatMap[col.id] || formatMap.defaultPercent;
+                     const value = totals[col.id];
+                     const formatter = formatMap[col.id] || formatMap.defaultPercent;
                      return `<td class="px-4 py-2 text-right">${formatter(value)}</td>`;
                 }).join('')}
             </tr>
@@ -410,7 +523,7 @@ export const uiComponents = {
         const totals = reportData.reduce((acc, item) => {
              acc[mainRevenueKey] = (acc[mainRevenueKey] || 0) + (item[mainRevenueKey] || 0);
             acc[mainQuantityKey] = (acc[mainQuantityKey] || 0) + (item[mainQuantityKey] || 0);
-            subQuantityKeys.forEach(subKey => {
+             subQuantityKeys.forEach(subKey => {
                 acc[subKey] = (acc[subKey] || 0) + (item[subKey] || 0);
             });
             return acc;
@@ -422,7 +535,7 @@ export const uiComponents = {
             'PHỤ KIỆN': 'category-header-phukien',
             'GIA DỤNG': 'category-header-giadung',
             'CE': 'category-header-ce',
-            'BẢO HIỂM': 'category-header-baohiem',
+             'BẢO HIỂM': 'category-header-baohiem',
         }[title] || 'bg-gray-200';
 
         const subHeaders = subQuantityLabels.map((label) => `<th class="px-2 py-2 text-right">${label}</th>`).join('');
@@ -433,48 +546,48 @@ export const uiComponents = {
                  tableRows.push(`
                     <tr class="interactive-row" data-employee-id="${item.maNV}" data-source-tab="sknv">
                         <td class="px-2 py-2 font-semibold line-clamp-2 employee-name-cell">
-                           <a href="#">${this.getShortEmployeeName(item.hoTen, item.maNV)}</a>
+                            <a href="#">${this.getShortEmployeeName(item.hoTen, item.maNV)}</a>
                         </td>
                          <td class="px-2 py-2 text-right font-bold">${this.formatRevenue(item[mainRevenueKey])}</td>
-                        <td class="px-2 py-2 text-right font-bold">${this.formatNumberOrDash(item[mainQuantityKey])}</td>
+                         <td class="px-2 py-2 text-right font-bold">${this.formatNumberOrDash(item[mainQuantityKey])}</td>
                          ${subQuantityKeys.map(subKey => `<td class="px-2 py-2 text-right">${this.formatNumberOrDash(item[subKey])}</td>`).join('')}
-                    </tr>
+                     </tr>
                 `);
             }
         });
 
         if (tableRows.length === 0) {
              return `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-                        <h4 class="text-lg font-bold p-3 border-b ${titleClass}">${title}</h4>
+                         <h4 class="text-lg font-bold p-3 border-b ${titleClass}">${title}</h4>
                          <p class="p-4 text-gray-500">Không có dữ liệu cho ngành hàng này.</p>
-                    </div>`;
+                     </div>`;
         }
 
         const html = `
             <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
                 <h4 class="text-lg font-bold p-3 border-b ${titleClass}">${title}</h4>
                  <div class="overflow-x-auto">
-                    <table class="min-w-full text-sm table-bordered table-striped" data-table-type="${sortStateKey}">
+                     <table class="min-w-full text-sm table-bordered table-striped" data-table-type="${sortStateKey}">
                          <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
-                            <tr>
+                             <tr>
                                 <th rowspan="2" class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên</th>
                                  <th rowspan="2" class="${headerClass(mainRevenueKey)} text-right" data-sort="${mainRevenueKey}">DT</th>
-                                 <th rowspan="2" class="${headerClass(mainQuantityKey)} text-right" data-sort="${mainQuantityKey}">Tổng SL</th>
+                                <th rowspan="2" class="${headerClass(mainQuantityKey)} text-right" data-sort="${mainQuantityKey}">Tổng SL</th>
                                  <th colspan="${subQuantityKeys.length}" class="px-2 py-2 text-center">Chi tiết SL</th>
                             </tr>
                             <tr>${subHeaders}</tr>
                          </thead>
-                         <tbody>
-                            ${tableRows.join('')}
+                          <tbody>
+                             ${tableRows.join('')}
                         </tbody>
                           <tfoot class="table-footer font-bold">
                             <tr>
-                                 <td class="px-2 py-2">Tổng</td>
+                                <td class="px-2 py-2">Tổng</td>
                                  <td class="px-2 py-2 text-right">${this.formatRevenue(totals[mainRevenueKey] || 0)}</td>
                                  <td class="px-2 py-2 text-right">${this.formatNumberOrDash(totals[mainQuantityKey] || 0)}</td>
                                  ${subQuantityKeys.map(subKey => `<td class="px-2 py-2 text-right">${this.formatNumberOrDash(totals[subKey] || 0)}</td>`).join('')}
                              </tr>
-                         </tfoot>
+                          </tfoot>
                      </table>
                 </div>
             </div>`;
@@ -653,6 +766,7 @@ export const uiComponents = {
                  } else if (uiId === 'status-luyke') {
                     countText = '';
                  }
+                 
                  finalStatusText = `✓ Đã đồng bộ cloud ${countText} ${timeAgo}`.trim();
              }
 
@@ -747,7 +861,7 @@ export const uiComponents = {
         if (show) {
             drawer.classList.remove('hidden');
             setTimeout(() => {
-                drawer.classList.add('open');
+                 drawer.classList.add('open');
                  sidebar.classList.add('menu-locked');
                  overlay.classList.remove('hidden');
             }, 10);
@@ -759,7 +873,7 @@ export const uiComponents = {
                  if (!drawer.classList.contains('open')) {
                      drawer.classList.add('hidden');
                  }
-            }, 300);
+             }, 300);
         }
     },
     closeAllDrawers() {
@@ -793,7 +907,7 @@ export const uiComponents = {
     toggleDebugTool(button) {
         const container = document.getElementById('debug-tool-container');
         if (container) {
-            container.classList.toggle('hidden');
+             container.classList.toggle('hidden');
             button.textContent = container.classList.contains('hidden') ? 'Hiển thị Công cụ Gỡ lỗi' : 'Ẩn Công cụ Gỡ lỗi';
         }
     },
@@ -812,7 +926,7 @@ export const uiComponents = {
         const firstTextarea = document.querySelector('#composer-context-content textarea');
         firstTextarea?.focus();
     },
-    insertComposerTag(textarea, tag) {
+     insertComposerTag(textarea, tag) {
         if (!textarea) return;
         const start = textarea.selectionStart;
         const end = textarea.selectionEnd;
@@ -835,7 +949,7 @@ export const uiComponents = {
              .then(() => {
                 uiComponents.showNotification('Đã sao chép nội dung!', 'success');
                 uiComponents.toggleModal('preview-modal', false);
-            })
+             })
              .catch(err => {
                 console.error('Lỗi sao chép:', err);
                  uiComponents.showNotification('Lỗi khi sao chép.', 'error');
@@ -861,16 +975,16 @@ export const uiComponents = {
         const container = document.getElementById('update-history-list');
         if (!container) return;
         try {
-            const response = await fetch(`./changelog.json?v=${new Date().getTime()}`);
+             const response = await fetch(`./changelog.json?v=${new Date().getTime()}`);
             if (!response.ok) throw new Error('Không thể tải lịch sử cập nhật.');
             const updateHistory = await response.json();
             container.innerHTML = updateHistory.map(item => `
                 <div class="bg-white rounded-xl shadow-md p-5 border border-gray-200">
                       <h4 class="font-bold text-blue-600 mb-2">Phiên bản ${item.version} (${item.date})</h4>
-                      <ul class="list-disc list-inside text-gray-700 space-y-1 text-sm">
+                     <ul class="list-disc list-inside text-gray-700 space-y-1 text-sm">
                          ${item.notes.map(note => `<li>${note}</li>`).join('')}
                     </ul>
-                </div>`).join('');
+                 </div>`).join('');
         } catch (error) {
             console.error("Lỗi khi render lịch sử cập nhật:", error);
             container.innerHTML = '<p class="text-red-500">Không thể tải lịch sử cập nhật.</p>';
@@ -884,7 +998,7 @@ export const uiComponents = {
         composerContainer.innerHTML = `
              <h4 class="text-lg font-semibold text-gray-800 mb-3">Gửi góp ý của bạn</h4>
             <textarea id="feedback-textarea" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-3" rows="4" placeholder="Chúng tôi luôn lắng nghe ý kiến của bạn để cải thiện công cụ tốt hơn..."></textarea>
-            <button id="submit-feedback-btn" class="w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-indigo-700 transition">Gửi góp ý</button>
+             <button id="submit-feedback-btn" class="w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-indigo-700 transition">Gửi góp ý</button>
         `;
 
         if (!appState.feedbackList || appState.feedbackList.length === 0) {
@@ -1011,15 +1125,15 @@ export const uiComponents = {
                   </div>`;
             }
 
-            const headers = Object.keys(data[0]);
+             const headers = Object.keys(data[0]);
             let tableHTML = `<div class="p-2 border rounded-md bg-white mb-4">
-                 <h4 class="font-bold text-gray-800 mb-2">${title}</h4>
+                  <h4 class="font-bold text-gray-800 mb-2">${title}</h4>
                 <div class="overflow-x-auto">
                      <table class="min-w-full text-xs">
                         <thead class="bg-gray-100">
                              <tr>${headers.map(h => `<th class="px-2 py-1 text-left font-semibold text-gray-600 whitespace-nowrap">${h}</th>`).join('')}</tr>
                         </thead>
-                        <tbody>`;
+                         <tbody>`;
             data.forEach(row => {
                 tableHTML += `<tr class="border-t">`;
                 headers.forEach(header => {
@@ -1050,7 +1164,7 @@ export const uiComponents = {
     },
     renderCompetitionDebugReport(debugResults) {
         // ... (Giữ nguyên)
-        const container = document.getElementById('debug-competition-results');
+         const container = document.getElementById('debug-competition-results');
         if (!container) return;
 
         if (!debugResults || debugResults.length === 0) {
@@ -1070,14 +1184,14 @@ export const uiComponents = {
                          <thead class="bg-gray-100 sticky top-0">
                              <tr>
                                 <th class="p-2">Người tạo</th>
-                                <th class="p-2">Nhóm hàng</th>
+                                 <th class="p-2">Nhóm hàng</th>
                                  <th class="p-2">HT Xuất</th>
                                  <th class="p-2">TT Thu tiền</th>
                                  <th class="p-2">TT Hủy</th>
                                 <th class="p-2">TT Trả</th>
                                  <th class="p-2">TT Xuất</th>
                                  ${checkHeaders.map(h => `<th class="p-2">${h}</th>`).join('')}
-                                <th class="p-2">Tổng thể</th>
+                                 <th class="p-2">Tổng thể</th>
                              </tr>
                          </thead>
                         <tbody>`;
@@ -1087,22 +1201,22 @@ export const uiComponents = {
         debugResults.forEach(result => {
             const rowClass = result.isOverallValid ? 'bg-green-50' : 'bg-red-50';
             const { rowData, checks, isOverallValid } = result;
-            tableHTML += `
+             tableHTML += `
                 <tr class="${rowClass}">
                      <td class="p-2">${rowData.nguoiTao || ''}</td>
                      <td class="p-2">${rowData.nhomHang || ''}</td>
                      <td class="p-2">${rowData.hinhThucXuat || ''}</td>
                      <td class="p-2">${rowData.trangThaiThuTien || ''}</td>
                     <td class="p-2">${rowData.trangThaiHuy || ''}</td>
-                    <td class="p-2">${rowData.tinhTrangTra || ''}</td>
-                     <td class="p-2">${rowData.trangThaiXuat || ''}</td>
+                     <td class="p-2">${rowData.tinhTrangTra || ''}</td>
+                    <td class="p-2">${rowData.trangThaiXuat || ''}</td>
                     ${renderCheck(checks.isDoanhThuHTX)}
                     ${renderCheck(checks.isThuTien)}
                     ${renderCheck(checks.isChuaHuy)}
                     ${renderCheck(checks.isChuaTra)}
                     ${renderCheck(checks.isDaXuat)}
-                     ${renderCheck(isOverallValid)}
-                 </tr>
+                    ${renderCheck(isOverallValid)}
+                </tr>
             `;
         });
 
@@ -1125,7 +1239,7 @@ export const uiComponents = {
 
         const sortedUsers = [...users].sort((a, b) => {
             let valA = a[key];
-            let valB = b[key];
+             let valB = b[key];
 
             if (key === 'lastLogin') {
                 valA = valA instanceof Date ? valA.getTime() : 0;
@@ -1146,12 +1260,12 @@ export const uiComponents = {
         let tableHTML = `
             <div class="overflow-x-auto max-h-[600px]">
                 <table class="min-w-full text-sm table-bordered table-striped" data-table-type="user_stats">
-                    <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold sticky top-0">
+                     <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold sticky top-0">
                         <tr>
                             <th class="${headerClass('email')}" data-sort="email">Email <span class="sort-indicator"></span></th>
                             <th class="${headerClass('loginCount')} text-right" data-sort="loginCount">Lượt truy cập <span class="sort-indicator"></span></th>
                             <th class="${headerClass('actionsTaken')} text-right" data-sort="actionsTaken">Lượt sử dụng <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('lastLogin')} text-right" data-sort="lastLogin">Lần cuối truy cập <span class="sort-indicator"></span></th>
+                             <th class="${headerClass('lastLogin')} text-right" data-sort="lastLogin">Lần cuối truy cập <span class="sort-indicator"></span></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1161,7 +1275,7 @@ export const uiComponents = {
             const lastLoginDate = user.lastLogin instanceof Date ? user.lastLogin : null;
             const formattedLastLogin = lastLoginDate
                 ? `${lastLoginDate.toLocaleDateString('vi-VN')} ${lastLoginDate.toLocaleTimeString('vi-VN')}`
-                : 'Chưa rõ';
+                 : 'Chưa rõ';
 
             // *** SỬA LỖI CÚ PHÁP: Đã sửa cách nhúng biến vào template string ***
             tableHTML += `
@@ -1169,7 +1283,7 @@ export const uiComponents = {
                     <td class="px-4 py-2 font-medium text-gray-900">${user.email}</td>
                     <td class="px-4 py-2 text-right font-bold">${this.formatNumber(user.loginCount || 0)}</td>
                     <td class="px-4 py-2 text-right font-bold">${this.formatNumber(user.actionsTaken || 0)}</td>
-                    <td class="px-4 py-2 text-right">${formattedLastLogin}</td>
+                     <td class="px-4 py-2 text-right">${formattedLastLogin}</td>
                 </tr>
             `;
             // *** KẾT THÚC SỬA LỖI ***
@@ -1177,6 +1291,57 @@ export const uiComponents = {
 
         tableHTML += `</tbody></table></div>`;
         container.innerHTML = tableHTML;
-    }
+    },
     // *** END MODIFIED FUNCTION ***
+
+    // *** START: NEW FUNCTION (v3.23) ***
+    /**
+     * Render bảng ánh xạ tên thi đua trong Tab Khai báo.
+     */
+    renderCompetitionNameMappingTable() {
+        const container = document.getElementById('competition-name-mapping-container');
+        if (!container) return;
+
+        const mappings = appState.competitionNameMappings || {};
+        const mappingEntries = Object.entries(mappings);
+
+        if (mappingEntries.length === 0) {
+             container.innerHTML = '<p class="text-gray-500 italic">Vui lòng dán dữ liệu "Thi đua nhân viên" ở tab "Cập nhật dữ liệu" để hệ thống tự động trích xuất tên...</p>';
+            return;
+        }
+
+        let tableHTML = `
+            <table class="min-w-full text-sm table-bordered bg-white">
+                <thead class="text-xs text-slate-800 uppercase bg-slate-100 font-bold">
+                    <tr>
+                        <th class="px-4 py-2 text-left w-1/2">Tên Gốc (Từ dữ liệu dán)</th>
+                         <th class="px-4 py-2 text-left w-1/2">Tên Rút Gọn (Nhập để thay thế)</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        mappingEntries.forEach(([originalName, shortName]) => {
+            tableHTML += `
+                <tr class="border-t hover:bg-gray-50">
+                    <td class="px-4 py-2 text-gray-600 align-top text-xs">
+                         ${originalName}
+                    </td>
+                    <td class="px-4 py-2 align-top">
+                        <input 
+                            type="text" 
+                            class="competition-name-input w-full p-1 border rounded-md text-sm" 
+                             value="${shortName || ''}" 
+                            data-original-name="${originalName}"
+                            placeholder="Nhập tên rút gọn..."
+                        >
+                    </td>
+                </tr>
+            `;
+        });
+
+        tableHTML += `</tbody></table>`;
+        container.innerHTML = tableHTML;
+    }
+    // *** END: NEW FUNCTION (v3.23) ***
 };

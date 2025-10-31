@@ -1,3 +1,4 @@
+/* Version 6.11 - Add styles for declaration accordion */
 /* Version 6.10 - Fix CSS selector for Thi đua vùng 4-column layout */
 /* Version 6.9 - Fix missing curly brace for .modal__container--large */
 /* Version 6.8 - Adjust Thi đua vùng layout (4 cols) & summary colors */
@@ -1203,3 +1204,43 @@ font-size: 0.9rem; color: #1f2937; flex-grow:
     outline: none;
 }
 /* === END: LOGIN MODAL STYLES === */
+
+/* === START: Declaration Accordion Styles (v6.11) === */
+.declaration-group {
+    border-bottom: 1px solid #e5e7eb; /* gray-200 */
+}
+.declaration-group:last-child {
+    border-bottom: none;
+}
+.declaration-group summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0.5rem;
+    cursor: pointer;
+    font-size: 1.125rem; /* text-lg */
+    font-weight: 700; /* font-bold */
+    color: #374151; /* gray-700 */
+    list-style: none; /* Hide default marker */
+}
+.declaration-group summary::-webkit-details-marker {
+    display: none; /* Hide default marker for Chrome */
+}
+.declaration-group summary:hover {
+    background-color: #f9fafb; /* gray-50 */
+}
+.declaration-group summary::after {
+    content: '+';
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: #6b7280; /* gray-500 */
+    transition: transform 0.2s ease-in-out;
+}
+.declaration-group[open] > summary::after {
+    transform: rotate(45deg);
+    content: '×';
+}
+.declaration-content {
+    padding: 1rem 0.5rem 1.5rem 0.5rem;
+}
+/* === END: Declaration Accordion Styles === */
