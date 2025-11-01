@@ -1,3 +1,6 @@
+// Version 6.22 - Fix: Remove 'min-w-full' from all tables to force parent overflow scroll
+// Version 6.21 - Fix critical syntax error from v6.18
+// Version 6.18 - Add advanced layout logging for Problem 2
 // Version 6.17 - Add deep logging for layout debugging (Problem 2) & force no-wrap on employee name (Req 3)
 // Version 6.16 - Add deep logging for layout debugging (Problem 2) & force no-wrap on employee name (Req 3)
 // Version 6.15 - Fix pasted competition report: add min-width to th, format numbers as integers (no decimals)
@@ -17,7 +20,7 @@ export const uiSknv = {
         const container = document.getElementById('income-report-container');
         const placeholder = document.getElementById('income-report-placeholder');
         if (!container || !placeholder) {
-            console.error("[ui-sknv.js displayEmployeeIncomeReport] Container or placeholder not found."); // Log mới
+           console.error("[ui-sknv.js displayEmployeeIncomeReport] Container or placeholder not found."); // Log mới
             return;
         }
         const hasIncomeData = reportData.some(item => (item.tongThuNhap || 0) > 0 || (item.gioCong || 0) > 0);
@@ -33,7 +36,7 @@ export const uiSknv = {
 
         const groupedByDept = {};
         reportData.forEach(item => {
-            const dept = item.boPhan;
+             const dept = item.boPhan;
             if (!groupedByDept[dept]) groupedByDept[dept] = [];
             groupedByDept[dept].push(item);
         });
@@ -63,7 +66,7 @@ export const uiSknv = {
 
         const totals = data.reduce((acc, item) => {
             acc.gioCong += item.gioCong || 0; // Ensure NaN safety
-            acc.thuongNong += item.thuongNong || 0;
+             acc.thuongNong += item.thuongNong || 0;
             acc.thuongERP += item.thuongERP || 0;
             acc.tongThuNhap += item.tongThuNhap || 0;
             acc.thuNhapDuKien += item.thuNhapDuKien || 0;
@@ -80,12 +83,13 @@ export const uiSknv = {
         else if (title.includes('Trang Trí')) titleClass = 'department-header-tt';
 
         const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
-        let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title} <span class="text-sm font-normal text-gray-500">(Thu nhập DK TB: ${uiComponents.formatRevenue(averageProjectedIncome)})</span></h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="thunhap" data-capture-columns="8">
+        // *** FIX (v6.22): Removed 'min-w-full' from table ***
+        let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title} <span class="text-sm font-normal text-gray-500">(Thu nhập DK TB: ${uiComponents.formatRevenue(averageProjectedIncome)})</span></h4><div class="overflow-x-auto"><table class="text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="thunhap" data-capture-columns="8">
           <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                  <tr>
                     <th class="${headerClass('hoTen')}" data-sort="hoTen">Họ Tên <span class="sort-indicator"></span></th>
                     <th class="${headerClass('gioCong')} text-right" data-sort="gioCong">Giờ công <span class="sort-indicator"></span></th>
-                    <th class="${headerClass('tongThuNhap')} text-right" data-sort="tongThuNhap">Tổng thu nhập <span class="sort-indicator"></span></th>
+                     <th class="${headerClass('tongThuNhap')} text-right" data-sort="tongThuNhap">Tổng thu nhập <span class="sort-indicator"></span></th>
                     <th class="${headerClass('thuNhapDuKien')} text-right" data-sort="thuNhapDuKien">Thu nhập DK <span class="sort-indicator"></span></th>
                     <th class="${headerClass('thuNhapThangTruoc')} text-right" data-sort="thuNhapThangTruoc">Tháng trước <span class="sort-indicator"></span></th>
                     <th class="${headerClass('chenhLechThuNhap')} text-right" data-sort="chenhLechThuNhap">+/- Tháng trước <span class="sort-indicator"></span></th>
@@ -93,7 +97,7 @@ export const uiSknv = {
                  </thead><tbody>`;
         sortedData.forEach(nv => {
             const incomeDkCellClass = nv.thuNhapDuKien < averageProjectedIncome ? 'cell-performance is-below' : '';
-            const incomeDiffClass = (nv.chenhLechThuNhap || 0) < 0 ? 'income-negative' : 'income-positive'; // Handle undefined/NaN
+             const incomeDiffClass = (nv.chenhLechThuNhap || 0) < 0 ? 'income-negative' : 'income-positive'; // Handle undefined/NaN
 
             tableHTML += `<tr class="interactive-row" data-employee-id="${nv.maNV}" data-source-tab="sknv">
                     <td class="px-4 py-2 font-semibold line-clamp-2 employee-name-cell">
@@ -146,14 +150,14 @@ export const uiSknv = {
             console.log(`[DEBUG displaySknvReport] Đang tìm data cho NV ID: ${employeeId}`); // Log mới
             const employeeData = appState.masterReportData.sknv.find(nv => String(nv.maNV).trim() === String(employeeId).trim());
             if(employeeData) {
-                console.log(`[DEBUG displaySknvReport] Đã tìm thấy data NV. Gọi renderSknvDetailForEmployee.`); // Log mới
+                 console.log(`[DEBUG displaySknvReport] Đã tìm thấy data NV. Gọi renderSknvDetailForEmployee.`); // Log mới
                 uiSknv.renderSknvDetailForEmployee(employeeData, filteredReport);
             } else {
                  console.warn(`[DEBUG displaySknvReport] KHÔNG TÌM THẤY data cho NV ID: ${employeeId}`); // Log mới
                  detailsContainer.innerHTML = `
                     <div class="mb-4">
                         <button class="back-to-summary-btn text-blue-600 hover:underline font-semibold">‹ Quay lại bảng tổng hợp</button>
-                    </div>
+                     </div>
                     <p class="text-red-500">Không tìm thấy dữ liệu chi tiết cho nhân viên đã chọn.</p>`;
             }
         } else {
@@ -166,6 +170,7 @@ export const uiSknv = {
     _createDetailMetricGrid(title, colorClass, icon, data) {
         let itemsHtml = data.map(row => {
             const evaluation = uiSknv.getSknvEvaluation(row.rawValue, row.rawAverage, row.higherIsBetter);
+            
             return `
                 <div class="sknv-detail-metric-card">
                     <span class="label">${row.label}</span>
@@ -230,7 +235,7 @@ export const uiSknv = {
         // --- Tạo dữ liệu cho các grid (Giữ nguyên logic tạo mảng doanhThuData, nangSuatData, hieuQuaData, donGiaData) ---
         const doanhThuData = [
             { label: 'Doanh thu thực', value: uiComponents.formatRevenue(employeeData.doanhThu), average: uiComponents.formatRevenue(departmentAverages.doanhThu || 0), rawValue: employeeData.doanhThu, rawAverage: departmentAverages.doanhThu },
-            { label: 'Doanh thu quy đổi', value: uiComponents.formatRevenue(employeeData.doanhThuQuyDoi), average: uiComponents.formatRevenue(departmentAverages.doanhThuQuyDoi || 0), rawValue: employeeData.doanhThuQuyDoi, rawAverage: departmentAverages.doanhThuQuyDoi },
+             { label: 'Doanh thu quy đổi', value: uiComponents.formatRevenue(employeeData.doanhThuQuyDoi), average: uiComponents.formatRevenue(departmentAverages.doanhThuQuyDoi || 0), rawValue: employeeData.doanhThuQuyDoi, rawAverage: departmentAverages.doanhThuQuyDoi },
             { label: '% Quy đổi', value: uiComponents.formatPercentage(employeeData.hieuQuaQuyDoi), valueClass: (mucTieu && employeeData.hieuQuaQuyDoi < (mucTieu.phanTramQD / 100)) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.hieuQuaQuyDoi), rawValue: employeeData.hieuQuaQuyDoi, rawAverage: departmentAverages.hieuQuaQuyDoi },
             { label: 'Doanh thu CE', value: uiComponents.formatRevenue(employeeData.dtCE), average: uiComponents.formatRevenue(departmentAverages.dtCE || 0), rawValue: employeeData.dtCE, rawAverage: departmentAverages.dtCE },
             { label: 'Doanh thu ICT', value: uiComponents.formatRevenue(employeeData.dtICT), average: uiComponents.formatRevenue(departmentAverages.dtICT || 0), rawValue: employeeData.dtICT, rawAverage: departmentAverages.dtICT },
@@ -251,7 +256,7 @@ export const uiSknv = {
         nangSuatData.forEach(d => countEvaluation('nangsuat', d.rawValue, d.rawAverage));
 
         const hieuQuaData = [
-            { label: '% PK', value: uiComponents.formatPercentage(employeeData.pctPhuKien), valueClass: (mucTieu && employeeData.pctPhuKien < (mucTieu.phanTramPhuKien / 100)) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctPhuKien), rawValue: employeeData.pctPhuKien, rawAverage: departmentAverages.pctPhuKien },
+             { label: '% PK', value: uiComponents.formatPercentage(employeeData.pctPhuKien), valueClass: (mucTieu && employeeData.pctPhuKien < (mucTieu.phanTramPhuKien / 100)) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctPhuKien), rawValue: employeeData.pctPhuKien, rawAverage: departmentAverages.pctPhuKien },
             { label: '% Gia dụng', value: uiComponents.formatPercentage(employeeData.pctGiaDung), valueClass: (mucTieu && employeeData.pctGiaDung < (mucTieu.phanTramGiaDung / 100)) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctGiaDung), rawValue: employeeData.pctGiaDung, rawAverage: departmentAverages.pctGiaDung },
             { label: '% MLN', value: uiComponents.formatPercentage(employeeData.pctMLN), valueClass: (mucTieu && employeeData.pctMLN < (mucTieu.phanTramMLN / 100)) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctMLN), rawValue: employeeData.pctMLN, rawAverage: departmentAverages.pctMLN },
             { label: '% Sim', value: uiComponents.formatPercentage(employeeData.pctSim), valueClass: (mucTieu && employeeData.pctSim < (mucTieu.phanTramSim / 100)) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctSim), rawValue: employeeData.pctSim, rawAverage: departmentAverages.pctSim },
@@ -264,7 +269,7 @@ export const uiSknv = {
             { label: 'Đơn giá TB', value: uiComponents.formatRevenue(employeeData.donGiaTrungBinh), average: uiComponents.formatRevenue(departmentAverages.donGiaTrungBinh), rawValue: employeeData.donGiaTrungBinh, rawAverage: departmentAverages.donGiaTrungBinh },
             { label: 'Đơn giá Tivi', value: uiComponents.formatRevenue(employeeData.donGiaTivi), average: uiComponents.formatRevenue(departmentAverages.donGiaTivi), rawValue: employeeData.donGiaTivi, rawAverage: departmentAverages.donGiaTivi },
             { label: 'Đơn giá Tủ lạnh', value: uiComponents.formatRevenue(employeeData.donGiaTuLanh), average: uiComponents.formatRevenue(departmentAverages.donGiaTuLanh), rawValue: employeeData.donGiaTuLanh, rawAverage: departmentAverages.donGiaTuLanh },
-            { label: 'Đơn giá Máy giặt', value: uiComponents.formatRevenue(employeeData.donGiaMayGiat), average: uiComponents.formatRevenue(departmentAverages.donGiaMayGiat), rawValue: employeeData.donGiaMayGiat, rawAverage: departmentAverages.donGiaMayGiat },
+             { label: 'Đơn giá Máy giặt', value: uiComponents.formatRevenue(employeeData.donGiaMayGiat), average: uiComponents.formatRevenue(departmentAverages.donGiaMayGiat), rawValue: employeeData.donGiaMayGiat, rawAverage: departmentAverages.donGiaMayGiat },
             { label: 'Đơn giá Máy lạnh', value: uiComponents.formatRevenue(employeeData.donGiaMayLanh), average: uiComponents.formatRevenue(departmentAverages.donGiaMayLanh), rawValue: employeeData.donGiaMayLanh, rawAverage: departmentAverages.donGiaMayLanh },
             { label: 'Đơn giá Điện thoại', value: uiComponents.formatRevenue(employeeData.donGiaDienThoai), average: uiComponents.formatRevenue(departmentAverages.donGiaDienThoai), rawValue: employeeData.donGiaDienThoai, rawAverage: departmentAverages.donGiaDienThoai },
             { label: 'Đơn giá Laptop', value: uiComponents.formatRevenue(employeeData.donGiaLaptop), average: uiComponents.formatRevenue(departmentAverages.donGiaLaptop), rawValue: employeeData.donGiaLaptop, rawAverage: departmentAverages.donGiaLaptop },
@@ -283,14 +288,14 @@ export const uiSknv = {
                     <i data-feather="camera"></i>
                     <span>Chụp ảnh</span>
                 </button>
-            </div>
+             </div>
             <div id="sknv-detail-capture-area">
                 <div class="sknv-detail-header-card" data-capture-group="1">
                     <div class="sknv-card__avatar sknv-detail-avatar">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                     </div>
                     <div class="sknv-detail-info">
-                        <p class="name">${employeeData.hoTen} - ${employeeData.maNV}</p>
+                         <p class="name">${employeeData.hoTen} - ${employeeData.maNV}</p>
                         <p class="department">${employeeData.boPhan}</p>
                         <p class="kpi-summary">Chỉ số trên TB: <span class="text-green-600 font-bold">${totalAbove}</span> / Tổng: <span class="font-bold">${totalCriteria}</span></p>
                     </div>
@@ -298,13 +303,13 @@ export const uiSknv = {
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6" data-capture-layout="grid">
                     <div class="space-y-6" data-capture-group="1">
-                        ${this._createDetailMetricGrid('Doanh thu', 'sknv-header-blue', 'trending-up', doanhThuData)}
+                         ${this._createDetailMetricGrid('Doanh thu', 'sknv-header-blue', 'trending-up', doanhThuData)}
                         ${this._createDetailMetricGrid('Hiệu quả khai thác', 'sknv-header-orange', 'award', hieuQuaData)}
                     </div>
                     <div class="space-y-6" data-capture-group="1">
                         ${this._createDetailMetricGrid('Năng suất', 'sknv-header-green', 'dollar-sign', nangSuatData)}
                         ${this._createDetailMetricGrid('Đơn giá', 'sknv-header-yellow', 'tag', donGiaData)}
-                    </div>
+                     </div>
                     <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6" data-capture-layout="grid">
                         <div data-capture-group="1" class="overflow-x-auto">${uiSknv.renderSknvQdcTable(employeeData, departmentAverages, countEvaluation, evaluationCounts)}</div>
                         <div data-capture-group="1" class="overflow-x-auto">${uiSknv.renderSknvNganhHangTable(employeeData)}</div>
@@ -330,6 +335,7 @@ export const uiSknv = {
         }
         console.log(`[ui-sknv.js displaySknvSummaryReport] Input reportData length: ${reportData.length}`); // Log mới
 
+        
         const summarizedData = reportData.map(employee => {
             const departmentAverages = services.calculateDepartmentAverages(employee.boPhan, reportData);
             const counts = {
@@ -438,7 +444,7 @@ export const uiSknv = {
                                     <span class="label">${group.label}</span>
                                 </div>
                                 <span class="value ${valueColorClass}">${item.summary[group.key].above}/${item.summary[group.key].total}</span>
-                            </div>
+                             </div>
                         `; 
                     }).join(''); 
 
@@ -446,21 +452,21 @@ export const uiSknv = {
                         <div class="sknv-card interactive-row" data-employee-id="${item.maNV}" data-source-tab="sknv">
                             ${medalHtml}
                             <div class="sknv-card__header">
-                                <div class="sknv-card__avatar">
+                                 <div class="sknv-card__avatar">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                                 </div>
                                 <div class="sknv-card__info">
-                                    <p class="name">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</p>
+                                     <p class="name">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</p>
                                     <p class="id">${item.boPhan}</p>
                                 </div>
                             </div>
                             <div class="sknv-card__main-kpi ${performanceColorClass}">
-                                <span class="value">${item.totalAbove}</span>
+                                 <span class="value">${item.totalAbove}</span>
                                 <span class="total">/ ${item.totalCriteria}</span>
                                 <span class="label">Chỉ số trên TB</span>
                             </div>
                             <div class="sknv-card__sub-kpi-grid">
-                                ${subKpisHtml}
+                                 ${subKpisHtml}
                             </div>
                         </div>`; 
                 });
@@ -500,12 +506,13 @@ export const uiSknv = {
         const sortedData = [...dataArray].sort((a,b) => direction === 'asc' ? (a[key] || 0) - (b[key] || 0) : (b[key] || 0) - (a[key] || 0)); 
         const headerClass = (sortKey) => `px-4 py-2 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
 
-        return `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"><div class="sknv-detail-card-header sknv-header-purple"><i data-feather="list" class="header-icon"></i><h4 class="text-lg font-bold">Doanh thu theo Ngành hàng</h4></div><div class="overflow-x-auto" style="max-height: 400px;"><table class="min-w-full text-sm table-bordered table-striped" data-table-type="sknv_nganhhang_chitiet">
+        // *** FIX (v6.22): Removed 'min-w-full' from table ***
+        return `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"><div class="sknv-detail-card-header sknv-header-purple"><i data-feather="list" class="header-icon"></i><h4 class="text-lg font-bold">Doanh thu theo Ngành hàng</h4></div><div class="overflow-x-auto" style="max-height: 400px;"><table class="text-sm table-bordered table-striped" data-table-type="sknv_nganhhang_chitiet">
             <thead class="sknv-subtable-header"><tr>
                 <th class="${headerClass('name')}" data-sort="name">Ngành hàng</th>
                 <th class="${headerClass('quantity')} text-right" data-sort="quantity">SL</th>
                 <th class="${headerClass('revenue')} text-right" data-sort="revenue">Doanh thu</th>
-                <th class="${headerClass('revenueQuyDoi')} text-right" data-sort="revenueQuyDoi">DTQĐ</th>
+                 <th class="${headerClass('revenueQuyDoi')} text-right" data-sort="revenueQuyDoi">DTQĐ</th>
             </tr></thead>
             <tbody>${sortedData.map(item => `
                 <tr class="border-t">
@@ -513,7 +520,7 @@ export const uiSknv = {
                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatNumberOrDash(item.quantity)}</td>
                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.revenue, 0)}</td>
                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.revenueQuyDoi, 0)}</td>
-                </tr>`).join('')}
+                 </tr>`).join('')}
             </tbody></table></div></div>`;
     },
 
@@ -532,7 +539,7 @@ export const uiSknv = {
         const { key, direction } = sortState;
         const sortedData = Object.entries(qdcData)
             .map(([id, values]) => ({ id, ...values }))
-            .filter(item => (item.sl || 0) > 0) 
+             .filter(item => (item.sl || 0) > 0) 
             .sort((a,b) => direction === 'asc' ? (a[key] || 0) - (b[key] || 0) : (b[key] || 0) - (a[key] || 0)); 
         console.log(`[ui-sknv.js renderSknvQdcTable] Sorted QDC data length: ${sortedData.length}`); 
 
@@ -545,8 +552,9 @@ export const uiSknv = {
 
         const headerClass = (sortKey) => `px-4 py-2 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
 
-        return `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"><div class="sknv-detail-card-header sknv-header-indigo"><i data-feather="star" class="header-icon"></i><h4 class="text-lg font-bold">Nhóm hàng Quy đổi cao</h4></div><div class="overflow-x-auto" style="max-height: 400px;"><table class="min-w-full text-sm table-bordered table-striped" data-table-type="sknv_qdc">
-            <thead class="sknv-subtable-header"><tr>
+        // *** FIX (v6.22): Removed 'min-w-full' from table ***
+        return `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"><div class="sknv-detail-card-header sknv-header-indigo"><i data-feather="star" class="header-icon"></i><h4 class="text-lg font-bold">Nhóm hàng Quy đổi cao</h4></div><div class="overflow-x-auto" style="max-height: 400px;"><table class="text-sm table-bordered table-striped" data-table-type="sknv_qdc">
+             <thead class="sknv-subtable-header"><tr>
                 <th class="${headerClass('name')}" data-sort="name">Nhóm hàng</th>
                 <th class="${headerClass('sl')} text-right" data-sort="sl">SL</th>
                 <th class="${headerClass('dtqd')} text-right" data-sort="dtqd">DTQĐ (Tr)</th>
@@ -555,7 +563,7 @@ export const uiSknv = {
             <tbody>${sortedData.map(item => {
                 const avgValue = avgQdcData?.[item.id]?.dtqd;
                 const evaluation = uiSknv.getSknvEvaluation(item.dtqd, avgValue);
-                countCallback('qdc', item.dtqd, avgValue);
+                 countCallback('qdc', item.dtqd, avgValue);
                 return `<tr class="border-t">
                     <td class="px-4 py-2 font-medium">${item.name}</td>
                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatNumberOrDash(item.sl)}</td>
@@ -565,8 +573,8 @@ export const uiSknv = {
             </tbody></table></div></div>`;
     },
 
-    // *** START: MODIFIED FUNCTION (v6.17) - Fix Bugs 2, 3 & Add Feature 5 + Logging ***
-    /**
+    // *** START: MODIFIED FUNCTION (v6.22) - Sửa lỗi min-w-full ***
+     /**
      * Render bảng báo cáo Thi đua NV từ dữ liệu đã dán (pasted data).
      * @param {Array} reportData - Dữ liệu đã được xử lý từ appState.pastedThiDuaReportData (đã được lọc)
      */
@@ -598,6 +606,7 @@ export const uiSknv = {
         console.log(`[DEBUG renderPastedCompetitionReport] Số lượng cột header: ${headers.length}`);
         // === END: DEBUG ===
 
+        
         let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden" data-capture-group="pasted-competition">`;
 
         // Nhóm theo bộ phận
@@ -615,7 +624,7 @@ export const uiSknv = {
             if (groupedByDept[deptName]) {
                 const deptData = groupedByDept[deptName];
                 
-                // Sắp xếp nhân viên trong bộ phận
+                 // Sắp xếp nhân viên trong bộ phận
                 const sortState = appState.sortState[sortStateKey] || { key: 'hoTen', direction: 'asc' };
                 const { key, direction } = sortState;
                 const sortedData = [...deptData].sort((a, b) => {
@@ -636,20 +645,22 @@ export const uiSknv = {
                 // === START: DEBUG (v6.16) ===
                 console.log(`[DEBUG renderPastedCompetitionReport] Bắt đầu render department: ${deptName}`);
                 // Thêm overflow-x-auto ngay đây
+                // *** MODIFIED (v6.18): Thêm class "sknv-pasted-competition-scroller" ***
                 finalHTML += `<div class="department-block">
                     <h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${deptName}</h4>
-                    <div class="overflow-x-auto"> 
-                    <table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="${1 + headers.length}">
-                        <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
+                    <div class="overflow-x-auto sknv-pasted-competition-scroller"> 
+                    
+                    <table class="text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="${1 + headers.length}">
+                    <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                             <tr>
                                 <th class="${headerClass('hoTen')}" data-sort="hoTen" style="min-width: 150px; white-space: nowrap;">Nhân viên <span class="sort-indicator"></span></th>
                             
                                 ${headers.map((header, index) => `
-                                    <th class="px-4 py-2 text-center header-group-${index % 12 + 1}" title="${header.tenGoc} (${header.loaiSoLieu})" style="min-width: 130px;">
+                                     <th class="px-4 py-2 text-center header-group-${index % 12 + 1}" title="${header.tenGoc} (${header.loaiSoLieu})" style="min-width: 130px;">
                                         ${header.tenRutGon}
                                     </th>
                                 `).join('')}
-                            </tr>
+                             </tr>
                             </thead>
                         <tbody>`;
 
@@ -660,22 +671,22 @@ export const uiSknv = {
                 // Thêm dòng dữ liệu nhân viên
                 sortedData.forEach(item => {
                     // === FIX 3 (Thêm style) ===
-                    finalHTML += `<tr class="hover:bg-gray-50">
+                     finalHTML += `<tr class="hover:bg-gray-50">
                         <td class="px-4 py-2 font-semibold whitespace-nowrap">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</td>
                         
                         ${item.competitions.map((comp, i) => {
                              let formattedValue;
-                            const giaTri = comp.giaTri || 0;
+                             const giaTri = comp.giaTri || 0;
                             
                             if (giaTri === 0) {
                                 formattedValue = '-';
                             } else {
-                                // Add to totals
+                                 // Add to totals
                                 deptTotals[i] += giaTri;
                                 validEmployeeCount[i]++;
                                 
                                 // === FIX 3b (Sửa) - Dùng formatNumber với 0 số lẻ ===
-                                formattedValue = uiComponents.formatNumber(giaTri, 0); 
+                                 formattedValue = uiComponents.formatNumber(giaTri, 0); 
                             }
                  
                             const cellClass = (comp.loaiSoLieu === 'SLLK') ? 'text-right font-bold' : 'text-right font-bold text-blue-600';
@@ -687,24 +698,24 @@ export const uiSknv = {
 
                 // *** FIX (Feature 5): Render Sum and Avg rows ***
                 finalHTML += `</tbody>
-                    <tfoot class="table-footer font-bold">
+                     <tfoot class="table-footer font-bold">
                         <tr class="bg-gray-100">
                             <td class="px-4 py-2 text-left">Tổng</td>
                             ${headers.map((header, i) => {
                                 const total = deptTotals[i];
-                                // === FIX 3b (Sửa) ===
+                                 // === FIX 3b (Sửa) ===
                                 const formattedTotal = total === 0 ? '-' : uiComponents.formatNumber(total, 0);
                                 return `<td class="px-2 py-2 text-right">${formattedTotal}</td>`;
                             }).join('')}
                         </tr>
-                        <tr class="bg-gray-100">
+                         <tr class="bg-gray-100">
                             <td class="px-4 py-2 text-left">Trung Bình</td>
                             ${headers.map((header, i) => {
                                 const total = deptTotals[i];
                                 const count = validEmployeeCount[i];
                                 const avg = count > 0 ? total / count : 0;
                                 // === FIX 3b (Sửa) ===
-                                const formattedAvg = avg === 0 ? '-' : uiComponents.formatNumber(avg, 0);
+                                 const formattedAvg = avg === 0 ? '-' : uiComponents.formatNumber(avg, 0);
                                 return `<td class="px-2 py-2 text-right">${formattedAvg}</td>`;
                             }).join('')}
                         </tr>
@@ -716,25 +727,60 @@ export const uiSknv = {
         finalHTML += `</div>`; // Đóng .bg-white
         container.innerHTML = finalHTML;
         
-        // === START: DEBUG (v6.16) ===
-        // Thêm log chẩn đoán sau khi render
+        // === START: DEBUG (v6.18) - Nâng cấp log chẩn đoán ===
         setTimeout(() => {
             const tableEl = container.querySelector('table');
-            const tableContainer = container.querySelector('.overflow-x-auto');
-            if (tableEl && tableContainer) {
-                console.log(`[DEBUG renderPastedCompetitionReport] Kích thước sau render:`);
-                console.log(`  > Kích thước Bảng (scrollWidth): ${tableEl.scrollWidth}px`);
-                console.log(`  > Kích thước Container (clientWidth): ${tableContainer.clientWidth}px`);
+            // Tìm container cuộn (div.overflow-x-auto)
+            const tableContainer = container.querySelector('.sknv-pasted-competition-scroller');
+            // Tìm container cha (pasted-competition-report-container)
+            const parentContainer = document.getElementById('pasted-competition-report-container');
+            // Tìm main content
+            const mainContentEl = document.getElementById('main-content');
+
+            if (tableEl && tableContainer && parentContainer && mainContentEl) {
+                console.log(`%c[DEBUG renderPastedCompetitionReport] Kích thước sau render (v6.22):`, "color: #00008B; font-weight: bold;");
+                
+                // Log 1: Cái bảng
+                console.log(`  > 1. Bảng (<table>):`);
+                console.log(`    - scrollWidth: ${tableEl.scrollWidth}px`);
+                console.log(`    - display: ${window.getComputedStyle(tableEl).display}`);
+
+                // Log 2: Container cuộn
+                console.log(`  > 2. Container Cuộn (.sknv-pasted-competition-scroller):`);
+                console.log(`    - clientWidth: ${tableContainer.clientWidth}px`);
+                console.log(`    - display: ${window.getComputedStyle(tableContainer).display}`);
+                
+                // Log 3: Container Cha (của container cuộn)
+                console.log(`  > 3. Container Báo Cáo (#pasted-competition-report-container):`);
+                console.log(`    - clientWidth: ${parentContainer.clientWidth}px`);
+                console.log(`    - display: ${window.getComputedStyle(parentContainer).display}`);
+
+                // Log 4: Main Content
+                console.log(`  > 4. Main Content (#main-content):`);
+                console.log(`    - clientWidth: ${mainContentEl.clientWidth}px`);
+                console.log(`    - display: ${window.getComputedStyle(mainContentEl).display}`);
+
+                // Chẩn đoán
+                console.log(`%c[DEBUG renderPastedCompetitionReport] CHẨN ĐOÁN (v6.22):`, "color: #00008B; font-weight: bold;");
                 if (tableEl.scrollWidth > tableContainer.clientWidth) {
-                    console.log(`%c  > CHẨN ĐOÁN: Tốt! Bảng rộng hơn container, thanh trượt ngang NÊN xuất hiện.`, "color: green;");
+                    console.log(`%c  > TỐT: Bảng (1) rộng hơn Container Cuộn (2). Thanh trượt NÊN xuất hiện.`, "color: green;");
                 } else {
-                    console.log(`%c  > CHẨN ĐOÁN: Cảnh báo! Bảng không rộng hơn container, thanh trượt ngang sẽ KHÔNG xuất hiện.`, "color: orange;");
+                    console.log(`%c  > LỖI: Bảng (1) KHÔNG rộng hơn Container Cuộn (2). Thanh trượt sẽ KHÔNG xuất hiện.`, "color: red; font-weight: bold;");
+                    console.log(`    Kiểm tra tại sao Container Cuộn (2) lại rộng bằng Bảng (1).`);
                 }
+                
+                if (tableContainer.clientWidth >= mainContentEl.clientWidth) {
+                     console.log(`%c  > LỖI: Container Cuộn (2) đang rộng bằng hoặc hơn Main Content (4).`, "color: red; font-weight: bold;");
+                     console.log(`    Điều này cho thấy Main Content (4) đã bị Bảng (1) đẩy dãn ra.`);
+                } else {
+                     console.log(`%c  > TỐT: Container Cuộn (2) hẹp hơn Main Content (4).`, "color: green;");
+                }
+
             } else {
-                console.error("[DEBUG renderPastedCompetitionReport] Không tìm thấy bảng hoặc container sau khi render để chẩn đoán.");
+                console.error("[DEBUG renderPastedCompetitionReport] Không tìm thấy một trong các phần tử chẩn đoán (table, tableContainer, parentContainer, mainContentEl).");
             }
         }, 0);
-        // === END: DEBUG (v6.16) ===
+        // === END: DEBUG (v6.18) ===
     }
-    // *** END: MODIFIED FUNCTION (v6.17) ***
+    // *** END: MODIFIED FUNCTION (v6.22) ***
 };
