@@ -1,3 +1,5 @@
+// Version 3.3 - Add cloud functions for competitionNameMappings
+// Version 3.2 - Modify incrementCounter to support user-specific actionsTaken
 // Version 3.1 - Add savePastedDataToFirestore for text content sync
 // Version 3.0 - Implement Cloud Storage upload & save metadata to Firestore
 // Version 2.5 - Add detailed try...catch for setDoc in saveDataByWarehouse
@@ -8,19 +10,17 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, arrayUnion, serverTimestamp, query, orderBy, setDoc, increment, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-// *** ADDED: Import Storage functions needed for upload ***
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 import { appState } from './state.js';
 import { ui } from './ui.js';
 
 const firebase = {
-    // *** initCore() remains the same as v2.5 ***
     async initCore() {
         const firebaseConfig = {
           apiKey: "AIzaSyAQ3TWcpa4AnTN-32igGseYDlXrCf1BVew", // Replace with your actual config if needed
           authDomain: "qlst-9e6bd.firebaseapp.com",
           projectId: "qlst-9e6bd",
-          storageBucket: "qlst-9e6bd.firebasestorage.app", // *** Sửa lại tên bucket chuẩn ***
+          storageBucket: "qlst-9e6bd.firebasestorage.app",
           messagingSenderId: "2316705291",
           appId: "1:2316705291:web:ebec2963816aea7585b10e",
           measurementId: "G-M0SM0XHCEK"
@@ -38,8 +38,6 @@ const firebase = {
         }
     },
 
-    // *** setupListeners() remains the same as v2.5 ***
-    // (Listener now expects metadata, not full data)
     setupListeners() {
         console.log("Setting up Firebase listeners...");
         if (!appState.db) {
@@ -58,8 +56,9 @@ const firebase = {
                 const data = doc.data();
                 appState.feedbackList.push({ id: doc.id, ...data, timestamp: data.timestamp?.toDate() });
             });
+            // Chỉ render nếu đang ở trang chủ
             if (document.getElementById('home-section')?.classList.contains('hidden') === false) {
-                 ui.renderFeedbackSection();
+                 ui.renderFeedbackSection(); // Giả sử hàm này nằm trong ui object
             }
         }, (error) => {
             console.error("Error listening to feedback collection: ", error);
@@ -71,15 +70,16 @@ const firebase = {
         const helpContentRef = collection(appState.db, "help_content");
         onSnapshot(helpContentRef, (querySnapshot) => {
             console.log("Help content listener received data.");
-             let contentUpdated = false;
+            let contentUpdated = false;
             querySnapshot.forEach((doc) => {
                 if (appState.helpContent.hasOwnProperty(doc.id)) {
                     appState.helpContent[doc.id] = doc.data().content;
                     contentUpdated = true;
                 }
             });
+            // Chỉ render nếu admin đang ở trang khai báo
             if (contentUpdated && appState.isAdmin && document.getElementById('declaration-section')?.classList.contains('hidden') === false) {
-                 ui.renderAdminHelpEditors();
+                 ui.renderAdminHelpEditors(); // Giả sử hàm này nằm trong ui object
             }
         }, (error) => {
             console.error("Error listening to help_content collection: ", error);
@@ -93,7 +93,7 @@ const firebase = {
             if (docSnap.exists()) {
                console.log("Stats listener received data.");
                const statsData = docSnap.data();
-                ui.updateUsageCounter(statsData);
+                ui.updateUsageCounter(statsData); // Giả sử hàm này nằm trong ui object
             } else {
                 console.log("Không tìm thấy document thống kê.");
             }
@@ -107,18 +107,42 @@ const firebase = {
         console.log("Firebase listeners setup initiated.");
     },
 
-    // *** incrementCounter() remains the same as v2.5 ***
-    async incrementCounter(fieldName) {
+    // *** MODIFIED FUNCTION (v3.2) ***
+    /**
+     * Tăng giá trị một trường số trong Firestore.
+     * Nếu fieldName là 'actionsTaken' và có email, tăng bộ đếm cho user đó.
+     * Ngược lại, tăng bộ đếm global trong 'analytics/site_stats'.
+     * @param {string} fieldName Tên trường cần tăng (vd: 'pageLoads', 'actionsTaken').
+     * @param {string} [email=null] Email của người dùng (chỉ dùng cho actionsTaken).
+     */
+    async incrementCounter(fieldName, email = null) {
         if (!appState.db || !fieldName) return;
-        const statsRef = doc(appState.db, "analytics", "site_stats");
+
+        let docRef;
+        const dataToUpdate = { [fieldName]: increment(1) };
+
+        // ** Logic mới: Kiểm tra nếu là actionsTaken và có email **
+        if (fieldName === 'actionsTaken' && email) {
+            docRef = doc(appState.db, "users", email);
+            console.log(`Incrementing actionsTaken for user: ${email}`);
+        } else if (fieldName === 'actionsTaken' && !email) {
+            // Nếu là actionsTaken nhưng không có email (dự phòng), vẫn tăng global
+            docRef = doc(appState.db, "analytics", "site_stats");
+            console.log("Incrementing global actionsTaken (email not provided).");
+        } else {
+            // Các trường hợp khác (vd: pageLoads) tăng global
+            docRef = doc(appState.db, "analytics", "site_stats");
+            console.log(`Incrementing global counter: ${fieldName}`);
+        }
+
         try {
-             await setDoc(statsRef, { [fieldName]: increment(1) }, { merge: true });
+            await setDoc(docRef, dataToUpdate, { merge: true });
         } catch (error) {
-            console.error(`Lỗi khi tăng bộ đếm cho '${fieldName}':`, error);
+            console.error(`Lỗi khi tăng bộ đếm cho '${fieldName}' tại ${docRef.path}:`, error);
         }
     },
+    // *** END MODIFIED FUNCTION ***
 
-    // *** submitFeedback() remains the same as v2.5 ***
     async submitFeedback(content) {
         if (!content || !appState.db || !appState.currentUser) {
              ui.showNotification("Không thể gửi góp ý: Người dùng chưa được xác thực.", "error");
@@ -138,7 +162,6 @@ const firebase = {
         }
     },
 
-    // *** submitReply() remains the same as v2.5 ***
     async submitReply(docId, content) {
         if (!docId || !content || !appState.db) return false;
         try {
@@ -152,7 +175,6 @@ const firebase = {
         }
     },
 
-    // *** saveHelpContent() remains the same as v2.5 ***
     async saveHelpContent(contents) {
         if (!appState.db || !appState.isAdmin) return;
         ui.showNotification('Đang lưu nội dung hướng dẫn...', 'success');
@@ -170,7 +192,6 @@ const firebase = {
         }
     },
 
-    // *** saveCategoryDataToFirestore() remains the same as v2.5 ***
     async saveCategoryDataToFirestore(data) {
         if (!appState.db || !appState.isAdmin) return;
         ui.showNotification('Đang đồng bộ dữ liệu khai báo lên cloud...', 'success');
@@ -186,7 +207,6 @@ const firebase = {
         }
     },
 
-    // *** loadCategoryDataFromFirestore() remains the same as v2.5 ***
     async loadCategoryDataFromFirestore() {
         if (!appState.db) {
              console.warn("loadCategoryDataFromFirestore called before DB initialization.");
@@ -208,7 +228,6 @@ const firebase = {
         }
     },
 
-    // *** loadDeclarationsFromFirestore() remains the same as v2.5 ***
     async loadDeclarationsFromFirestore() {
         if (!appState.db) {
             console.warn("loadDeclarationsFromFirestore called before DB initialization.");
@@ -231,7 +250,6 @@ const firebase = {
         }
     },
 
-    // *** saveDeclarationsToFirestore() remains the same as v2.5 ***
     async saveDeclarationsToFirestore(declarations) {
         if (!appState.db || !appState.isAdmin) return;
         ui.showNotification('Đang đồng bộ khai báo tính toán lên cloud...', 'success');
@@ -248,7 +266,46 @@ const firebase = {
         }
     },
 
-    // *** getTemplateDownloadURL() remains the same as v2.5 ***
+    // *** START: NEW FUNCTIONS (v3.3) ***
+    async loadCompetitionNameMappings() {
+        if (!appState.db) {
+            console.warn("loadCompetitionNameMappings called before DB initialization.");
+            return {};
+        }
+        console.log("Loading competition name mappings from Firestore...");
+        try {
+            const docRef = doc(appState.db, "declarations", "competitionNameMappings");
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                console.log("Successfully loaded competition name mappings.");
+                return docSnap.data().mappings || {};
+            } else {
+                console.log("No competition name mappings found in Firestore, returning empty object.");
+                return {};
+            }
+        } catch (error) {
+            console.error("Lỗi khi tải Bảng Ánh Xạ Tên Thi Đua từ Firestore:", error);
+            return {};
+        }
+    },
+
+    async saveCompetitionNameMappings(mappings) {
+        if (!appState.db || !appState.isAdmin) {
+            console.warn("Save competition name mappings skipped: Not admin or DB not initialized.");
+            return;
+        }
+        console.log("Saving competition name mappings to Firestore...");
+        try {
+            const docRef = doc(appState.db, "declarations", "competitionNameMappings");
+            await setDoc(docRef, { mappings: mappings });
+            console.log("Successfully saved competition name mappings.");
+        } catch (error) {
+            console.error("Lỗi khi lưu Bảng Ánh Xạ Tên Thi Đua:", error);
+            ui.showNotification('Lỗi khi lưu tên rút gọn lên cloud.', 'error');
+        }
+    },
+    // *** END: NEW FUNCTIONS (v3.3) ***
+
     async getTemplateDownloadURL() {
         if (!appState.storage) throw new Error("Firebase Storage chưa được khởi tạo.");
         const filePath = 'templates/danh_sach_nhan_vien_mau.xlsx';
@@ -257,7 +314,6 @@ const firebase = {
         catch (error) { console.error("Lỗi khi lấy URL tải file mẫu: ", error); throw error; }
     },
 
-    // *** getBookmarkDownloadURL() remains the same as v2.5 ***
     async getBookmarkDownloadURL() {
         if (!appState.storage) throw new Error("Firebase Storage chưa được khởi tạo.");
         const filePath = 'templates/Share_QLST.zip';
@@ -266,7 +322,6 @@ const firebase = {
         catch (error) { console.error("Lỗi khi lấy URL tải file bookmark: ", error); throw error; }
     },
 
-    // *** getQrCodeDownloadURL() remains the same as v2.5 ***
     async getQrCodeDownloadURL() {
         if (!appState.storage) throw new Error("Firebase Storage chưa được khởi tạo.");
         const filePath = 'qrcodes/main-qr.jpg';
@@ -279,25 +334,21 @@ const firebase = {
         }
     },
 
-    // *** upsertUserRecord() remains the same as v2.5 ***
     async upsertUserRecord(email) {
         if (!appState.db || !email) return;
         if (!appState.auth?.currentUser) { console.warn("Attempted to upsert user record before auth is ready."); return; }
         const userRef = doc(appState.db, "users", email);
         try {
-            await setDoc(userRef, { email: email, lastLogin: serverTimestamp(), loginCount: increment(1) }, { merge: true });
-            console.log(`User record for ${email} updated successfully.`);
+            // Chỉ tăng loginCount, không reset actionsTaken ở đây
+            await setDoc(userRef, {
+                email: email,
+                lastLogin: serverTimestamp(),
+                loginCount: increment(1)
+            }, { merge: true });
+            console.log(`User record for ${email} updated successfully (loginCount incremented).`);
         } catch (error) { console.error("Error upserting user record:", error); }
     },
 
-    // *** NEW FUNCTION (v3.0): Upload file to Cloud Storage ***
-    /**
-     * Uploads a file to Firebase Cloud Storage.
-     * @param {File} file The file object to upload.
-     * @param {string} storagePath The desired path in Cloud Storage (e.g., 'uploads/warehouse/datatype_version.xlsx').
-     * @param {function} onProgress Callback function to report upload progress (receives percentage).
-     * @returns {Promise<string>} A promise that resolves with the download URL of the uploaded file.
-     */
     async uploadFileToStorage(file, storagePath, onProgress) {
         if (!appState.storage) {
             throw new Error("Firebase Storage is not initialized.");
@@ -315,12 +366,11 @@ const firebase = {
                     const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
                     console.log(`Upload ${storagePath} is ${progress}% done`);
                     if (onProgress && typeof onProgress === 'function') {
-                        onProgress(progress); // Call the progress callback
+                        onProgress(progress);
                     }
                 },
-                (error) => { // Handle unsuccessful uploads
+                (error) => {
                     console.error(`%c[Firebase.uploadFileToStorage] LỖI KHI UPLOAD file ${storagePath}:`, "color: red; font-weight: bold;", error);
-                    // Handle specific errors
                     let userMessage = `Lỗi upload file lên cloud (${error.code || 'UNKNOWN'}).`;
                     switch (error.code) {
                         case 'storage/unauthorized':
@@ -334,14 +384,14 @@ const firebase = {
                             break;
                     }
                     ui.showNotification(userMessage, 'error');
-                    reject(error); // Reject the promise with the error
+                    reject(error);
                 },
-                async () => { // Handle successful uploads on complete
+                async () => {
                     console.log(`[Firebase.uploadFileToStorage] File ${storagePath} uploaded successfully.`);
                     try {
                         const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
                         console.log('[Firebase.uploadFileToStorage] File available at', downloadURL);
-                        resolve(downloadURL); // Resolve the promise with the download URL
+                        resolve(downloadURL);
                     } catch (getUrlError) {
                         console.error(`%c[Firebase.uploadFileToStorage] LỖI KHI LẤY DOWNLOAD URL cho ${storagePath}:`, "color: red; font-weight: bold;", getUrlError);
                         ui.showNotification(`Lỗi lấy link file sau khi upload (${getUrlError.code || 'UNKNOWN'}).`, 'error');
@@ -352,13 +402,6 @@ const firebase = {
         });
     },
 
-    // *** MODIFIED FUNCTION (v3.0): Save Metadata to Firestore ***
-    /**
-     * Saves metadata about a synchronized file to Firestore.
-     * @param {string} kho Warehouse ID.
-     * @param {string} dataType Type of data (e.g., 'ycx', 'giocong').
-     * @param {object} metadata Metadata object containing { storagePath, downloadURL, version, timestamp, updatedBy, rowCount, fileName }.
-     */
     async saveMetadataToFirestore(kho, dataType, metadata) {
         if (!appState.db || !kho || !dataType || !metadata) {
             console.error("[saveMetadataToFirestore] Invalid input parameters.");
@@ -370,35 +413,26 @@ const firebase = {
 
         const khoRef = doc(appState.db, "warehouseData", kho);
         const dataToSave = {
-            [dataType]: { // Store metadata under the dataType key
-                ...metadata, // Spread all properties from the metadata object
-                updatedAt: serverTimestamp(), // Add Firestore server timestamp
-                updatedBy: appState.currentUser.email // Ensure updatedBy is current user
+            [dataType]: {
+                ...metadata,
+                updatedAt: serverTimestamp(),
+                updatedBy: appState.currentUser.email
             }
         };
 
         try {
             console.log(`[Firebase.saveMetadataToFirestore] Attempting to save metadata for ${dataType} (v${metadata.version}, t${metadata.timestamp}) for kho ${kho}.`);
-            await setDoc(khoRef, dataToSave, { merge: true }); // Use merge: true
+            await setDoc(khoRef, dataToSave, { merge: true });
             console.log(`[Firebase.saveMetadataToFirestore] Successfully saved metadata for ${dataType} (v${metadata.version}).`);
         } catch (error) {
             console.error(`%c[Firebase.saveMetadataToFirestore] LỖI KHI LƯU METADATA KHO ${kho} (${dataType}, v${metadata.version}):`, "color: red; font-weight: bold;", error);
             console.error("[Firebase.saveMetadataToFirestore] Error details:", error.code, error.message);
             let userMessage = `Lỗi nghiêm trọng khi lưu thông tin đồng bộ ${dataType}.`;
-            // Add specific error checks if needed (e.g., permission-denied)
             ui.showNotification(userMessage, 'error');
-            throw error; // Re-throw error
+            throw error;
         }
     },
 
-    // *** NEW FUNCTION (v3.1): Save Pasted Data to Firestore ***
-    /**
-     * Saves pasted text content (as metadata) to Firestore.
-     * @param {string} kho Warehouse ID.
-     * @param {string} dataType Type of data (e.g., 'pastedLuykeBI', 'pastedThuongERP').
-     * @param {string} content The actual text content to save.
-     * @param {object} versionInfo Object containing { version: newVersion, timestamp: uploadTimestamp }.
-     */
     async savePastedDataToFirestore(kho, dataType, content, versionInfo) {
         if (!appState.db || !kho || !dataType || !content || !versionInfo) {
             console.error("[savePastedDataToFirestore] Invalid input parameters.");
@@ -409,19 +443,14 @@ const firebase = {
         }
 
         const khoRef = doc(appState.db, "warehouseData", kho);
-        
-        // Create metadata object for pasted data
         const metadata = {
-            content: content, // Save the full text content
+            content: content,
             version: versionInfo.version,
-            timestamp: versionInfo.timestamp, // local timestamp
+            timestamp: versionInfo.timestamp,
             updatedAt: serverTimestamp(),
             updatedBy: appState.currentUser.email
         };
-
-        const dataToSave = {
-            [dataType]: metadata
-        };
+        const dataToSave = { [dataType]: metadata };
 
         try {
             console.log(`[Firebase.savePastedDataToFirestore] Attempting to save pasted data for ${dataType} (v${versionInfo.version}, t${versionInfo.timestamp}) for kho ${kho}.`);
@@ -431,13 +460,10 @@ const firebase = {
             console.error(`%c[Firebase.savePastedDataToFirestore] LỖI KHI LƯU DỮ LIỆU DÁN KHO ${kho} (${dataType}, v${versionInfo.version}):`, "color: red; font-weight: bold;", error);
             let userMessage = `Lỗi nghiêm trọng khi lưu dữ liệu dán ${dataType}.`;
             ui.showNotification(userMessage, 'error');
-            throw error; // Re-throw error
+            throw error;
         }
     },
 
-
-    // *** listenForDataChanges() remains the same as v2.5 ***
-    // (Callback in main.js will now handle metadata instead of full data)
     listenForDataChanges(kho, callback) {
         if (!appState.db || !kho || typeof callback !== 'function') return null;
         if (!appState.auth?.currentUser) {
@@ -448,11 +474,11 @@ const firebase = {
         console.log(`Bắt đầu lắng nghe thay đổi dữ liệu cho kho: ${kho}`);
         const unsubscribe = onSnapshot(khoRef, (docSnap) => {
             if (docSnap.exists()) {
-                console.log(`Phát hiện dữ liệu/metadata mới cho kho ${kho}.`); // Modified log
+                console.log(`Phát hiện dữ liệu/metadata mới cho kho ${kho}.`);
                 const allData = docSnap.data();
-                callback(allData); // Callback receives the entire document data (containing metadata fields)
+                callback(allData);
             } else {
-                console.log(`Chưa có dữ liệu/metadata nào trên cloud cho kho ${kho}.`); // Modified log
+                console.log(`Chưa có dữ liệu/metadata nào trên cloud cho kho ${kho}.`);
                 callback({});
             }
         }, (error) => {
@@ -466,7 +492,12 @@ const firebase = {
         return unsubscribe;
     },
 
-    // *** getAllUsers() remains the same as v2.5 ***
+    // *** MODIFIED FUNCTION (v3.2) ***
+    /**
+     * Lấy danh sách tất cả người dùng và thông tin của họ từ Firestore.
+     * Bao gồm cả trường 'actionsTaken' mới.
+     * @returns {Promise<Array<Object>>} Mảng các đối tượng người dùng.
+     */
     async getAllUsers() {
         if (!appState.db || !appState.isAdmin) {
             ui.showNotification("Bạn không có quyền truy cập chức năng này.", "error");
@@ -481,9 +512,11 @@ const firebase = {
                 users.push({
                     email: data.email,
                     loginCount: data.loginCount || 0,
-                    lastLogin: data.lastLogin?.toDate()
+                    lastLogin: data.lastLogin?.toDate(),
+                    actionsTaken: data.actionsTaken || 0 // Lấy thêm actionsTaken
                 });
             });
+            console.log(`Loaded ${users.length} users from Firestore.`);
             return users;
         } catch (error) {
             console.error("Lỗi khi lấy danh sách người dùng:", error);
@@ -491,6 +524,7 @@ const firebase = {
             return [];
         }
     }
+    // *** END MODIFIED FUNCTION ***
 };
 
 export { firebase };

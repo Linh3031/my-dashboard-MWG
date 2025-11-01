@@ -1,3 +1,7 @@
+// Version 3.4 - Fix processThiDuaNhanVienData for 1-column logic & Fix ReferenceError
+// Version 3.2 - Fix ReferenceError in parsePastedThiDuaTableData
+// Version 3.1 - Fix parsePastedThiDuaTableData to filter out "Tổng" and "BP" rows
+// Version 3.0 - Thêm logic phân tích và ánh xạ tên thi đua
 // Version 2.0 - Read declarations from appState instead of localStorage
 // MODULE: SERVICES - DATA PROCESSING
 // Chứa các hàm xử lý, chuẩn hóa, và phân tích cú pháp dữ liệu thô.
@@ -335,152 +339,266 @@ export const dataProcessing = {
         return results;
     },
 
-    processThiDuaNhanVienData(pastedText, luykeCompetitionData) {
-        const debugInfo = { required: [], found: [], status: 'Chưa xử lý' };
+    /**
+     * Cập nhật Bảng Ánh Xạ Tên Thi Đua trong appState và Cloud.
+     * @param {Array<string>} mainHeaders - Danh sách tên gốc của các chương trình thi đua.
+     */
+    updateCompetitionNameMappings(mainHeaders) {
+        if (!mainHeaders || mainHeaders.length === 0) return;
+
+        // Tải mappings MỚI NHẤT từ appState (đã được tải từ Cloud khi init)
+        const oldMappings = appState.competitionNameMappings || {};
+        const newMappings = { ...oldMappings }; // Sao chép để tránh ghi đè
+        let hasChanges = false;
+
+        mainHeaders.forEach(originalName => {
+            // Chỉ thêm nếu tên này chưa tồn tại
+            if (!newMappings.hasOwnProperty(originalName)) {
+                newMappings[originalName] = ''; // Thêm tên mới với giá trị rỗng
+                hasChanges = true;
+            }
+        });
+
+        // Chỉ lưu lên Cloud nếu có tên mới được thêm vào
+        if (hasChanges) {
+            appState.competitionNameMappings = newMappings;
+            // Không lưu localStorage nữa, hàm gọi (listeners-settings) sẽ xử lý việc lưu cloud
+            console.log("Phát hiện tên thi đua mới, Bảng Ánh Xạ đã được cập nhật trong appState.");
+        }
+    },
+
+    /**
+     * @private
+     * Hàm dọn dẹp tên chương trình thi đua để so khớp.
+     */
+    _cleanCompetitionName(name) {
+        return name.replace(/thi đua doanh thu bán hàng|thi đua doanh thu|thi đua số lượng/gi, "").trim();
+    },
+
+    // *** START: HÀM ĐƯỢC VIẾT LẠI (v3.4) - Sửa lỗi logic 1 cột ***
+    /**
+     * Xử lý dữ liệu thi đua nhân viên đã được phân tích cú pháp.
+     * @param {Object} parsedData - Đối tượng trả về từ `parsePastedThiDuaTableData` ({ mainHeaders, subHeaders, dataRows }).
+     * @param {Array} luykeCompetitionData - Dữ liệu mục tiêu thi đua từ `parseCompetitionDataFromLuyKe`.
+     * @returns {Array} - Mảng dữ liệu báo cáo thi đua đã được chuẩn hóa.
+     */
+    processThiDuaNhanVienData(parsedData, luykeCompetitionData) {
+        const { mainHeaders, subHeaders, dataRows } = parsedData;
+        
+        const debugInfo = { required: [], found: [], status: 'Đang xử lý...' };
         appState.debugInfo['thiduanv-pasted'] = debugInfo;
 
-        if (!pastedText.trim() || !appState.danhSachNhanVien.length || !luykeCompetitionData.length) {
-            debugInfo.status = 'Lỗi: Thiếu dữ liệu đầu vào (dán Thi đua NV, DSNV, hoặc dán Data Lũy kế).';
+        if (appState.danhSachNhanVien.length === 0) {
+            debugInfo.status = 'Lỗi: Danh sách nhân viên (DSNV) chưa được tải lên.';
+            return [];
+        }
+        if (mainHeaders.length === 0 || dataRows.length === 0 || subHeaders.length === 0) {
+            debugInfo.status = 'Lỗi: Dữ liệu dán vào không hợp lệ, không tìm thấy tiêu đề hoặc dòng dữ liệu.';
             return [];
         }
 
-        const lines = pastedText.trim().split('\n').map(l => l.trim());
-        const competitionCategories = [];
-        const employeePastedDataMap = new Map();
-
-        let isParsingCategories = false;
-        let isParsingEmployees = false;
-
-        for (const line of lines) {
-            if (line.includes('Phòng ban')) {
-                isParsingCategories = true;
-                continue;
-            }
-            if (line.includes('Tổng')) {
-                isParsingCategories = false;
-                isParsingEmployees = true;
-                continue;
-            }
-            if (isParsingCategories && line) {
-                competitionCategories.push(line);
-            }
-            if (isParsingEmployees && line) {
-                const row = line.split('\t').map(item => item.trim());
-                const msnv = row[0];
-                if (msnv) {
-                    employeePastedDataMap.set(msnv, row.slice(2).map(val => parseFloat(val.replace(/,/g, '')) || 0));
-                }
-            }
-        }
-
-        debugInfo.found.push({
-            name: 'Số cột thi đua đã nhận dạng',
-            value: `${competitionCategories.length} cột`,
-            status: competitionCategories.length > 0
-        });
-        debugInfo.found.push({
-            name: 'Số dòng nhân viên đã nhận dạng',
-            value: `${employeePastedDataMap.size} dòng`,
-            status: employeePastedDataMap.size > 0
-        });
-
-        const cleanCompetitionName = (name) => name.replace(/thi đua doanh thu bán hàng|thi đua doanh thu|thi đua số lượng/gi, "").trim();
-
-        const competitionTargets = luykeCompetitionData.map(comp => ({
-            originalName: comp.name,
-            cleanedName: cleanCompetitionName(comp.name),
-            target: comp.target
+        // Tải bảng ánh xạ tên rút gọn (đã được tải từ Cloud)
+        const nameMappings = appState.competitionNameMappings || {};
+        
+        // Tạo map mục tiêu từ dữ liệu lũy kế
+        const competitionTargets = (luykeCompetitionData || []).map(comp => ({
+            ...comp,
+            cleanedName: this._cleanCompetitionName(comp.name)
         }));
+        
+        const finalReport = [];
+        const totalEmployeesInDSNV = appState.danhSachNhanVien.length; // Chỉ đếm 1 lần
 
-        const totalEmployeesInSupermarket = appState.danhSachNhanVien.length;
-        if (totalEmployeesInSupermarket === 0) {
-            debugInfo.status = 'Lỗi: Danh sách nhân viên trống.';
-            return [];
-        }
+        dataRows.forEach(row => {
+            // Bước 3.1: Trích xuất MSNV từ "Nguyễn Vũ Linh - 3031"
+            const nameParts = row.name.split(' - ');
+            const msnv = nameParts.length > 1 ? nameParts[nameParts.length - 1].trim() : null;
 
-        const finalReport = appState.danhSachNhanVien.map(employee => {
-            const salesData = employeePastedDataMap.get(employee.maNV) || [];
+            let employee;
+            if (msnv) {
+                // Bước 3.2: Tra cứu DSNV
+                employee = appState.employeeMaNVMap.get(msnv);
+            }
+
+            // Nếu không tìm thấy, tạo một đối tượng tạm
+            if (!employee) {
+                employee = { 
+                    hoTen: row.name, 
+                    maNV: msnv || 'N/A', 
+                    boPhan: 'Nhân viên không tìm thấy' 
+                };
+            }
 
             const employeeResult = {
                 maNV: employee.maNV,
                 hoTen: employee.hoTen,
+                boPhan: employee.boPhan,
                 completedCount: 0,
-                totalCompetitions: competitionCategories.length,
-                competitions: []
+                totalCompetitions: mainHeaders.length, // Số lượng chương trình
+                competitions: [] // Mảng chứa dữ liệu của từng chương trình
             };
 
-            competitionCategories.forEach((categoryName, index) => {
-                const cleanedName = cleanCompetitionName(categoryName);
+            // Lặp qua TẤT CẢ các cột (vì mainHeaders và subHeaders có cùng độ dài)
+            // Giả định mainHeaders.length === subHeaders.length
+            for (let i = 0; i < mainHeaders.length; i++) {
+                const originalName = mainHeaders[i];
+                const loaiSoLieu = subHeaders[i]; // "DTLK", "SLLK", "DTQĐ"
+                
+                // Bước 5.1: Tra cứu tên rút gọn
+                const shortName = nameMappings[originalName] || originalName;
+                
+                // Logic tính toán mục tiêu (target)
+                const cleanedName = this._cleanCompetitionName(originalName);
                 const matchedTarget = competitionTargets.find(t => t.cleanedName === cleanedName);
                 const groupTarget = matchedTarget ? matchedTarget.target : 0;
-                const individualTarget = totalEmployeesInSupermarket > 0 ? groupTarget / totalEmployeesInSupermarket : 0;
-                const actualSales = salesData[index] || 0;
+                const individualTarget = totalEmployeesInDSNV > 0 ? groupTarget / totalEmployeesInDSNV : 0;
+
+                // Bước 3.3: Lấy GIÁ TRỊ THỰC TẾ (chỉ 1 giá trị)
+                const giaTri = parseFloat(String(row.values[i] || '0').replace(/,/g, '')) || 0;
+                const actualSales = giaTri; // actualSales chính là giaTri
+
                 const percentExpected = individualTarget > 0 ? actualSales / individualTarget : (actualSales > 0 ? Infinity : 0);
 
                 if (percentExpected >= 1) {
                     employeeResult.completedCount++;
                 }
 
+                // Lưu đối tượng mới với cấu trúc 1 cột
                 employeeResult.competitions.push({
-                    tenNganhHang: categoryName,
+                    tenNganhHang: shortName, // Tên rút gọn
+                    tenGoc: originalName,    // Tên gốc
+                    loaiSoLieu: loaiSoLieu,  // Loại dữ liệu (DTLK, SLLK, DTQĐ)
+                    giaTri: giaTri,        // Giá trị
+                    
+                    // Các trường cũ để so sánh (nếu cần)
                     thucHien: actualSales,
                     mucTieu: individualTarget,
-                    conLai: actualSales - individualTarget,
                     percentExpected: percentExpected,
                 });
-            });
+            }
 
             employeeResult.completionRate = employeeResult.totalCompetitions > 0 ? employeeResult.completedCount / employeeResult.totalCompetitions : 0;
-            return employeeResult;
+            finalReport.push(employeeResult);
         });
 
         debugInfo.status = `Thành công: Đã xử lý báo cáo cho ${finalReport.length} nhân viên.`;
         return finalReport;
     },
+    // *** END: HÀM ĐƯỢC VIẾT LẠI (v3.4) ***
 
+    // *** START: HÀM ĐƯỢC VIẾT LẠI (v3.2) - Sửa lỗi ReferenceError ***
+    /**
+     * Phân tích cú pháp dữ liệu thô từ ô dán "Thi đua nhân viên".
+     * @param {string} rawText - Văn bản thô từ textarea.
+     * @returns {Object} - { success, mainHeaders, subHeaders, dataRows, error? }
+     */
     parsePastedThiDuaTableData(rawText) {
+        const debugInfo = { required: [], found: [], status: 'Bắt đầu phân tích...' };
+        appState.debugInfo['thiduanv-pasted'] = debugInfo;
+
         if (!rawText || !rawText.trim()) {
-            return { success: false, error: 'Dữ liệu đầu vào rỗng.' };
+            debugInfo.status = 'Lỗi: Dữ liệu dán vào rỗng.';
+            return { success: false, error: debugInfo.status, mainHeaders: [], subHeaders: [], dataRows: [] };
         }
 
-        const lines = rawText.split('\n').map(line => line.trim()).filter(line => line);
+        // Bước 0: Tiền xử lý (Làm sạch dữ liệu thô)
+        const lines = rawText.split('\n')
+            .map(line => line.trim())
+            .filter(line => line.length > 0);
 
-        const mainHeaders = [];
-        let startHeaderIndex = lines.findIndex(line => line.includes('Phòng ban'));
+        // --- Các hằng số Regex ---
+        const splitRegex = /\s{2,}|\t/; // Tách bằng 2+ dấu cách HOẶC 1 dấu tab
+        const numberCheckRegex = /^-?[\d,.]+$/; // Kiểm tra là số
 
-        if (startHeaderIndex === -1) {
-            return { success: false, error: 'Không tìm thấy dòng "Phòng ban".' };
+        // --- Tìm các "Mỏ neo" (Anchors) ---
+        const mainHeaderStartIndex = lines.findIndex(line => line.includes('Phòng ban'));
+        const subHeaderStartIndex = lines.findIndex(line => line.startsWith('DTLK') || line.startsWith('SLLK') || line.startsWith('DTQĐ'));
+        
+        let dataEndIndex = lines.findIndex(line => line.includes('Hỗ trợ BI'));
+        if (dataEndIndex === -1) {
+            dataEndIndex = lines.length; // Nếu không tìm thấy footer, lấy hết
         }
 
-        for (let i = startHeaderIndex + 1; i < lines.length; i++) {
-            const currentLine = lines[i];
-            if (currentLine.startsWith('SLLK') || currentLine.startsWith('DTQĐ')) {
-                break;
+        // *** (LOGIC SỬA LỖI v3.2) ***
+        // Tìm điểm bắt đầu của dữ liệu (dòng đầu tiên SAU tiêu đề phụ)
+        // Phải tìm trước khi cắt mảng Tiêu đề phụ
+        const dataRowsStartIndex = lines.findIndex((line, index) => {
+            if (index <= subHeaderStartIndex) return false; // Phải ở SAU dòng sub-header đầu tiên
+            
+            const parts = line.split(splitRegex).map(p => p.trim());
+            const firstPart = parts[0] || "";
+
+            // Bỏ qua nếu là dòng tổng, dòng bộ phận, hoặc dòng sub-header bị ngắt
+            if (firstPart.startsWith('Tổng') || firstPart.startsWith('BP ') || firstPart.startsWith('DTLK') || firstPart.startsWith('SLLK') || firstPart.startsWith('DTQĐ')) {
+                return false;
             }
-            mainHeaders.push(currentLine);
+            
+            // Đây là dòng dữ liệu NẾU nó có > 1 phần TỬ VÀ phần tử thứ 2 là số
+            return parts.length > 1 && numberCheckRegex.test(parts[1]);
+        });
+        // *** (KẾT THÚC LOGIC SỬA LỖI v3.2) ***
+
+        // --- Kiểm tra Mỏ neo ---
+        if (mainHeaderStartIndex === -1 || subHeaderStartIndex === -1 || dataRowsStartIndex === -1) {
+            let error = `Lỗi: Không thể tìm thấy mỏ neo. 'Phòng ban': ${mainHeaderStartIndex !== -1}. 'SLLK/DTLK': ${subHeaderStartIndex !== -1}. 'Dòng dữ liệu đầu tiên': ${dataRowsStartIndex !== -1}.`;
+            debugInfo.status = error;
+            return { success: false, error: error, mainHeaders: [], subHeaders: [], dataRows: [] };
         }
+        
+        // Bước 1: Trích xuất Tiêu Đề Chính (Main Headers)
+        const mainHeaders = lines.slice(mainHeaderStartIndex + 1, subHeaderStartIndex);
+        debugInfo.found.push({ name: 'Tiêu đề chính (Ngành hàng)', value: `${mainHeaders.length} mục`, status: mainHeaders.length > 0 });
 
-        let subHeaderLine = lines
-            .filter(line => line.startsWith('SLLK') || line.startsWith('DTQĐ'))
-            .join('\t');
-        const subHeaders = subHeaderLine.split(/\s+/).filter(Boolean);
+        // Bước 2: Trích xuất Tiêu Đề Phụ (Sub Headers)
+        // Lấy TẤT CẢ các dòng tiêu đề phụ (từ dòng sub-header đầu tiên đến trước dòng data đầu tiên)
+        const subHeaderLines = lines.slice(subHeaderStartIndex, dataRowsStartIndex);
+        const subHeaderString = subHeaderLines.join('\t'); // Nối bằng Tab
+        const subHeaders = subHeaderString.split(/\s+/).filter(Boolean);
+        debugInfo.found.push({ name: 'Tiêu đề phụ (SLLK/DTQĐ)', value: `${subHeaders.length} mục`, status: subHeaders.length > 0 });
 
+        // Bước 3: Trích xuất Dữ Liệu Nhân Viên (Data Rows)
+        const potentialDataLines = lines.slice(dataRowsStartIndex, dataEndIndex);
         const dataRows = [];
-        for (const line of lines) {
-            const parts = line.split(/\s{2,}|\t/);
-            if (parts.length > 1 && /^-?[\d,.]+$/.test(parts[1].trim())) {
-                const name = parts[0];
-                const values = parts.slice(1);
-                dataRows.push({ name, values });
+        
+        for (const line of potentialDataLines) {
+            const parts = line.split(splitRegex).map(p => p.trim());
+            const firstPart = parts[0] || "";
+
+            // *** QUY TẮC LỌC (v3.1) ***
+            // Bỏ qua các dòng tổng và dòng tóm tắt bộ phận
+            if (firstPart.startsWith('Tổng') || firstPart.startsWith('BP ')) {
+                continue;
+            }
+            // *** KẾT THÚC QUY TẮC LỌC ***
+
+            // Áp dụng "Quy tắc kiểm tra" (Kiểm tra lại để chắc chắn)
+            if (parts.length > 1 && numberCheckRegex.test(parts[1])) {
+                dataRows.push({
+                    name: firstPart,
+                    values: parts.slice(1)
+                });
             }
         }
+        debugInfo.found.push({ name: 'Dòng dữ liệu nhân viên', value: `${dataRows.length} dòng`, status: dataRows.length > 0 });
 
-        if (mainHeaders.length === 0 || dataRows.length === 0) {
-            return { success: false, error: 'Không thể xử lý dữ liệu. Định dạng không hợp lệ.' };
+        if (mainHeaders.length === 0 || subHeaders.length === 0 || dataRows.length === 0) {
+            debugInfo.status = 'Lỗi: Không thể phân tích dữ liệu. Thiếu Tiêu đề chính, Tiêu đề phụ, hoặc Dòng dữ liệu (sau khi lọc).';
+            return { success: false, error: debugInfo.status, mainHeaders, subHeaders, dataRows };
+        }
+        
+        // Kiểm tra tính toàn vẹn dữ liệu
+        const expectedDataCols = subHeaders.length;
+        if (dataRows.length > 0 && dataRows[0].values.length !== expectedDataCols) {
+             console.warn(`[parsePastedThiDua] Cảnh báo: Số cột tiêu đề phụ (${expectedDataCols}) không khớp với số cột dữ liệu (${dataRows[0].values.length}). Dữ liệu có thể bị lệch.`);
+             debugInfo.status = `Cảnh báo: Số cột không khớp! Tiêu đề phụ (${expectedDataCols}) vs Dữ liệu (${dataRows[0].values.length}).`;
+             // Không thất bại, nhưng cảnh báo
+        } else {
+            debugInfo.status = `Phân tích thành công.`;
         }
 
         return { success: true, mainHeaders, subHeaders, dataRows };
     },
+    // *** END: HÀM ĐƯỢC VIẾT LẠI (v3.2) ***
 
     classifyInsurance: (productName) => {
         if (!productName || typeof productName !== 'string') return null;

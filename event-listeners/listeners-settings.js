@@ -1,11 +1,61 @@
+// Version 1.6 - Add click listener for pasted competition column toggles
+// Version 1.5 - Save competition name mapping to Firestore (debounced) & re-process data
+// Version 1.4 - Add auto-save listener for competition name mapping
 // Version 1.3 - Add event listener for efficiency column toggles
 // MODULE: LISTENERS - SETTINGS
 // Chứa logic sự kiện cho các drawers Cài đặt và các Modals.
 
 import { ui } from '../ui.js';
 import { settingsService } from '../modules/settings.service.js';
+import { appState } from '../state.js';
+import { firebase } from '../firebase.js'; // *** NEW (v1.5) ***
+import { services } from '../services.js'; // *** NEW (v1.5) ***
 
 export function initializeSettingsListeners(appController) {
+    // *** NEW (v1.5): Helper debounce function ***
+    let debounceTimer;
+    const debounce = (func, delay) => {
+        return (...args) => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                func.apply(this, args);
+            }, delay);
+        };
+    };
+
+    // *** NEW (v1.5): Create a debounced save function (e.g., wait 1 second after last keystroke) ***
+    const debouncedSaveMappings = debounce((mappings) => {
+        // 1. Save to Firestore
+        firebase.saveCompetitionNameMappings(mappings);
+        ui.showNotification('Đã tự động lưu tên rút gọn lên Cloud!', 'success');
+        
+        // 2. (Bug 1 Fix) Re-process pasted data with new names
+        const pastedText = document.getElementById('paste-thiduanv')?.value || '';
+        
+        // Chỉ xử lý lại nếu đã có dữ liệu được dán và xử lý trước đó
+        // `appState.pastedThiDuaReportData` sẽ có dữ liệu sau lần dán đầu tiên
+        if (pastedText && appState.pastedThiDuaReportData) { 
+            console.log("Re-processing pasted thi dua data after name change...");
+            try {
+                const parsedData = services.parsePastedThiDuaTableData(pastedText);
+                if (parsedData.success) {
+                    // Use the NEW mappings from appState
+                    appState.pastedThiDuaReportData = services.processThiDuaNhanVienData(parsedData, appState.competitionData);
+                    // Save the re-processed data to localStorage
+                    localStorage.setItem('daily_paste_thiduanv', JSON.stringify(appState.pastedThiDuaReportData));
+                    
+                    // Re-render the current tab if it's the SKNV tab
+                    const activeTab = document.querySelector('.page-section:not(.hidden)');
+                    if (activeTab && activeTab.id === 'health-employee-section') {
+                        appController.updateAndRenderCurrentTab();
+                    }
+                }
+            } catch (e) {
+                console.error("Error re-processing pasted data after name mapping change:", e);
+            }
+        }
+    }, 1000); // 1000ms (1 second) delay
+
     // --- Open/Close Modals & Drawers ---
     document.getElementById('admin-access-btn')?.addEventListener('click', () => ui.toggleModal('admin-modal', true));
     document.getElementById('admin-submit-btn')?.addEventListener('click', () => appController.handleAdminLogin());
@@ -28,8 +78,8 @@ export function initializeSettingsListeners(appController) {
         appController.updateAndRenderCurrentTab();
     }));
     document.querySelectorAll('.luyke-goal-input').forEach(input => input.addEventListener('input', () => {
-        settingsService.saveLuykeGoalSettings();
-        appController.updateAndRenderCurrentTab();
+         settingsService.saveLuykeGoalSettings();
+         appController.updateAndRenderCurrentTab();
     }));
     
     // --- Declaration Settings ---
@@ -38,7 +88,7 @@ export function initializeSettingsListeners(appController) {
     // --- Global Modals (Help, etc.) & Debug Tool ---
     document.getElementById('toggle-debug-btn')?.addEventListener('click', (e) => ui.toggleDebugTool(e.currentTarget));
     
-    // --- Event Delegation for dynamically added elements ---
+    // --- Event Delegation for dynamically added elements --- 
     document.body.addEventListener('click', (e) => {
         const helpTrigger = e.target.closest('.page-header__help-btn');
         if(helpTrigger) {
@@ -49,7 +99,7 @@ export function initializeSettingsListeners(appController) {
         if (closeModalTrigger) {
             const modal = closeModalTrigger.closest('.modal');
             if(modal) {
-                ui.toggleModal(modal.id, false);
+                 ui.toggleModal(modal.id, false);
             }
         }
         
@@ -79,7 +129,7 @@ export function initializeSettingsListeners(appController) {
             appController.updateAndRenderCurrentTab();
         }
 
-        // === BẮT ĐẦU LOGIC MỚI CHO TÙY CHỈNH CỘT ===
+        // === LOGIC TÙY CHỈNH CỘT (HIỆU QUẢ NV LK) ===
         const columnToggleButton = e.target.closest('.column-toggle-btn');
         if (columnToggleButton && columnToggleButton.closest('#efficiency-column-toggles')) {
             e.preventDefault();
@@ -92,7 +142,7 @@ export function initializeSettingsListeners(appController) {
             const newSettings = currentSettings.map(col => {
                 if (col.id === columnId) {
                     return { ...col, visible: !col.visible };
-                }
+                 }
                 return col;
             });
 
@@ -102,15 +152,61 @@ export function initializeSettingsListeners(appController) {
             // 4. Render lại tab để áp dụng thay đổi
             appController.updateAndRenderCurrentTab();
         }
-        // === KẾT THÚC LOGIC MỚI ===
+        
+        // === START: NEW LOGIC (v1.6) - TÙY CHỈNH CỘT (THI ĐUA NV DÁN VÀO) ===
+        const pastedCompToggleButton = e.target.closest('.pasted-comp-toggle-btn');
+        if (pastedCompToggleButton && pastedCompToggleButton.closest('#pasted-competition-column-toggles')) {
+            e.preventDefault();
+            const columnTenGoc = pastedCompToggleButton.dataset.columnTenGoc; // Dùng tên gốc làm ID
+            
+            // 1. Tải cài đặt hiện tại
+            const currentSettings = settingsService.loadPastedCompetitionViewSettings();
+            
+            // 2. Thay đổi trạng thái
+            const newSettings = currentSettings.map(col => {
+                if (col.tenGoc === columnTenGoc) {
+                    return { ...col, visible: !col.visible };
+                }
+                return col;
+            });
+            
+            // 3. Lưu cài đặt mới
+            settingsService.savePastedCompetitionViewSettings(newSettings);
+            
+            // 4. Render lại tab
+            appController.updateAndRenderCurrentTab();
+        }
+        // === END: NEW LOGIC (v1.6) ===
     });
+
+    // *** MODIFIED (v1.5): Event delegation for auto-saving competition name mappings ***
+    document.body.addEventListener('input', (e) => {
+        const mappingInput = e.target.closest('.competition-name-input');
+        
+        if (mappingInput) {
+            const originalName = mappingInput.dataset.originalName;
+            const shortName = mappingInput.value.trim();
+            
+            if (originalName) {
+                if (!appState.competitionNameMappings) {
+                    appState.competitionNameMappings = {};
+                }
+                // 1. Update the state immediately
+                appState.competitionNameMappings[originalName] = shortName;
+                
+                // 2. Call the debounced function to save to Firestore & re-process data
+                debouncedSaveMappings(appState.competitionNameMappings);
+            }
+        }
+    });
+    // *** END MODIFIED ***
 
     const searchInput = document.getElementById('selection-modal-search');
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
             const searchTerm = e.target.value.toLowerCase();
             document.querySelectorAll('#selection-modal-list .selection-item').forEach(item => {
-                const label = item.querySelector('label').textContent.toLowerCase();
+                 const label = item.querySelector('label').textContent.toLowerCase();
                 item.style.display = label.includes(searchTerm) ? '' : 'none';
             });
         });

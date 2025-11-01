@@ -1,3 +1,4 @@
+// Version 3.0 - Add competitionNameMappings and pastedThiDuaReportData
 // Version 2.8 - Merged features: Add warehouse state, user stats sort, and listener
 // MODULE 2: TỦ TRẠNG THÁI (APPSTATE)
 // File này chứa đối tượng trạng thái chung của ứng dụng, hoạt động như một "bộ nhớ".
@@ -18,6 +19,9 @@ const appState = {
         sknv: '',
         realtime: ''
     },
+    // *** NEW (v3.0) ***
+    competitionNameMappings: {}, // Lưu trữ { "Tên Gốc": "Tên Rút Gọn" }
+    // *** END NEW ***
 
     // --- Dữ liệu & Trạng thái ---
     selectedWarehouse: null, // <<< GIAI ĐOẠN 1
@@ -39,9 +43,13 @@ const appState = {
     rawGioCongData: [],
     thuongNongData: [],
     thuongERPData: [],
-    thiDuaNhanVienData: [],
+    thiDuaNhanVienData: [], // Dữ liệu cũ (từ logic khai báo mục tiêu)
     thiDuaVungChiTiet: [],
     thiDuaVungTong: [],
+
+    // *** NEW (v3.0) ***
+    pastedThiDuaReportData: [], // Lưu kết quả xử lý từ ô dán "Thi đua nhân viên"
+    // *** END NEW ***
 
     thiDuaReportData: [],
 
@@ -95,6 +103,9 @@ const appState = {
         sknv_thidua_summary: { key: 'completedCount', direction: 'desc'},
         sknv_thidua_category: { key: 'percentExpected', direction: 'desc'},
         sknv_thidua_employee: { key: 'percentExpected', direction: 'desc'},
+        // *** NEW (v3.0) ***
+        sknv_thidua_pasted: { key: 'hoTen', direction: 'asc' }, // Sắp xếp cho bảng thi đua dán vào
+        // *** END NEW ***
         luyke_competition_doanhthu: { key: 'hoanThanh', direction: 'desc' },
         luyke_competition_soluong: { key: 'hoanThanh', direction: 'desc' },
         luyke_nganhhang: { key: 'revenue', direction: 'desc' },

@@ -1,3 +1,4 @@
+// Version 2.2 - Add dragdrop support for pasted competition column toggles
 // Version 2.1 - Add logging to diagnose re-render issue on drop
 // MODULE: LISTENERS - DRAG & DROP
 // Chứa logic khởi tạo và xử lý sự kiện kéo-thả cột bằng SortableJS.
@@ -7,8 +8,7 @@ import { settingsService } from '../modules/settings.service.js';
 let appController = null;
 
 /**
- * Khởi tạo SortableJS trên khu vực chứa các thẻ tùy chỉnh cột.
- * @param {HTMLElement} container - Phần tử DOM chứa bảng và các nút tùy chỉnh.
+ * Kích hoạt SortableJS cho các thẻ tùy chỉnh cột (Bảng Hiệu quả NV LK)
  */
 function activateSortableOnColumnToggles(container) {
     if (!container) return;
@@ -16,56 +16,93 @@ function activateSortableOnColumnToggles(container) {
     const toggleContainer = container.querySelector('#efficiency-column-toggles');
     if (!toggleContainer) return;
 
-    // Hủy bỏ instance cũ nếu có để tránh lỗi khởi tạo nhiều lần
+    // Hủy bỏ instance cũ nếu có
     if (toggleContainer.sortable) {
         toggleContainer.sortable.destroy();
     }
 
     // Tạo instance mới
     toggleContainer.sortable = new Sortable(toggleContainer, {
-        animation: 150, // Hiệu ứng chuyển động mượt mà
-        filter: '.non-draggable', // Bỏ qua các phần tử có class này (ví dụ: label "Tùy chỉnh cột:")
-        handle: '.drag-handle-icon', // Chỉ cho phép kéo khi bấm vào icon
+        animation: 150,
+        filter: '.non-draggable', 
+        handle: '.drag-handle-icon',
         onEnd: (evt) => {
-            // Lấy danh sách các thẻ <button> theo thứ tự mới
             const newButtonOrder = Array.from(evt.target.querySelectorAll('button.column-toggle-btn'));
-            
-            // Lấy ra ID của các cột theo thứ tự mới từ thuộc tính data-column-id
             const newColumnIdOrder = newButtonOrder.map(btn => btn.dataset.columnId).filter(Boolean);
-
-            // Tải cài đặt hiện tại
             const currentSettings = settingsService.loadEfficiencyViewSettings();
-             
-            // Tạo một Map để truy cập nhanh các đối tượng cài đặt theo ID
             const settingsMap = new Map(currentSettings.map(s => [s.id, s]));
-
-            // Tạo lại mảng cài đặt theo thứ tự mới
             const reorderedSettings = newColumnIdOrder.map(id => settingsMap.get(id));
-               
-            // Thêm lại các cột đã bị ẩn (nếu có) vào cuối danh sách để không làm mất chúng
+            
             currentSettings.forEach(setting => {
                 if (!reorderedSettings.find(s => s.id === setting.id)) {
                     reorderedSettings.push(setting);
                 }
             });
 
-            // Lưu lại cấu hình mới
             settingsService.saveEfficiencyViewSettings(reorderedSettings);
 
-            // Vẽ lại toàn bộ tab để đồng bộ header, body, và footer của bảng
             if (appController) {
-                console.log("LOG: Yêu cầu render lại tab sau khi kéo thả."); // <<< THÊM DÒNG NÀY ĐỂ GỠ LỖI
+                console.log("LOG: Yêu cầu render lại tab (efficiency) sau khi kéo thả."); 
                 appController.updateAndRenderCurrentTab();
             }
         }
     });
 }
 
+// === START: NEW FUNCTION (v2.2) ===
+/**
+ * Kích hoạt SortableJS cho các thẻ tùy chỉnh cột (Bảng Thi Đua NV Dán VÀo)
+ */
+function activateSortableOnPastedCompToggles(container) {
+    if (!container) return;
+
+    // Target container mới
+    const toggleContainer = container.querySelector('#pasted-competition-column-toggles');
+    if (!toggleContainer) return;
+
+    if (toggleContainer.sortable) {
+        toggleContainer.sortable.destroy();
+    }
+
+    toggleContainer.sortable = new Sortable(toggleContainer, {
+        animation: 150,
+        filter: '.non-draggable',
+        handle: '.drag-handle-icon',
+        onEnd: (evt) => {
+            // Target các nút bấm mới
+            const newButtonOrder = Array.from(evt.target.querySelectorAll('button.pasted-comp-toggle-btn'));
+            
+            // Dùng 'tenGoc' làm ID duy nhất
+            const newColumnNameOrder = newButtonOrder.map(btn => btn.dataset.columnTenGoc).filter(Boolean);
+            
+            // Gọi hàm settings mới
+            const currentSettings = settingsService.loadPastedCompetitionViewSettings();
+            
+            const settingsMap = new Map(currentSettings.map(s => [s.tenGoc, s]));
+            const reorderedSettings = newColumnNameOrder.map(name => settingsMap.get(name));
+            
+            currentSettings.forEach(setting => {
+                if (!reorderedSettings.find(s => s.tenGoc === setting.tenGoc)) {
+                    reorderedSettings.push(setting);
+                }
+            });
+
+            // Gọi hàm save mới
+            settingsService.savePastedCompetitionViewSettings(reorderedSettings);
+
+            if (appController) {
+                console.log("LOG: Yêu cầu render lại tab (pasted comp) sau khi kéo thả.");
+                appController.updateAndRenderCurrentTab();
+            }
+        }
+    });
+}
+// === END: NEW FUNCTION (v2.2) ===
+
 
 export const dragDroplisteners = {
     /**
      * Hàm khởi tạo chính, nhận vào controller của ứng dụng.
-     * @param {object} mainAppController - Controller chính của ứng dụng.
      */
     init(mainAppController) {
         appController = mainAppController;
@@ -73,10 +110,16 @@ export const dragDroplisteners = {
     
     /**
      * Hàm được gọi sau mỗi lần render để kích hoạt lại tính năng kéo-thả.
-     * @param {string} containerId - ID của container chứa bảng (ví dụ: 'efficiency-report-container').
+     * * === MODIFIED (v2.2): Kích hoạt cho cả hai bảng ===
      */
     initializeForContainer(containerId) {
         const container = document.getElementById(containerId);
-        activateSortableOnColumnToggles(container);
+        if (container) {
+            // Kích hoạt cho bảng Hiệu quả NV LK
+            activateSortableOnColumnToggles(container);
+            
+            // Kích hoạt cho bảng Thi Đua NV Dán VÀo
+            activateSortableOnPastedCompToggles(container);
+        }
     }
 };

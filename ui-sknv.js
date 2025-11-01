@@ -1,4 +1,8 @@
-// Version 6.11 - Add detailed logging to main render functions
+// Version 6.25 - Fix toggle button icon by using inline SVG (like ui-components.js)
+// Version 6.24 - Fix missing 'text-center' and 'header-group' classes in pasted comp table
+// Version 6.23 - Implement column toggles, sorting, and header wrap for pasted competition
+// Version 6.22 - Fix: Remove 'min-w-full' from all tables to force parent overflow scroll
+// Version 6.21 - Fix critical syntax error from v6.18
 // MODULE: UI SKNV
 // Chứa các hàm render giao diện cho tab "Sức khỏe nhân viên"
 
@@ -6,6 +10,7 @@ import { appState } from './state.js';
 import { services } from './services.js';
 import { uiComponents } from './ui-components.js';
 import { utils } from './utils.js';
+import { settingsService } from './modules/settings.service.js'; // *** NEW (v6.23) ***
 
 export const uiSknv = {
     displayEmployeeIncomeReport: (reportData) => {
@@ -13,7 +18,7 @@ export const uiSknv = {
         const container = document.getElementById('income-report-container');
         const placeholder = document.getElementById('income-report-placeholder');
         if (!container || !placeholder) {
-            console.error("[ui-sknv.js displayEmployeeIncomeReport] Container or placeholder not found."); // Log mới
+           console.error("[ui-sknv.js displayEmployeeIncomeReport] Container or placeholder not found."); // Log mới
             return;
         }
         const hasIncomeData = reportData.some(item => (item.tongThuNhap || 0) > 0 || (item.gioCong || 0) > 0);
@@ -29,7 +34,7 @@ export const uiSknv = {
 
         const groupedByDept = {};
         reportData.forEach(item => {
-            const dept = item.boPhan;
+             const dept = item.boPhan;
             if (!groupedByDept[dept]) groupedByDept[dept] = [];
             groupedByDept[dept].push(item);
         });
@@ -59,7 +64,7 @@ export const uiSknv = {
 
         const totals = data.reduce((acc, item) => {
             acc.gioCong += item.gioCong || 0; // Ensure NaN safety
-            acc.thuongNong += item.thuongNong || 0;
+             acc.thuongNong += item.thuongNong || 0;
             acc.thuongERP += item.thuongERP || 0;
             acc.tongThuNhap += item.tongThuNhap || 0;
             acc.thuNhapDuKien += item.thuNhapDuKien || 0;
@@ -76,12 +81,13 @@ export const uiSknv = {
         else if (title.includes('Trang Trí')) titleClass = 'department-header-tt';
 
         const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
-        let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title} <span class="text-sm font-normal text-gray-500">(Thu nhập DK TB: ${uiComponents.formatRevenue(averageProjectedIncome)})</span></h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="thunhap" data-capture-columns="8">
-             <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
+        // *** FIX (v6.22): Removed 'min-w-full' from table ***
+        let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title} <span class="text-sm font-normal text-gray-500">(Thu nhập DK TB: ${uiComponents.formatRevenue(averageProjectedIncome)})</span></h4><div class="overflow-x-auto"><table class="text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="thunhap" data-capture-columns="8">
+          <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                  <tr>
                     <th class="${headerClass('hoTen')}" data-sort="hoTen">Họ Tên <span class="sort-indicator"></span></th>
                     <th class="${headerClass('gioCong')} text-right" data-sort="gioCong">Giờ công <span class="sort-indicator"></span></th>
-                    <th class="${headerClass('tongThuNhap')} text-right" data-sort="tongThuNhap">Tổng thu nhập <span class="sort-indicator"></span></th>
+                     <th class="${headerClass('tongThuNhap')} text-right" data-sort="tongThuNhap">Tổng thu nhập <span class="sort-indicator"></span></th>
                     <th class="${headerClass('thuNhapDuKien')} text-right" data-sort="thuNhapDuKien">Thu nhập DK <span class="sort-indicator"></span></th>
                     <th class="${headerClass('thuNhapThangTruoc')} text-right" data-sort="thuNhapThangTruoc">Tháng trước <span class="sort-indicator"></span></th>
                     <th class="${headerClass('chenhLechThuNhap')} text-right" data-sort="chenhLechThuNhap">+/- Tháng trước <span class="sort-indicator"></span></th>
@@ -89,7 +95,7 @@ export const uiSknv = {
                  </thead><tbody>`;
         sortedData.forEach(nv => {
             const incomeDkCellClass = nv.thuNhapDuKien < averageProjectedIncome ? 'cell-performance is-below' : '';
-            const incomeDiffClass = (nv.chenhLechThuNhap || 0) < 0 ? 'income-negative' : 'income-positive'; // Handle undefined/NaN
+             const incomeDiffClass = (nv.chenhLechThuNhap || 0) < 0 ? 'income-negative' : 'income-positive'; // Handle undefined/NaN
 
             tableHTML += `<tr class="interactive-row" data-employee-id="${nv.maNV}" data-source-tab="sknv">
                     <td class="px-4 py-2 font-semibold line-clamp-2 employee-name-cell">
@@ -116,7 +122,10 @@ export const uiSknv = {
     },
 
     displaySknvReport: (filteredReport, forceDetail = false) => {
-        console.log(`[ui-sknv.js displaySknvReport] === Starting render === Force detail: ${forceDetail}`); // Log mới
+        // === START: DEBUG (v6.16) ===
+        console.log(`%c[DEBUG displaySknvReport] === Bắt đầu render ===`, "color: blue; font-weight: bold;");
+        console.log(`[DEBUG displaySknvReport] Force detail: ${forceDetail}`);
+        // === END: DEBUG ===
         const summaryContainer = document.getElementById('sknv-summary-container');
         const detailsContainer = document.getElementById('sknv-details-container');
         if (!summaryContainer || !detailsContainer) {
@@ -126,36 +135,40 @@ export const uiSknv = {
 
         const isViewingDetail = appState.viewingDetailFor && appState.viewingDetailFor.sourceTab === 'sknv';
         const shouldShowDetail = forceDetail || isViewingDetail;
-        console.log(`[ui-sknv.js displaySknvReport] Should show detail: ${shouldShowDetail}`); // Log mới
+        // === START: DEBUG (v6.16) ===
+        console.log(`[DEBUG displaySknvReport] isViewingDetail (từ appState): ${isViewingDetail}`);
+        console.log(`[DEBUG displaySknvReport] shouldShowDetail (kết quả): ${shouldShowDetail}`);
+        // === END: DEBUG ===
 
         summaryContainer.classList.toggle('hidden', shouldShowDetail);
         detailsContainer.classList.toggle('hidden', !shouldShowDetail);
 
         if (shouldShowDetail) {
             const employeeId = appState.viewingDetailFor.employeeId;
-            console.log(`[ui-sknv.js displaySknvReport] Finding data for employee ID: ${employeeId}`); // Log mới
+            console.log(`[DEBUG displaySknvReport] Đang tìm data cho NV ID: ${employeeId}`); // Log mới
             const employeeData = appState.masterReportData.sknv.find(nv => String(nv.maNV).trim() === String(employeeId).trim());
             if(employeeData) {
-                console.log(`[ui-sknv.js displaySknvReport] Employee data found. Calling renderSknvDetailForEmployee.`); // Log mới
+                 console.log(`[DEBUG displaySknvReport] Đã tìm thấy data NV. Gọi renderSknvDetailForEmployee.`); // Log mới
                 uiSknv.renderSknvDetailForEmployee(employeeData, filteredReport);
             } else {
-                 console.warn(`[ui-sknv.js displaySknvReport] Employee data NOT FOUND for ID: ${employeeId}`); // Log mới
+                 console.warn(`[DEBUG displaySknvReport] KHÔNG TÌM THẤY data cho NV ID: ${employeeId}`); // Log mới
                  detailsContainer.innerHTML = `
                     <div class="mb-4">
                         <button class="back-to-summary-btn text-blue-600 hover:underline font-semibold">‹ Quay lại bảng tổng hợp</button>
-                    </div>
+                     </div>
                     <p class="text-red-500">Không tìm thấy dữ liệu chi tiết cho nhân viên đã chọn.</p>`;
             }
         } else {
-            console.log("[ui-sknv.js displaySknvReport] Calling displaySknvSummaryReport."); // Log mới
+            console.log("[DEBUG displaySknvReport] Gọi displaySknvSummaryReport."); // Log mới
             uiSknv.displaySknvSummaryReport(filteredReport);
         }
-        console.log("[ui-sknv.js displaySknvReport] === Render complete ==="); // Log mới
+        console.log("%c[DEBUG displaySknvReport] === Render kết thúc ===", "color: blue; font-weight: bold;"); // Log mới
     },
     
     _createDetailMetricGrid(title, colorClass, icon, data) {
         let itemsHtml = data.map(row => {
             const evaluation = uiSknv.getSknvEvaluation(row.rawValue, row.rawAverage, row.higherIsBetter);
+            
             return `
                 <div class="sknv-detail-metric-card">
                     <span class="label">${row.label}</span>
@@ -220,7 +233,7 @@ export const uiSknv = {
         // --- Tạo dữ liệu cho các grid (Giữ nguyên logic tạo mảng doanhThuData, nangSuatData, hieuQuaData, donGiaData) ---
         const doanhThuData = [
             { label: 'Doanh thu thực', value: uiComponents.formatRevenue(employeeData.doanhThu), average: uiComponents.formatRevenue(departmentAverages.doanhThu || 0), rawValue: employeeData.doanhThu, rawAverage: departmentAverages.doanhThu },
-            { label: 'Doanh thu quy đổi', value: uiComponents.formatRevenue(employeeData.doanhThuQuyDoi), average: uiComponents.formatRevenue(departmentAverages.doanhThuQuyDoi || 0), rawValue: employeeData.doanhThuQuyDoi, rawAverage: departmentAverages.doanhThuQuyDoi },
+             { label: 'Doanh thu quy đổi', value: uiComponents.formatRevenue(employeeData.doanhThuQuyDoi), average: uiComponents.formatRevenue(departmentAverages.doanhThuQuyDoi || 0), rawValue: employeeData.doanhThuQuyDoi, rawAverage: departmentAverages.doanhThuQuyDoi },
             { label: '% Quy đổi', value: uiComponents.formatPercentage(employeeData.hieuQuaQuyDoi), valueClass: (mucTieu && employeeData.hieuQuaQuyDoi < (mucTieu.phanTramQD / 100)) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.hieuQuaQuyDoi), rawValue: employeeData.hieuQuaQuyDoi, rawAverage: departmentAverages.hieuQuaQuyDoi },
             { label: 'Doanh thu CE', value: uiComponents.formatRevenue(employeeData.dtCE), average: uiComponents.formatRevenue(departmentAverages.dtCE || 0), rawValue: employeeData.dtCE, rawAverage: departmentAverages.dtCE },
             { label: 'Doanh thu ICT', value: uiComponents.formatRevenue(employeeData.dtICT), average: uiComponents.formatRevenue(departmentAverages.dtICT || 0), rawValue: employeeData.dtICT, rawAverage: departmentAverages.dtICT },
@@ -241,7 +254,7 @@ export const uiSknv = {
         nangSuatData.forEach(d => countEvaluation('nangsuat', d.rawValue, d.rawAverage));
 
         const hieuQuaData = [
-            { label: '% PK', value: uiComponents.formatPercentage(employeeData.pctPhuKien), valueClass: (mucTieu && employeeData.pctPhuKien < (mucTieu.phanTramPhuKien / 100)) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctPhuKien), rawValue: employeeData.pctPhuKien, rawAverage: departmentAverages.pctPhuKien },
+             { label: '% PK', value: uiComponents.formatPercentage(employeeData.pctPhuKien), valueClass: (mucTieu && employeeData.pctPhuKien < (mucTieu.phanTramPhuKien / 100)) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctPhuKien), rawValue: employeeData.pctPhuKien, rawAverage: departmentAverages.pctPhuKien },
             { label: '% Gia dụng', value: uiComponents.formatPercentage(employeeData.pctGiaDung), valueClass: (mucTieu && employeeData.pctGiaDung < (mucTieu.phanTramGiaDung / 100)) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctGiaDung), rawValue: employeeData.pctGiaDung, rawAverage: departmentAverages.pctGiaDung },
             { label: '% MLN', value: uiComponents.formatPercentage(employeeData.pctMLN), valueClass: (mucTieu && employeeData.pctMLN < (mucTieu.phanTramMLN / 100)) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctMLN), rawValue: employeeData.pctMLN, rawAverage: departmentAverages.pctMLN },
             { label: '% Sim', value: uiComponents.formatPercentage(employeeData.pctSim), valueClass: (mucTieu && employeeData.pctSim < (mucTieu.phanTramSim / 100)) ? 'cell-performance is-below' : '', average: uiComponents.formatPercentage(departmentAverages.pctSim), rawValue: employeeData.pctSim, rawAverage: departmentAverages.pctSim },
@@ -254,7 +267,7 @@ export const uiSknv = {
             { label: 'Đơn giá TB', value: uiComponents.formatRevenue(employeeData.donGiaTrungBinh), average: uiComponents.formatRevenue(departmentAverages.donGiaTrungBinh), rawValue: employeeData.donGiaTrungBinh, rawAverage: departmentAverages.donGiaTrungBinh },
             { label: 'Đơn giá Tivi', value: uiComponents.formatRevenue(employeeData.donGiaTivi), average: uiComponents.formatRevenue(departmentAverages.donGiaTivi), rawValue: employeeData.donGiaTivi, rawAverage: departmentAverages.donGiaTivi },
             { label: 'Đơn giá Tủ lạnh', value: uiComponents.formatRevenue(employeeData.donGiaTuLanh), average: uiComponents.formatRevenue(departmentAverages.donGiaTuLanh), rawValue: employeeData.donGiaTuLanh, rawAverage: departmentAverages.donGiaTuLanh },
-            { label: 'Đơn giá Máy giặt', value: uiComponents.formatRevenue(employeeData.donGiaMayGiat), average: uiComponents.formatRevenue(departmentAverages.donGiaMayGiat), rawValue: employeeData.donGiaMayGiat, rawAverage: departmentAverages.donGiaMayGiat },
+             { label: 'Đơn giá Máy giặt', value: uiComponents.formatRevenue(employeeData.donGiaMayGiat), average: uiComponents.formatRevenue(departmentAverages.donGiaMayGiat), rawValue: employeeData.donGiaMayGiat, rawAverage: departmentAverages.donGiaMayGiat },
             { label: 'Đơn giá Máy lạnh', value: uiComponents.formatRevenue(employeeData.donGiaMayLanh), average: uiComponents.formatRevenue(departmentAverages.donGiaMayLanh), rawValue: employeeData.donGiaMayLanh, rawAverage: departmentAverages.donGiaMayLanh },
             { label: 'Đơn giá Điện thoại', value: uiComponents.formatRevenue(employeeData.donGiaDienThoai), average: uiComponents.formatRevenue(departmentAverages.donGiaDienThoai), rawValue: employeeData.donGiaDienThoai, rawAverage: departmentAverages.donGiaDienThoai },
             { label: 'Đơn giá Laptop', value: uiComponents.formatRevenue(employeeData.donGiaLaptop), average: uiComponents.formatRevenue(departmentAverages.donGiaLaptop), rawValue: employeeData.donGiaLaptop, rawAverage: departmentAverages.donGiaLaptop },
@@ -264,7 +277,7 @@ export const uiSknv = {
         const totalAbove = evaluationCounts.doanhthu.above + evaluationCounts.nangsuat.above + evaluationCounts.hieuqua.above + evaluationCounts.dongia.above + evaluationCounts.qdc.above;
         const totalCriteria = evaluationCounts.doanhthu.total + evaluationCounts.nangsuat.total + evaluationCounts.hieuqua.total + evaluationCounts.dongia.total + evaluationCounts.qdc.total;
         console.log(`[ui-sknv.js renderSknvDetail] Evaluation Counts:`, evaluationCounts, `Total Above: ${totalAbove}, Total Criteria: ${totalCriteria}`); // Log mới
-        
+      
         console.log("[ui-sknv.js renderSknvDetail] Generating HTML..."); // Log mới
         detailsContainer.innerHTML = `
             <div class="mb-4 flex justify-between items-center">
@@ -273,14 +286,14 @@ export const uiSknv = {
                     <i data-feather="camera"></i>
                     <span>Chụp ảnh</span>
                 </button>
-            </div>
+             </div>
             <div id="sknv-detail-capture-area">
                 <div class="sknv-detail-header-card" data-capture-group="1">
                     <div class="sknv-card__avatar sknv-detail-avatar">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                     </div>
                     <div class="sknv-detail-info">
-                        <p class="name">${employeeData.hoTen} - ${employeeData.maNV}</p>
+                         <p class="name">${employeeData.hoTen} - ${employeeData.maNV}</p>
                         <p class="department">${employeeData.boPhan}</p>
                         <p class="kpi-summary">Chỉ số trên TB: <span class="text-green-600 font-bold">${totalAbove}</span> / Tổng: <span class="font-bold">${totalCriteria}</span></p>
                     </div>
@@ -288,18 +301,18 @@ export const uiSknv = {
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6" data-capture-layout="grid">
                     <div class="space-y-6" data-capture-group="1">
-                        ${this._createDetailMetricGrid('Doanh thu', 'sknv-header-blue', 'trending-up', doanhThuData)}
+                         ${this._createDetailMetricGrid('Doanh thu', 'sknv-header-blue', 'trending-up', doanhThuData)}
                         ${this._createDetailMetricGrid('Hiệu quả khai thác', 'sknv-header-orange', 'award', hieuQuaData)}
                     </div>
                     <div class="space-y-6" data-capture-group="1">
                         ${this._createDetailMetricGrid('Năng suất', 'sknv-header-green', 'dollar-sign', nangSuatData)}
                         ${this._createDetailMetricGrid('Đơn giá', 'sknv-header-yellow', 'tag', donGiaData)}
-                    </div>
+                     </div>
                     <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6" data-capture-layout="grid">
-                        <div data-capture-group="1">${uiSknv.renderSknvQdcTable(employeeData, departmentAverages, countEvaluation, evaluationCounts)}</div>
-                        <div data-capture-group="1">${uiSknv.renderSknvNganhHangTable(employeeData)}</div>
+                        <div data-capture-group="1" class="overflow-x-auto">${uiSknv.renderSknvQdcTable(employeeData, departmentAverages, countEvaluation, evaluationCounts)}</div>
+                        <div data-capture-group="1" class="overflow-x-auto">${uiSknv.renderSknvNganhHangTable(employeeData)}</div>
                     </div>
-                </div>
+                    </div>
             </div>`;
             feather.replace();
         console.log("[ui-sknv.js renderSknvDetail] === Render complete ==="); // Log mới
@@ -320,6 +333,7 @@ export const uiSknv = {
         }
         console.log(`[ui-sknv.js displaySknvSummaryReport] Input reportData length: ${reportData.length}`); // Log mới
 
+        
         const summarizedData = reportData.map(employee => {
             const departmentAverages = services.calculateDepartmentAverages(employee.boPhan, reportData);
             const counts = {
@@ -428,7 +442,7 @@ export const uiSknv = {
                                     <span class="label">${group.label}</span>
                                 </div>
                                 <span class="value ${valueColorClass}">${item.summary[group.key].above}/${item.summary[group.key].total}</span>
-                            </div>
+                             </div>
                         `; 
                     }).join(''); 
 
@@ -436,21 +450,21 @@ export const uiSknv = {
                         <div class="sknv-card interactive-row" data-employee-id="${item.maNV}" data-source-tab="sknv">
                             ${medalHtml}
                             <div class="sknv-card__header">
-                                <div class="sknv-card__avatar">
+                                 <div class="sknv-card__avatar">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                                 </div>
                                 <div class="sknv-card__info">
-                                    <p class="name">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</p>
+                                     <p class="name">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</p>
                                     <p class="id">${item.boPhan}</p>
                                 </div>
                             </div>
                             <div class="sknv-card__main-kpi ${performanceColorClass}">
-                                <span class="value">${item.totalAbove}</span>
+                                 <span class="value">${item.totalAbove}</span>
                                 <span class="total">/ ${item.totalCriteria}</span>
                                 <span class="label">Chỉ số trên TB</span>
                             </div>
                             <div class="sknv-card__sub-kpi-grid">
-                                ${subKpisHtml}
+                                 ${subKpisHtml}
                             </div>
                         </div>`; 
                 });
@@ -470,7 +484,7 @@ export const uiSknv = {
         const isAbove = higherIsBetter ? (value >= avgValue) : (value <= avgValue);
         return {
             text: isAbove ? 'Trên TB' : 'Dưới TB',
-            class: isAbove ? 'text-green-600' : 'text-yellow-600'
+            class: isAbove ? 'text-green-600' : 'text-yellow-6Doanhthu'
         };
     },
     
@@ -490,12 +504,13 @@ export const uiSknv = {
         const sortedData = [...dataArray].sort((a,b) => direction === 'asc' ? (a[key] || 0) - (b[key] || 0) : (b[key] || 0) - (a[key] || 0)); 
         const headerClass = (sortKey) => `px-4 py-2 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
 
-        return `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"><div class="sknv-detail-card-header sknv-header-purple"><i data-feather="list" class="header-icon"></i><h4 class="text-lg font-bold">Doanh thu theo Ngành hàng</h4></div><div class="overflow-x-auto" style="max-height: 400px;"><table class="min-w-full text-sm table-bordered table-striped" data-table-type="sknv_nganhhang_chitiet">
+        // *** FIX (v6.22): Removed 'min-w-full' from table ***
+        return `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"><div class="sknv-detail-card-header sknv-header-purple"><i data-feather="list" class="header-icon"></i><h4 class="text-lg font-bold">Doanh thu theo Ngành hàng</h4></div><div class="overflow-x-auto" style="max-height: 400px;"><table class="text-sm table-bordered table-striped" data-table-type="sknv_nganhhang_chitiet">
             <thead class="sknv-subtable-header"><tr>
                 <th class="${headerClass('name')}" data-sort="name">Ngành hàng</th>
                 <th class="${headerClass('quantity')} text-right" data-sort="quantity">SL</th>
                 <th class="${headerClass('revenue')} text-right" data-sort="revenue">Doanh thu</th>
-                <th class="${headerClass('revenueQuyDoi')} text-right" data-sort="revenueQuyDoi">DTQĐ</th>
+                 <th class="${headerClass('revenueQuyDoi')} text-right" data-sort="revenueQuyDoi">DTQĐ</th>
             </tr></thead>
             <tbody>${sortedData.map(item => `
                 <tr class="border-t">
@@ -503,7 +518,7 @@ export const uiSknv = {
                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatNumberOrDash(item.quantity)}</td>
                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.revenue, 0)}</td>
                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.revenueQuyDoi, 0)}</td>
-                </tr>`).join('')}
+                 </tr>`).join('')}
             </tbody></table></div></div>`;
     },
 
@@ -522,7 +537,7 @@ export const uiSknv = {
         const { key, direction } = sortState;
         const sortedData = Object.entries(qdcData)
             .map(([id, values]) => ({ id, ...values }))
-            .filter(item => (item.sl || 0) > 0) 
+             .filter(item => (item.sl || 0) > 0) 
             .sort((a,b) => direction === 'asc' ? (a[key] || 0) - (b[key] || 0) : (b[key] || 0) - (a[key] || 0)); 
         console.log(`[ui-sknv.js renderSknvQdcTable] Sorted QDC data length: ${sortedData.length}`); 
 
@@ -535,8 +550,9 @@ export const uiSknv = {
 
         const headerClass = (sortKey) => `px-4 py-2 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
 
-        return `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"><div class="sknv-detail-card-header sknv-header-indigo"><i data-feather="star" class="header-icon"></i><h4 class="text-lg font-bold">Nhóm hàng Quy đổi cao</h4></div><div class="overflow-x-auto" style="max-height: 400px;"><table class="min-w-full text-sm table-bordered table-striped" data-table-type="sknv_qdc">
-            <thead class="sknv-subtable-header"><tr>
+        // *** FIX (v6.22): Removed 'min-w-full' from table ***
+        return `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"><div class="sknv-detail-card-header sknv-header-indigo"><i data-feather="star" class="header-icon"></i><h4 class="text-lg font-bold">Nhóm hàng Quy đổi cao</h4></div><div class="overflow-x-auto" style="max-height: 400px;"><table class="text-sm table-bordered table-striped" data-table-type="sknv_qdc">
+             <thead class="sknv-subtable-header"><tr>
                 <th class="${headerClass('name')}" data-sort="name">Nhóm hàng</th>
                 <th class="${headerClass('sl')} text-right" data-sort="sl">SL</th>
                 <th class="${headerClass('dtqd')} text-right" data-sort="dtqd">DTQĐ (Tr)</th>
@@ -545,7 +561,7 @@ export const uiSknv = {
             <tbody>${sortedData.map(item => {
                 const avgValue = avgQdcData?.[item.id]?.dtqd;
                 const evaluation = uiSknv.getSknvEvaluation(item.dtqd, avgValue);
-                countCallback('qdc', item.dtqd, avgValue);
+                 countCallback('qdc', item.dtqd, avgValue);
                 return `<tr class="border-t">
                     <td class="px-4 py-2 font-medium">${item.name}</td>
                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatNumberOrDash(item.sl)}</td>
@@ -554,4 +570,226 @@ export const uiSknv = {
                 </tr>`}).join('')}
             </tbody></table></div></div>`;
     },
+
+    // *** START: MODIFIED FUNCTION (v6.25) - Fix Icon Display ***
+    renderPastedCompetitionReport(reportData) {
+        console.log(`%c[DEBUG renderPastedCompetitionReport] === Bắt đầu render (v6.25) ===`, "color: blue; font-weight: bold;");
+        
+        const container = document.getElementById('pasted-competition-report-container');
+        if (!container) {
+            console.error("[ui-sknv.js] Container '#pasted-competition-report-container' not found.");
+            return;
+        }
+
+        // 1. TẢI CÀI ĐẶT CỘT (REQ 3)
+        const columnSettings = settingsService.loadPastedCompetitionViewSettings();
+        
+        // *** START: SVG Icon (v6.25) - Copy từ ui-components.js ***
+        const dragIconSVG = `<svg class="drag-handle-icon mr-2 cursor-grab" width="12" height="12" viewBox="0 0 10 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M4 2a1 1 0 10-2 0 1 1 0 002 0zM2 9a1 1 0 110-2 1 1 0 010 2zm0 5a1 1 0 110-2 1 1 0 010 2zm5-12a1 1 0 10-2 0 1 1 0 002 0zM7 9a1 1 0 110-2 1 1 0 010 2zm0 5a1 1 0 110-2 1 1 0 010 2z" fill="currentColor"></path></svg>`;
+        // *** END: SVG Icon (v6.25) ***
+
+        if (!reportData || reportData.length === 0) {
+            // Vẫn render thanh toggle dù không có data
+            const placeholderToggles = columnSettings.length > 0 
+                ? columnSettings.map(col => `
+                    <button 
+                        class="column-toggle-btn draggable-tag pasted-comp-toggle-btn ${col.visible ? 'active' : ''}" 
+                        data-column-ten-goc="${col.tenGoc}" 
+                        title="${col.tenGoc} (${col.loaiSoLieu})">
+                        ${dragIconSVG} <span>${col.label}</span>
+                    </button>`).join('')
+                : '<span class="text-sm text-gray-500">Dán dữ liệu để thấy các cột...</span>';
+                
+            container.innerHTML = `
+                <div id="pasted-competition-column-toggles">
+                    <span class="non-draggable">HIỂN THỊ CỘT:</span>
+                    ${placeholderToggles}
+                </div>
+                <div data-capture-group="pasted-competition">
+                    <p class="text-gray-500 p-4">Không có dữ liệu thi đua nhân viên. Vui lòng dán dữ liệu ở tab "Cập nhật dữ liệu" và đảm bảo bộ lọc không quá hẹp.</p>
+                </div>`;
+            // GỌI FEATHER CHO CÁC ICON KHÁC (nếu có) - nhưng ở đây không cần
+            return;
+        }
+        
+        const visibleColumns = columnSettings.filter(col => col.visible);
+        
+        // 2. RENDER CÁC NÚT TÙY CHỈNH CỘT (REQ 3)
+        let togglesHTML = `<div id="pasted-competition-column-toggles">
+            <span class="non-draggable">HIỂN THỊ CỘT:</span>
+            ${columnSettings.map(col => `
+                <button 
+                    class="column-toggle-btn draggable-tag pasted-comp-toggle-btn ${col.visible ? 'active' : ''}" 
+                    data-column-ten-goc="${col.tenGoc}" 
+                    title="${col.tenGoc} (${col.loaiSoLieu})">
+                    ${dragIconSVG} <span>${col.label}</span>
+                </button>
+            `).join('')}
+        </div>`;
+        
+        let finalHTML = ``; // HTML cho bảng sẽ được xây dựng bên dưới
+
+        // 3. NHÓM VÀ SẮP XẾP DỮ LIỆU (REQ 1)
+        const groupedByDept = {};
+        reportData.forEach(item => {
+            const dept = item.boPhan || 'Chưa phân loại';
+            if (!groupedByDept[dept]) groupedByDept[dept] = [];
+            groupedByDept[dept].push(item);
+        });
+
+        const departmentOrder = utils.getSortedDepartmentList(reportData);
+        const sortStateKey = 'sknv_thidua_pasted';
+        
+        departmentOrder.forEach(deptName => {
+            if (groupedByDept[deptName]) {
+                const deptData = groupedByDept[deptName];
+                
+                // Sắp xếp nhân viên trong bộ phận (REQ 1)
+                const sortState = appState.sortState[sortStateKey] || { key: 'hoTen', direction: 'asc' };
+                const { key, direction } = sortState;
+                
+                const sortedData = [...deptData].sort((a, b) => {
+                    let valA, valB;
+                    if (key.startsWith('comp_')) {
+                        // Sắp xếp theo cột thi đua động
+                        const sortCol = columnSettings.find(c => c.id === key);
+                        if (!sortCol) return 0; // Không tìm thấy cột
+                        
+                        valA = a.competitions.find(c => c.tenGoc === sortCol.tenGoc)?.giaTri || 0;
+                        valB = b.competitions.find(c => c.tenGoc === sortCol.tenGoc)?.giaTri || 0;
+                        return direction === 'asc' ? valA - valB : valB - valA;
+                        
+                    } else { // Sắp xếp theo 'hoTen'
+                        valA = a[key] || ''; 
+                        valB = b[key] || '';
+                        return direction === 'asc' 
+                            ? valA.localeCompare(valB) 
+                            : valB.localeCompare(valA);
+                    }
+                });
+
+                let titleClass = '';
+                 if (deptName.includes('Tư Vấn')) titleClass = 'department-header-tv';
+                else if (deptName.includes('Kho')) titleClass = 'department-header-kho';
+                else if (deptName.includes('Trang Trí')) titleClass = 'department-header-tt';
+
+                const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
+
+                // 4. RENDER BẢNG
+                finalHTML += `<div class="department-block">
+                    <h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${deptName}</h4>
+                    <div class="overflow-x-auto sknv-pasted-competition-scroller"> 
+                    
+                    <table class="text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="${1 + visibleColumns.length}">
+                         <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
+                            <tr>
+                                <th class="${headerClass('hoTen')}" data-sort="hoTen" style="min-width: 150px; white-space: nowrap;">Nhân viên <span class="sort-indicator"></span></th>
+                            
+                                ${visibleColumns.map((header, index) => `
+                                     <th class="${headerClass(header.id)} text-center header-group-${index % 12 + 1}" 
+                                         data-sort="${header.id}" 
+                                         title="${header.tenGoc} (${header.loaiSoLieu})">
+                                        ${header.label}
+                                        <span class="sort-indicator"></span>
+                                    </th>
+                                `).join('')}
+                                </tr>
+                            </thead>
+                        <tbody>`;
+
+                // Tính toán Tổng/TB (Dùng Map để tôn trọng thứ tự cột)
+                const deptTotals = new Map();
+                const validEmployeeCount = new Map();
+                visibleColumns.forEach(col => {
+                    deptTotals.set(col.tenGoc, 0);
+                    validEmployeeCount.set(col.tenGoc, 0);
+                });
+
+                // Render dòng nhân viên
+                sortedData.forEach(item => {
+                    finalHTML += `<tr class="hover:bg-gray-50">
+                        <td class="px-4 py-2 font-semibold whitespace-nowrap">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</td>
+                        
+                        ${visibleColumns.map(col => {
+                             const compData = item.competitions.find(c => c.tenGoc === col.tenGoc);
+                             const giaTri = compData?.giaTri || 0;
+                             let formattedValue = '-';
+                            
+                            if (giaTri !== 0) {
+                                formattedValue = uiComponents.formatNumber(giaTri, 0);
+                                // Cập nhật tổng
+                                deptTotals.set(col.tenGoc, deptTotals.get(col.tenGoc) + giaTri);
+                                validEmployeeCount.set(col.tenGoc, validEmployeeCount.get(col.tenGoc) + 1);
+                            }
+                 
+                            const cellClass = (col.loaiSoLieu === 'SLLK') ? 'text-right font-bold' : 'text-right font-bold text-blue-600';
+                            return `<td class="${cellClass} px-2 py-2">${formattedValue}</td>`;
+                        }).join('')}
+                    </tr>`;
+                });
+
+                // Render TFOOT
+                finalHTML += `</tbody>
+                     <tfoot class="table-footer font-bold">
+                        <tr class="bg-gray-100">
+                            <td class="px-4 py-2 text-left">Tổng</td>
+                            ${visibleColumns.map(col => {
+                                const total = deptTotals.get(col.tenGoc) || 0;
+                                const formattedTotal = total === 0 ? '-' : uiComponents.formatNumber(total, 0);
+                                return `<td class="px-2 py-2 text-right">${formattedTotal}</td>`;
+                            }).join('')}
+                        </tr>
+                         <tr class="bg-gray-100">
+                            <td class="px-4 py-2 text-left">Trung Bình</td>
+                            ${visibleColumns.map(col => {
+                                const total = deptTotals.get(col.tenGoc) || 0;
+                                const count = validEmployeeCount.get(col.tenGoc) || 0;
+                                const avg = count > 0 ? total / count : 0;
+                                const formattedAvg = avg === 0 ? '-' : uiComponents.formatNumber(avg, 0);
+                                return `<td class="px-2 py-2 text-right">${formattedAvg}</td>`;
+                            }).join('')}
+                        </tr>
+                    </tfoot>
+                </table></div></div>`; // Đóng overflow-x-auto và department-block
+            }
+        });
+
+        // 5. GỘP HTML
+        // (REQ 3) Đặt 'togglesHTML' BÊN NGOÀI 'data-capture-group'
+        container.innerHTML = `
+            ${togglesHTML} 
+            <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden" data-capture-group="pasted-competition">
+                ${finalHTML}
+            </div>`;
+        
+        // Log chẩn đoán vẫn giữ nguyên
+        setTimeout(() => {
+            const tableEl = container.querySelector('table');
+            const tableContainer = container.querySelector('.sknv-pasted-competition-scroller');
+            const parentContainer = document.getElementById('pasted-competition-report-container');
+            const mainContentEl = document.getElementById('main-content');
+
+            if (tableEl && tableContainer && parentContainer && mainContentEl) {
+                console.log(`%c[DEBUG renderPastedCompetitionReport] Kích thước sau render (v6.25):`, "color: #00008B; font-weight: bold;");
+                console.log(`  > 1. Bảng (<table>): scrollWidth: ${tableEl.scrollWidth}px`);
+                console.log(`  > 2. Container Cuộn (.sknv-pasted-competition-scroller): clientWidth: ${tableContainer.clientWidth}px`);
+                console.log(`  > 3. Container Báo Cáo (#pasted-competition-report-container): clientWidth: ${parentContainer.clientWidth}px`);
+                console.log(`  > 4. Main Content (#main-content): clientWidth: ${mainContentEl.clientWidth}px`);
+                console.log(`%c[DEBUG renderPastedCompetitionReport] CHẨN ĐOÁN (v6.25):`, "color: #00008B; font-weight: bold;");
+                if (tableEl.scrollWidth > tableContainer.clientWidth) {
+                    console.log(`%c  > TỐT: Bảng (1) rộng hơn Container Cuộn (2). Thanh trượt NÊN xuất hiện.`, "color: green;");
+                } else {
+                    console.log(`%c  > LỖI: Bảng (1) KHÔNG rộng hơn Container Cuộn (2). Thanh trượt sẽ KHÔNG xuất hiện.`, "color: red; font-weight: bold;");
+                }
+                if (tableContainer.clientWidth >= mainContentEl.clientWidth) {
+                     console.log(`%c  > LỖI: Container Cuộn (2) đang rộng bằng hoặc hơn Main Content (4).`, "color: red; font-weight: bold;");
+                } else {
+                     console.log(`%c  > TỐT: Container Cuộn (2) hẹp hơn Main Content (4).`, "color: green;");
+                }
+            } else {
+                console.error("[DEBUG] Không tìm thấy một trong các phần tử chẩn đoán.");
+            }
+        }, 0);
+    }
+    // *** END: MODIFIED FUNCTION (v6.25) ***
 };
