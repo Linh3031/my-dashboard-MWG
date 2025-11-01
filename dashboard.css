@@ -1,3 +1,4 @@
+/* Version 6.15 - Add styles for pasted competition toggles & header wrap */
 /* Version 6.14 - Add min-width: 0 to #main-content to fix layout overflow */
 /* Version 6.13 - Remove visual debugging borders */
 /* Version 6.11 - Add styles for declaration accordion */
@@ -584,7 +585,8 @@ bold !important; color: #d90429; margin-top: 4px; }
     min-width: 250px;
 }
 
-#goal-drawer .choices__list--dropdown,
+#goal-drawer 
+.choices__list--dropdown,
 #goal-drawer .choices__list[aria-expanded] {
     min-width: 100%;
     width: auto;
@@ -592,8 +594,7 @@ bold !important; color: #d90429; margin-top: 4px; }
 }
 
 #goal-drawer .choices__list--multiple .choices__item {
-   
- display: inline-flex;
+    display: inline-flex;
     align-items: center;
     background-color: #3b82f6;
     border: 1px
@@ -649,15 +650,15 @@ solid #2563eb;
     margin-right: 0.75rem;
 }
 .selection-item label {
-    flex-grow: 1;
+  
+  flex-grow: 1;
     cursor: pointer;
 }
 .settings-trigger-btn {
     background: none;
     border: none;
     cursor: pointer;
-    color: 
-#9ca3af; /* gray-400 */
+    color: #9ca3af; /* gray-400 */
     transition: color 0.2s ease-in-out, transform 0.2s ease-in-out;
     padding: 2px;
 }
@@ -705,15 +706,15 @@ solid #2563eb;
 }
 
 .competition-summary-counter strong {
-    font-size: 1.15rem !important;
+    font-size: 
+1.15rem !important;
     font-weight: 800 !important;
     white-space: nowrap;
 }
 .competition-summary-counter .text-blue-600 {
     color: #2563eb !important;
 }
-.competition-summary-counter .text-red-600 
-{
+.competition-summary-counter .text-red-600 {
     color: #dc2626 !important;
 }
 
@@ -767,15 +768,15 @@ solid #2563eb;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 .drag-handle-icon {
-    color: #6b7280;
+   
+ color: #6b7280;
     transition: color 0.2s ease-in-out;
 }
 .column-toggle-btn.draggable-tag:hover .drag-handle-icon {
     color: #1f2937;
 }
 .sortable-drag {
-  
-  opacity: 0.95;
+    opacity: 0.95;
     transform: rotate(-2deg);
     box-shadow: 0 8px 16px rgba(0,0,0,0.2);
 }
@@ -826,11 +827,11 @@ solid #2563eb;
     position: relative; height: 350px; width: 100%;
 }
 .customer-accordion-luyke summary {
-    display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; padding: 0.5rem 1rem; cursor: pointer; list-style: none;
+    
+display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; padding: 0.5rem 1rem; cursor: pointer; list-style: none;
 }
 .customer-accordion-luyke summary:hover {
- 
-   background-color: #f9fafb;
+    background-color: #f9fafb;
 }
 .customer-accordion-luyke .customer-name-small {
     font-weight: 600;
@@ -867,14 +868,14 @@ font-size: 0.9rem; color: #1f2937; flex-grow:
     gap: 1.5rem;
 }
 
-@media (min-width: 768px) { /* 2 columns for tablets */
+@media (min-width: 768px) { /* 2 columns for tablets 
+*/
     .sknv-summary-grid {
         grid-template-columns: repeat(2, 1fr);
 }
 }
 
-@media (min-width: 
-1280px) { /* 4 columns for large desktops */
+@media (min-width: 1280px) { /* 4 columns for large desktops */
     .sknv-summary-grid {
         grid-template-columns: repeat(4, 1fr);
     }
@@ -908,7 +909,7 @@ font-size: 0.9rem; color: #1f2937; flex-grow:
     width: 48px;
     height: 48px;
     border-radius: 9999px;
-    background-color: #eef2ff;
+background-color: #eef2ff;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -917,7 +918,7 @@ font-size: 0.9rem; color: #1f2937; flex-grow:
 
 .sknv-card__avatar svg {
     width: 24px;
-height: 24px;
+    height: 24px;
     color: #4338ca;
 }
 
@@ -968,11 +969,11 @@ height: 24px;
 }
 
 .sknv-card-kpi-strong { border-top: 4px solid #16a34a; } /* UPDATED: Added top border */
-.sknv-card-kpi-medium { border-top: 4px solid #f59e0b; } /* UPDATED: Added top border */
+.sknv-card-kpi-medium { border-top: 4px solid #f59e0b; } /* UPDATED: Added top border 
+*/
 .sknv-card-kpi-weak { border-top: 4px solid #ef4444; } /* UPDATED: Added top border */
 .sknv-card-kpi-strong .value { color: #16a34a; }
-.sknv-card-kpi-medium 
-.value { color: #f59e0b; }
+.sknv-card-kpi-medium .value { color: #f59e0b; }
 .sknv-card-kpi-weak .value { color: #ef4444; }
 
 .sknv-card__sub-kpi-grid {
@@ -1017,11 +1018,11 @@ height: 24px;
 }
 /* === END: NEW SUB-KPI LAYOUT === */
 
-.sknv-card__sub-kpi-item.strong { border-bottom: 3px solid #22c55e; }
+.sknv-card__sub-kpi-item.strong { 
+border-bottom: 3px solid #22c55e; }
 .sknv-card__sub-kpi-item.medium { border-bottom: 3px solid #f59e0b; }
 .sknv-card__sub-kpi-item.weak { border-bottom: 3px solid #ef4444; }
-/* === 
-END: SKNV INFOGRAPHIC CARD STYLES === */
+/* === END: SKNV INFOGRAPHIC CARD STYLES === */
 
 /* === START: SKNV Department Grouping Styles (V6.1) === */
 .sknv-department-group {
@@ -1050,14 +1051,14 @@ END: SKNV INFOGRAPHIC CARD STYLES === */
     padding: 0.75rem 1rem;
     border-radius: 0.5rem 0.5rem 0 0;
     margin-bottom: 0; /* Remove bottom margin to connect with cards */
-    display: flex;
+    
+display: flex;
     align-items: center;
     gap: 0.75rem;
 }
 
 .sknv-department-header--priority::before {
-    content: '\f02e'; /* Font Awesome 'flag' icon 
-- if Font Awesome is available */
+    content: '\f02e'; /* Font Awesome 'flag' icon - if Font Awesome is available */
     font-family: 'Font Awesome 5 Free'; /* Specify font family */
     font-weight: 900; /* For solid icon style */
     font-size: 1.25rem;
@@ -1085,13 +1086,13 @@ END: SKNV INFOGRAPHIC CARD STYLES === */
     max-width: 1100px;
     margin: 0 auto;
 }
-.sknv-detail-header-card {
+.sknv-detail-header-card 
+{
     display: flex;
     align-items: center;
     gap: 1.5rem;
     padding: 1rem; /* UPDATED: Compact padding */
-  
-  background-color: #eff6ff; /* blue-50 */
+    background-color: #eff6ff; /* blue-50 */
     border: 1px solid #dbeafe; /* blue-200 */
     border-top: 4px solid #3b82f6; /* blue-500 */
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
@@ -1127,7 +1128,8 @@ END: SKNV INFOGRAPHIC CARD STYLES === */
     line-height: 1.2;
 }
 .sknv-detail-info .department {
-    font-size: 1rem;
+ 
+   font-size: 1rem;
     font-weight: 500;
 }
 .sknv-detail-info .kpi-summary {
@@ -1135,8 +1137,7 @@ END: SKNV INFOGRAPHIC CARD STYLES === */
     font-weight: 600;
 }
 
-.sknv-detail-card-header 
-{
+.sknv-detail-card-header {
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -1173,12 +1174,12 @@ END: SKNV INFOGRAPHIC CARD STYLES === */
 }
 .sknv-detail-metric-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+0 2px 4px -2px rgba(0, 0, 0, 0.1);
 }
 .sknv-detail-metric-card .label {
     font-weight: 600;
-    font-size: 0.8rem;
-/* UPDATED */
+    font-size: 0.8rem; /* UPDATED */
     color: #374151;
 }
 .sknv-detail-metric-card .value {
@@ -1215,12 +1216,11 @@ END: SKNV INFOGRAPHIC CARD STYLES === */
     width: 100%;
     height: 100%;
     display: block;
-    filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3)); /* Add a nice shadow */
+filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3)); /* Add a nice shadow */
 }
 
 /* NEW: Compact tables in detail view */
-#sknv-details-container 
-.sknv-subtable-header {
+#sknv-details-container .sknv-subtable-header {
     font-size: 0.8rem;
 }
 #sknv-details-container .table-bordered td,
@@ -1259,10 +1259,10 @@ END: SKNV INFOGRAPHIC CARD STYLES === */
     padding: 1rem 0.5rem;
     cursor: pointer;
     font-size: 1.125rem; /* text-lg */
-    font-weight: 700; /* font-bold */
-    color: #374151; /* gray-700 */
-    list-style: none; /* Hide default marker 
+    font-weight: 700; /* font-bold 
 */
+    color: #374151; /* gray-700 */
+    list-style: none; /* Hide default marker */
 }
 .declaration-group summary::-webkit-details-marker {
     display: none; /* Hide default marker for Chrome */
@@ -1285,3 +1285,41 @@ END: SKNV INFOGRAPHIC CARD STYLES === */
     padding: 1rem 0.5rem 1.5rem 0.5rem;
 }
 /* === END: Declaration Accordion Styles === */
+
+/* === START: Pasted Competition Column Toggles & Header Wrap (v6.15) === */
+
+/* Container for the toggle buttons */
+#pasted-competition-column-toggles {
+    padding: 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.25rem;
+    background-color: #f9fafb; /* gray-50 */
+}
+
+/* Label for the toggles */
+#pasted-competition-column-toggles .non-draggable {
+    font-size: 0.875rem; /* text-sm */
+    font-weight: 600; /* font-semibold */
+    margin-right: 0.5rem; /* mr-2 */
+    color: #374151; /* gray-700 */
+}
+
+/* Styles for the table headers to allow wrapping */
+#pasted-competition-report-container table th {
+    white-space: normal; /* Allow text wrapping */
+    vertical-align: middle;
+    line-height: 1.3;
+    max-width: 150px; /* Set a max-width */
+    width: 120px; /* Set a base width */
+}
+
+/* Keep employee name header slightly wider and no-wrap */
+#pasted-competition-report-container table th[data-sort="hoTen"] {
+    white-space: nowrap;
+    width: 150px; 
+    min-width: 150px;
+}
+/* === END: Pasted Competition Styles === */

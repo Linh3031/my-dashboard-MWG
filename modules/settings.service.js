@@ -1,3 +1,7 @@
+// Version 2.4 - Fix "undefined" label bug (use tenNganhHang not tenRutGon)
+// Version 2.3 - Fix critical path error (./state.js -> ../state.js)
+// Version 2.2 - Fix critical syntax errors (remove all source tags)
+// Version 2.1 - Add save/load functions for dynamic pasted competition columns
 // Version 2.0 - Revert loading logic to respect user-saved drag-drop order
 // MODULE: SETTINGS SERVICE
 // Chứa toàn bộ logic liên quan đến việc quản lý cài đặt (lưu/tải từ localStorage).
@@ -18,6 +22,9 @@ const ALL_EFFICIENCY_ITEMS = [
     { id: 'pctVAS',    label: '% VAS' },
     { id: 'pctBaoHiem', label: '% Bảo hiểm' }
 ];
+
+// *** NEW (v2.1) ***
+const PASTED_COMPETITION_SETTINGS_KEY = 'pastedCompetitionViewSettings';
 
 
 export const settingsService = {
@@ -93,7 +100,7 @@ export const settingsService = {
                 return JSON.parse(savedSettings);
             }
         } catch (e) {
-            console.error("Lỗi khi tải cài đặt hiển thị Nhóm hàng QĐC:", e);
+             console.error("Lỗi khi tải cài đặt hiển thị Nhóm hàng QĐC:", e);
         }
         // Mặc định hiển thị tất cả nếu chưa có cài đặt
         return allItems;
@@ -122,7 +129,7 @@ export const settingsService = {
                 kpiTitleColor: '#ffffff',
                 kpiMainColor: '#ffffff',
                 kpiSubColor: '#ffffff',
-                globalFontSize: '14',
+                 globalFontSize: '14',
                 kpiFontSize: '36'
             };
             const settings = { ...defaultSettings, ...savedSettings };
@@ -134,7 +141,7 @@ export const settingsService = {
                 if (key.startsWith('kpiCard')) {
                     const keyNumber = key.replace('kpiCard', '').replace('Bg', '');
                     const colorPicker = document.getElementById(`kpi-color-${keyNumber}`);
-                    if (colorPicker) colorPicker.value = settings[key];
+                     if (colorPicker) colorPicker.value = settings[key];
                 }
             });
             
@@ -216,7 +223,7 @@ export const settingsService = {
     },
 
     loadAndApplyRealtimeGoalSettings() {
-        const warehouseSelect = document.getElementById('rt-goal-warehouse-select');
+         const warehouseSelect = document.getElementById('rt-goal-warehouse-select');
         if (!warehouseSelect) return;
         const warehouse = warehouseSelect.value;
         const settings = (warehouse && appState.realtimeGoalSettings && appState.realtimeGoalSettings[warehouse]) 
@@ -244,7 +251,7 @@ export const settingsService = {
         if (!warehouseSelect) return;
         const warehouse = warehouseSelect.value;
         const settings = (warehouse && appState.luykeGoalSettings && appState.luykeGoalSettings[warehouse]) 
-            ? appState.luykeGoalSettings[warehouse] 
+             ? appState.luykeGoalSettings[warehouse] 
             : {};
         document.querySelectorAll('.luyke-goal-input').forEach(input => input.value = settings[input.dataset.goal] || '');
     },
@@ -265,13 +272,13 @@ export const settingsService = {
 
             warehouseKeys.forEach(whKey => {
                 const source = allSettings[whKey];
-                goalKeys.forEach(key => {
+                 goalKeys.forEach(key => {
                     const value = parseFloat(source[key]) || 0;
                     if (key.startsWith('phanTram')) {
                         settings.goals[key] += value;
                         percentCounts[key] = (percentCounts[key] || 0) + 1;
                     } else {
-                        settings.goals[key] += value;
+                         settings.goals[key] += value;
                     }
                 });
             });
@@ -299,7 +306,7 @@ export const settingsService = {
                 Object.entries(ws.goals).forEach(([key, value]) => {
                     if (key.startsWith('phanTram')) {
                         if (!percentGoals[key]) { percentGoals[key] = 0; percentCounts[key] = 0; }
-                        const numValue = parseFloat(value);
+                         const numValue = parseFloat(value);
                         if(!isNaN(numValue)) { percentGoals[key] += numValue; percentCounts[key]++; }
                     }
                 });
@@ -312,7 +319,7 @@ export const settingsService = {
     },
 
     applyContrastSetting() {
-        const savedLevel = localStorage.getItem('contrastLevel') || '3';
+         const savedLevel = localStorage.getItem('contrastLevel') || '3';
         document.documentElement.dataset.contrast = savedLevel;
         document.querySelectorAll('.contrast-selector').forEach(sel => sel.value = savedLevel);
     },
@@ -326,4 +333,82 @@ export const settingsService = {
             appState.highlightSettings = { luyke: {}, sknv: {}, realtime: {} };
         }
     },
+
+    // === START: NEW FUNCTIONS (v2.1) ===
+    /**
+     * Lưu cài đặt hiển thị cho bảng Thi đua NV Dán vào.
+     * @param {Array<Object>} settings - Mảng cấu hình cột đầy đủ.
+     */
+    savePastedCompetitionViewSettings(settings) {
+        if (!Array.isArray(settings)) return;
+        try {
+            localStorage.setItem(PASTED_COMPETITION_SETTINGS_KEY, JSON.stringify(settings));
+        } catch (e) {
+            console.error("Lỗi khi lưu cài đặt hiển thị Thi đua NV:", e);
+        }
+    },
+
+    /**
+     * Tải và hợp nhất cài đặt hiển thị cho bảng Thi đua NV Dán vào.
+     * Nó lấy các cột từ appState (dữ liệu mới dán) và hợp nhất với cài đặt đã lưu.
+     * @returns {Array<Object>} Mảng cấu hình cột đầy đủ.
+     */
+    loadPastedCompetitionViewSettings() {
+        // 1. Lấy danh sách cột "master" từ appState (dữ liệu vừa dán)
+        if (!appState.pastedThiDuaReportData || appState.pastedThiDuaReportData.length === 0) {
+            return []; // Không có dữ liệu, không có cột
+        }
+        
+        const masterColumns = appState.pastedThiDuaReportData[0].competitions.map((comp, index) => ({
+            id: `comp_${index}`, // ID duy nhất tạm thời dựa trên thứ tự
+            // *** START FIX (v2.4) ***
+            label: comp.tenNganhHang, // Sửa lỗi: Lấy tenNganhHang thay vì tenRutGon
+            // *** END FIX (v2.4) ***
+            tenGoc: comp.tenGoc, // Tên gốc để làm khóa ổn định
+            loaiSoLieu: comp.loaiSoLieu,
+            visible: true // Mặc định là hiển thị
+        }));
+        
+        const masterMap = new Map(masterColumns.map(item => [item.tenGoc, item]));
+
+        // 2. Lấy cài đặt đã lưu từ localStorage
+        let savedItems = [];
+        try {
+            savedItems = JSON.parse(localStorage.getItem(PASTED_COMPETITION_SETTINGS_KEY) || '[]');
+            if (!Array.isArray(savedItems) || (savedItems.length > 0 && typeof savedItems[0] !== 'object')) {
+                savedItems = []; // Reset nếu dữ liệu lưu không hợp lệ
+            }
+        } catch (e) {
+            console.error("Lỗi khi tải cài đặt Thi đua NV:", e);
+            savedItems = [];
+        }
+
+        const savedMap = new Map(savedItems.map(item => [item.tenGoc, item]));
+        const finalSettings = [];
+
+        // 3. Hợp nhất: Ưu tiên thứ tự và trạng thái 'visible' đã lưu
+        
+        // Thêm các cột đã lưu mà vẫn còn tồn tại trong master list
+        savedItems.forEach(savedItem => {
+            if (masterMap.has(savedItem.tenGoc)) {
+                const masterItem = masterMap.get(savedItem.tenGoc);
+                finalSettings.push({
+                    ...savedItem,
+                    // Cập nhật ID và Label nếu tên rút gọn đã thay đổi
+                    id: masterItem.id, 
+                    label: masterItem.label 
+                });
+            }
+        });
+
+        // Thêm các cột mới (chưa có trong savedItems) vào cuối danh sách
+        masterColumns.forEach(masterItem => {
+            if (!savedMap.has(masterItem.tenGoc)) {
+                finalSettings.push(masterItem); // Mặc định visible: true
+            }
+        });
+
+        return finalSettings;
+    }
+    // === END: NEW FUNCTIONS (v2.1) ===
 };

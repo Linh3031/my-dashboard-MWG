@@ -1,3 +1,5 @@
+// Version 4.45 - Fix critical syntax errors (remove all source tags)
+// Version 4.44 - Call loadPastedCompetitionViewSettings after pasting thi dua data
 // Version 4.43 - Add deep logging for saving/loading pasted data (Debug Problem 1)
 // Version 4.42 - Fix restore pasted data (raw text) & luyke parsing on load; Fix "cache" status text; Update file status for cloud categories
 // Version 4.41 - Load competitionNameMappings from Firestore in continueInit
@@ -220,7 +222,7 @@ const app = {
                          console.log(`%c[continueInit] UI status for ${firestoreKey} was set by loadDataFromStorage (cache) and is up-to-date. Keeping it.`, "color: green;");
                      }
                 } else if (metadata) {
-                    if (metadata.version > localVersionInfo.version) {
+                     if (metadata.version > localVersionInfo.version) {
                         uiComponents.updateFileStatus(uiId, metadata.fileName || 'Cloud', '', 'default', true, metadata, firestoreKey, savedWarehouse);
                         console.log(`%c[continueInit] UI status for ${firestoreKey} requires download (Cloud v${metadata.version} > Local v${localVersionInfo.version}).`, "color: green;");
                     } else {
@@ -228,7 +230,7 @@ const app = {
                         console.log(`%c[continueInit] UI status for ${firestoreKey} requires download (v${metadata.version}). Cache empty or not loaded.`, "color: orange;");
                     }
                 } else {
-                    uiComponents.updateFileStatus(uiId, '', `Đang chờ đồng bộ từ kho ${savedWarehouse}...`, 'default');
+                     uiComponents.updateFileStatus(uiId, '', `Đang chờ đồng bộ từ kho ${savedWarehouse}...`, 'default');
                     console.log(`%c[continueInit] No metadata for ${firestoreKey}, waiting for sync.`, "color: orange;");
                 }
             });
@@ -322,7 +324,7 @@ const app = {
                     }
 
                     if (appState.currentUser && updatedBy === appState.currentUser.email) {
-                        if (isPasted) {
+                         if (isPasted) {
                             let processedCount = 0;
                             // *** MODIFIED (v4.40) ***
                             // Logic đếm số lượng cho pastedThiduaNVBI đã được chuyển sang hàm handleThiduaNVPaste
@@ -333,7 +335,7 @@ const app = {
                                     processedCount = processed?.length || 0;
                                 } catch (e) { console.error(`Error processing pasted content during status update for ${dataType}:`, e); }
                             } else if (dataType === 'pastedThiduaNVBI') {
-                                // Tải lại dữ liệu đã xử lý từ localStorage (do chính người dùng này lưu)
+                                 // Tải lại dữ liệu đã xử lý từ localStorage (do chính người dùng này lưu)
                                 const processedData = JSON.parse(localStorage.getItem(saveKey) || '[]');
                                 processedCount = processedData.length;
                             }
@@ -350,7 +352,7 @@ const app = {
                             try {
                                  // *** MODIFIED (v4.40) ***
                                  if (dataType === 'pastedThiduaNVBI') {
-                                    // Đây là logic quan trọng: Dữ liệu thi đua cần chạy qua BỘ XỬ LÝ ĐẦY ĐỦ
+                                     // Đây là logic quan trọng: Dữ liệu thi đua cần chạy qua BỘ XỬ LÝ ĐẦY ĐỦ
                                     // 1. Phân tích cú pháp
                                     const parsedData = services.parsePastedThiDuaTableData(content);
                                     if (!parsedData.success) throw new Error(parsedData.error);
@@ -364,7 +366,7 @@ const app = {
                                     // 4. Lưu kết quả đã xử lý (KHÔNG LƯU NỘI DUNG THÔ)
                                     appState[stateKey] = processedData;
                                     localStorage.setItem(saveKey, JSON.stringify(processedData)); // Lưu mảng đã xử lý
-                                    processedCount = processedData.length;
+                                     processedCount = processedData.length;
 
                                     // === FIX 2a.1 (Thêm) ===
                                     localStorage.setItem(RAW_PASTE_THIDUANV_KEY, content); // Lưu cả text thô
@@ -373,21 +375,21 @@ const app = {
                                     // === END FIX ===
 
                                 } else {
-                                    // Logic cũ cho các ô dán khác
+                                     // Logic cũ cho các ô dán khác
                                     localStorage.setItem(saveKey, content);
                                     if (stateKey && processFunc) {
                                          const processedData = processFunc(content);
                                         appState[stateKey] = processedData;
                                         processedCount = processedData?.length || 0;
                                     } else if (stateKey) {
-                                        console.warn(`Missing processFunc for pasted data ${dataType}`);
+                                         console.warn(`Missing processFunc for pasted data ${dataType}`);
                                     } else if (uiId === 'status-luyke') {
                                         document.getElementById('paste-luyke').value = content;
                                     }
                                 }
                                 // *** END MODIFIED (v4.40) ***
 
-                                if (!this._localDataVersions[currentWarehouse]) this._localDataVersions[currentWarehouse] = {};
+                                 if (!this._localDataVersions[currentWarehouse]) this._localDataVersions[currentWarehouse] = {};
                                 this._localDataVersions[currentWarehouse][dataType] = { version: cloudVersion, timestamp: cloudLocalTimestamp };
                                 localStorage.setItem(LOCAL_DATA_VERSIONS_KEY, JSON.stringify(this._localDataVersions));
 
@@ -398,7 +400,7 @@ const app = {
                                     ui.renderAdminPage();
                                 }
                             } catch (e) {
-                                console.error(`Error processing pasted data ${dataType} from cloud:`, e);
+                                 console.error(`Error processing pasted data ${dataType} from cloud:`, e);
                                 uiComponents.updatePasteStatus(uiId, `Lỗi xử lý v${cloudVersion} từ cloud.`, 'error');
                             }
                         } else {
@@ -640,7 +642,7 @@ const app = {
             try {
                 if (saveKey === 'saved_category_structure') {
                      if (appState.categoryStructure.length > 0 || appState.brandList.length > 0) {
-                        // Đã được xử lý bởi logic Fix 1a, không cần làm gì ở đây
+                         // Đã được xử lý bởi logic Fix 1a, không cần làm gì ở đây
                     }
                     return;
                 }
@@ -764,7 +766,7 @@ const app = {
 
         const loadPasted = (saveKey, stateKey, uiId, processFunc) => {
             // === START: DEBUG (v4.43) ===
-            console.log(`%c[DEBUG loadPastedDataFromStorage] Đang xử lý key: ${saveKey}`, "color: brown;");
+             console.log(`%c[DEBUG loadPastedDataFromStorage] Đang xử lý key: ${saveKey}`, "color: brown;");
             // === END: DEBUG ===
             
             const pastedText = localStorage.getItem(saveKey); // Đây là text thô (ngoại trừ daily_paste_thiduanv)
@@ -787,7 +789,7 @@ const app = {
                  }
                  // === END FIX ===
 
-                let processedCount = 0;
+                 let processedCount = 0;
                 
                 // === FIX 2a.2 (Sửa) ===
                 if (saveKey === 'daily_paste_thiduanv') {
@@ -868,7 +870,7 @@ const app = {
 
         if (!mappingInfo) {
             if (fileType === 'danhsachnv') {
-                return this.handleDsnvUpload(e, file);
+                 return this.handleDsnvUpload(e, file);
             }
             console.error(`[handleFileInputChange] No mapping info found for fileType: ${fileType}`);
             return;
@@ -911,7 +913,7 @@ const app = {
             let currentFirestoreKey = null;
             try {
                 console.log("[DEBUG STEP 1] Getting warehouseToSync..."); // Log added
-                warehouseToSync = appState.selectedWarehouse;
+                 warehouseToSync = appState.selectedWarehouse;
                 console.log(`[DEBUG STEP 2] warehouseToSync = ${warehouseToSync}`); // Log added
         
                 console.log("[DEBUG STEP 3] Getting firestoreKey..."); // Log added
@@ -949,7 +951,7 @@ const app = {
                             timestamp: uploadTimestamp,
                             rowCount: normalizedData.length,
                              fileName: file.name
-                        };
+                         };
 
                         await firebase.saveMetadataToFirestore(warehouseToSync, currentFirestoreKey, metadata);
 
@@ -979,7 +981,7 @@ const app = {
                 } else {
                      console.log(`%c[DEBUG SYNC SKIP] Skipping cloud sync for ${fileType}. Warehouse selected: ${!!warehouseToSync}, Firestore key exists: ${!!currentFirestoreKey}`, "color: orange;");
                      if (currentFirestoreKey) {
-                        uiComponents.updateFileStatus(fileType, file.name, `✓ Đã tải ${normalizedData.length} dòng (Chưa đồng bộ).`, 'success', false, null);
+                         uiComponents.updateFileStatus(fileType, file.name, `✓ Đã tải ${normalizedData.length} dòng (Chưa đồng bộ).`, 'success', false, null);
                      }
                 }
 
@@ -994,7 +996,7 @@ const app = {
             this.updateAndRenderCurrentTab();
 
         } catch (error) {
-            console.error(`Lỗi xử lý file ${dataName}:`, error);
+             console.error(`Lỗi xử lý file ${dataName}:`, error);
             uiComponents.updateFileStatus(fileType, file.name, `Lỗi đọc file: ${error.message}`, 'error');
             ui.showNotification(`Lỗi khi xử lý file "${dataName}".`, 'error');
         } finally {
@@ -1021,7 +1023,7 @@ const app = {
             ui.displayDebugInfo(fileType);
 
             if (!success) {
-                const errorMessage = `Lỗi file "${dataName}": Thiếu cột: ${missingColumns.join(', ')}.`;
+                 const errorMessage = `Lỗi file "${dataName}": Thiếu cột: ${missingColumns.join(', ')}.`;
                 uiComponents.updateFileStatus(fileType, file.name, `Lỗi: Thiếu cột dữ liệu.`, 'error');
                 ui.showNotification(errorMessage, 'error');
                 if (document.getElementById('debug-tool-container')?.classList.contains('hidden')) {
@@ -1042,7 +1044,7 @@ const app = {
                  console.error("[handleDsnvUpload] Error saving DSNV filename to localStorage:", lsError);
             }
 
-            ui.showNotification(`Tải thành công file "${dataName}"!`, 'success');
+             ui.showNotification(`Tải thành công file "${dataName}"!`, 'success');
 
             if (saveKey) {
                  console.log(`[handleDsnvUpload] Saving normalized data (${normalizedData.length} rows) to cache: ${saveKey}`);
@@ -1066,8 +1068,8 @@ const app = {
     handleFileRead(file) {
         // ... (Giữ nguyên)
         return new Promise((resolve, reject) => {
-            if (!file) return reject(new Error("No file provided."));
-            const reader = new FileReader();
+             if (!file) return reject(new Error("No file provided."));
+             const reader = new FileReader();
              reader.onload = (event) => {
                  try {
                     const data = new Uint8Array(event.target.result);
@@ -1075,7 +1077,7 @@ const app = {
                     resolve(workbook);
                 } catch (err) { reject(err); }
              };
-            reader.onerror = (err) => reject(new Error("Could not read the file: " + err));
+             reader.onerror = (err) => reject(new Error("Could not read the file: " + err));
              reader.readAsArrayBuffer(file);
         });
     },
@@ -1118,7 +1120,7 @@ const app = {
             const linkElement = document.getElementById('download-bookmark-link');
             if (linkElement) linkElement.href = bookmarkUrl;
         } catch (error) {
-            console.error("Không thể tải link bookmark:", error);
+             console.error("Không thể tải link bookmark:", error);
             const linkElement = document.getElementById('download-bookmark-link');
             if (linkElement) linkElement.style.display = 'none';
         }
@@ -1134,7 +1136,7 @@ const app = {
         // *** MODIFIED (v4.40): Chỉ lưu text thô nếu đó KHÔNG PHẢI là thi đua NV
         // Dữ liệu thi đua NV sẽ được lưu dưới dạng JSON đã xử lý ở hàm riêng
         if (dataType !== 'pastedThiduaNVBI') {
-            // === START: DEBUG (v4.43) ===
+             // === START: DEBUG (v4.43) ===
             try {
                 localStorage.setItem(localStorageKey, pastedText);
                 console.log(`%c[DEBUG _handlePastedDataSync]   > Đã LƯU (setItem) text thô vào localStorage key: ${localStorageKey}`, "color: darkcyan;");
@@ -1149,7 +1151,7 @@ const app = {
         
         // *** MODIFIED (v4.40) ***
         if (dataType === 'pastedThiduaNVBI') {
-            // Logic này chỉ chạy khi GỌI TỪ CLOUD (handleCloudDataUpdate)
+             // Logic này chỉ chạy khi GỌI TỪ CLOUD (handleCloudDataUpdate)
             // Vì _handlePastedDataSync không còn được gọi trực tiếp bởi handleThiduaNVPaste
             const parsedData = services.parsePastedThiDuaTableData(pastedText);
             if(parsedData.success) {
@@ -1163,7 +1165,7 @@ const app = {
             }
         } 
         // *** END MODIFIED ***
-        else if (stateKey && processFunc) {
+         else if (stateKey && processFunc) {
             processedData = processFunc(pastedText);
             appState[stateKey] = processedData;
             processedCount = processedData?.length || 0;
@@ -1245,7 +1247,7 @@ const app = {
          this.updateAndRenderCurrentTab();
     },
 
-    // *** START: HÀM ĐƯỢC VIẾT LẠI (v4.40) ***
+    // *** START: HÀM ĐƯỢC CẬP NHẬT (v4.44) ***
     async handleThiduaNVPaste() {
         const pastedText = document.getElementById('paste-thiduanv')?.value || '';
         const kho = appState.selectedWarehouse;
@@ -1262,7 +1264,7 @@ const app = {
             console.log(`%c[DEBUG handleThiduaNVPaste] Đã LƯU (setItem) text thô vào localStorage key: ${RAW_PASTE_THIDUANV_KEY} (Độ dài: ${pastedText.length})`, "color: green;");
             // === END: DEBUG ===
         } catch (e) {
-            console.warn("Không thể lưu raw_paste_thiduanv vào localStorage:", e);
+             console.warn("Không thể lưu raw_paste_thiduanv vào localStorage:", e);
         }
         // === END FIX ===
 
@@ -1278,12 +1280,18 @@ const app = {
 
             // 3. Chuẩn hóa dữ liệu (Tra cứu DSNV, áp dụng tên rút gọn)
             // Chúng ta dùng appState.competitionData (từ Lũy kế) để lấy mục tiêu
-            const processedData = services.processThiDuaNhanVienData(parsedData, appState.competitionData);
+             const processedData = services.processThiDuaNhanVienData(parsedData, appState.competitionData);
             
             // 4. Lưu kết quả ĐÃ XỬ LÝ vào appState và localStorage
             appState[stateKey] = processedData;
             localStorage.setItem(saveKey, JSON.stringify(processedData)); // Lưu mảng JSON đã xử lý
             
+            // *** START: NEW (v4.44) ***
+            // Tải/Hợp nhất cài đặt cột SAU KHI appState.pastedThiDuaReportData đã được cập nhật
+            settingsService.loadPastedCompetitionViewSettings();
+            console.log("[main.js handleThiduaNVPaste] Đã tải và hợp nhất cài đặt cột thi đua.");
+            // *** END: NEW (v4.44) ***
+
             const processedCount = processedData.length;
             
             // 5. Đồng bộ TEXT THÔ lên Cloud (sử dụng logic _handlePastedDataSync)
@@ -1314,7 +1322,7 @@ const app = {
             }
         }
     },
-    // *** END: HÀM ĐƯỢC VIẾT LẠI (v4.40) ***
+    // *** END: HÀM ĐƯỢC CẬP NHẬT (v4.44) ***
 
     async handleErpPaste() {
         // ... (Giữ nguyên)
@@ -1323,7 +1331,7 @@ const app = {
         const mappingInfo = ALL_DATA_MAPPING['pastedThuongERP'];
         
         // === START: DEBUG (v4.43) ===
-        try {
+         try {
             localStorage.setItem(mappingInfo.saveKey, pastedText);
             console.log(`%c[DEBUG handleErpPaste] Đã LƯU (setItem) vào localStorage key: ${mappingInfo.saveKey} (Độ dài: ${pastedText.length})`, "color: green;");
         } catch (e) {
@@ -1337,8 +1345,8 @@ const app = {
             mappingInfo.firestoreKey,
             mappingInfo.uiId,
             mappingInfo.saveKey,
-            mappingInfo.stateKey,
-            mappingInfo.processFunc
+             mappingInfo.stateKey,
+             mappingInfo.processFunc
         );
     },
 
@@ -1397,7 +1405,7 @@ const app = {
 
     async handleCategoryFile(e) {
         // ... (Giữ nguyên)
-        const fileInput = e.target;
+         const fileInput = e.target;
         const file = fileInput.files[0];
         if (!file) return;
         uiComponents.updateFileStatus('category-structure', file.name, 'Đang xử lý...', 'default');
@@ -1681,7 +1689,7 @@ const app = {
         highlightService.applyHighlights(prefix);
     },
 
-    async saveDeclarations() {
+     async saveDeclarations() {
         // ... (Giữ nguyên)
         const ycxEl = document.getElementById('declaration-ycx');
         const ycxGopEl = document.getElementById('declaration-ycx-gop');

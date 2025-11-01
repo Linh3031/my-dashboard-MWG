@@ -1,3 +1,4 @@
+// Version 3.9 - Update drag-drop listener to target the whole subtab container
 // Version 3.8 - Add view-switcher logic for sknv-thidua tab
 // Version 3.7 - Fix duplicate 'activeSubTabId' identifier declaration & Add logging
 // MODULE: TAB SKNV
@@ -14,7 +15,8 @@ import { uiCompetition } from './ui-competition.js'; // Import logic render "The
 
 export const sknvTab = {
     render() {
-        console.log("[tab-sknv.js render] === Starting render ==="); 
+    
+    console.log("[tab-sknv.js render] === Starting render ==="); 
         console.log(`[tab-sknv.js render] Current appState lengths - DSNV: ${appState.danhSachNhanVien?.length}, YCX: ${appState.ycxData?.length}`); 
 
         if (!appState.danhSachNhanVien || appState.danhSachNhanVien.length === 0) { 
@@ -40,7 +42,8 @@ export const sknvTab = {
         const selectedWarehouse = document.getElementById('sknv-filter-warehouse')?.value || ''; 
         const selectedDept = document.getElementById('sknv-filter-department')?.value || ''; 
         const selectedNames = appState.choices.sknv_employee ? appState.choices.sknv_employee.getValue(true) : []; 
-        const selectedDates = appState.choices.sknv_date_picker ? appState.choices.sknv_date_picker.selectedDates : []; 
+        const selectedDates 
+= appState.choices.sknv_date_picker ? appState.choices.sknv_date_picker.selectedDates : []; 
         console.log(`[tab-sknv.js render] Filters - Warehouse: '${selectedWarehouse}', Dept: '${selectedDept}', Names: ${selectedNames.length}, Dates: ${selectedDates.length}`); 
 
         let filteredYCXData = appState.ycxData; 
@@ -64,7 +67,8 @@ export const sknvTab = {
         }
 
 
-        let filteredReport = appState.masterReportData.sknv; 
+ 
+       let filteredReport = appState.masterReportData.sknv; 
         if (selectedWarehouse) filteredReport = filteredReport.filter(nv => nv.maKho == selectedWarehouse); 
         if (selectedDept) filteredReport = filteredReport.filter(nv => nv.boPhan === selectedDept); 
         if (selectedNames && selectedNames.length > 0) filteredReport = filteredReport.filter(nv => selectedNames.includes(String(nv.maNV))); 
@@ -81,7 +85,8 @@ export const sknvTab = {
                 console.log(`[tab-sknv.js render] Rendering detail view for employee: ${detailInfo.employeeId}`); 
                 const employeeData = appState.masterReportData.sknv.find(nv => String(nv.maNV) === String(detailInfo.employeeId)); 
                 if (activeSubTabId === 'subtab-sknv' && detailInfo.sourceTab === 'sknv') { 
-                     console.log("[tab-sknv.js render] Calling ui.displaySknvReport (detail mode)."); 
+                   
+  console.log("[tab-sknv.js render] Calling ui.displaySknvReport (detail mode)."); 
                      ui.displaySknvReport(filteredReport, true); 
                 } else if (activeSubTabId === 'subtab-doanhthu-lk' && detailInfo.sourceTab === 'dtnv-lk') { 
                     console.log("[tab-sknv.js render] Calling services.generateLuyKeEmployeeDetailReport..."); 
@@ -97,7 +102,8 @@ export const sknvTab = {
                 console.log("[tab-sknv.js render] Rendering summary views."); 
                 this.renderSummaryViews(activeSubTabId, filteredReport, filteredYCXData); 
             }
-        } catch (uiError) {
+        
+} catch (uiError) {
              console.error(`[tab-sknv.js render] Error during UI rendering for subtab ${activeSubTabId}:`, uiError); 
              ui.showNotification("Đã xảy ra lỗi khi hiển thị dữ liệu tab SKNV.", "error"); 
              const errorContainer = document.getElementById(activeSubTabId);
@@ -111,15 +117,19 @@ export const sknvTab = {
          highlightService.populateHighlightFilters('sknv', filteredYCXData, filteredReport); 
         highlightService.applyHighlights('sknv'); 
 
-        const efficiencyReportContainer = document.getElementById('efficiency-report-container'); 
-        if (efficiencyReportContainer && !isViewingDetail) { 
-            console.log("[tab-sknv.js render] Initializing drag-drop for efficiency table."); 
-            dragDroplisteners.initializeForContainer('efficiency-report-container'); 
+        // *** START: MODIFIED (v3.9) ***
+        // Target container cha để kích hoạt listener cho CẢ HAI bảng
+        if (!isViewingDetail) { 
+            console.log("[tab-sknv.js render] Initializing drag-drop for 'employee-subtabs-content'."); 
+            dragDroplisteners.initializeForContainer('employee-subtabs-content'); 
         }
+        // *** END: MODIFIED (v3.9) ***
+        
         console.log("[tab-sknv.js render] === Render complete ==="); 
     },
 
-    renderSummaryViews(activeSubTabId, filteredReport, filteredYCXData) {
+    renderSummaryViews(activeSubTabId, 
+filteredReport, filteredYCXData) {
         console.log(`[tab-sknv.js renderSummaryViews] Rendering summary for subtab: ${activeSubTabId}`); 
         
         // *** START: MODIFIED (v3.8) ***
@@ -141,7 +151,8 @@ export const sknvTab = {
             if (viewType === 'program') {
                 console.log("[tab-sknv.js renderSummaryViews] Calculating 'program' report..."); 
                 const competitionReportData = services.calculateCompetitionFocusReport( 
-                    filteredYCXData, 
+         
+           filteredYCXData, 
                     appState.competitionConfigs 
                 );
                 console.log("[tab-sknv.js renderSummaryViews] Calling uiCompetition.renderCompetitionUI..."); 
@@ -157,7 +168,8 @@ export const sknvTab = {
                 const visibleEmployeeMaNVs = new Set(filteredReport.map(nv => nv.maNV));
                 const filteredPastedData = (appState.pastedThiDuaReportData || []).filter(item => 
                     visibleEmployeeMaNVs.has(item.maNV)
-                );
+        
+        );
                 
                 uiSknv.renderPastedCompetitionReport(filteredPastedData); 
                 
@@ -179,7 +191,8 @@ export const sknvTab = {
             console.log("[tab-sknv.js renderSummaryViews] Calling ui.displayEmployeeEfficiencyReport..."); 
             ui.displayEmployeeEfficiencyReport(filteredReport, 'efficiency-report-container', 'hieu_qua'); 
         } else if (activeSubTabId === 'subtab-doanhthu-nganhhang') { 
-            console.log("[tab-sknv.js renderSummaryViews] Calling ui.displayCategoryRevenueReport..."); 
+    
+        console.log("[tab-sknv.js renderSummaryViews] Calling ui.displayCategoryRevenueReport..."); 
             ui.displayCategoryRevenueReport(filteredReport, 'category-revenue-report-container', 'sknv'); 
         } else {
              console.warn(`[tab-sknv.js renderSummaryViews] No summary render defined for subtab: ${activeSubTabId}`); 

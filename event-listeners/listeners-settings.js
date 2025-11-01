@@ -1,3 +1,4 @@
+// Version 1.6 - Add click listener for pasted competition column toggles
 // Version 1.5 - Save competition name mapping to Firestore (debounced) & re-process data
 // Version 1.4 - Add auto-save listener for competition name mapping
 // Version 1.3 - Add event listener for efficiency column toggles
@@ -55,7 +56,7 @@ export function initializeSettingsListeners(appController) {
         }
     }, 1000); // 1000ms (1 second) delay
 
-    // --- Open/Close Modals & Drawers --- [cite: 206-207, 795-796]
+    // --- Open/Close Modals & Drawers ---
     document.getElementById('admin-access-btn')?.addEventListener('click', () => ui.toggleModal('admin-modal', true));
     document.getElementById('admin-submit-btn')?.addEventListener('click', () => appController.handleAdminLogin());
     document.getElementById('admin-cancel-btn')?.addEventListener('click', () => ui.toggleModal('admin-modal', false));
@@ -63,13 +64,13 @@ export function initializeSettingsListeners(appController) {
     document.getElementById('goal-settings-btn')?.addEventListener('click', () => ui.toggleDrawer('goal-drawer', true));
     document.querySelectorAll('.close-drawer-btn, #drawer-overlay').forEach(el => el.addEventListener('click', () => ui.closeAllDrawers()));
 
-    // --- Interface Settings --- [cite: 207, 796-797]
+    // --- Interface Settings ---
     document.querySelectorAll('.contrast-selector').forEach(sel => sel.addEventListener('change', (e) => appController.handleContrastChange(e)));
     document.getElementById('global-font-size-slider')?.addEventListener('input', (e) => settingsService.handleFontSizeChange(e, 'global'));
     document.getElementById('kpi-font-size-slider')?.addEventListener('input', (e) => settingsService.handleFontSizeChange(e, 'kpi'));
     document.querySelectorAll('.kpi-color-input').forEach(picker => picker.addEventListener('input', () => settingsService.saveInterfaceSettings()));
 
-    // --- Goal Settings --- [cite: 207-208, 797-798]
+    // --- Goal Settings ---
     document.getElementById('rt-goal-warehouse-select')?.addEventListener('change', () => settingsService.loadAndApplyRealtimeGoalSettings());
     document.getElementById('luyke-goal-warehouse-select')?.addEventListener('change', () => settingsService.loadAndApplyLuykeGoalSettings());
     document.querySelectorAll('.rt-goal-input, .rt-setting-input').forEach(input => input.addEventListener('input', () => {
@@ -81,13 +82,13 @@ export function initializeSettingsListeners(appController) {
          appController.updateAndRenderCurrentTab();
     }));
     
-    // --- Declaration Settings --- [cite: 208, 798]
+    // --- Declaration Settings ---
     document.getElementById('save-declaration-btn')?.addEventListener('click', () => appController.saveDeclarations());
 
-    // --- Global Modals (Help, etc.) & Debug Tool --- [cite: 208, 798]
+    // --- Global Modals (Help, etc.) & Debug Tool ---
     document.getElementById('toggle-debug-btn')?.addEventListener('click', (e) => ui.toggleDebugTool(e.currentTarget));
     
-    // --- Event Delegation for dynamically added elements --- [cite: 209-212, 798-801]
+    // --- Event Delegation for dynamically added elements --- 
     document.body.addEventListener('click', (e) => {
         const helpTrigger = e.target.closest('.page-header__help-btn');
         if(helpTrigger) {
@@ -128,7 +129,7 @@ export function initializeSettingsListeners(appController) {
             appController.updateAndRenderCurrentTab();
         }
 
-        // === BẮT ĐẦU LOGIC MỚI CHO TÙY CHỈNH CỘT === [cite: 210-212, 800-801]
+        // === LOGIC TÙY CHỈNH CỘT (HIỆU QUẢ NV LK) ===
         const columnToggleButton = e.target.closest('.column-toggle-btn');
         if (columnToggleButton && columnToggleButton.closest('#efficiency-column-toggles')) {
             e.preventDefault();
@@ -151,7 +152,31 @@ export function initializeSettingsListeners(appController) {
             // 4. Render lại tab để áp dụng thay đổi
             appController.updateAndRenderCurrentTab();
         }
-        // === KẾT THÚC LOGIC MỚI ===
+        
+        // === START: NEW LOGIC (v1.6) - TÙY CHỈNH CỘT (THI ĐUA NV DÁN VÀO) ===
+        const pastedCompToggleButton = e.target.closest('.pasted-comp-toggle-btn');
+        if (pastedCompToggleButton && pastedCompToggleButton.closest('#pasted-competition-column-toggles')) {
+            e.preventDefault();
+            const columnTenGoc = pastedCompToggleButton.dataset.columnTenGoc; // Dùng tên gốc làm ID
+            
+            // 1. Tải cài đặt hiện tại
+            const currentSettings = settingsService.loadPastedCompetitionViewSettings();
+            
+            // 2. Thay đổi trạng thái
+            const newSettings = currentSettings.map(col => {
+                if (col.tenGoc === columnTenGoc) {
+                    return { ...col, visible: !col.visible };
+                }
+                return col;
+            });
+            
+            // 3. Lưu cài đặt mới
+            settingsService.savePastedCompetitionViewSettings(newSettings);
+            
+            // 4. Render lại tab
+            appController.updateAndRenderCurrentTab();
+        }
+        // === END: NEW LOGIC (v1.6) ===
     });
 
     // *** MODIFIED (v1.5): Event delegation for auto-saving competition name mappings ***
@@ -176,7 +201,7 @@ export function initializeSettingsListeners(appController) {
     });
     // *** END MODIFIED ***
 
-    const searchInput = document.getElementById('selection-modal-search'); // [cite: 214, 803]
+    const searchInput = document.getElementById('selection-modal-search');
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
             const searchTerm = e.target.value.toLowerCase();

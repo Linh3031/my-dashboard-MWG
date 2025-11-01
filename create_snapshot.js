@@ -1,5 +1,5 @@
 // Kịch bản Node.js chuyên dụng để tạo snapshot toàn diện cho dự án
-// Phiên bản 1.1 - Mở rộng các loại file được hỗ trợ
+// Phiên bản 1.2 - Thêm logic loại trừ file cụ thể (excludeFiles)
 
 const fs = require('fs');
 const path = require('path');
@@ -10,11 +10,21 @@ const config = {
     rootDirectory: '.', 
     // Tên file output
     outputFile: 'project_snapshot.txt',
-    // ====> THAY ĐỔI QUAN TRỌNG <====
-    // Các đuôi file cần lấy nội dung. Đã bổ sung .json, .svg, .md
+    // Các đuôi file cần lấy nội dung
     includeExtensions: ['.js', '.html', '.css', '.txt', '.json', '.svg', '.md'],
     // Các thư mục cần bỏ qua
-    excludeDirectories: ['node_modules', '.git', '.history'] 
+    excludeDirectories: ['node_modules', '.git', '.history'],
+    
+    // ===> THÊM MỤC NÀY VÀO <===
+    // Các file cụ thể cần bỏ qua (sử dụng đường dẫn tương đối)
+    excludeFiles: [
+        'project_snapshot.txt',   // Loại bỏ chính file snapshot
+        'create_snapshot.js',     // Loại bỏ file script này
+        'changelog.json',         // Loại bỏ file lịch sử
+        'cors-config.json',       // Loại bỏ file cấu hình CORS
+        'version.json',           // Loại bỏ file phiên bản
+        '.vscode/settings.json'   // Loại bỏ file cài đặt VSCode
+    ]
 };
 
 // --- LOGIC CHÍNH ---
@@ -25,6 +35,16 @@ function walkDirectory(dir, filelist = []) {
     files.forEach(file => {
         const filepath = path.join(dir, file);
         const stat = fs.statSync(filepath);
+
+        // ===> THÊM LOGIC KIỂM TRA NÀY VÀO <===
+        // Chuẩn hóa đường dẫn để so sánh (vd: 'folder/file.js')
+        const normalizedPath = path.normalize(filepath).replace(/\\/g, '/');
+
+        // Bỏ qua nếu file nằm trong danh sách loại trừ file
+        if (config.excludeFiles.includes(normalizedPath)) {
+            return; 
+        }
+        // ===> KẾT THÚC LOGIC MỚI <===
 
         // Nếu là thư mục và không nằm trong danh sách loại trừ -> tiếp tục duyệt
         if (stat.isDirectory() && !config.excludeDirectories.includes(file)) {

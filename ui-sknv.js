@@ -1,11 +1,8 @@
+// Version 6.24 - Fix missing 'text-center' and 'header-group' classes in pasted comp table
+// Version 6.23 - Implement column toggles, sorting, and header wrap for pasted competition
 // Version 6.22 - Fix: Remove 'min-w-full' from all tables to force parent overflow scroll
 // Version 6.21 - Fix critical syntax error from v6.18
 // Version 6.18 - Add advanced layout logging for Problem 2
-// Version 6.17 - Add deep logging for layout debugging (Problem 2) & force no-wrap on employee name (Req 3)
-// Version 6.16 - Add deep logging for layout debugging (Problem 2) & force no-wrap on employee name (Req 3)
-// Version 6.15 - Fix pasted competition report: add min-width to th, format numbers as integers (no decimals)
-// Version 6.14 - Fix pasted competition report: 1-col render, number format, column width, totals row, and scroll
-// Version 6.11 - Add detailed logging to main render functions
 // MODULE: UI SKNV
 // Chứa các hàm render giao diện cho tab "Sức khỏe nhân viên"
 
@@ -13,6 +10,7 @@ import { appState } from './state.js';
 import { services } from './services.js';
 import { uiComponents } from './ui-components.js';
 import { utils } from './utils.js';
+import { settingsService } from './modules/settings.service.js'; // *** NEW (v6.23) ***
 
 export const uiSknv = {
     displayEmployeeIncomeReport: (reportData) => {
@@ -279,7 +277,7 @@ export const uiSknv = {
         const totalAbove = evaluationCounts.doanhthu.above + evaluationCounts.nangsuat.above + evaluationCounts.hieuqua.above + evaluationCounts.dongia.above + evaluationCounts.qdc.above;
         const totalCriteria = evaluationCounts.doanhthu.total + evaluationCounts.nangsuat.total + evaluationCounts.hieuqua.total + evaluationCounts.dongia.total + evaluationCounts.qdc.total;
         console.log(`[ui-sknv.js renderSknvDetail] Evaluation Counts:`, evaluationCounts, `Total Above: ${totalAbove}, Total Criteria: ${totalCriteria}`); // Log mới
-        
+      
         console.log("[ui-sknv.js renderSknvDetail] Generating HTML..."); // Log mới
         detailsContainer.innerHTML = `
             <div class="mb-4 flex justify-between items-center">
@@ -573,43 +571,64 @@ export const uiSknv = {
             </tbody></table></div></div>`;
     },
 
-    // *** START: MODIFIED FUNCTION (v6.22) - Sửa lỗi min-w-full ***
-     /**
-     * Render bảng báo cáo Thi đua NV từ dữ liệu đã dán (pasted data).
-     * @param {Array} reportData - Dữ liệu đã được xử lý từ appState.pastedThiDuaReportData (đã được lọc)
-     */
+    // *** START: MODIFIED FUNCTION (v6.24) - Re-add styles, Keep Column Toggles, Sort, Wrap ***
     renderPastedCompetitionReport(reportData) {
-        // === START: DEBUG (v6.16) ===
-        console.log(`%c[DEBUG renderPastedCompetitionReport] === Bắt đầu render ===`, "color: blue; font-weight: bold;");
-        console.log(`[DEBUG renderPastedCompetitionReport] Data length: ${reportData.length}`);
-        // === END: DEBUG ===
+        console.log(`%c[DEBUG renderPastedCompetitionReport] === Bắt đầu render (v6.24) ===`, "color: blue; font-weight: bold;");
         
         const container = document.getElementById('pasted-competition-report-container');
         if (!container) {
-            console.error("[ui-sknv.js renderPastedCompetitionReport] Container '#pasted-competition-report-container' not found.");
+            console.error("[ui-sknv.js] Container '#pasted-competition-report-container' not found.");
             return;
         }
 
-        if (!reportData || reportData.length === 0) {
-            container.innerHTML = '<p class="text-gray-500">Không có dữ liệu thi đua nhân viên. Vui lòng dán dữ liệu ở tab "Cập nhật dữ liệu" và đảm bảo bộ lọc không quá hẹp.</p>';
-            return;
-        }
-
-        // Lấy tiêu đề từ nhân viên đầu tiên (giả định tất cả đều giống nhau)
-        const firstEmployee = reportData[0];
-        const headers = firstEmployee.competitions.map(comp => ({
-            tenRutGon: comp.tenNganhHang, // Đây là tên rút gọn
-            tenGoc: comp.tenGoc,
-            loaiSoLieu: comp.loaiSoLieu // 'SLLK', 'DTQĐ', 'DTLK'
-        }));
-        // === START: DEBUG (v6.16) ===
-        console.log(`[DEBUG renderPastedCompetitionReport] Số lượng cột header: ${headers.length}`);
-        // === END: DEBUG ===
-
+        // 1. TẢI CÀI ĐẶT CỘT (REQ 3)
+        // Hàm này sẽ tự động hợp nhất các cột mới từ appState
+        const columnSettings = settingsService.loadPastedCompetitionViewSettings();
         
-        let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden" data-capture-group="pasted-competition">`;
+        if (!reportData || reportData.length === 0) {
+            // Vẫn render thanh toggle dù không có data, để người dùng thấy
+            const placeholderToggles = columnSettings.length > 0 
+                ? columnSettings.map(col => `
+                    <button 
+                        class="column-toggle-btn draggable-tag pasted-comp-toggle-btn ${col.visible ? 'active' : ''}" 
+                        data-column-ten-goc="${col.tenGoc}" 
+                        title="${col.tenGoc} (${col.loaiSoLieu})">
+                        <i data-feather="move" class="drag-handle-icon"></i>
+                        ${col.label}
+                    </button>`).join('')
+                : '<span class="text-sm text-gray-500">Dán dữ liệu để thấy các cột...</span>';
+                
+            container.innerHTML = `
+                <div id="pasted-competition-column-toggles">
+                    <span class="non-draggable">HIỂN THỊ CỘT:</span>
+                    ${placeholderToggles}
+                </div>
+                <div data-capture-group="pasted-competition">
+                    <p class="text-gray-500 p-4">Không có dữ liệu thi đua nhân viên. Vui lòng dán dữ liệu ở tab "Cập nhật dữ liệu" và đảm bảo bộ lọc không quá hẹp.</p>
+                </div>`;
+            feather.replace(); // Phải gọi feather cho icon
+            return;
+        }
+        
+        const visibleColumns = columnSettings.filter(col => col.visible);
+        
+        // 2. RENDER CÁC NÚT TÙY CHỈNH CỘT (REQ 3)
+        let togglesHTML = `<div id="pasted-competition-column-toggles">
+            <span class="non-draggable">HIỂN THỊ CỘT:</span>
+            ${columnSettings.map(col => `
+                <button 
+                    class="column-toggle-btn draggable-tag pasted-comp-toggle-btn ${col.visible ? 'active' : ''}" 
+                    data-column-ten-goc="${col.tenGoc}" 
+                    title="${col.tenGoc} (${col.loaiSoLieu})">
+                    <i data-feather="move" class="drag-handle-icon"></i>
+                    ${col.label}
+                </button>
+            `).join('')}
+        </div>`;
+        
+        let finalHTML = ``; // HTML cho bảng sẽ được xây dựng bên dưới
 
-        // Nhóm theo bộ phận
+        // 3. NHÓM VÀ SẮP XẾP DỮ LIỆU (REQ 1)
         const groupedByDept = {};
         reportData.forEach(item => {
             const dept = item.boPhan || 'Chưa phân loại';
@@ -624,15 +643,28 @@ export const uiSknv = {
             if (groupedByDept[deptName]) {
                 const deptData = groupedByDept[deptName];
                 
-                 // Sắp xếp nhân viên trong bộ phận
+                // Sắp xếp nhân viên trong bộ phận (REQ 1)
                 const sortState = appState.sortState[sortStateKey] || { key: 'hoTen', direction: 'asc' };
                 const { key, direction } = sortState;
+                
                 const sortedData = [...deptData].sort((a, b) => {
-                    const valA = a[key] || ''; 
-                    const valB = b[key] || '';
-                    if (valA < valB) return direction === 'asc' ? -1 : 1;
-                    if (valA > valB) return direction === 'asc' ? 1 : -1;
-                    return 0;
+                    let valA, valB;
+                    if (key.startsWith('comp_')) {
+                        // Sắp xếp theo cột thi đua động
+                        const sortCol = columnSettings.find(c => c.id === key);
+                        if (!sortCol) return 0; // Không tìm thấy cột
+                        
+                        valA = a.competitions.find(c => c.tenGoc === sortCol.tenGoc)?.giaTri || 0;
+                        valB = b.competitions.find(c => c.tenGoc === sortCol.tenGoc)?.giaTri || 0;
+                        return direction === 'asc' ? valA - valB : valB - valA;
+                        
+                    } else { // Sắp xếp theo 'hoTen'
+                        valA = a[key] || ''; 
+                        valB = b[key] || '';
+                        return direction === 'asc' 
+                            ? valA.localeCompare(valB) 
+                            : valB.localeCompare(valA);
+                    }
                 });
 
                 let titleClass = '';
@@ -642,80 +674,77 @@ export const uiSknv = {
 
                 const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
 
-                // === START: DEBUG (v6.16) ===
-                console.log(`[DEBUG renderPastedCompetitionReport] Bắt đầu render department: ${deptName}`);
-                // Thêm overflow-x-auto ngay đây
-                // *** MODIFIED (v6.18): Thêm class "sknv-pasted-competition-scroller" ***
+                // 4. RENDER BẢNG
                 finalHTML += `<div class="department-block">
                     <h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${deptName}</h4>
                     <div class="overflow-x-auto sknv-pasted-competition-scroller"> 
                     
-                    <table class="text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="${1 + headers.length}">
-                    <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
+                    <table class="text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="${1 + visibleColumns.length}">
+                         <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                             <tr>
                                 <th class="${headerClass('hoTen')}" data-sort="hoTen" style="min-width: 150px; white-space: nowrap;">Nhân viên <span class="sort-indicator"></span></th>
                             
-                                ${headers.map((header, index) => `
-                                     <th class="px-4 py-2 text-center header-group-${index % 12 + 1}" title="${header.tenGoc} (${header.loaiSoLieu})" style="min-width: 130px;">
-                                        ${header.tenRutGon}
+                                ${visibleColumns.map((header, index) => `
+                                     <th class="${headerClass(header.id)} text-center header-group-${index % 12 + 1}" 
+                                         data-sort="${header.id}" 
+                                         title="${header.tenGoc} (${header.loaiSoLieu})">
+                                        ${header.label}
+                                        <span class="sort-indicator"></span>
                                     </th>
                                 `).join('')}
-                             </tr>
+                                </tr>
                             </thead>
                         <tbody>`;
 
-                // *** FIX (Feature 5): Prepare for Sum/Avg calculation ***
-                const deptTotals = new Array(headers.length).fill(0);
-                const validEmployeeCount = new Array(headers.length).fill(0);
+                // Tính toán Tổng/TB (Dùng Map để tôn trọng thứ tự cột)
+                const deptTotals = new Map();
+                const validEmployeeCount = new Map();
+                visibleColumns.forEach(col => {
+                    deptTotals.set(col.tenGoc, 0);
+                    validEmployeeCount.set(col.tenGoc, 0);
+                });
 
-                // Thêm dòng dữ liệu nhân viên
+                // Render dòng nhân viên
                 sortedData.forEach(item => {
-                    // === FIX 3 (Thêm style) ===
-                     finalHTML += `<tr class="hover:bg-gray-50">
+                    finalHTML += `<tr class="hover:bg-gray-50">
                         <td class="px-4 py-2 font-semibold whitespace-nowrap">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</td>
                         
-                        ${item.competitions.map((comp, i) => {
-                             let formattedValue;
-                             const giaTri = comp.giaTri || 0;
+                        ${visibleColumns.map(col => {
+                             const compData = item.competitions.find(c => c.tenGoc === col.tenGoc);
+                             const giaTri = compData?.giaTri || 0;
+                             let formattedValue = '-';
                             
-                            if (giaTri === 0) {
-                                formattedValue = '-';
-                            } else {
-                                 // Add to totals
-                                deptTotals[i] += giaTri;
-                                validEmployeeCount[i]++;
-                                
-                                // === FIX 3b (Sửa) - Dùng formatNumber với 0 số lẻ ===
-                                 formattedValue = uiComponents.formatNumber(giaTri, 0); 
+                            if (giaTri !== 0) {
+                                formattedValue = uiComponents.formatNumber(giaTri, 0);
+                                // Cập nhật tổng
+                                deptTotals.set(col.tenGoc, deptTotals.get(col.tenGoc) + giaTri);
+                                validEmployeeCount.set(col.tenGoc, validEmployeeCount.get(col.tenGoc) + 1);
                             }
                  
-                            const cellClass = (comp.loaiSoLieu === 'SLLK') ? 'text-right font-bold' : 'text-right font-bold text-blue-600';
-                            
+                            const cellClass = (col.loaiSoLieu === 'SLLK') ? 'text-right font-bold' : 'text-right font-bold text-blue-600';
                             return `<td class="${cellClass} px-2 py-2">${formattedValue}</td>`;
                         }).join('')}
                     </tr>`;
                 });
 
-                // *** FIX (Feature 5): Render Sum and Avg rows ***
+                // Render TFOOT
                 finalHTML += `</tbody>
                      <tfoot class="table-footer font-bold">
                         <tr class="bg-gray-100">
                             <td class="px-4 py-2 text-left">Tổng</td>
-                            ${headers.map((header, i) => {
-                                const total = deptTotals[i];
-                                 // === FIX 3b (Sửa) ===
+                            ${visibleColumns.map(col => {
+                                const total = deptTotals.get(col.tenGoc) || 0;
                                 const formattedTotal = total === 0 ? '-' : uiComponents.formatNumber(total, 0);
                                 return `<td class="px-2 py-2 text-right">${formattedTotal}</td>`;
                             }).join('')}
                         </tr>
                          <tr class="bg-gray-100">
                             <td class="px-4 py-2 text-left">Trung Bình</td>
-                            ${headers.map((header, i) => {
-                                const total = deptTotals[i];
-                                const count = validEmployeeCount[i];
+                            ${visibleColumns.map(col => {
+                                const total = deptTotals.get(col.tenGoc) || 0;
+                                const count = validEmployeeCount.get(col.tenGoc) || 0;
                                 const avg = count > 0 ? total / count : 0;
-                                // === FIX 3b (Sửa) ===
-                                 const formattedAvg = avg === 0 ? '-' : uiComponents.formatNumber(avg, 0);
+                                const formattedAvg = avg === 0 ? '-' : uiComponents.formatNumber(avg, 0);
                                 return `<td class="px-2 py-2 text-right">${formattedAvg}</td>`;
                             }).join('')}
                         </tr>
@@ -724,63 +753,42 @@ export const uiSknv = {
             }
         });
 
-        finalHTML += `</div>`; // Đóng .bg-white
-        container.innerHTML = finalHTML;
+        // 5. GỘP HTML
+        // (REQ 3) Đặt 'togglesHTML' BÊN NGOÀI 'data-capture-group'
+        container.innerHTML = `
+            ${togglesHTML} 
+            <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden" data-capture-group="pasted-competition">
+                ${finalHTML}
+            </div>`;
         
-        // === START: DEBUG (v6.18) - Nâng cấp log chẩn đoán ===
+        // Log chẩn đoán vẫn giữ nguyên
         setTimeout(() => {
             const tableEl = container.querySelector('table');
-            // Tìm container cuộn (div.overflow-x-auto)
             const tableContainer = container.querySelector('.sknv-pasted-competition-scroller');
-            // Tìm container cha (pasted-competition-report-container)
             const parentContainer = document.getElementById('pasted-competition-report-container');
-            // Tìm main content
             const mainContentEl = document.getElementById('main-content');
 
             if (tableEl && tableContainer && parentContainer && mainContentEl) {
-                console.log(`%c[DEBUG renderPastedCompetitionReport] Kích thước sau render (v6.22):`, "color: #00008B; font-weight: bold;");
-                
-                // Log 1: Cái bảng
-                console.log(`  > 1. Bảng (<table>):`);
-                console.log(`    - scrollWidth: ${tableEl.scrollWidth}px`);
-                console.log(`    - display: ${window.getComputedStyle(tableEl).display}`);
-
-                // Log 2: Container cuộn
-                console.log(`  > 2. Container Cuộn (.sknv-pasted-competition-scroller):`);
-                console.log(`    - clientWidth: ${tableContainer.clientWidth}px`);
-                console.log(`    - display: ${window.getComputedStyle(tableContainer).display}`);
-                
-                // Log 3: Container Cha (của container cuộn)
-                console.log(`  > 3. Container Báo Cáo (#pasted-competition-report-container):`);
-                console.log(`    - clientWidth: ${parentContainer.clientWidth}px`);
-                console.log(`    - display: ${window.getComputedStyle(parentContainer).display}`);
-
-                // Log 4: Main Content
-                console.log(`  > 4. Main Content (#main-content):`);
-                console.log(`    - clientWidth: ${mainContentEl.clientWidth}px`);
-                console.log(`    - display: ${window.getComputedStyle(mainContentEl).display}`);
-
-                // Chẩn đoán
-                console.log(`%c[DEBUG renderPastedCompetitionReport] CHẨN ĐOÁN (v6.22):`, "color: #00008B; font-weight: bold;");
+                console.log(`%c[DEBUG renderPastedCompetitionReport] Kích thước sau render (v6.24):`, "color: #00008B; font-weight: bold;");
+                console.log(`  > 1. Bảng (<table>): scrollWidth: ${tableEl.scrollWidth}px`);
+                console.log(`  > 2. Container Cuộn (.sknv-pasted-competition-scroller): clientWidth: ${tableContainer.clientWidth}px`);
+                console.log(`  > 3. Container Báo Cáo (#pasted-competition-report-container): clientWidth: ${parentContainer.clientWidth}px`);
+                console.log(`  > 4. Main Content (#main-content): clientWidth: ${mainContentEl.clientWidth}px`);
+                console.log(`%c[DEBUG renderPastedCompetitionReport] CHẨN ĐOÁN (v6.24):`, "color: #00008B; font-weight: bold;");
                 if (tableEl.scrollWidth > tableContainer.clientWidth) {
                     console.log(`%c  > TỐT: Bảng (1) rộng hơn Container Cuộn (2). Thanh trượt NÊN xuất hiện.`, "color: green;");
                 } else {
                     console.log(`%c  > LỖI: Bảng (1) KHÔNG rộng hơn Container Cuộn (2). Thanh trượt sẽ KHÔNG xuất hiện.`, "color: red; font-weight: bold;");
-                    console.log(`    Kiểm tra tại sao Container Cuộn (2) lại rộng bằng Bảng (1).`);
                 }
-                
                 if (tableContainer.clientWidth >= mainContentEl.clientWidth) {
                      console.log(`%c  > LỖI: Container Cuộn (2) đang rộng bằng hoặc hơn Main Content (4).`, "color: red; font-weight: bold;");
-                     console.log(`    Điều này cho thấy Main Content (4) đã bị Bảng (1) đẩy dãn ra.`);
                 } else {
                      console.log(`%c  > TỐT: Container Cuộn (2) hẹp hơn Main Content (4).`, "color: green;");
                 }
-
             } else {
-                console.error("[DEBUG renderPastedCompetitionReport] Không tìm thấy một trong các phần tử chẩn đoán (table, tableContainer, parentContainer, mainContentEl).");
+                console.error("[DEBUG] Không tìm thấy một trong các phần tử chẩn đoán.");
             }
         }, 0);
-        // === END: DEBUG (v6.18) ===
     }
-    // *** END: MODIFIED FUNCTION (v6.22) ***
+    // *** END: MODIFIED FUNCTION (v6.24) ***
 };
