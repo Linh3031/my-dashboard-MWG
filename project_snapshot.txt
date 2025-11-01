@@ -1561,12 +1561,6 @@ export { config };
 /* Version 6.15 - Add styles for pasted competition toggles & header wrap */
 /* Version 6.14 - Add min-width: 0 to #main-content to fix layout overflow */
 /* Version 6.13 - Remove visual debugging borders */
-/* Version 6.11 - Add styles for declaration accordion */
-/* Version 6.10 - Fix CSS selector for Thi đua vùng 4-column layout */
-/* Version 6.9 - Fix missing curly brace for .modal__container--large */
-/* Version 6.8 - Adjust Thi đua vùng layout (4 cols) & 
-summary colors */
-/* Version 6.7 - Add login modal styles to v6.6 base */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -3085,6 +3079,7 @@ export function initializeCompetitionListeners(appController) {
 --- END FILE: ./event-listeners/listeners-competition.js ---
 
 --- START FILE: ./event-listeners/listeners-dragdrop.js ---
+// Version 2.2 - Add dragdrop support for pasted competition column toggles
 // Version 2.1 - Add logging to diagnose re-render issue on drop
 // MODULE: LISTENERS - DRAG & DROP
 // Chứa logic khởi tạo và xử lý sự kiện kéo-thả cột bằng SortableJS.
@@ -3094,8 +3089,7 @@ import { settingsService } from '../modules/settings.service.js';
 let appController = null;
 
 /**
- * Khởi tạo SortableJS trên khu vực chứa các thẻ tùy chỉnh cột.
- * @param {HTMLElement} container - Phần tử DOM chứa bảng và các nút tùy chỉnh.
+ * Kích hoạt SortableJS cho các thẻ tùy chỉnh cột (Bảng Hiệu quả NV LK)
  */
 function activateSortableOnColumnToggles(container) {
     if (!container) return;
@@ -3103,56 +3097,93 @@ function activateSortableOnColumnToggles(container) {
     const toggleContainer = container.querySelector('#efficiency-column-toggles');
     if (!toggleContainer) return;
 
-    // Hủy bỏ instance cũ nếu có để tránh lỗi khởi tạo nhiều lần
+    // Hủy bỏ instance cũ nếu có
     if (toggleContainer.sortable) {
         toggleContainer.sortable.destroy();
     }
 
     // Tạo instance mới
     toggleContainer.sortable = new Sortable(toggleContainer, {
-        animation: 150, // Hiệu ứng chuyển động mượt mà
-        filter: '.non-draggable', // Bỏ qua các phần tử có class này (ví dụ: label "Tùy chỉnh cột:")
-        handle: '.drag-handle-icon', // Chỉ cho phép kéo khi bấm vào icon
+        animation: 150,
+        filter: '.non-draggable', 
+        handle: '.drag-handle-icon',
         onEnd: (evt) => {
-            // Lấy danh sách các thẻ <button> theo thứ tự mới
             const newButtonOrder = Array.from(evt.target.querySelectorAll('button.column-toggle-btn'));
-            
-            // Lấy ra ID của các cột theo thứ tự mới từ thuộc tính data-column-id
             const newColumnIdOrder = newButtonOrder.map(btn => btn.dataset.columnId).filter(Boolean);
-
-            // Tải cài đặt hiện tại
             const currentSettings = settingsService.loadEfficiencyViewSettings();
-             
-            // Tạo một Map để truy cập nhanh các đối tượng cài đặt theo ID
             const settingsMap = new Map(currentSettings.map(s => [s.id, s]));
-
-            // Tạo lại mảng cài đặt theo thứ tự mới
             const reorderedSettings = newColumnIdOrder.map(id => settingsMap.get(id));
-               
-            // Thêm lại các cột đã bị ẩn (nếu có) vào cuối danh sách để không làm mất chúng
+            
             currentSettings.forEach(setting => {
                 if (!reorderedSettings.find(s => s.id === setting.id)) {
                     reorderedSettings.push(setting);
                 }
             });
 
-            // Lưu lại cấu hình mới
             settingsService.saveEfficiencyViewSettings(reorderedSettings);
 
-            // Vẽ lại toàn bộ tab để đồng bộ header, body, và footer của bảng
             if (appController) {
-                console.log("LOG: Yêu cầu render lại tab sau khi kéo thả."); // <<< THÊM DÒNG NÀY ĐỂ GỠ LỖI
+                console.log("LOG: Yêu cầu render lại tab (efficiency) sau khi kéo thả."); 
                 appController.updateAndRenderCurrentTab();
             }
         }
     });
 }
 
+// === START: NEW FUNCTION (v2.2) ===
+/**
+ * Kích hoạt SortableJS cho các thẻ tùy chỉnh cột (Bảng Thi Đua NV Dán VÀo)
+ */
+function activateSortableOnPastedCompToggles(container) {
+    if (!container) return;
+
+    // Target container mới
+    const toggleContainer = container.querySelector('#pasted-competition-column-toggles');
+    if (!toggleContainer) return;
+
+    if (toggleContainer.sortable) {
+        toggleContainer.sortable.destroy();
+    }
+
+    toggleContainer.sortable = new Sortable(toggleContainer, {
+        animation: 150,
+        filter: '.non-draggable',
+        handle: '.drag-handle-icon',
+        onEnd: (evt) => {
+            // Target các nút bấm mới
+            const newButtonOrder = Array.from(evt.target.querySelectorAll('button.pasted-comp-toggle-btn'));
+            
+            // Dùng 'tenGoc' làm ID duy nhất
+            const newColumnNameOrder = newButtonOrder.map(btn => btn.dataset.columnTenGoc).filter(Boolean);
+            
+            // Gọi hàm settings mới
+            const currentSettings = settingsService.loadPastedCompetitionViewSettings();
+            
+            const settingsMap = new Map(currentSettings.map(s => [s.tenGoc, s]));
+            const reorderedSettings = newColumnNameOrder.map(name => settingsMap.get(name));
+            
+            currentSettings.forEach(setting => {
+                if (!reorderedSettings.find(s => s.tenGoc === setting.tenGoc)) {
+                    reorderedSettings.push(setting);
+                }
+            });
+
+            // Gọi hàm save mới
+            settingsService.savePastedCompetitionViewSettings(reorderedSettings);
+
+            if (appController) {
+                console.log("LOG: Yêu cầu render lại tab (pasted comp) sau khi kéo thả.");
+                appController.updateAndRenderCurrentTab();
+            }
+        }
+    });
+}
+// === END: NEW FUNCTION (v2.2) ===
+
 
 export const dragDroplisteners = {
     /**
      * Hàm khởi tạo chính, nhận vào controller của ứng dụng.
-     * @param {object} mainAppController - Controller chính của ứng dụng.
      */
     init(mainAppController) {
         appController = mainAppController;
@@ -3160,11 +3191,17 @@ export const dragDroplisteners = {
     
     /**
      * Hàm được gọi sau mỗi lần render để kích hoạt lại tính năng kéo-thả.
-     * @param {string} containerId - ID của container chứa bảng (ví dụ: 'efficiency-report-container').
+     * * === MODIFIED (v2.2): Kích hoạt cho cả hai bảng ===
      */
     initializeForContainer(containerId) {
         const container = document.getElementById(containerId);
-        activateSortableOnColumnToggles(container);
+        if (container) {
+            // Kích hoạt cho bảng Hiệu quả NV LK
+            activateSortableOnColumnToggles(container);
+            
+            // Kích hoạt cho bảng Thi Đua NV Dán VÀo
+            activateSortableOnPastedCompToggles(container);
+        }
     }
 };
 --- END FILE: ./event-listeners/listeners-dragdrop.js ---
@@ -3226,6 +3263,7 @@ export function initializeHighlightingListeners(appController) {
 --- END FILE: ./event-listeners/listeners-highlighting.js ---
 
 --- START FILE: ./event-listeners/listeners-settings.js ---
+// Version 1.6 - Add click listener for pasted competition column toggles
 // Version 1.5 - Save competition name mapping to Firestore (debounced) & re-process data
 // Version 1.4 - Add auto-save listener for competition name mapping
 // Version 1.3 - Add event listener for efficiency column toggles
@@ -3283,7 +3321,7 @@ export function initializeSettingsListeners(appController) {
         }
     }, 1000); // 1000ms (1 second) delay
 
-    // --- Open/Close Modals & Drawers --- [cite: 206-207, 795-796]
+    // --- Open/Close Modals & Drawers ---
     document.getElementById('admin-access-btn')?.addEventListener('click', () => ui.toggleModal('admin-modal', true));
     document.getElementById('admin-submit-btn')?.addEventListener('click', () => appController.handleAdminLogin());
     document.getElementById('admin-cancel-btn')?.addEventListener('click', () => ui.toggleModal('admin-modal', false));
@@ -3291,13 +3329,13 @@ export function initializeSettingsListeners(appController) {
     document.getElementById('goal-settings-btn')?.addEventListener('click', () => ui.toggleDrawer('goal-drawer', true));
     document.querySelectorAll('.close-drawer-btn, #drawer-overlay').forEach(el => el.addEventListener('click', () => ui.closeAllDrawers()));
 
-    // --- Interface Settings --- [cite: 207, 796-797]
+    // --- Interface Settings ---
     document.querySelectorAll('.contrast-selector').forEach(sel => sel.addEventListener('change', (e) => appController.handleContrastChange(e)));
     document.getElementById('global-font-size-slider')?.addEventListener('input', (e) => settingsService.handleFontSizeChange(e, 'global'));
     document.getElementById('kpi-font-size-slider')?.addEventListener('input', (e) => settingsService.handleFontSizeChange(e, 'kpi'));
     document.querySelectorAll('.kpi-color-input').forEach(picker => picker.addEventListener('input', () => settingsService.saveInterfaceSettings()));
 
-    // --- Goal Settings --- [cite: 207-208, 797-798]
+    // --- Goal Settings ---
     document.getElementById('rt-goal-warehouse-select')?.addEventListener('change', () => settingsService.loadAndApplyRealtimeGoalSettings());
     document.getElementById('luyke-goal-warehouse-select')?.addEventListener('change', () => settingsService.loadAndApplyLuykeGoalSettings());
     document.querySelectorAll('.rt-goal-input, .rt-setting-input').forEach(input => input.addEventListener('input', () => {
@@ -3309,13 +3347,13 @@ export function initializeSettingsListeners(appController) {
          appController.updateAndRenderCurrentTab();
     }));
     
-    // --- Declaration Settings --- [cite: 208, 798]
+    // --- Declaration Settings ---
     document.getElementById('save-declaration-btn')?.addEventListener('click', () => appController.saveDeclarations());
 
-    // --- Global Modals (Help, etc.) & Debug Tool --- [cite: 208, 798]
+    // --- Global Modals (Help, etc.) & Debug Tool ---
     document.getElementById('toggle-debug-btn')?.addEventListener('click', (e) => ui.toggleDebugTool(e.currentTarget));
     
-    // --- Event Delegation for dynamically added elements --- [cite: 209-212, 798-801]
+    // --- Event Delegation for dynamically added elements --- 
     document.body.addEventListener('click', (e) => {
         const helpTrigger = e.target.closest('.page-header__help-btn');
         if(helpTrigger) {
@@ -3356,7 +3394,7 @@ export function initializeSettingsListeners(appController) {
             appController.updateAndRenderCurrentTab();
         }
 
-        // === BẮT ĐẦU LOGIC MỚI CHO TÙY CHỈNH CỘT === [cite: 210-212, 800-801]
+        // === LOGIC TÙY CHỈNH CỘT (HIỆU QUẢ NV LK) ===
         const columnToggleButton = e.target.closest('.column-toggle-btn');
         if (columnToggleButton && columnToggleButton.closest('#efficiency-column-toggles')) {
             e.preventDefault();
@@ -3379,7 +3417,31 @@ export function initializeSettingsListeners(appController) {
             // 4. Render lại tab để áp dụng thay đổi
             appController.updateAndRenderCurrentTab();
         }
-        // === KẾT THÚC LOGIC MỚI ===
+        
+        // === START: NEW LOGIC (v1.6) - TÙY CHỈNH CỘT (THI ĐUA NV DÁN VÀO) ===
+        const pastedCompToggleButton = e.target.closest('.pasted-comp-toggle-btn');
+        if (pastedCompToggleButton && pastedCompToggleButton.closest('#pasted-competition-column-toggles')) {
+            e.preventDefault();
+            const columnTenGoc = pastedCompToggleButton.dataset.columnTenGoc; // Dùng tên gốc làm ID
+            
+            // 1. Tải cài đặt hiện tại
+            const currentSettings = settingsService.loadPastedCompetitionViewSettings();
+            
+            // 2. Thay đổi trạng thái
+            const newSettings = currentSettings.map(col => {
+                if (col.tenGoc === columnTenGoc) {
+                    return { ...col, visible: !col.visible };
+                }
+                return col;
+            });
+            
+            // 3. Lưu cài đặt mới
+            settingsService.savePastedCompetitionViewSettings(newSettings);
+            
+            // 4. Render lại tab
+            appController.updateAndRenderCurrentTab();
+        }
+        // === END: NEW LOGIC (v1.6) ===
     });
 
     // *** MODIFIED (v1.5): Event delegation for auto-saving competition name mappings ***
@@ -3404,7 +3466,7 @@ export function initializeSettingsListeners(appController) {
     });
     // *** END MODIFIED ***
 
-    const searchInput = document.getElementById('selection-modal-search'); // [cite: 214, 803]
+    const searchInput = document.getElementById('selection-modal-search');
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
             const searchTerm = e.target.value.toLowerCase();
@@ -5461,7 +5523,7 @@ id="luyke-efficiency-content"></div></div>
             }
         });
     </script>
-    <script type="module" src="./main.js?v=3.6"></script> </body>
+    <script type="module" src="./main.js?v=3.7"></script> </body>
 </html>
 --- END FILE: ./index.html ---
 
@@ -5469,10 +5531,6 @@ id="luyke-efficiency-content"></div></div>
 // Version 4.45 - Fix critical syntax errors (remove all source tags)
 // Version 4.44 - Call loadPastedCompetitionViewSettings after pasting thi dua data
 // Version 4.43 - Add deep logging for saving/loading pasted data (Debug Problem 1)
-// Version 4.42 - Fix restore pasted data (raw text) & luyke parsing on load; Fix "cache" status text; Update file status for cloud categories
-// Version 4.41 - Load competitionNameMappings from Firestore in continueInit
-// Version 4.40 - Update handleThiduaNVPaste with new parsing/mapping logic
-// Version 4.39 - Load competitionNameMappings from localStorage
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -5524,7 +5582,7 @@ const ALL_DATA_MAPPING = {
 };
 
 const app = {
-    currentVersion: '3.5', // Giữ nguyên version này, bạn có thể tự cập nhật sau khi tích hợp xong
+    currentVersion: '3.7', // Giữ nguyên version này, bạn có thể tự cập nhật sau khi tích hợp xong
     storage: storage,
     unsubscribeDataListener: null,
     _isInitialized: false,
@@ -7684,14 +7742,16 @@ export const highlightService = {
 --- END FILE: ./modules/highlight.service.js ---
 
 --- START FILE: ./modules/settings.service.js ---
+// Version 2.4 - Fix "undefined" label bug (use tenNganhHang not tenRutGon)
+// Version 2.3 - Fix critical path error (./state.js -> ../state.js)
 // Version 2.2 - Fix critical syntax errors (remove all source tags)
 // Version 2.1 - Add save/load functions for dynamic pasted competition columns
 // Version 2.0 - Revert loading logic to respect user-saved drag-drop order
 // MODULE: SETTINGS SERVICE
 // Chứa toàn bộ logic liên quan đến việc quản lý cài đặt (lưu/tải từ localStorage).
 
-import { appState } from './state.js';
-import { ui } from './ui.js';
+import { appState } from '../state.js';
+import { ui } from '../ui.js';
 
 // Hằng số chứa danh sách đầy đủ và thứ tự cột chính xác cho bảng Hiệu quả khai thác
 const ALL_EFFICIENCY_ITEMS = [
@@ -8045,7 +8105,9 @@ export const settingsService = {
         
         const masterColumns = appState.pastedThiDuaReportData[0].competitions.map((comp, index) => ({
             id: `comp_${index}`, // ID duy nhất tạm thời dựa trên thứ tự
-            label: comp.tenRutGon, // Tên hiển thị (đã rút gọn)
+            // *** START FIX (v2.4) ***
+            label: comp.tenNganhHang, // Sửa lỗi: Lấy tenNganhHang thay vì tenRutGon
+            // *** END FIX (v2.4) ***
             tenGoc: comp.tenGoc, // Tên gốc để làm khóa ổn định
             loaiSoLieu: comp.loaiSoLieu,
             visible: true // Mặc định là hiển thị
@@ -10191,6 +10253,7 @@ export { luykeTab };
 --- END FILE: ./tab-luyke.js ---
 
 --- START FILE: ./tab-sknv.js ---
+// Version 3.9 - Update drag-drop listener to target the whole subtab container
 // Version 3.8 - Add view-switcher logic for sknv-thidua tab
 // Version 3.7 - Fix duplicate 'activeSubTabId' identifier declaration & Add logging
 // MODULE: TAB SKNV
@@ -10207,7 +10270,8 @@ import { uiCompetition } from './ui-competition.js'; // Import logic render "The
 
 export const sknvTab = {
     render() {
-        console.log("[tab-sknv.js render] === Starting render ==="); 
+    
+    console.log("[tab-sknv.js render] === Starting render ==="); 
         console.log(`[tab-sknv.js render] Current appState lengths - DSNV: ${appState.danhSachNhanVien?.length}, YCX: ${appState.ycxData?.length}`); 
 
         if (!appState.danhSachNhanVien || appState.danhSachNhanVien.length === 0) { 
@@ -10233,7 +10297,8 @@ export const sknvTab = {
         const selectedWarehouse = document.getElementById('sknv-filter-warehouse')?.value || ''; 
         const selectedDept = document.getElementById('sknv-filter-department')?.value || ''; 
         const selectedNames = appState.choices.sknv_employee ? appState.choices.sknv_employee.getValue(true) : []; 
-        const selectedDates = appState.choices.sknv_date_picker ? appState.choices.sknv_date_picker.selectedDates : []; 
+        const selectedDates 
+= appState.choices.sknv_date_picker ? appState.choices.sknv_date_picker.selectedDates : []; 
         console.log(`[tab-sknv.js render] Filters - Warehouse: '${selectedWarehouse}', Dept: '${selectedDept}', Names: ${selectedNames.length}, Dates: ${selectedDates.length}`); 
 
         let filteredYCXData = appState.ycxData; 
@@ -10257,7 +10322,8 @@ export const sknvTab = {
         }
 
 
-        let filteredReport = appState.masterReportData.sknv; 
+ 
+       let filteredReport = appState.masterReportData.sknv; 
         if (selectedWarehouse) filteredReport = filteredReport.filter(nv => nv.maKho == selectedWarehouse); 
         if (selectedDept) filteredReport = filteredReport.filter(nv => nv.boPhan === selectedDept); 
         if (selectedNames && selectedNames.length > 0) filteredReport = filteredReport.filter(nv => selectedNames.includes(String(nv.maNV))); 
@@ -10274,7 +10340,8 @@ export const sknvTab = {
                 console.log(`[tab-sknv.js render] Rendering detail view for employee: ${detailInfo.employeeId}`); 
                 const employeeData = appState.masterReportData.sknv.find(nv => String(nv.maNV) === String(detailInfo.employeeId)); 
                 if (activeSubTabId === 'subtab-sknv' && detailInfo.sourceTab === 'sknv') { 
-                     console.log("[tab-sknv.js render] Calling ui.displaySknvReport (detail mode)."); 
+                   
+  console.log("[tab-sknv.js render] Calling ui.displaySknvReport (detail mode)."); 
                      ui.displaySknvReport(filteredReport, true); 
                 } else if (activeSubTabId === 'subtab-doanhthu-lk' && detailInfo.sourceTab === 'dtnv-lk') { 
                     console.log("[tab-sknv.js render] Calling services.generateLuyKeEmployeeDetailReport..."); 
@@ -10290,7 +10357,8 @@ export const sknvTab = {
                 console.log("[tab-sknv.js render] Rendering summary views."); 
                 this.renderSummaryViews(activeSubTabId, filteredReport, filteredYCXData); 
             }
-        } catch (uiError) {
+        
+} catch (uiError) {
              console.error(`[tab-sknv.js render] Error during UI rendering for subtab ${activeSubTabId}:`, uiError); 
              ui.showNotification("Đã xảy ra lỗi khi hiển thị dữ liệu tab SKNV.", "error"); 
              const errorContainer = document.getElementById(activeSubTabId);
@@ -10304,15 +10372,19 @@ export const sknvTab = {
          highlightService.populateHighlightFilters('sknv', filteredYCXData, filteredReport); 
         highlightService.applyHighlights('sknv'); 
 
-        const efficiencyReportContainer = document.getElementById('efficiency-report-container'); 
-        if (efficiencyReportContainer && !isViewingDetail) { 
-            console.log("[tab-sknv.js render] Initializing drag-drop for efficiency table."); 
-            dragDroplisteners.initializeForContainer('efficiency-report-container'); 
+        // *** START: MODIFIED (v3.9) ***
+        // Target container cha để kích hoạt listener cho CẢ HAI bảng
+        if (!isViewingDetail) { 
+            console.log("[tab-sknv.js render] Initializing drag-drop for 'employee-subtabs-content'."); 
+            dragDroplisteners.initializeForContainer('employee-subtabs-content'); 
         }
+        // *** END: MODIFIED (v3.9) ***
+        
         console.log("[tab-sknv.js render] === Render complete ==="); 
     },
 
-    renderSummaryViews(activeSubTabId, filteredReport, filteredYCXData) {
+    renderSummaryViews(activeSubTabId, 
+filteredReport, filteredYCXData) {
         console.log(`[tab-sknv.js renderSummaryViews] Rendering summary for subtab: ${activeSubTabId}`); 
         
         // *** START: MODIFIED (v3.8) ***
@@ -10334,7 +10406,8 @@ export const sknvTab = {
             if (viewType === 'program') {
                 console.log("[tab-sknv.js renderSummaryViews] Calculating 'program' report..."); 
                 const competitionReportData = services.calculateCompetitionFocusReport( 
-                    filteredYCXData, 
+         
+           filteredYCXData, 
                     appState.competitionConfigs 
                 );
                 console.log("[tab-sknv.js renderSummaryViews] Calling uiCompetition.renderCompetitionUI..."); 
@@ -10350,7 +10423,8 @@ export const sknvTab = {
                 const visibleEmployeeMaNVs = new Set(filteredReport.map(nv => nv.maNV));
                 const filteredPastedData = (appState.pastedThiDuaReportData || []).filter(item => 
                     visibleEmployeeMaNVs.has(item.maNV)
-                );
+        
+        );
                 
                 uiSknv.renderPastedCompetitionReport(filteredPastedData); 
                 
@@ -10372,7 +10446,8 @@ export const sknvTab = {
             console.log("[tab-sknv.js renderSummaryViews] Calling ui.displayEmployeeEfficiencyReport..."); 
             ui.displayEmployeeEfficiencyReport(filteredReport, 'efficiency-report-container', 'hieu_qua'); 
         } else if (activeSubTabId === 'subtab-doanhthu-nganhhang') { 
-            console.log("[tab-sknv.js renderSummaryViews] Calling ui.displayCategoryRevenueReport..."); 
+    
+        console.log("[tab-sknv.js renderSummaryViews] Calling ui.displayCategoryRevenueReport..."); 
             ui.displayCategoryRevenueReport(filteredReport, 'category-revenue-report-container', 'sknv'); 
         } else {
              console.warn(`[tab-sknv.js renderSummaryViews] No summary render defined for subtab: ${activeSubTabId}`); 
@@ -13256,14 +13331,11 @@ export const uiRealtime = {
 --- END FILE: ./ui-realtime.js ---
 
 --- START FILE: ./ui-sknv.js ---
+// Version 6.25 - Fix toggle button icon by using inline SVG (like ui-components.js)
+// Version 6.24 - Fix missing 'text-center' and 'header-group' classes in pasted comp table
+// Version 6.23 - Implement column toggles, sorting, and header wrap for pasted competition
 // Version 6.22 - Fix: Remove 'min-w-full' from all tables to force parent overflow scroll
 // Version 6.21 - Fix critical syntax error from v6.18
-// Version 6.18 - Add advanced layout logging for Problem 2
-// Version 6.17 - Add deep logging for layout debugging (Problem 2) & force no-wrap on employee name (Req 3)
-// Version 6.16 - Add deep logging for layout debugging (Problem 2) & force no-wrap on employee name (Req 3)
-// Version 6.15 - Fix pasted competition report: add min-width to th, format numbers as integers (no decimals)
-// Version 6.14 - Fix pasted competition report: 1-col render, number format, column width, totals row, and scroll
-// Version 6.11 - Add detailed logging to main render functions
 // MODULE: UI SKNV
 // Chứa các hàm render giao diện cho tab "Sức khỏe nhân viên"
 
@@ -13271,6 +13343,7 @@ import { appState } from './state.js';
 import { services } from './services.js';
 import { uiComponents } from './ui-components.js';
 import { utils } from './utils.js';
+import { settingsService } from './modules/settings.service.js'; // *** NEW (v6.23) ***
 
 export const uiSknv = {
     displayEmployeeIncomeReport: (reportData) => {
@@ -13537,7 +13610,7 @@ export const uiSknv = {
         const totalAbove = evaluationCounts.doanhthu.above + evaluationCounts.nangsuat.above + evaluationCounts.hieuqua.above + evaluationCounts.dongia.above + evaluationCounts.qdc.above;
         const totalCriteria = evaluationCounts.doanhthu.total + evaluationCounts.nangsuat.total + evaluationCounts.hieuqua.total + evaluationCounts.dongia.total + evaluationCounts.qdc.total;
         console.log(`[ui-sknv.js renderSknvDetail] Evaluation Counts:`, evaluationCounts, `Total Above: ${totalAbove}, Total Criteria: ${totalCriteria}`); // Log mới
-        
+      
         console.log("[ui-sknv.js renderSknvDetail] Generating HTML..."); // Log mới
         detailsContainer.innerHTML = `
             <div class="mb-4 flex justify-between items-center">
@@ -13831,43 +13904,65 @@ export const uiSknv = {
             </tbody></table></div></div>`;
     },
 
-    // *** START: MODIFIED FUNCTION (v6.22) - Sửa lỗi min-w-full ***
-     /**
-     * Render bảng báo cáo Thi đua NV từ dữ liệu đã dán (pasted data).
-     * @param {Array} reportData - Dữ liệu đã được xử lý từ appState.pastedThiDuaReportData (đã được lọc)
-     */
+    // *** START: MODIFIED FUNCTION (v6.25) - Fix Icon Display ***
     renderPastedCompetitionReport(reportData) {
-        // === START: DEBUG (v6.16) ===
-        console.log(`%c[DEBUG renderPastedCompetitionReport] === Bắt đầu render ===`, "color: blue; font-weight: bold;");
-        console.log(`[DEBUG renderPastedCompetitionReport] Data length: ${reportData.length}`);
-        // === END: DEBUG ===
+        console.log(`%c[DEBUG renderPastedCompetitionReport] === Bắt đầu render (v6.25) ===`, "color: blue; font-weight: bold;");
         
         const container = document.getElementById('pasted-competition-report-container');
         if (!container) {
-            console.error("[ui-sknv.js renderPastedCompetitionReport] Container '#pasted-competition-report-container' not found.");
+            console.error("[ui-sknv.js] Container '#pasted-competition-report-container' not found.");
             return;
         }
+
+        // 1. TẢI CÀI ĐẶT CỘT (REQ 3)
+        const columnSettings = settingsService.loadPastedCompetitionViewSettings();
+        
+        // *** START: SVG Icon (v6.25) - Copy từ ui-components.js ***
+        const dragIconSVG = `<svg class="drag-handle-icon mr-2 cursor-grab" width="12" height="12" viewBox="0 0 10 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M4 2a1 1 0 10-2 0 1 1 0 002 0zM2 9a1 1 0 110-2 1 1 0 010 2zm0 5a1 1 0 110-2 1 1 0 010 2zm5-12a1 1 0 10-2 0 1 1 0 002 0zM7 9a1 1 0 110-2 1 1 0 010 2zm0 5a1 1 0 110-2 1 1 0 010 2z" fill="currentColor"></path></svg>`;
+        // *** END: SVG Icon (v6.25) ***
 
         if (!reportData || reportData.length === 0) {
-            container.innerHTML = '<p class="text-gray-500">Không có dữ liệu thi đua nhân viên. Vui lòng dán dữ liệu ở tab "Cập nhật dữ liệu" và đảm bảo bộ lọc không quá hẹp.</p>';
+            // Vẫn render thanh toggle dù không có data
+            const placeholderToggles = columnSettings.length > 0 
+                ? columnSettings.map(col => `
+                    <button 
+                        class="column-toggle-btn draggable-tag pasted-comp-toggle-btn ${col.visible ? 'active' : ''}" 
+                        data-column-ten-goc="${col.tenGoc}" 
+                        title="${col.tenGoc} (${col.loaiSoLieu})">
+                        ${dragIconSVG} <span>${col.label}</span>
+                    </button>`).join('')
+                : '<span class="text-sm text-gray-500">Dán dữ liệu để thấy các cột...</span>';
+                
+            container.innerHTML = `
+                <div id="pasted-competition-column-toggles">
+                    <span class="non-draggable">HIỂN THỊ CỘT:</span>
+                    ${placeholderToggles}
+                </div>
+                <div data-capture-group="pasted-competition">
+                    <p class="text-gray-500 p-4">Không có dữ liệu thi đua nhân viên. Vui lòng dán dữ liệu ở tab "Cập nhật dữ liệu" và đảm bảo bộ lọc không quá hẹp.</p>
+                </div>`;
+            // GỌI FEATHER CHO CÁC ICON KHÁC (nếu có) - nhưng ở đây không cần
             return;
         }
-
-        // Lấy tiêu đề từ nhân viên đầu tiên (giả định tất cả đều giống nhau)
-        const firstEmployee = reportData[0];
-        const headers = firstEmployee.competitions.map(comp => ({
-            tenRutGon: comp.tenNganhHang, // Đây là tên rút gọn
-            tenGoc: comp.tenGoc,
-            loaiSoLieu: comp.loaiSoLieu // 'SLLK', 'DTQĐ', 'DTLK'
-        }));
-        // === START: DEBUG (v6.16) ===
-        console.log(`[DEBUG renderPastedCompetitionReport] Số lượng cột header: ${headers.length}`);
-        // === END: DEBUG ===
-
         
-        let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden" data-capture-group="pasted-competition">`;
+        const visibleColumns = columnSettings.filter(col => col.visible);
+        
+        // 2. RENDER CÁC NÚT TÙY CHỈNH CỘT (REQ 3)
+        let togglesHTML = `<div id="pasted-competition-column-toggles">
+            <span class="non-draggable">HIỂN THỊ CỘT:</span>
+            ${columnSettings.map(col => `
+                <button 
+                    class="column-toggle-btn draggable-tag pasted-comp-toggle-btn ${col.visible ? 'active' : ''}" 
+                    data-column-ten-goc="${col.tenGoc}" 
+                    title="${col.tenGoc} (${col.loaiSoLieu})">
+                    ${dragIconSVG} <span>${col.label}</span>
+                </button>
+            `).join('')}
+        </div>`;
+        
+        let finalHTML = ``; // HTML cho bảng sẽ được xây dựng bên dưới
 
-        // Nhóm theo bộ phận
+        // 3. NHÓM VÀ SẮP XẾP DỮ LIỆU (REQ 1)
         const groupedByDept = {};
         reportData.forEach(item => {
             const dept = item.boPhan || 'Chưa phân loại';
@@ -13882,15 +13977,28 @@ export const uiSknv = {
             if (groupedByDept[deptName]) {
                 const deptData = groupedByDept[deptName];
                 
-                 // Sắp xếp nhân viên trong bộ phận
+                // Sắp xếp nhân viên trong bộ phận (REQ 1)
                 const sortState = appState.sortState[sortStateKey] || { key: 'hoTen', direction: 'asc' };
                 const { key, direction } = sortState;
+                
                 const sortedData = [...deptData].sort((a, b) => {
-                    const valA = a[key] || ''; 
-                    const valB = b[key] || '';
-                    if (valA < valB) return direction === 'asc' ? -1 : 1;
-                    if (valA > valB) return direction === 'asc' ? 1 : -1;
-                    return 0;
+                    let valA, valB;
+                    if (key.startsWith('comp_')) {
+                        // Sắp xếp theo cột thi đua động
+                        const sortCol = columnSettings.find(c => c.id === key);
+                        if (!sortCol) return 0; // Không tìm thấy cột
+                        
+                        valA = a.competitions.find(c => c.tenGoc === sortCol.tenGoc)?.giaTri || 0;
+                        valB = b.competitions.find(c => c.tenGoc === sortCol.tenGoc)?.giaTri || 0;
+                        return direction === 'asc' ? valA - valB : valB - valA;
+                        
+                    } else { // Sắp xếp theo 'hoTen'
+                        valA = a[key] || ''; 
+                        valB = b[key] || '';
+                        return direction === 'asc' 
+                            ? valA.localeCompare(valB) 
+                            : valB.localeCompare(valA);
+                    }
                 });
 
                 let titleClass = '';
@@ -13900,80 +14008,77 @@ export const uiSknv = {
 
                 const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
 
-                // === START: DEBUG (v6.16) ===
-                console.log(`[DEBUG renderPastedCompetitionReport] Bắt đầu render department: ${deptName}`);
-                // Thêm overflow-x-auto ngay đây
-                // *** MODIFIED (v6.18): Thêm class "sknv-pasted-competition-scroller" ***
+                // 4. RENDER BẢNG
                 finalHTML += `<div class="department-block">
                     <h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${deptName}</h4>
                     <div class="overflow-x-auto sknv-pasted-competition-scroller"> 
                     
-                    <table class="text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="${1 + headers.length}">
-                    <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
+                    <table class="text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="${1 + visibleColumns.length}">
+                         <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                             <tr>
                                 <th class="${headerClass('hoTen')}" data-sort="hoTen" style="min-width: 150px; white-space: nowrap;">Nhân viên <span class="sort-indicator"></span></th>
                             
-                                ${headers.map((header, index) => `
-                                     <th class="px-4 py-2 text-center header-group-${index % 12 + 1}" title="${header.tenGoc} (${header.loaiSoLieu})" style="min-width: 130px;">
-                                        ${header.tenRutGon}
+                                ${visibleColumns.map((header, index) => `
+                                     <th class="${headerClass(header.id)} text-center header-group-${index % 12 + 1}" 
+                                         data-sort="${header.id}" 
+                                         title="${header.tenGoc} (${header.loaiSoLieu})">
+                                        ${header.label}
+                                        <span class="sort-indicator"></span>
                                     </th>
                                 `).join('')}
-                             </tr>
+                                </tr>
                             </thead>
                         <tbody>`;
 
-                // *** FIX (Feature 5): Prepare for Sum/Avg calculation ***
-                const deptTotals = new Array(headers.length).fill(0);
-                const validEmployeeCount = new Array(headers.length).fill(0);
+                // Tính toán Tổng/TB (Dùng Map để tôn trọng thứ tự cột)
+                const deptTotals = new Map();
+                const validEmployeeCount = new Map();
+                visibleColumns.forEach(col => {
+                    deptTotals.set(col.tenGoc, 0);
+                    validEmployeeCount.set(col.tenGoc, 0);
+                });
 
-                // Thêm dòng dữ liệu nhân viên
+                // Render dòng nhân viên
                 sortedData.forEach(item => {
-                    // === FIX 3 (Thêm style) ===
-                     finalHTML += `<tr class="hover:bg-gray-50">
+                    finalHTML += `<tr class="hover:bg-gray-50">
                         <td class="px-4 py-2 font-semibold whitespace-nowrap">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</td>
                         
-                        ${item.competitions.map((comp, i) => {
-                             let formattedValue;
-                             const giaTri = comp.giaTri || 0;
+                        ${visibleColumns.map(col => {
+                             const compData = item.competitions.find(c => c.tenGoc === col.tenGoc);
+                             const giaTri = compData?.giaTri || 0;
+                             let formattedValue = '-';
                             
-                            if (giaTri === 0) {
-                                formattedValue = '-';
-                            } else {
-                                 // Add to totals
-                                deptTotals[i] += giaTri;
-                                validEmployeeCount[i]++;
-                                
-                                // === FIX 3b (Sửa) - Dùng formatNumber với 0 số lẻ ===
-                                 formattedValue = uiComponents.formatNumber(giaTri, 0); 
+                            if (giaTri !== 0) {
+                                formattedValue = uiComponents.formatNumber(giaTri, 0);
+                                // Cập nhật tổng
+                                deptTotals.set(col.tenGoc, deptTotals.get(col.tenGoc) + giaTri);
+                                validEmployeeCount.set(col.tenGoc, validEmployeeCount.get(col.tenGoc) + 1);
                             }
                  
-                            const cellClass = (comp.loaiSoLieu === 'SLLK') ? 'text-right font-bold' : 'text-right font-bold text-blue-600';
-                            
+                            const cellClass = (col.loaiSoLieu === 'SLLK') ? 'text-right font-bold' : 'text-right font-bold text-blue-600';
                             return `<td class="${cellClass} px-2 py-2">${formattedValue}</td>`;
                         }).join('')}
                     </tr>`;
                 });
 
-                // *** FIX (Feature 5): Render Sum and Avg rows ***
+                // Render TFOOT
                 finalHTML += `</tbody>
                      <tfoot class="table-footer font-bold">
                         <tr class="bg-gray-100">
                             <td class="px-4 py-2 text-left">Tổng</td>
-                            ${headers.map((header, i) => {
-                                const total = deptTotals[i];
-                                 // === FIX 3b (Sửa) ===
+                            ${visibleColumns.map(col => {
+                                const total = deptTotals.get(col.tenGoc) || 0;
                                 const formattedTotal = total === 0 ? '-' : uiComponents.formatNumber(total, 0);
                                 return `<td class="px-2 py-2 text-right">${formattedTotal}</td>`;
                             }).join('')}
                         </tr>
                          <tr class="bg-gray-100">
                             <td class="px-4 py-2 text-left">Trung Bình</td>
-                            ${headers.map((header, i) => {
-                                const total = deptTotals[i];
-                                const count = validEmployeeCount[i];
+                            ${visibleColumns.map(col => {
+                                const total = deptTotals.get(col.tenGoc) || 0;
+                                const count = validEmployeeCount.get(col.tenGoc) || 0;
                                 const avg = count > 0 ? total / count : 0;
-                                // === FIX 3b (Sửa) ===
-                                 const formattedAvg = avg === 0 ? '-' : uiComponents.formatNumber(avg, 0);
+                                const formattedAvg = avg === 0 ? '-' : uiComponents.formatNumber(avg, 0);
                                 return `<td class="px-2 py-2 text-right">${formattedAvg}</td>`;
                             }).join('')}
                         </tr>
@@ -13982,65 +14087,44 @@ export const uiSknv = {
             }
         });
 
-        finalHTML += `</div>`; // Đóng .bg-white
-        container.innerHTML = finalHTML;
+        // 5. GỘP HTML
+        // (REQ 3) Đặt 'togglesHTML' BÊN NGOÀI 'data-capture-group'
+        container.innerHTML = `
+            ${togglesHTML} 
+            <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden" data-capture-group="pasted-competition">
+                ${finalHTML}
+            </div>`;
         
-        // === START: DEBUG (v6.18) - Nâng cấp log chẩn đoán ===
+        // Log chẩn đoán vẫn giữ nguyên
         setTimeout(() => {
             const tableEl = container.querySelector('table');
-            // Tìm container cuộn (div.overflow-x-auto)
             const tableContainer = container.querySelector('.sknv-pasted-competition-scroller');
-            // Tìm container cha (pasted-competition-report-container)
             const parentContainer = document.getElementById('pasted-competition-report-container');
-            // Tìm main content
             const mainContentEl = document.getElementById('main-content');
 
             if (tableEl && tableContainer && parentContainer && mainContentEl) {
-                console.log(`%c[DEBUG renderPastedCompetitionReport] Kích thước sau render (v6.22):`, "color: #00008B; font-weight: bold;");
-                
-                // Log 1: Cái bảng
-                console.log(`  > 1. Bảng (<table>):`);
-                console.log(`    - scrollWidth: ${tableEl.scrollWidth}px`);
-                console.log(`    - display: ${window.getComputedStyle(tableEl).display}`);
-
-                // Log 2: Container cuộn
-                console.log(`  > 2. Container Cuộn (.sknv-pasted-competition-scroller):`);
-                console.log(`    - clientWidth: ${tableContainer.clientWidth}px`);
-                console.log(`    - display: ${window.getComputedStyle(tableContainer).display}`);
-                
-                // Log 3: Container Cha (của container cuộn)
-                console.log(`  > 3. Container Báo Cáo (#pasted-competition-report-container):`);
-                console.log(`    - clientWidth: ${parentContainer.clientWidth}px`);
-                console.log(`    - display: ${window.getComputedStyle(parentContainer).display}`);
-
-                // Log 4: Main Content
-                console.log(`  > 4. Main Content (#main-content):`);
-                console.log(`    - clientWidth: ${mainContentEl.clientWidth}px`);
-                console.log(`    - display: ${window.getComputedStyle(mainContentEl).display}`);
-
-                // Chẩn đoán
-                console.log(`%c[DEBUG renderPastedCompetitionReport] CHẨN ĐOÁN (v6.22):`, "color: #00008B; font-weight: bold;");
+                console.log(`%c[DEBUG renderPastedCompetitionReport] Kích thước sau render (v6.25):`, "color: #00008B; font-weight: bold;");
+                console.log(`  > 1. Bảng (<table>): scrollWidth: ${tableEl.scrollWidth}px`);
+                console.log(`  > 2. Container Cuộn (.sknv-pasted-competition-scroller): clientWidth: ${tableContainer.clientWidth}px`);
+                console.log(`  > 3. Container Báo Cáo (#pasted-competition-report-container): clientWidth: ${parentContainer.clientWidth}px`);
+                console.log(`  > 4. Main Content (#main-content): clientWidth: ${mainContentEl.clientWidth}px`);
+                console.log(`%c[DEBUG renderPastedCompetitionReport] CHẨN ĐOÁN (v6.25):`, "color: #00008B; font-weight: bold;");
                 if (tableEl.scrollWidth > tableContainer.clientWidth) {
                     console.log(`%c  > TỐT: Bảng (1) rộng hơn Container Cuộn (2). Thanh trượt NÊN xuất hiện.`, "color: green;");
                 } else {
                     console.log(`%c  > LỖI: Bảng (1) KHÔNG rộng hơn Container Cuộn (2). Thanh trượt sẽ KHÔNG xuất hiện.`, "color: red; font-weight: bold;");
-                    console.log(`    Kiểm tra tại sao Container Cuộn (2) lại rộng bằng Bảng (1).`);
                 }
-                
                 if (tableContainer.clientWidth >= mainContentEl.clientWidth) {
                      console.log(`%c  > LỖI: Container Cuộn (2) đang rộng bằng hoặc hơn Main Content (4).`, "color: red; font-weight: bold;");
-                     console.log(`    Điều này cho thấy Main Content (4) đã bị Bảng (1) đẩy dãn ra.`);
                 } else {
                      console.log(`%c  > TỐT: Container Cuộn (2) hẹp hơn Main Content (4).`, "color: green;");
                 }
-
             } else {
-                console.error("[DEBUG renderPastedCompetitionReport] Không tìm thấy một trong các phần tử chẩn đoán (table, tableContainer, parentContainer, mainContentEl).");
+                console.error("[DEBUG] Không tìm thấy một trong các phần tử chẩn đoán.");
             }
         }, 0);
-        // === END: DEBUG (v6.18) ===
     }
-    // *** END: MODIFIED FUNCTION (v6.22) ***
+    // *** END: MODIFIED FUNCTION (v6.25) ***
 };
 --- END FILE: ./ui-sknv.js ---
 
