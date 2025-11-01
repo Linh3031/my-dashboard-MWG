@@ -1,12 +1,6 @@
 /* Version 6.15 - Add styles for pasted competition toggles & header wrap */
 /* Version 6.14 - Add min-width: 0 to #main-content to fix layout overflow */
 /* Version 6.13 - Remove visual debugging borders */
-/* Version 6.11 - Add styles for declaration accordion */
-/* Version 6.10 - Fix CSS selector for Thi đua vùng 4-column layout */
-/* Version 6.9 - Fix missing curly brace for .modal__container--large */
-/* Version 6.8 - Adjust Thi đua vùng layout (4 cols) & 
-summary colors */
-/* Version 6.7 - Add login modal styles to v6.6 base */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {

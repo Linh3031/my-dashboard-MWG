@@ -1,10 +1,20 @@
 [
+    {
+    "version": "3.7",
+    "date": "01/11/2025",
+    "notes": [
+      "Thêm tính năng xem chi tiết thi đua nhân viên trong tab Thi đua NV LK",
+      "Dữ liệu được dán trực tiếp từ BI",
+      "Có thể bật tắt các thẻ để hiển thị các ngành hàng cần theo dõi ( mặc định hiển thị tất cả)",
+      "Có thể kéo thả các thẻ để sắp xếp lại các cột, ưu tiên đưa ngành hàng quan trọng lên đầu ( tương tự tab Hiệu quả NV LK)" 
+    ]
+  },  
      {
     "version": "3.6",
     "date": "27/10/2025",
     "notes": [
       "Nâng cấp tính nâng đồng bộ cloud theo mã kho:",
-      "- Cần cập nhập E-mail(không cần đăng nhập) vàchọn mã kho trước khi up file dữ liệu lên, hệ thống sẽ tự đồng bộ lên cloud",
+      "- Cần cập nhập E-mail(không cần đăng nhập) và chọn mã kho trước khi up file dữ liệu lên, hệ thống sẽ tự đồng bộ lên cloud",
       "- QL/TC cùng siêu thị sẽ thấy được dữ liệu dùng chung như YCX lũy kế,giờ công,thưởng nóng...",
       "- Dữ liệu cũng sẽ được đồng bộ khi xem giữa điện thoại, laptop",
       "Sửa lỗi không tính bảo hiểm vào tỷ lệ quy đổi",

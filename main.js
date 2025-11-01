@@ -1,10 +1,6 @@
 // Version 4.45 - Fix critical syntax errors (remove all source tags)
 // Version 4.44 - Call loadPastedCompetitionViewSettings after pasting thi dua data
 // Version 4.43 - Add deep logging for saving/loading pasted data (Debug Problem 1)
-// Version 4.42 - Fix restore pasted data (raw text) & luyke parsing on load; Fix "cache" status text; Update file status for cloud categories
-// Version 4.41 - Load competitionNameMappings from Firestore in continueInit
-// Version 4.40 - Update handleThiduaNVPaste with new parsing/mapping logic
-// Version 4.39 - Load competitionNameMappings from localStorage
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -56,7 +52,7 @@ const ALL_DATA_MAPPING = {
 };
 
 const app = {
-    currentVersion: '3.5', // Giữ nguyên version này, bạn có thể tự cập nhật sau khi tích hợp xong
+    currentVersion: '3.7', // Giữ nguyên version này, bạn có thể tự cập nhật sau khi tích hợp xong
     storage: storage,
     unsubscribeDataListener: null,
     _isInitialized: false,

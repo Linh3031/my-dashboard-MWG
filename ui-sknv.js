@@ -1,8 +1,8 @@
+// Version 6.25 - Fix toggle button icon by using inline SVG (like ui-components.js)
 // Version 6.24 - Fix missing 'text-center' and 'header-group' classes in pasted comp table
 // Version 6.23 - Implement column toggles, sorting, and header wrap for pasted competition
 // Version 6.22 - Fix: Remove 'min-w-full' from all tables to force parent overflow scroll
 // Version 6.21 - Fix critical syntax error from v6.18
-// Version 6.18 - Add advanced layout logging for Problem 2
 // MODULE: UI SKNV
 // Chứa các hàm render giao diện cho tab "Sức khỏe nhân viên"
 
@@ -571,9 +571,9 @@ export const uiSknv = {
             </tbody></table></div></div>`;
     },
 
-    // *** START: MODIFIED FUNCTION (v6.24) - Re-add styles, Keep Column Toggles, Sort, Wrap ***
+    // *** START: MODIFIED FUNCTION (v6.25) - Fix Icon Display ***
     renderPastedCompetitionReport(reportData) {
-        console.log(`%c[DEBUG renderPastedCompetitionReport] === Bắt đầu render (v6.24) ===`, "color: blue; font-weight: bold;");
+        console.log(`%c[DEBUG renderPastedCompetitionReport] === Bắt đầu render (v6.25) ===`, "color: blue; font-weight: bold;");
         
         const container = document.getElementById('pasted-competition-report-container');
         if (!container) {
@@ -582,19 +582,21 @@ export const uiSknv = {
         }
 
         // 1. TẢI CÀI ĐẶT CỘT (REQ 3)
-        // Hàm này sẽ tự động hợp nhất các cột mới từ appState
         const columnSettings = settingsService.loadPastedCompetitionViewSettings();
         
+        // *** START: SVG Icon (v6.25) - Copy từ ui-components.js ***
+        const dragIconSVG = `<svg class="drag-handle-icon mr-2 cursor-grab" width="12" height="12" viewBox="0 0 10 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M4 2a1 1 0 10-2 0 1 1 0 002 0zM2 9a1 1 0 110-2 1 1 0 010 2zm0 5a1 1 0 110-2 1 1 0 010 2zm5-12a1 1 0 10-2 0 1 1 0 002 0zM7 9a1 1 0 110-2 1 1 0 010 2zm0 5a1 1 0 110-2 1 1 0 010 2z" fill="currentColor"></path></svg>`;
+        // *** END: SVG Icon (v6.25) ***
+
         if (!reportData || reportData.length === 0) {
-            // Vẫn render thanh toggle dù không có data, để người dùng thấy
+            // Vẫn render thanh toggle dù không có data
             const placeholderToggles = columnSettings.length > 0 
                 ? columnSettings.map(col => `
                     <button 
                         class="column-toggle-btn draggable-tag pasted-comp-toggle-btn ${col.visible ? 'active' : ''}" 
                         data-column-ten-goc="${col.tenGoc}" 
                         title="${col.tenGoc} (${col.loaiSoLieu})">
-                        <i data-feather="move" class="drag-handle-icon"></i>
-                        ${col.label}
+                        ${dragIconSVG} <span>${col.label}</span>
                     </button>`).join('')
                 : '<span class="text-sm text-gray-500">Dán dữ liệu để thấy các cột...</span>';
                 
@@ -606,7 +608,7 @@ export const uiSknv = {
                 <div data-capture-group="pasted-competition">
                     <p class="text-gray-500 p-4">Không có dữ liệu thi đua nhân viên. Vui lòng dán dữ liệu ở tab "Cập nhật dữ liệu" và đảm bảo bộ lọc không quá hẹp.</p>
                 </div>`;
-            feather.replace(); // Phải gọi feather cho icon
+            // GỌI FEATHER CHO CÁC ICON KHÁC (nếu có) - nhưng ở đây không cần
             return;
         }
         
@@ -620,8 +622,7 @@ export const uiSknv = {
                     class="column-toggle-btn draggable-tag pasted-comp-toggle-btn ${col.visible ? 'active' : ''}" 
                     data-column-ten-goc="${col.tenGoc}" 
                     title="${col.tenGoc} (${col.loaiSoLieu})">
-                    <i data-feather="move" class="drag-handle-icon"></i>
-                    ${col.label}
+                    ${dragIconSVG} <span>${col.label}</span>
                 </button>
             `).join('')}
         </div>`;
@@ -769,12 +770,12 @@ export const uiSknv = {
             const mainContentEl = document.getElementById('main-content');
 
             if (tableEl && tableContainer && parentContainer && mainContentEl) {
-                console.log(`%c[DEBUG renderPastedCompetitionReport] Kích thước sau render (v6.24):`, "color: #00008B; font-weight: bold;");
+                console.log(`%c[DEBUG renderPastedCompetitionReport] Kích thước sau render (v6.25):`, "color: #00008B; font-weight: bold;");
                 console.log(`  > 1. Bảng (<table>): scrollWidth: ${tableEl.scrollWidth}px`);
                 console.log(`  > 2. Container Cuộn (.sknv-pasted-competition-scroller): clientWidth: ${tableContainer.clientWidth}px`);
                 console.log(`  > 3. Container Báo Cáo (#pasted-competition-report-container): clientWidth: ${parentContainer.clientWidth}px`);
                 console.log(`  > 4. Main Content (#main-content): clientWidth: ${mainContentEl.clientWidth}px`);
-                console.log(`%c[DEBUG renderPastedCompetitionReport] CHẨN ĐOÁN (v6.24):`, "color: #00008B; font-weight: bold;");
+                console.log(`%c[DEBUG renderPastedCompetitionReport] CHẨN ĐOÁN (v6.25):`, "color: #00008B; font-weight: bold;");
                 if (tableEl.scrollWidth > tableContainer.clientWidth) {
                     console.log(`%c  > TỐT: Bảng (1) rộng hơn Container Cuộn (2). Thanh trượt NÊN xuất hiện.`, "color: green;");
                 } else {
@@ -790,5 +791,5 @@ export const uiSknv = {
             }
         }, 0);
     }
-    // *** END: MODIFIED FUNCTION (v6.24) ***
+    // *** END: MODIFIED FUNCTION (v6.25) ***
 };
