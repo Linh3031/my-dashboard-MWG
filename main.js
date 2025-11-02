@@ -1,3 +1,4 @@
+// Version 4.46 - Fix bug: Move ALL_DATA_MAPPING inside the app object
 // Version 4.45 - Fix critical syntax errors (remove all source tags)
 // Version 4.44 - Call loadPastedCompetitionViewSettings after pasting thi dua data
 // Version 4.43 - Add deep logging for saving/loading pasted data (Debug Problem 1)
@@ -35,23 +36,28 @@ const LOCAL_METADATA_PREFIX = '_localMetadata_';
 const LOCAL_DSNV_FILENAME_KEY = '_localDsnvFilename'; // Key for DSNV filename
 const RAW_PASTE_THIDUANV_KEY = 'raw_paste_thiduanv'; // === FIX 2a.2 (Thêm) ===
 
-const ALL_DATA_MAPPING = {
-    // Daily Files
-    'ycx': { stateKey: 'ycxData', saveKey: 'saved_ycx', isPasted: false, uiId: 'ycx', firestoreKey: 'ycx' },
-    'giocong': { stateKey: 'rawGioCongData', saveKey: 'saved_giocong', isPasted: false, uiId: 'giocong', firestoreKey: 'giocong' },
-    'thuongnong': { stateKey: 'thuongNongData', saveKey: 'saved_thuongnong', isPasted: false, uiId: 'thuongnong', firestoreKey: 'thuongnong' },
-    // Daily Pasted
-    'pastedLuykeBI': { stateKey: null, saveKey: 'daily_paste_luyke', isPasted: true, uiId: 'status-luyke', firestoreKey: 'pastedLuykeBI' },
-    'pastedThuongERP': { stateKey: 'thuongERPData', saveKey: 'daily_paste_thuongerp', isPasted: true, uiId: 'status-thuongerp', firestoreKey: 'pastedThuongERP', processFunc: services.processThuongERP },
-    'pastedThiduaNVBI': { stateKey: 'pastedThiDuaReportData', saveKey: 'daily_paste_thiduanv', isPasted: true, uiId: 'status-thiduanv', firestoreKey: 'pastedThiduaNVBI' }, // *** MODIFIED (v4.40) ***
-    // Previous Month Files
-    'ycx-thangtruoc': { stateKey: 'ycxDataThangTruoc', saveKey: 'saved_ycx_thangtruoc', isPasted: false, uiId: 'ycx-thangtruoc', firestoreKey: 'ycx_thangtruoc' },
-    'thuongnong-thangtruoc': { stateKey: 'thuongNongDataThangTruoc', saveKey: 'saved_thuongnong_thangtruoc', isPasted: false, uiId: 'thuongnong-thangtruoc', firestoreKey: 'thuongnong_thangtruoc' },
-    // Previous Month Pasted
-    'pastedThuongERPThangTruoc': { stateKey: 'thuongERPDataThangTruoc', saveKey: 'saved_thuongerp_thangtruoc', isPasted: true, uiId: 'status-thuongerp-thangtruoc', firestoreKey: 'pastedThuongERPThangTruoc', processFunc: services.processThuongERP }
-};
+// [ĐÃ DI CHUYỂN] Khối ALL_DATA_MAPPING đã được di chuyển vào bên trong đối tượng 'app' bên dưới
 
 const app = {
+    // === START: FIX LỖI ===
+    // Di chuyển ALL_DATA_MAPPING từ bên ngoài vào đây
+    ALL_DATA_MAPPING: {
+        // Daily Files
+        'ycx': { stateKey: 'ycxData', saveKey: 'saved_ycx', isPasted: false, uiId: 'ycx', firestoreKey: 'ycx' },
+        'giocong': { stateKey: 'rawGioCongData', saveKey: 'saved_giocong', isPasted: false, uiId: 'giocong', firestoreKey: 'giocong' },
+        'thuongnong': { stateKey: 'thuongNongData', saveKey: 'saved_thuongnong', isPasted: false, uiId: 'thuongnong', firestoreKey: 'thuongnong' },
+        // Daily Pasted
+        'pastedLuykeBI': { stateKey: null, saveKey: 'daily_paste_luyke', isPasted: true, uiId: 'status-luyke', firestoreKey: 'pastedLuykeBI' },
+        'pastedThuongERP': { stateKey: 'thuongERPData', saveKey: 'daily_paste_thuongerp', isPasted: true, uiId: 'status-thuongerp', firestoreKey: 'pastedThuongERP', processFunc: services.processThuongERP },
+        'pastedThiduaNVBI': { stateKey: 'pastedThiDuaReportData', saveKey: 'daily_paste_thiduanv', isPasted: true, uiId: 'status-thiduanv', firestoreKey: 'pastedThiduaNVBI' }, // *** MODIFIED (v4.40) ***
+        // Previous Month Files
+        'ycx-thangtruoc': { stateKey: 'ycxDataThangTruoc', saveKey: 'saved_ycx_thangtruoc', isPasted: false, uiId: 'ycx-thangtruoc', firestoreKey: 'ycx_thangtruoc' },
+        'thuongnong-thangtruoc': { stateKey: 'thuongNongDataThangTruoc', saveKey: 'saved_thuongnong_thangtruoc', isPasted: false, uiId: 'thuongnong-thangtruoc', firestoreKey: 'thuongnong_thangtruoc' },
+        // Previous Month Pasted
+        'pastedThuongERPThangTruoc': { stateKey: 'thuongERPDataThangTruoc', saveKey: 'saved_thuongerp_thangtruoc', isPasted: true, uiId: 'status-thuongerp-thangtruoc', firestoreKey: 'pastedThuongERPThangTruoc', processFunc: services.processThuongERP }
+    },
+    // === END: FIX LỖI ===
+
     currentVersion: '3.7', // Giữ nguyên version này, bạn có thể tự cập nhật sau khi tích hợp xong
     storage: storage,
     unsubscribeDataListener: null,
@@ -191,10 +197,10 @@ const app = {
 
             console.log(`%c[continueInit] Checking sync status for warehouse ${savedWarehouse} (AFTER loadDataFromStorage)...`, "color: teal; font-weight: bold;");
 
-            const fileDataTypes = Object.keys(ALL_DATA_MAPPING).filter(k => !ALL_DATA_MAPPING[k].isPasted);
+            const fileDataTypes = Object.keys(this.ALL_DATA_MAPPING).filter(k => !this.ALL_DATA_MAPPING[k].isPasted);
 
             fileDataTypes.forEach(fileTypeKey => {
-                const mappingInfo = ALL_DATA_MAPPING[fileTypeKey];
+                const mappingInfo = this.ALL_DATA_MAPPING[fileTypeKey];
                 if (!mappingInfo) return;
 
                 const { firestoreKey, uiId } = mappingInfo;
@@ -233,8 +239,8 @@ const app = {
             console.log(`%c[continueInit] Finished checking sync status.`, "color: teal; font-weight: bold;");
 
         } else {
-             Object.keys(ALL_DATA_MAPPING).filter(k => !ALL_DATA_MAPPING[k].isPasted).forEach(fileTypeKey => {
-                 uiComponents.updateFileStatus(ALL_DATA_MAPPING[fileTypeKey].uiId, '', 'Chọn kho để đồng bộ...', 'default');
+             Object.keys(this.ALL_DATA_MAPPING).filter(k => !this.ALL_DATA_MAPPING[k].isPasted).forEach(fileTypeKey => {
+                 uiComponents.updateFileStatus(this.ALL_DATA_MAPPING[fileTypeKey].uiId, '', 'Chọn kho để đồng bộ...', 'default');
              });
              const dsnvFilename = localStorage.getItem(LOCAL_DSNV_FILENAME_KEY);
              if (!dsnvFilename) {
@@ -277,7 +283,7 @@ const app = {
             return;
         }
 
-        for (const [dataType, mappingInfo] of Object.entries(ALL_DATA_MAPPING)) {
+        for (const [dataType, mappingInfo] of Object.entries(this.ALL_DATA_MAPPING)) {
             const cloudMetadata = cloudData[dataType];
             const { stateKey, saveKey, isPasted, uiId, processFunc } = mappingInfo;
 
@@ -429,7 +435,7 @@ const app = {
         console.log(`%c[handleDownloadAndProcessData] User requested download for ${dataType} @ ${warehouse}`, "color: darkcyan; font-weight: bold;");
         const metadataKey = `${LOCAL_METADATA_PREFIX}${warehouse}_${dataType}`;
 
-        const mappingInfo = Object.values(ALL_DATA_MAPPING).find(m => m.firestoreKey === dataType);
+        const mappingInfo = Object.values(this.ALL_DATA_MAPPING).find(m => m.firestoreKey === dataType);
 
         if (!mappingInfo || mappingInfo.isPasted) {
             console.error(`[handleDownloadAndProcessData] Invalid or non-file dataType: ${dataType}`);
@@ -653,7 +659,7 @@ const app = {
                     let statusType = 'success';
                     let metadata = null;
 
-                    const mappingEntry = Object.values(ALL_DATA_MAPPING).find(m => m.saveKey === saveKey);
+                    const mappingEntry = Object.values(this.ALL_DATA_MAPPING).find(m => m.saveKey === saveKey);
                     const firestoreKey = mappingEntry ? mappingEntry.firestoreKey : null;
 
                     if (saveKey === 'saved_danhsachnv') {
@@ -811,7 +817,7 @@ const app = {
 
 
                 const kho = localStorage.getItem('selectedWarehouse');
-                const mappingInfo = Object.values(ALL_DATA_MAPPING).find(m => m.saveKey === saveKey);
+                const mappingInfo = Object.values(this.ALL_DATA_MAPPING).find(m => m.saveKey === saveKey);
                 let metadata = null;
                 if (kho && mappingInfo) {
                     metadata = this._getSavedMetadata(kho, mappingInfo.firestoreKey);
@@ -860,7 +866,7 @@ const app = {
         const file = fileInput.files[0];
         const fileType = fileInput.id.replace('file-', '');
 
-        const mappingInfo = Object.values(ALL_DATA_MAPPING).find(m => m.uiId === fileType);
+        const mappingInfo = Object.values(this.ALL_DATA_MAPPING).find(m => m.uiId === fileType);
 
         if (!file) return;
 
@@ -1218,7 +1224,7 @@ const app = {
         // ... (Giữ nguyên)
         const pastedText = document.getElementById('paste-luyke')?.value || '';
         const kho = appState.selectedWarehouse;
-        const mappingInfo = ALL_DATA_MAPPING['pastedLuykeBI'];
+        const mappingInfo = this.ALL_DATA_MAPPING['pastedLuykeBI'];
 
         // === START: DEBUG (v4.43) ===
         try {
@@ -1247,7 +1253,7 @@ const app = {
     async handleThiduaNVPaste() {
         const pastedText = document.getElementById('paste-thiduanv')?.value || '';
         const kho = appState.selectedWarehouse;
-        const mappingInfo = ALL_DATA_MAPPING['pastedThiduaNVBI'];
+        const mappingInfo = this.ALL_DATA_MAPPING['pastedThiduaNVBI'];
         if (!mappingInfo) return;
 
         const { stateKey, saveKey, firestoreKey, uiId } = mappingInfo;
@@ -1324,7 +1330,7 @@ const app = {
         // ... (Giữ nguyên)
         const pastedText = document.getElementById('paste-thuongerp')?.value || '';
         const kho = appState.selectedWarehouse;
-        const mappingInfo = ALL_DATA_MAPPING['pastedThuongERP'];
+        const mappingInfo = this.ALL_DATA_MAPPING['pastedThuongERP'];
         
         // === START: DEBUG (v4.43) ===
          try {
@@ -1350,7 +1356,7 @@ const app = {
         // ... (Giữ nguyên)
          const pastedText = e.target.value;
          const kho = appState.selectedWarehouse;
-         const mappingInfo = ALL_DATA_MAPPING['pastedThuongERPThangTruoc'];
+         const mappingInfo = this.ALL_DATA_MAPPING['pastedThuongERPThangTruoc'];
          
          // === START: DEBUG (v4.43) ===
          try {

@@ -1,3 +1,5 @@
+/* Version 6.19 - YC: Tăng size Top 3, làm vòng tròn xám cho hạng 4+ */
+/* Version 6.18 - YC: Định dạng Huy chương Thường SVG & Canh chỉnh số Top 3 (FULL FILE) */
 /* Version 6.15 - Add styles for pasted competition toggles & header wrap */
 /* Version 6.14 - Add min-width: 0 to #main-content to fix layout overflow */
 /* Version 6.13 - Remove visual debugging borders */
@@ -908,6 +910,8 @@ background-color: #eef2ff;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    /* (v6.18) Thêm position relative để canh số Top 3 */
+    position: relative;
 }
 
 .sknv-card__avatar svg {
@@ -1036,6 +1040,16 @@ border-bottom: 3px solid #22c55e; }
     border-bottom: 3px solid #d1d5db; /* Light gray border */
     position: relative;
     padding-left: 0.5rem;
+    /* (v6.18) Thêm flex để icon canh giữa */
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* (v6.18) Định dạng cho icon (nếu có) */
+.sknv-department-header .header-icon {
+    width: 1.4rem;
+    height: 1.4rem;
 }
 
 .sknv-department-header--priority {
@@ -1051,12 +1065,11 @@ display: flex;
     gap: 0.75rem;
 }
 
+/* (v6.18) Bỏ icon FontAwesome cũ */
 .sknv-department-header--priority::before {
-    content: '\f02e'; /* Font Awesome 'flag' icon - if Font Awesome is available */
-    font-family: 'Font Awesome 5 Free'; /* Specify font family */
-    font-weight: 900; /* For solid icon style */
-    font-size: 1.25rem;
-    color: #2563eb;
+    content: none;
+    /* font-family: 'Font Awesome 5 Free'; */
+    /* font-weight: 900; */
 }
 
 /* Adjust grid gap and padding for priority department to integrate better */
@@ -1200,10 +1213,11 @@ display: flex;
 
 .medal-container {
     position: absolute; /* Changed for positioning */
-    top: -8px; /* Position it slightly outside the card */
-    left: 12px;
-    width: 32px; /* Reduced size */
-    height: 32px;
+    /* (v6.19) YC: Tăng size + điều chỉnh vị trí */
+    top: -10px;
+    left: 10px;
+    width: 48px;
+    height: 48px;
     flex-shrink: 0;
 }
 .medal-container svg {
@@ -1317,3 +1331,46 @@ filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3)); /* Add a nice shadow */
     min-width: 150px;
 }
 /* === END: Pasted Competition Styles === */
+
+/* === START: SKNV Rank Number Styles (v6.19 - Phương án A Mới) === */
+
+/* 1. (v6.19) Định dạng cho số thứ tự (1, 2, 3) của Top 3 */
+.sknv-card__avatar-rank {
+    font-size: 1.75rem; /* 28px */
+    font-weight: 700; /* font-bold */
+    line-height: 1;
+    /* Canh số vào giữa vòng tròn */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    /* (v6.19) Nằm đè lên trên SVG huy chương */
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 12; /* Nằm trên huy chương (z-11) */
+    color: #ffffff; /* (v6.19) Màu trắng cho Top 3 */
+}
+
+/* 2. (v6.19) Ẩn nền xanh của avatar Top 3, để huy chương SVG lo việc hiển thị */
+.sknv-card:has(.medal-container) .sknv-card__avatar {
+    background-color: transparent;
+}
+
+/* 3. (v6.19) Định dạng cho Vòng tròn hạng 4+ (Đơn thuần) */
+.sknv-card__avatar--standard {
+    background-color: #e5e7eb; /* (v6.19) Vòng tròn xám (gray-200) */
+}
+
+/* 4. (v6.19) Định dạng cho SỐ hạng 4+ */
+.sknv-card__avatar--standard .sknv-card__avatar-rank {
+    color: #4b5563; /* (v6.19) Số màu xám đậm (gray-600) */
+    position: static; /* (v6.19) Reset lại position, không cần đè */
+}
+
+/* 5. (v6.19) Bỏ SVG Huy chương Thường (nếu có từ v6.18) */
+.sknv-card__avatar-medal {
+    display: none;
+}
+/* === END: SKNV Rank Number Styles === */
