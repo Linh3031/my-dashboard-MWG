@@ -1,0 +1,131 @@
+/* Version 1.0 - Specific: Composer (Refactored from v6.19) */
+/* Chứa các style CHỈ dành riêng cho modal Trình tạo Nhận xét & Xem trước */
+
+.composer { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 1.5rem; 
+}
+.composer__editor { 
+    flex-grow: 1; 
+}
+.composer__tags { 
+    width: 100%; 
+}
+.composer__label { 
+    display: block; 
+    font-weight: 500; 
+    color: #374151; 
+    margin-bottom: 0.5rem; 
+}
+.composer__textarea { 
+    width: 100%; 
+    border: 1px solid #d1d5db; 
+    border-radius: 0.5rem; 
+    padding: 0.75rem; 
+    font-size: 0.875em; 
+    resize: vertical; 
+}
+.composer__textarea:focus { 
+    border-color: #3b82f6; 
+    box-shadow: 0 0 0 1px #3b82f6; 
+    outline: none; 
+}
+.composer__nav { 
+    display: flex; 
+    border-bottom: 1px solid #e5e7eb; 
+    margin-bottom: 1rem; 
+}
+.composer__tab-btn { 
+    padding: 0.5rem 1rem; 
+    border: none; 
+    background-color: transparent; 
+    cursor: pointer; 
+    font-weight: 500; 
+    color: #6b7280; 
+    border-bottom: 2px solid transparent; 
+    margin-bottom: -1px; 
+    font-size: 0.875em; 
+}
+.composer__tab-btn.active { 
+    color: #3b82f6; 
+    border-bottom-color: #3b82f6; 
+}
+.composer__tab-pane {
+    display: none; 
+}
+.composer__tab-pane.active { 
+    display: block; 
+}
+.composer__tag-group { 
+    margin-bottom: 1rem; 
+}
+.composer__tag-group:last-child { 
+    margin-bottom: 0; 
+}
+.composer__tag-group-title { 
+    font-weight: 600; 
+    font-size: 0.875em; 
+    color: #4b5563; 
+    margin-bottom: 0.75rem; 
+    border-bottom: 1px solid #e5e7eb; 
+    padding-bottom: 0.5rem; 
+}
+.composer__tag-btn { 
+    background-color: #e0e7ff; 
+    color: #3730a3; 
+    border: 1px solid #c7d2fe; 
+    border-radius: 9999px; 
+    padding: 0.25rem 0.75rem; 
+    font-size: 0.8rem; 
+    font-weight: 500; 
+    cursor: pointer; 
+    margin: 0.25rem; 
+}
+.composer__icon-btn { 
+    background-color: #f3f4f6; 
+    color: #1f2937; 
+    border: 1px solid #d1d5db; 
+    border-radius: 9999px; 
+    padding: 0.25rem 0.75rem; 
+    font-size: 1.1rem; 
+    font-weight: 500; 
+    cursor: pointer; 
+    margin: 0.25rem; 
+    line-height: 1; 
+}
+.composer__filter-group { 
+    margin-bottom: 1rem;
+    padding-bottom: 1rem; 
+    border-bottom: 1px solid #e5e7eb; 
+}
+.composer__select { 
+    width: 100%; 
+    padding: 0.5rem; 
+    border: 1px solid #d1d5db; 
+    border-radius: 0.375rem; 
+    background-color: white; 
+}
+@media (min-width: 768px) { 
+    .composer { 
+        flex-direction: row; 
+    } 
+    .composer__tags { 
+        width: 350px; 
+        flex-shrink: 0; 
+        border-left: 1px solid #e5e7eb; 
+        padding-left: 1.5rem; 
+    } 
+}
+
+.preview-content { 
+    background-color: #f3f4f6; 
+    padding: 1rem; 
+    border-radius: 0.5rem; 
+    white-space: pre-wrap; 
+    word-wrap: break-word; 
+    font-size: 0.875em; 
+    line-height: 1.6; 
+    color: #1f2937; 
+    font-family: 'Inter', sans-serif; 
+}

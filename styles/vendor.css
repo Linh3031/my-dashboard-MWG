@@ -1,0 +1,47 @@
+/* Version 1.0 - Vendor overrides (Refactored from v6.19) */
+/* Chứa các style ghi đè lên thư viện bên thứ ba, ví dụ: Choices.js */
+
+#dtnv-realtime-employee-selector-container .choices__inner { 
+    min-width: 300px; 
+}
+#dtnv-realtime-employee-selector-container .choices__list--single { 
+    min-width: 300px; 
+}
+
+.choices__inner { 
+    min-height: 42px; 
+}
+.choices__list--multiple .choices__item { 
+    background-color: #3b82f6; 
+    border-color: #2563eb; 
+}
+
+#goal-drawer .choices__inner {
+    min-width: 250px;
+}
+
+#goal-drawer .choices__list--dropdown,
+#goal-drawer .choices__list[aria-expanded] {
+    min-width: 100%;
+    width: auto;
+    word-break: normal;
+}
+
+#goal-drawer .choices__list--multiple .choices__item {
+    display: inline-flex;
+    align-items: center;
+    background-color: #3b82f6;
+    border: 1px solid #2563eb;
+    color: white;
+    border-radius: 9999px;
+    padding: 2px 8px;
+    font-size: 0.8em;
+    font-weight: 500;
+    margin: 2px 4px 2px 0;
+}
+#goal-drawer .choices__inner {
+    height: auto !important;
+    min-height: 42px !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+}

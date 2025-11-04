@@ -1,0 +1,50 @@
+/* Version 1.0 - Base styles (Refactored from v6.19) */
+/* Chứa các thiết lập nền tảng: fonts, :root variables, body, scrollbar */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+    --global-font-size: 18px;
+    --kpi-main-font-size: 36px;
+    --bg-lightness-1: 98%; --header-lightness-1: 96%; --header-text-lightness-1: 25%; --special-header-lightness-1: 92%; --below-target-lightness-1: 96%;
+    --bg-lightness-2: 96%; --header-lightness-2: 94%; --header-text-lightness-2: 22%; --special-header-lightness-2: 88%; --below-target-lightness-2: 94%;
+    --bg-lightness-3: 94%; --header-lightness-3: 92%; --header-text-lightness-3: 18%; --special-header-lightness-3: 85%; --below-target-lightness-3: 92%; /* Normal */
+    --bg-lightness-4: 92%; --header-lightness-4: 88%; --header-text-lightness-4: 15%; --special-header-lightness-4: 80%; --below-target-lightness-4: 88%;
+    --bg-lightness-5: 90%; --header-lightness-5: 84%; --header-text-lightness-5: 12%; --special-header-lightness-5: 75%; --below-target-lightness-5: 84%;
+    --bg-lightness-6: 88%; --header-lightness-6: 80%; --header-text-lightness-6: 10%; --special-header-lightness-6: 70%; --below-target-lightness-6: 80%;
+    --kpi-card-1-bg: #38bdf8;
+    --kpi-card-2-bg: #34d399; --kpi-card-3-bg: #fbbf24;
+    --kpi-card-4-bg: #2dd4bf; --kpi-card-5-bg: #a78bfa; --kpi-card-6-bg: #f472b6;
+    --kpi-card-7-bg: #818cf8;
+    --kpi-card-8-bg: #f87171;
+    --kpi-title-color: #ffffff;
+    --kpi-main-color: #ffffff;
+    --kpi-sub-color: #ffffff;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f3f4f6;
+    font-size: var(--global-font-size);
+}
+
+html[data-contrast="1"] { --bg-lightness: var(--bg-lightness-1); --header-lightness: var(--header-lightness-1); --header-text-lightness: var(--header-text-lightness-1); --special-header-lightness: var(--special-header-lightness-1); --below-target-lightness: var(--below-target-lightness-1); }
+html[data-contrast="2"] { --bg-lightness: var(--bg-lightness-2); --header-lightness: var(--header-lightness-2); --header-text-lightness: var(--header-text-lightness-2); --special-header-lightness: var(--special-header-lightness-2); --below-target-lightness: var(--below-target-lightness-2); }
+html[data-contrast="3"] { --bg-lightness: var(--bg-lightness-3); --header-lightness: var(--header-lightness-3); --header-text-lightness: var(--header-text-lightness-3); --special-header-lightness: var(--special-header-lightness-3);
+--below-target-lightness: var(--below-target-lightness-3); }
+html[data-contrast="4"] { --bg-lightness: var(--bg-lightness-4); --header-lightness: var(--header-lightness-4); --header-text-lightness: var(--header-text-lightness-4); --special-header-lightness: var(--special-header-lightness-4); --below-target-lightness: var(--below-target-lightness-4); }
+html[data-contrast="5"] { --bg-lightness: var(--bg-lightness-5); --header-lightness: var(--header-lightness-5); --header-text-lightness: var(--header-text-lightness-5); --special-header-lightness: var(--special-header-lightness-5); --below-target-lightness: var(--below-target-lightness-5); }
+html[data-contrast="6"] { --bg-lightness: var(--bg-lightness-6); --header-lightness: var(--header-lightness-6); --header-text-lightness: var(--header-text-lightness-6); --special-header-lightness: var(--special-header-lightness-6); --below-target-lightness: var(--below-target-lightness-6); }
+
+
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #555; }
+
+.feather {
+    width: 1.1rem;
+    height: 1.1rem;
+    stroke-width: 1.5;
+    flex-shrink: 0;
+}
