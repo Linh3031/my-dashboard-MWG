@@ -1,3 +1,5 @@
+// Version 1.2 - Remove stray comments from HTML template literals
+// Version 1.1 - Fix capture logic to support vertical stitching
 // Version 1.0 - Refactored from ui-components.js
 // MODULE: UI REPORTS
 // Chịu trách nhiệm tạo HTML cho các bảng báo cáo dữ liệu phức tạp.
@@ -37,7 +39,10 @@ export const uiReports = {
              container.innerHTML = '<p class="text-gray-500">Không có dữ liệu doanh thu cho lựa chọn này.</p>';
             return;
         }
-        let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden" data-capture-group="1">
+        
+        // *** START: SỬA LỖI (v1.1) ***
+        // Xóa data-capture-group="1" và overflow-hidden
+        let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200">
              <div class="p-4 header-group-1 text-gray-800">
                  <h3 class="text-xl font-bold uppercase">Doanh thu nhân viên</h3>
                  <p class="text-sm italic text-gray-600">(đơn vị tính: Triệu đồng)</p>
@@ -101,7 +106,9 @@ export const uiReports = {
 
         const headerClass = (sortKey) => `px-4 py-3 sortable ${headerClasses[sortKey] || ''} ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
 
-        let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="7">
+        // *** START: SỬA LỖI (v1.1) ***
+        // Thêm data-capture-group="report-part"
+        let tableHTML = `<div class="department-block" data-capture-group="report-part"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="7">
              <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                      <tr>
                              <th class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên <span class="sort-indicator"></span></th>
@@ -261,7 +268,7 @@ export const uiReports = {
 
         const headerClass = (sortKey) => `px-4 py-3 sortable draggable-header ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
         const captureColumnCount = 1 + visibleColumns.length;
-        let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="${captureColumnCount}">
+        let tableHTML = `<div class="department-block" data-capture-group="report-part"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title}</h4><div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="${captureColumnCount}">
             <thead class="text-xs text-slate-800 uppercase font-bold">
                  <tr>
                     <th class="${headerClass('hoTen')}" data-sort="hoTen">Tên nhân viên <span class="sort-indicator"></span></th>

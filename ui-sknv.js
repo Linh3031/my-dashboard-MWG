@@ -1,3 +1,4 @@
+// Version 6.31 - Fix capture logic to support vertical stitching
 // Version 6.30 - YC: Logic cho CSS v6.19 (Vòng tròn xám 4+, Huy chương Top 3)
 // Version 6.28 - YC: Bỏ icon cờ (summary) & Thêm w-full (bảng thu nhập)
 // Version 6.27 - Fix CRITICAL syntax error 'ax' from v6.26
@@ -29,7 +30,9 @@ export const uiSknv = {
         }
         placeholder.classList.add('hidden');
 
-        let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"><div class="p-4 header-group-2 text-gray-800"><h3 class="text-xl font-bold uppercase">Thu nhập nhân viên</h3><p class="text-sm italic text-gray-600">(đơn vị tính: Triệu đồng)</p></div>`;
+        // *** START: SỬA LỖI (v6.31) - Xóa 'overflow-hidden' ***
+        let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200"><div class="p-4 header-group-2 text-gray-800"><h3 class="text-xl font-bold uppercase">Thu nhập nhân viên</h3><p class="text-sm italic text-gray-600">(đơn vị tính: Triệu đồng)</p></div>`;
+        // *** END: SỬA LỖI (v6.31) ***
 
         const groupedByDept = {};
         reportData.forEach(item => {
@@ -82,7 +85,8 @@ export const uiSknv = {
         const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
         
         // *** YÊU CẦU 3 (v6.28): Thêm 'w-full' để bảng co giãn 100% ***
-        let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title} <span class="text-sm font-normal text-gray-500">(Thu nhập DK TB: ${uiComponents.formatRevenue(averageProjectedIncome)})</span></h4><div class="overflow-x-auto"><table class="w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="thunhap" data-capture-columns="8">
+        // *** START: SỬA LỖI (v6.31) - Thêm data-capture-group="report-part" ***
+        let tableHTML = `<div class="department-block" data-capture-group="report-part"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title} <span class="text-sm font-normal text-gray-500">(Thu nhập DK TB: ${uiComponents.formatRevenue(averageProjectedIncome)})</span></h4><div class="overflow-x-auto"><table class="w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="thunhap" data-capture-columns="6">
           <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                  <tr>
                     <th class="${headerClass('hoTen')}" data-sort="hoTen">Họ Tên <span class="sort-indicator"></span></th>
@@ -316,7 +320,7 @@ export const uiSknv = {
                         <div data-capture-group="1" class="overflow-x-auto">${uiSknv.renderSknvQdcTable(employeeData, departmentAverages)}</div>
                         <div data-capture-group="1" class="overflow-x-auto">${uiSknv.renderSknvNganhHangTable(employeeData)}</div>
                     </div>
-                    </div>
+                     </div>
             </div>`;
             feather.replace();
         console.log("[ui-sknv.js renderSknvDetail] === Render complete ==="); // Log mới
@@ -426,7 +430,9 @@ export const uiSknv = {
                 console.log(`[ui-sknv.js displaySknvSummaryReport] Rendering department group: ${deptName}`); 
                 const sortedDeptEmployees = [...groupedByDept[deptName]].sort((a, b) => (b.totalAbove || 0) - (a.totalAbove || 0)); 
 
-                finalCardsHtml += `<div class="sknv-department-group">`; 
+                // *** START: SỬA LỖI (v6.31) - Thêm data-capture-group="report-part" ***
+                finalCardsHtml += `<div class="sknv-department-group" data-capture-group="report-part">`; 
+                // *** END: SỬA LỖI (v6.31) ***
                 
                 // *** YÊU CẦU 1 (v6.28): Bỏ icon cờ ***
                 finalCardsHtml += `<h4 class="sknv-department-header ${deptName.includes('Tư Vấn - ĐM') ? 'sknv-department-header--priority' : ''}">${deptName}</h4>`; 
@@ -496,7 +502,10 @@ export const uiSknv = {
                 finalCardsHtml += `</div></div>`; 
             }
         });
-        container.innerHTML = `<div data-capture-group="1">${finalCardsHtml}</div>`; 
+        
+        // *** START: SỬA LỖI (v6.31) - Xóa 'data-capture-group="1"' ***
+        container.innerHTML = finalCardsHtml;
+        // *** END: SỬA LỖI (v6.31) ***
 
         if (typeof feather !== 'undefined') { 
             feather.replace(); 
@@ -521,7 +530,7 @@ export const uiSknv = {
         const { key, direction } = sortState;
         
         const dataArray = Object.entries(doanhThuTheoNganhHang || {}) 
-            .map(([name, values]) => ({ name, ...values }))
+             .map(([name, values]) => ({ name, ...values }))
             .filter(item => (item.revenue || 0) > 0); 
         console.log(`[ui-sknv.js renderSknvNganhHangTable] Data array length: ${dataArray.length}`); 
 
