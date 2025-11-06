@@ -1,3 +1,4 @@
+// Version 3.5 - Update processThiDuaVungFile to accept new sheet names
 // Version 3.4 - Fix processThiDuaNhanVienData for 1-column logic & Fix ReferenceError
 // Version 3.2 - Fix ReferenceError in parsePastedThiDuaTableData
 // Version 3.1 - Fix parsePastedThiDuaTableData to filter out "Tổng" and "BP" rows
@@ -694,12 +695,26 @@ export const dataProcessing = {
 
     processThiDuaVungFile(workbook) {
         const sheetNames = workbook.SheetNames;
-        const chiTietSheet = workbook.Sheets[sheetNames.find(name => name.toUpperCase().includes('CHITIET'))];
-        const tongSheet = workbook.Sheets[sheetNames.find(name => name.toUpperCase().includes('TONG'))];
+        // *** START: YÊU CẦU MỚI (v3.5) ***
+        // Tìm sheet chi tiết (CHITIET hoặc CHI TIẾT)
+        const chiTietSheetName = sheetNames.find(name => {
+            const upperName = name.toUpperCase();
+            return upperName.includes('CHITIET') || upperName.includes('CHI TIẾT');
+        });
+        
+        // Tìm sheet tổng (TONG hoặc SIEU THI)
+        const tongSheetName = sheetNames.find(name => {
+            const upperName = name.toUpperCase();
+            return upperName.includes('TONG') || upperName.includes('SIEU THI');
+        });
+
+        const chiTietSheet = chiTietSheetName ? workbook.Sheets[chiTietSheetName] : null;
+        const tongSheet = tongSheetName ? workbook.Sheets[tongSheetName] : null;
 
         if (!chiTietSheet || !tongSheet) {
-            throw new Error('File Excel phải chứa sheet có tên chứa "CHITIET" và "TONG".');
+            throw new Error('File Excel phải chứa sheet (CHITIET/CHI TIẾT) và (TONG/SIEU THI).');
         }
+        // *** END: YÊU CẦU MỚI (v3.5) ***
 
         const chiTietData = this._findHeaderAndProcess(chiTietSheet, ['siêu thị', 'ngành hàng', 'kênh']);
         const tongData = this._findHeaderAndProcess(tongSheet, ['siêu thị', 'tổng thưởng']);
