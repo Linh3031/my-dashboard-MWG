@@ -1,6 +1,5 @@
+// Version 3.32 - Refactor: Remove HomePage functions (moved to ui-home.js) and renderCompetitionConfigUI (moved to ui-admin.js)
 // Version 3.31 - Refactor: Remove admin and filter functions (moved to ui-admin.js and ui-filters.js)
-// Version 3.30 - Refactor: Moved report rendering functions to ui-reports.js
-// Version 3.29 - Refactor: Extract notifications & debugTools
 // ... (các phiên bản trước giữ nguyên)
 // MODULE: UI COMPONENTS
 // Chứa các hàm UI chung, tái sử dụng được trên toàn bộ ứng dụng.
@@ -28,41 +27,10 @@ export const uiComponents = {
         </button>`;
     },
 
-    renderCompetitionConfigUI() {
-        // ... (Giữ nguyên)
-        const container = document.getElementById(`competition-list-container`);
-        if (!container) return;
-        const configs = appState.competitionConfigs || [];
-
-        if (configs.length === 0) {
-            container.innerHTML = '<p class="text-xs text-center text-gray-500 italic">Chưa có chương trình nào được tạo.</p>';
-            return;
-        }
-
-        container.innerHTML = configs.map((config, index) => {
-                return `
-                    <div class="p-3 border rounded-lg bg-white flex justify-between items-center shadow-sm">
-                        <div>
-                            <div class="flex items-center gap-x-2">
-                                <p class="font-bold text-gray-800">${config.name}</p>
-                            </div>
-                            <div class="text-xs text-gray-500 mt-1 space-y-1">
-                                <p><strong>Hãng:</strong> <span class="font-semibold text-blue-600">${(config.brands || []).join(', ')}</span></p>
-                                <p><strong>Nhóm hàng:</strong> <span class="font-semibold">${(config.groups || []).length > 0 ? (config.groups || []).join(', ') : 'Tất cả'}</span></p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-x-2 flex-shrink-0">
-                            <button class="edit-competition-btn p-2 rounded-md hover:bg-gray-200 text-gray-600" data-index="${index}" title="Sửa chương trình">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                            </button>
-                            <button class="delete-competition-btn p-2 rounded-md hover:bg-red-100 text-red-600" data-index="${index}" title="Xóa chương trình">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                            </button>
-                        </div>
-                    </div>
-                `;
-        }).join('');
-    },
+    // === START: KHỐI HÀM ĐÃ BỊ XÓA (v3.32) ===
+    // 1 hàm (renderCompetitionConfigUI)
+    // ĐÃ BỊ XÓA khỏi đây vì đã chuyển sang 'ui-admin.js'.
+    // === END: KHỐI HÀM ĐÃ BỊ XÓA ===
 
     // === START: KHỐI HÀM ĐÃ BỊ XÓA (v3.31) ===
     // 2 hàm (populateCompetitionFilters, populateCompetitionBrandFilter)
@@ -109,10 +77,7 @@ export const uiComponents = {
     },
     
     // === START: KHỐI HÀM ĐÃ BỊ XÓA ===
-    // displayEmployeeRevenueReport, renderRevenueTableForDepartment,
-    // displayEmployeeEfficiencyReport, renderEfficiencyTableForDepartment,
-    // renderCategoryTable, displayCategoryRevenueReport
-    // ĐÃ BỊ XÓA KHỎI ĐÂY và chuyển sang ui-reports.js
+    // (Đã chuyển sang ui-reports.js)
     // === END: KHỐI HÀM ĐÃ BỊ XÓA ===
 
     // === START: KHỐI HÀM ĐÃ BỊ XÓA (v3.31) ===
@@ -120,16 +85,10 @@ export const uiComponents = {
     // ĐÃ BỊ XÓA khỏi đây vì đã tồn tại trong 'ui-filters.js'.
     // === END: KHỐI HÀM ĐÃ BỊ XÓA ===
 
-    // ... (Các hàm khác như showProgressBar, hideProgressBar, etc. giữ nguyên) ...
     showProgressBar: (elementId) => { const el = document.getElementById(`progress-${elementId}`); if(el) el.classList.remove('hidden'); },
     hideProgressBar: (elementId) => { const el = document.getElementById(`progress-${elementId}`); if(el) el.classList.add('hidden'); },
     
-    // <<< === START: KHỐI CODE BỊ XÓA (v3.29) === >>>
-    // 3 HÀM (showNotification, showUpdateNotification, updateUsageCounter)
-    // ĐÃ BỊ XÓA KHỎI ĐÂY.
-    // <<< === END: KHỐI CODE BỊ XÓA === >>>
-
-    ...notifications, // <<< THÊM MỚI (v3.29)
+    ...notifications, // (v3.29)
 
         updateFileStatus(uiId, fileName = '', statusText, statusType = 'default', showDownloadButton = false, metadata = null, dataType = '', warehouse = '') {
             const fileNameSpan = document.getElementById(`file-name-${uiId}`);
@@ -279,12 +238,14 @@ export const uiComponents = {
         const content = contentEl.textContent;
         navigator.clipboard.writeText(content)
                 .then(() => {
-                uiComponents.showNotification('Đã sao chép nội dung!', 'success');
-                uiComponents.toggleModal('preview-modal', false);
+                // Sử dụng ui.showNotification thay vì uiComponents.showNotification
+                ui.showNotification('Đã sao chép nội dung!', 'success');
+                ui.toggleModal('preview-modal', false);
                 })
                 .catch(err => {
                 console.error('Lỗi sao chép:', err);
-                    uiComponents.showNotification('Lỗi khi sao chép.', 'error');
+                    // Sử dụng ui.showNotification
+                    ui.showNotification('Lỗi khi sao chép.', 'error');
                 });
     },
 
@@ -293,76 +254,12 @@ export const uiComponents = {
     // ĐÃ BỊ XÓA khỏi đây vì đã chuyển sang 'ui-admin.js'.
     // === END: KHỐI HÀM ĐÃ BỊ XÓA ===
 
-    renderHomePage() {
-        this.renderUpdateHistory();
-        this.renderFeedbackSection();
-    },
-    async renderUpdateHistory() {
-        const container = document.getElementById('update-history-list');
-        if (!container) return;
-        try {
-                const response = await fetch(`./changelog.json?v=${new Date().getTime()}`);
-            if (!response.ok) throw new Error('Không thể tải lịch sử cập nhật.');
-            const updateHistory = await response.json();
-            container.innerHTML = updateHistory.map(item => `
-                <div class="bg-white rounded-xl shadow-md p-5 border border-gray-200">
-                        <h4 class="font-bold text-blue-600 mb-2">Phiên bản ${item.version} (${item.date})</h4>
-                        <ul class="list-disc list-inside text-gray-700 space-y-1 text-sm">
-                            ${item.notes.map(note => `<li>${note}</li>`).join('')}
-                    </ul>
-                    </div>`).join('');
-        } catch (error) {
-            console.error("Lỗi khi render lịch sử cập nhật:", error);
-            container.innerHTML = '<p class="text-red-500">Không thể tải lịch sử cập nhật.</p>';
-        }
-    },
-    renderFeedbackSection() {
-            const composerContainer = document.getElementById('feedback-composer');
-            const listContainer = document.getElementById('feedback-list');
-            if (!composerContainer || !listContainer) return;
+    // === START: KHỐI HÀM ĐÃ BỊ XÓA (v3.32) ===
+    // 3 hàm (renderHomePage, renderUpdateHistory, renderFeedbackSection)
+    // ĐÃ BỊ XÓA khỏi đây vì đã chuyển sang 'ui-home.js'.
+    // === END: KHỐI HÀM ĐÃ BỊ XÓA ===
 
-        composerContainer.innerHTML = `
-                <h4 class="text-lg font-semibold text-gray-800 mb-3">Gửi góp ý của bạn</h4>
-            <textarea id="feedback-textarea" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-3" rows="4" placeholder="Chúng tôi luôn lắng nghe ý kiến của bạn để cải thiện công cụ tốt hơn..."></textarea>
-                <button id="submit-feedback-btn" class="w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-indigo-700 transition">Gửi góp ý</button>
-        `;
-
-        if (!appState.feedbackList || appState.feedbackList.length === 0) {
-            listContainer.innerHTML = '<p class="text-center text-gray-500 mt-4">Chưa có góp ý nào.</p>';
-            return;
-        }
-
-            listContainer.innerHTML = appState.feedbackList.map(item => {
-            const userNameDisplay = item.user?.email || 'Người dùng ẩn danh';
-            return `
-                <div class="feedback-item bg-white rounded-xl shadow-md p-5 border border-gray-200" data-id="${item.id}">
-                    <p class="text-gray-800">${item.content}</p>
-                        <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">
-                            <span class="font-semibold">${userNameDisplay}</span>
-                            <span>${formatters.formatTimeAgo(item.timestamp)}</span> 
-                            ${appState.isAdmin ? `<button class="reply-btn text-blue-600 hover:underline">Trả lời</button>` : ''}
-                    </div>
-                    <div class="ml-6 mt-4 space-y-3">
-                            ${(item.replies || []).map(reply => `
-                                <div class="bg-gray-100 rounded-lg p-3">
-                                <p class="text-gray-700 text-sm">${reply.content}</p>
-                                    <div class="text-xs text-gray-500 mt-2">
-                                        <strong>Admin</strong> - ${formatters.formatTimeAgo(reply.timestamp instanceof Date ? reply.timestamp : reply.timestamp?.toDate())} 
-                                    </div>
-                            </div>`).join('')}
-                    </div>
-                    <div class="reply-form-container hidden ml-6 mt-4">
-                            <textarea class="w-full p-2 border rounded-lg text-sm" rows="2" placeholder="Viết câu trả lời..."></textarea>
-                            <div class="flex justify-end gap-2 mt-2">
-                            <button class="cancel-reply-btn text-sm text-gray-600 px-3 py-1 rounded-md hover:bg-gray-100">Hủy</button>
-                                <button class="submit-reply-btn text-sm bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700">Gửi</button>
-                        </div>
-                    </div>
-                </div>`;
-        }).join('');
-    },
-
-        applyInterfaceSettings(settings) {
+    applyInterfaceSettings(settings) {
             const root = document.documentElement;
             if (settings.kpiCard1Bg) root.style.setProperty('--kpi-card-1-bg', settings.kpiCard1Bg);
             if (settings.kpiCard2Bg) root.style.setProperty('--kpi-card-2-bg', settings.kpiCard2Bg);
@@ -377,12 +274,7 @@ export const uiComponents = {
             if (settings.kpiSubColor) root.style.setProperty('--kpi-sub-color', settings.kpiSubColor);
         },
 
-    // <<< === START: KHỐI CODE BỊ XÓA (v3.29) === >>>
-    // 4 HÀM (displayDebugInfo, displayPastedDebugInfo, displayThiDuaVungDebugInfo, renderCompetitionDebugReport)
-    // ĐÃ BỊ XÓA KHỎI ĐÂY.
-    // <<< === END: KHỐI CODE BỊ XÓA === >>>
-
-    ...debugTools, // <<< THÊM MỚI (v3.29)
+    ...debugTools, // (v3.29)
 
     // === START: KHỐI HÀM ĐÃ BỊ XÓA (v3.31) ===
     // 2 hàm (renderUserStatsTable, renderCompetitionNameMappingTable)

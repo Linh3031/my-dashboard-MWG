@@ -1,3 +1,4 @@
+// Version 3.12 - Refactor: Import and merge ui-home.js
 // Version 3.11 - Refactor: Move admin functions to ui-admin.js, import ui-filters.js
 // MODULE: UI FACADE (Mặt tiền Giao diện)
 
@@ -8,9 +9,9 @@ import { uiRealtime } from './ui-realtime.js';
 import { uiThiDuaVung } from './ui-thidua-vung.js';
 import { uiCompetition } from './ui-competition.js';
 import { uiReports } from './ui-reports.js';
-import { uiFilters } from './ui-filters.js'; // <<< THÊM MỚI (Từ Kế hoạch)
-import { uiAdmin } from './ui-admin.js'; // <<< THÊM MỚI (Từ Bước 1)
-// Xóa import appState và firebase (không còn cần thiết ở đây)
+import { uiFilters } from './ui-filters.js'; 
+import { uiAdmin } from './ui-admin.js';
+import { uiHome } from './ui-home.js'; // <<< THÊM MỚI (Từ Bước 1 dọn dẹp cuối)
 
 // Gộp tất cả các hàm từ các module con vào một đối tượng 'ui' duy nhất.
 const ui = {
@@ -21,10 +22,9 @@ const ui = {
     ...uiThiDuaVung,
     ...uiCompetition,
     ...uiReports,
-    ...uiFilters, // <<< THÊM MỚI
-    ...uiAdmin,  // <<< THÊM MỚI
-
-    // Hàm renderAdminPage đã được di chuyển sang ui-admin.js
+    ...uiFilters, 
+    ...uiAdmin,  
+    ...uiHome, // <<< THÊM MỚI
 };
 
 // Xuất khẩu đối tượng 'ui' đã được hợp nhất.
