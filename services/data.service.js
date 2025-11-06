@@ -1,4 +1,7 @@
+// Version 1.3 - Refactor: Di dời 2 hàm (TemplateDownload, CompetitionDebug) từ main.js
+// Version 1.2 - Fix: Xóa dấu phẩy (trailing comma) ở cuối object
 // Version 1.1 - Fix: Thêm dấu phẩy bị thiếu sau hàm cuối cùng
+// Version 1.0 - Refactor: Tách logic xử lý data từ main.js và ui-listeners.js
 import { appState } from '../state.js';
 import { ui } from '../ui.js';
 import { services } from '../services.js';
@@ -274,7 +277,7 @@ export const dataService = {
             ui.showNotification(`Lỗi khi xử lý file "${dataName}".`, 'error');
         } finally {
             ui.hideProgressBar(fileType);
-            e.target.value = '';
+            if(e.target) e.target.value = ''; // Thêm kiểm tra e.target
         }
     },
 
@@ -844,4 +847,44 @@ export const dataService = {
             ui.updateFileStatus('thidua-vung', file.name, `Lỗi: ${error.message}`, 'error');
         }
     },
+    
+    // --- CÁC HÀM MỚI (v1.3) ---
+
+    /**
+     * Tải file mẫu DSNV.
+     * (Đã di chuyển từ main.js )
+     */
+    async handleTemplateDownload() {
+        ui.showNotification('Đang chuẩn bị file mẫu...', 'success');
+        try {
+            const url = await firebase.getTemplateDownloadURL();
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'Danh_Sach_Nhan_Vien_Mau.xlsx';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (error) {
+            console.error("Lỗi khi tải file mẫu:", error);
+            ui.showNotification('Không thể tải file mẫu. Vui lòng thử lại.', 'error');
+        }
+    },
+
+    /**
+     * Xử lý file gỡ lỗi thi đua.
+     * (Đã di chuyển từ main.js )
+     */
+    async handleCompetitionDebugFile(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        ui.showNotification('Đang phân tích file gỡ lỗi...', 'success');
+        try {
+            const workbook = await this._handleFileRead(file);
+            const rawData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+            const debugResults = services.debugCompetitionFiltering(rawData);
+            ui.renderCompetitionDebugReport(debugResults);
+        } catch (err) {
+            ui.showNotification(`Lỗi khi đọc file gỡ lỗi: ${err.message}`, 'error');
+        }
+    }
 };

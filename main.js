@@ -1,3 +1,4 @@
+// Version 4.49 - Refactor: Di dời 3 hàm (TemplateDownload, CompetitionDebug, FileRead) sang data.service.js
 // Version 4.48 - Refactor: Di dời 14+ hàm xử lý data sang data.service.js
 // Version 4.47 - Refactor: Remove direct dependency on ui-components.js, use ui.js facade instead.
 // ... (các phiên bản trước giữ nguyên)
@@ -273,23 +274,14 @@ const app = {
         setInterval(() => this.checkForUpdates(), 15 * 60 * 1000);
     },
 
-    // <<< START: XÓA BỎ KHỐI HÀM (v4.48) >>>
-    // 14 hàm sau đã được di dời sang 'data.service.js'
-    // async handleCloudDataUpdate(cloudData) { ... }
-    // async handleDownloadAndProcessData(dataType, warehouse) { ... }
-    // _getSavedMetadata(warehouse, dataType) { ... }
-    // async handleFileInputChange(e) { ... }
-    // async handleDsnvUpload(e, file) { ... }
+    // <<< START: XÓA BỎ KHỐI HÀM (v4.49) >>>
+    // 14 hàm (handleCloudDataUpdate, handleDownloadAndProcessData, _getSavedMetadata, 
+    //         handleFileInputChange, handleDsnvUpload) đã bị xóa ở v4.48.
+    // 3 hàm sau sẽ bị xóa ở v4.49:
     // handleFileRead(file) { ... }
-    // async _handlePastedDataSync(...) { ... }
-    // async handleLuykePaste() { ... }
-    // async handleThiduaNVPaste() { ... }
-    // async handleErpPaste() { ... }
-    // async handleErpThangTruocPaste(e) { ... }
-    // async handleRealtimeFileInput(e) { ... }
-    // async handleCategoryFile(e) { ... }
-    // async handleThiDuaVungFileInput(e) { ... }
-    // <<< END: XÓA BỎ KHỐI HÀM (v4.48) >>>
+    // async handleCompetitionDebugFile(e) { ... }
+    // async handleTemplateDownload() { ... }
+    // <<< END: XÓA BỎ KHỐI HÀM (v4.49) >>>
 
     async setupMarquee() {
         // ... (Giữ nguyên)
@@ -704,20 +696,8 @@ const app = {
         }
     },
 
-    async handleCompetitionDebugFile(e) { // <<< GIỮ LẠI (v4.48)
-        // ... (Giữ nguyên)
-        const file = e.target.files[0];
-        if (!file) return;
-        ui.showNotification('Đang phân tích file gỡ lỗi...', 'success');
-        try {
-            const workbook = await this._handleFileRead(file); // <<< SẼ GÂY LỖI
-            const rawData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-            const debugResults = services.debugCompetitionFiltering(rawData);
-            ui.renderCompetitionDebugReport(debugResults);
-        } catch (err) {
-            ui.showNotification(`Lỗi khi đọc file gỡ lỗi: ${err.message}`, 'error');
-        }
-    },
+    // <<< XÓA BỎ (v4.49) >>>
+    // async handleCompetitionDebugFile(e) { ... }
 
     _handleCompetitionFormShow(show = true, isEdit = false) {
         // ... (Giữ nguyên)
@@ -816,22 +796,8 @@ const app = {
         localStorage.setItem('competitionConfigs', JSON.stringify(appState.competitionConfigs));
     },
 
-    async handleTemplateDownload() { // <<< GIỮ LẠI (v4.48)
-        // ... (Giữ nguyên)
-        ui.showNotification('Đang chuẩn bị file mẫu...', 'success');
-        try {
-                const url = await firebase.getTemplateDownloadURL();
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = 'Danh_Sach_Nhan_Vien_Mau.xlsx';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-        } catch (error) {
-            console.error("Lỗi khi tải file mẫu:", error);
-            ui.showNotification('Không thể tải file mẫu. Vui lòng thử lại.', 'error');
-        }
-    },
+    // <<< XÓA BỎ (v4.49) >>>
+    // async handleTemplateDownload() { ... }
 
     handleAdminLogin() {
         // ... (Giữ nguyên)

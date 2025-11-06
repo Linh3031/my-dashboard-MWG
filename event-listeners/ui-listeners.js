@@ -1,3 +1,4 @@
+// Version 3.34 - Refactor: Hoàn tất di dời 2 listener (Template, Debug) sang data.service.js
 // Version 3.33 - Fix: Gỡ bỏ comment [cite] gây lỗi cú pháp
 // Version 3.32 - Refactor: Di dời logic xử lý file/paste sang data.service.js
 // Version 3.31 - Fix: Thêm dấu phẩy (,) bị thiếu trong object 'singleSelects'
@@ -127,24 +128,26 @@ export function initializeEventListeners(mainAppController) {
     document.querySelectorAll('.toggle-filters-btn').forEach(button =>
         button.addEventListener('click', () => ui.toggleFilterSection(button.dataset.target)));
 
-    // --- BẮT ĐẦU TÁI CẤU TRÚC (v3.32) ---
+    // --- BẮT ĐẦU TÁI CẤU TRÚC (v3.32 -> v3.34) ---
     // File input listeners - Trỏ đến dataService
     document.querySelectorAll('.file-input').forEach(input => {
         if (input.id !== 'file-thidua-vung' && input.id !== 'file-category-structure' && input.id !== 'realtime-file-input' && input.id !== 'debug-competition-file-input') {
-            input.addEventListener('change', (e) => dataService.handleFileUpload(e)); // <<< THAY ĐỔI
+            input.addEventListener('change', (e) => dataService.handleFileUpload(e));
         }
     });
     // Gán các handler đặc biệt - Trỏ đến dataService
-    document.getElementById('file-category-structure')?.addEventListener('change', (e) => dataService.handleCategoryFile(e)); // <<< THAY ĐỔI
-    document.getElementById('paste-luyke')?.addEventListener('input', () => dataService.handleLuykePaste()); // <<< THAY ĐỔI
-    document.getElementById('paste-thiduanv')?.addEventListener('input', () => dataService.handleThiduaNVPaste()); // <<< THAY ĐỔI
-    document.getElementById('paste-thuongerp')?.addEventListener('input', () => dataService.handleErpPaste()); // <<< THAY ĐỔI
-    document.getElementById('paste-thuongerp-thangtruoc')?.addEventListener('input', (e) => dataService.handleErpThangTruocPaste(e)); // <<< THAY ĐỔI
-    document.getElementById('realtime-file-input')?.addEventListener('change', (e) => dataService.handleRealtimeFileInput(e)); // <<< THAY ĐỔI
-    document.getElementById('download-danhsachnv-template-btn')?.addEventListener('click', () => appController.handleTemplateDownload()); // <<< SẼ SỬA Ở MAIN.JS
-    document.getElementById('file-thidua-vung')?.addEventListener('change', (e) => dataService.handleThiDuaVungFileInput(e)); // <<< THAY ĐỔI
-    document.getElementById('thidua-vung-filter-supermarket')?.addEventListener('change', () => appController.handleThiDuaVungFilterChange()); // (Giữ nguyên appController)
-    document.getElementById('debug-competition-file-input')?.addEventListener('change', (e) => appController.handleCompetitionDebugFile(e)); // <<< SẼ SỬA Ở MAIN.JS
+    document.getElementById('file-category-structure')?.addEventListener('change', (e) => dataService.handleCategoryFile(e));
+    document.getElementById('paste-luyke')?.addEventListener('input', () => dataService.handleLuykePaste());
+    document.getElementById('paste-thiduanv')?.addEventListener('input', () => dataService.handleThiduaNVPaste());
+    document.getElementById('paste-thuongerp')?.addEventListener('input', () => dataService.handleErpPaste());
+    document.getElementById('paste-thuongerp-thangtruoc')?.addEventListener('input', (e) => dataService.handleErpThangTruocPaste(e));
+    document.getElementById('realtime-file-input')?.addEventListener('change', (e) => dataService.handleRealtimeFileInput(e));
+    document.getElementById('file-thidua-vung')?.addEventListener('change', (e) => dataService.handleThiDuaVungFileInput(e));
+    
+    // <<< CẬP NHẬT (v3.34) >>>
+    document.getElementById('download-danhsachnv-template-btn')?.addEventListener('click', () => dataService.handleTemplateDownload()); 
+    document.getElementById('thidua-vung-filter-supermarket')?.addEventListener('change', () => appController.handleThiDuaVungFilterChange()); // (Giữ nguyên)
+    document.getElementById('debug-competition-file-input')?.addEventListener('change', (e) => dataService.handleCompetitionDebugFile(e)); 
     // --- KẾT THÚC TÁI CẤU TRÚC ---
 
     // Filter change listeners (Giữ nguyên)
@@ -166,9 +169,8 @@ export function initializeEventListeners(mainAppController) {
                 console.log("[DEBUG] Unsubscribing from previous warehouse listener.");
                 appController.unsubscribeDataListener();
             }
-            // <<< THAY ĐỔI (v3.32): Gọi dataService.handleCloudDataUpdate >>>
             appController.unsubscribeDataListener = firebase.listenForDataChanges(selectedKho, (cloudData) => {
-                dataService.handleCloudDataUpdate(cloudData); // <<< THAY ĐỔI
+                dataService.handleCloudDataUpdate(cloudData); 
             });
             ['ycx', 'giocong', 'thuongnong'].forEach(ft => {
                 const versionInfo = appController._localDataVersions?.[selectedKho]?.[ft];
@@ -264,8 +266,7 @@ export function initializeEventListeners(mainAppController) {
             const warehouse = downloadBtn.dataset.warehouse;
             if (dataType && warehouse && appController) {
                 console.log(`[Body Click Listener] Download button clicked for ${dataType} @ ${warehouse}`);
-                // <<< THAY ĐỔI (v3.32): Gọi dataService.handleDownloadAndProcessData >>>
-                dataService.handleDownloadAndProcessData(dataType, warehouse); // <<< THAY ĐỔI
+                dataService.handleDownloadAndProcessData(dataType, warehouse); 
             } else {
                 console.error("Download button clicked but missing data-type or data-warehouse.", downloadBtn);
             }
