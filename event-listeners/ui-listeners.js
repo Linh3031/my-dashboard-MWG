@@ -1,10 +1,7 @@
-// Version 3.30 - Initialize choices.js for realtime brand/category filters
-// Version 3.29 - Add event listener for sknv-thidua-view-selector
-// Version 3.28 - Call incrementCounter with email for user-specific actionsTaken
-// Version 3.27 - Add actionsTaken counter increment on successful file upload
-// Version 3.26 - Fix incorrect import paths (./ changed to ../)
-// Version 3.25 - Add event listener for download-data-btn
-// Version 3.24 - Implement Cloud Storage upload and save metadata logic
+// Version 3.34 - Refactor: Hoàn tất di dời 2 listener (Template, Debug) sang data.service.js
+// Version 3.33 - Fix: Gỡ bỏ comment [cite] gây lỗi cú pháp
+// Version 3.32 - Refactor: Di dời logic xử lý file/paste sang data.service.js
+// Version 3.31 - Fix: Thêm dấu phẩy (,) bị thiếu trong object 'singleSelects'
 // MODULE: EVENT LISTENERS INITIALIZER
 // File này đóng vai trò là điểm khởi đầu, import và khởi chạy tất cả các module listener con.
 
@@ -24,171 +21,16 @@ import { dragDroplisteners } from './listeners-dragdrop.js';
 import { captureService } from '../modules/capture.service.js';
 import { firebase } from '../firebase.js';
 import { uiComponents } from '../ui-components.js';
+import { dataService } from '../services/data.service.js';
 
 let appController = null;
 
 // --- CONSTANTS ---
-const LOCAL_DATA_VERSIONS_KEY = '_localDataVersions'; // Key for localStorage
+// (Đã xóa LOCAL_DATA_VERSIONS_KEY)
 
 // --- HELPERS / HANDLERS ---
 
-async function handleFileInputChange(e) {
-    const fileInput = e.target;
-    const file = fileInput.files[0];
-    if (!file) {
-        // Clear status if user cancels file selection
-        const fileType = fileInput.id.replace('file-', '');
-        // Find mapping info using appController if available, otherwise might need direct access or different approach
-         const mappingInfo = appController?.ALL_DATA_MAPPING
-            ? Object.values(appController.ALL_DATA_MAPPING).find(m => m.uiId === fileType)
-            : null; // Fallback if appController isn't ready or doesn't have the mapping yet
-        if (mappingInfo && mappingInfo.uiId) {
-            uiComponents.updateFileStatus(mappingInfo.uiId, '', 'Chưa thêm file', 'default');
-        }
-        return;
-    }
-
-    const fileType = fileInput.id.replace('file-', '');
-    // Find mapping info using appController if available
-     const mappingInfo = appController?.ALL_DATA_MAPPING
-        ? Object.values(appController.ALL_DATA_MAPPING).find(m => m.uiId === fileType)
-        : null; // Fallback
-
-    if (!mappingInfo) {
-        if (fileType === 'danhsachnv') {
-            return appController.handleDsnvUpload(e, file);
-        }
-        console.error(`[handleFileInputChange] No mapping info found for fileType: ${fileType}`);
-        uiComponents.updateFileStatus(fileType, file.name, `Lỗi: Không tìm thấy cấu hình cho loại file '${fileType}'.`, 'error');
-        return;
-    }
-
-
-    const { stateKey, saveKey, firestoreKey } = mappingInfo;
-    const dataName = fileInput.dataset.name || fileType;
-
-    uiComponents.updateFileStatus(fileType, file.name, 'Đang đọc & chuẩn hóa...', 'default');
-    ui.showProgressBar(fileType);
-
-    try {
-        const workbook = await appController.handleFileRead(file);
-        const rawData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-        const normalizeType = fileType.replace('-thangtruoc', '');
-        const { normalizedData, success, missingColumns } = services.normalizeData(rawData, normalizeType);
-        ui.displayDebugInfo(fileType);
-
-        if (!success) {
-            const errorMessage = `Lỗi file "${dataName}": Thiếu cột: ${missingColumns.join(', ')}.`;
-            uiComponents.updateFileStatus(fileType, file.name, `Lỗi: Thiếu cột dữ liệu.`, 'error');
-            ui.showNotification(errorMessage, 'error');
-            if (document.getElementById('debug-tool-container')?.classList.contains('hidden')) {
-                 document.getElementById('toggle-debug-btn')?.click();
-            }
-             fileInput.value = ''; // Reset input on error
-            return;
-        }
-
-        // *** >>> SỬA ĐỂ GỌI HÀM ĐẾM VỚI EMAIL <<< ***
-        if (appState.currentUser?.email) {
-             firebase.incrementCounter('actionsTaken', appState.currentUser.email);
-             console.log(`Incremented actionsTaken for ${appState.currentUser.email}`);
-        } else {
-             firebase.incrementCounter('actionsTaken'); // Fallback if email somehow isn't available
-             console.warn("User email not found in appState, incrementing global actionsTaken.");
-        }
-        // *** >>> KẾT THÚC SỬA ĐỔI <<< ***
-
-        appState[stateKey] = normalizedData;
-        ui.showNotification(`Tải thành công file "${dataName}"!`, 'success');
-
-        if (saveKey) {
-            console.log(`[handleFileInputChange] Saving normalized data (${normalizedData.length} rows) to cache: ${saveKey}`);
-            await appController.storage.setItem(saveKey, normalizedData);
-            console.log(`%c[DEBUG POST-CACHE] Successfully saved ${fileType} to cache. Proceeding...`, "color: brown;");
-        }
-
-        // --- Cloud Synchronization ---
-        const warehouseToSync = appState.selectedWarehouse;
-        const currentFirestoreKey = firestoreKey;
-
-        console.log(`%c[DEBUG PRE-SYNC CHECK] File Type: ${fileType}, Warehouse: ${warehouseToSync}, Firestore Key: ${currentFirestoreKey}`, "color: purple; font-weight: bold;");
-
-        if (warehouseToSync && currentFirestoreKey) {
-            console.log(`%c[DEBUG SYNC BLOCK START] Entering cloud sync block for ${fileType} (Firestore Key: ${currentFirestoreKey})`, "color: magenta;");
-
-            uiComponents.updateFileStatus(fileType, file.name, `Đang chuẩn bị đồng bộ cloud...`, 'default');
-
-            let localDataVersions = appController._localDataVersions;
-            const currentVersion = localDataVersions?.[warehouseToSync]?.[currentFirestoreKey]?.version || 0;
-            const newVersion = currentVersion + 1;
-            const uploadTimestamp = Date.now();
-
-            const fileExtension = file.name.substring(file.name.lastIndexOf('.'));
-            const storagePath = `uploads/${warehouseToSync}/${currentFirestoreKey}_v${newVersion}${fileExtension}`;
-
-            console.log(`%c[handleFileInputChange] Cloud Upload for ${currentFirestoreKey}:`, "color: magenta; font-weight: bold;");
-
-            const onProgress = (progress) => {
-                uiComponents.updateFileStatus(fileType, file.name, `Đang tải lên cloud... ${Math.round(progress)}%`, 'default');
-            };
-
-            try {
-                const downloadURL = await firebase.uploadFileToStorage(file, storagePath, onProgress);
-                uiComponents.updateFileStatus(fileType, file.name, `Upload xong, đang lưu thông tin...`, 'default');
-
-                const metadata = {
-                    storagePath: storagePath,
-                    downloadURL: downloadURL,
-                    version: newVersion,
-                    timestamp: uploadTimestamp,
-                    rowCount: normalizedData.length,
-                    fileName: file.name
-                };
-
-                await firebase.saveMetadataToFirestore(warehouseToSync, currentFirestoreKey, metadata);
-
-                const metadataKey = `${appController.LOCAL_METADATA_PREFIX}${warehouseToSync}_${currentFirestoreKey}`;
-                const metadataToSaveLocally = { ...metadata, updatedAt: new Date() };
-                try {
-                    localStorage.setItem(metadataKey, JSON.stringify(metadataToSaveLocally));
-                    console.log(`[handleFileInputChange] Saved metadata for ${currentFirestoreKey} to localStorage ('${metadataKey}') immediately.`);
-                } catch (lsError) {
-                    console.error(`[handleFileInputChange] Error saving metadata for ${currentFirestoreKey} to localStorage:`, lsError);
-                }
-
-                if (!localDataVersions[warehouseToSync]) localDataVersions[warehouseToSync] = {};
-                localDataVersions[warehouseToSync][currentFirestoreKey] = { version: newVersion, timestamp: uploadTimestamp };
-                localStorage.setItem(LOCAL_DATA_VERSIONS_KEY, JSON.stringify(localDataVersions));
-                appController._localDataVersions = localDataVersions;
-
-                console.log(`%c[handleFileInputChange] Successfully uploaded ${currentFirestoreKey} (v${newVersion}).`, "color: magenta;");
-
-                uiComponents.updateFileStatus(fileType, file.name, '', 'success', false, metadataToSaveLocally);
-
-            } catch (syncError) {
-                console.error(`%c[handleFileInputChange] Cloud sync failed for ${currentFirestoreKey}:`, "color: red;", syncError);
-                uiComponents.updateFileStatus(fileType, file.name, `Lỗi đồng bộ cloud: ${syncError.message}`, 'error');
-            }
-            console.log(`%c[DEBUG SYNC BLOCK END] Finished cloud sync block for ${fileType}`, "color: magenta;");
-        } else {
-             console.log(`%c[DEBUG SYNC SKIP] Skipping cloud sync for ${fileType}. Warehouse selected: ${!!warehouseToSync}, Firestore key exists: ${!!currentFirestoreKey}`, "color: orange;");
-            uiComponents.updateFileStatus(fileType, file.name, `✓ Đã tải ${normalizedData.length} dòng (Chưa đồng bộ).`, 'success', false, null);
-        }
-
-        console.log(`%c[DEBUG PRE-RENDER] About to call updateAndRenderCurrentTab for ${fileType}`, "color: blue;");
-        appController.updateAndRenderCurrentTab();
-
-    } catch (error) {
-        console.error(`Lỗi xử lý file ${dataName}:`, error);
-        uiComponents.updateFileStatus(fileType, file.name, `Lỗi đọc file: ${error.message}`, 'error');
-        ui.showNotification(`Lỗi khi xử lý file "${dataName}".`, 'error');
-    } finally {
-        ui.hideProgressBar(fileType);
-        fileInput.value = '';
-        console.log(`%c[DEBUG FUNCTION END] handleFileInputChange finished for ${fileType}`, "color: gray;");
-    }
-}
-
+// (ĐÃ XÓA TOÀN BỘ HÀM handleFileInputChange)
 
 function handleFilterChange(prefix) {
     appState.viewingDetailFor = null;
@@ -225,15 +67,12 @@ export function initializeEventListeners(mainAppController) {
         
         const singleSelectConfig = { searchEnabled: true, removeItemButton: false, itemSelectText: 'Chọn', searchPlaceholderValue: 'Tìm kiếm...' };
         
-        // === FIX 4 (Sửa) ===
-        // Thêm 2 ID bộ lọc của tab Realtime vào đây
         const singleSelects = {
              'thidua-employee-filter': 'thidua_employee_detail',
             'thidua-vung-filter-supermarket': 'thiDuaVung_sieuThi',
-            'realtime-brand-category-filter': 'realtime_brand_category_filter', // Đã thêm
-            'realtime-brand-filter': 'realtime_brand_filter' // Đã thêm
+            'realtime-brand-category-filter': 'realtime_brand_category_filter',
+            'realtime-brand-filter': 'realtime_brand_filter',
         };
-        // === END FIX 4 ===
 
         for (const [id, key] of Object.entries(singleSelects)) {
              const el = document.getElementById(id);
@@ -286,25 +125,30 @@ export function initializeEventListeners(mainAppController) {
         else if (mainTabId === 'health-employee-section') sknvTab.render();
         else if (mainTabId === 'realtime-section') uiRealtime.render();
     }));
-    document.querySelectorAll('.toggle-filters-btn').forEach(button => button.addEventListener('click', () => ui.toggleFilterSection(button.dataset.target)));
+    document.querySelectorAll('.toggle-filters-btn').forEach(button =>
+        button.addEventListener('click', () => ui.toggleFilterSection(button.dataset.target)));
 
-    // File input listeners - Gán hàm xử lý chung đã sửa
+    // --- BẮT ĐẦU TÁI CẤU TRÚC (v3.32 -> v3.34) ---
+    // File input listeners - Trỏ đến dataService
     document.querySelectorAll('.file-input').forEach(input => {
         if (input.id !== 'file-thidua-vung' && input.id !== 'file-category-structure' && input.id !== 'realtime-file-input' && input.id !== 'debug-competition-file-input') {
-            input.addEventListener('change', handleFileInputChange); // Gán hàm đã định nghĩa ở trên
+            input.addEventListener('change', (e) => dataService.handleFileUpload(e));
         }
     });
-    // Gán các handler đặc biệt (Giữ nguyên)
-    document.getElementById('file-category-structure')?.addEventListener('change', (e) => appController.handleCategoryFile(e));
-    document.getElementById('paste-luyke')?.addEventListener('input', () => appController.handleLuykePaste());
-    document.getElementById('paste-thiduanv')?.addEventListener('input', () => appController.handleThiduaNVPaste());
-    document.getElementById('paste-thuongerp')?.addEventListener('input', () => appController.handleErpPaste());
-    document.getElementById('paste-thuongerp-thangtruoc')?.addEventListener('input', (e) => appController.handleErpThangTruocPaste(e));
-    document.getElementById('realtime-file-input')?.addEventListener('change', (e) => appController.handleRealtimeFileInput(e));
-    document.getElementById('download-danhsachnv-template-btn')?.addEventListener('click', () => appController.handleTemplateDownload());
-    document.getElementById('file-thidua-vung')?.addEventListener('change', (e) => appController.handleThiDuaVungFileInput(e));
-    document.getElementById('thidua-vung-filter-supermarket')?.addEventListener('change', () => appController.handleThiDuaVungFilterChange());
-    document.getElementById('debug-competition-file-input')?.addEventListener('change', (e) => appController.handleCompetitionDebugFile(e));
+    // Gán các handler đặc biệt - Trỏ đến dataService
+    document.getElementById('file-category-structure')?.addEventListener('change', (e) => dataService.handleCategoryFile(e));
+    document.getElementById('paste-luyke')?.addEventListener('input', () => dataService.handleLuykePaste());
+    document.getElementById('paste-thiduanv')?.addEventListener('input', () => dataService.handleThiduaNVPaste());
+    document.getElementById('paste-thuongerp')?.addEventListener('input', () => dataService.handleErpPaste());
+    document.getElementById('paste-thuongerp-thangtruoc')?.addEventListener('input', (e) => dataService.handleErpThangTruocPaste(e));
+    document.getElementById('realtime-file-input')?.addEventListener('change', (e) => dataService.handleRealtimeFileInput(e));
+    document.getElementById('file-thidua-vung')?.addEventListener('change', (e) => dataService.handleThiDuaVungFileInput(e));
+    
+    // <<< CẬP NHẬT (v3.34) >>>
+    document.getElementById('download-danhsachnv-template-btn')?.addEventListener('click', () => dataService.handleTemplateDownload()); 
+    document.getElementById('thidua-vung-filter-supermarket')?.addEventListener('change', () => appController.handleThiDuaVungFilterChange()); // (Giữ nguyên)
+    document.getElementById('debug-competition-file-input')?.addEventListener('change', (e) => dataService.handleCompetitionDebugFile(e)); 
+    // --- KẾT THÚC TÁI CẤU TRÚC ---
 
     // Filter change listeners (Giữ nguyên)
     ['luyke', 'sknv', 'realtime'].forEach(prefix => {
@@ -313,7 +157,7 @@ export function initializeEventListeners(mainAppController) {
          document.getElementById(`${prefix}-filter-name`)?.addEventListener('change', () => handleFilterChange(prefix));
     });
 
-    // Warehouse selector listener (Giữ nguyên)
+    // Warehouse selector listener (Giữ nguyên logic, nhưng thay đổi hàm callback)
     document.getElementById('data-warehouse-selector')?.addEventListener('change', (e) => {
         const selectedKho = e.target.value;
         console.log("[DEBUG] Kho selection changed. Selected:", selectedKho);
@@ -326,11 +170,12 @@ export function initializeEventListeners(mainAppController) {
                 appController.unsubscribeDataListener();
             }
             appController.unsubscribeDataListener = firebase.listenForDataChanges(selectedKho, (cloudData) => {
-                appController.handleCloudDataUpdate(cloudData);
+                dataService.handleCloudDataUpdate(cloudData); 
             });
             ['ycx', 'giocong', 'thuongnong'].forEach(ft => {
                 const versionInfo = appController._localDataVersions?.[selectedKho]?.[ft];
-                if (!versionInfo || !versionInfo.version || versionInfo.version === 0) {
+                if (!versionInfo || !versionInfo.version ||
+                    versionInfo.version === 0) {
                      uiComponents.updateFileStatus(ft, 'Cloud', `Đang chờ đồng bộ từ kho ${selectedKho}...`, 'default');
                 }
             });
@@ -352,7 +197,7 @@ export function initializeEventListeners(mainAppController) {
     document.getElementById('sknv-view-selector')?.addEventListener('click', (e) => appController.handleSknvViewChange(e));
     document.getElementById('sknv-employee-filter')?.addEventListener('change', () => sknvTab.render());
 
-    // Body click listener (Giữ nguyên)
+    // Body click listener (Giữ nguyên logic, nhưng thay đổi hàm callback)
     document.body.addEventListener('click', (e) => {
         const interactiveRow = e.target.closest('.interactive-row');
         if (interactiveRow && interactiveRow.dataset.employeeId) {
@@ -421,7 +266,7 @@ export function initializeEventListeners(mainAppController) {
             const warehouse = downloadBtn.dataset.warehouse;
             if (dataType && warehouse && appController) {
                 console.log(`[Body Click Listener] Download button clicked for ${dataType} @ ${warehouse}`);
-                appController.handleDownloadAndProcessData(dataType, warehouse);
+                dataService.handleDownloadAndProcessData(dataType, warehouse); 
             } else {
                 console.error("Download button clicked but missing data-type or data-warehouse.", downloadBtn);
             }

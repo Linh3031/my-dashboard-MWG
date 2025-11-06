@@ -1,0 +1,128 @@
+/* Version 1.0 - Tables styles (Refactored from v6.19) */
+/* Chứa các class chung cho bảng biểu: borders, striping, header colors, sort indicators */
+
+.table-bordered { 
+    border-collapse: collapse; 
+}
+.table-bordered th, .table-bordered td { 
+    border: 1px solid #e5e7eb; 
+}
+.table-striped tbody tr:nth-child(even) { 
+    background-color: #f9fafb; 
+}
+.table-footer { 
+    background-color: hsl(210, 20%, var(--header-lightness));
+    border-top: 2px solid #9ca3af; 
+}
+.cell-performance.is-below { 
+    background-color: hsl(0, 80%, var(--below-target-lightness)) !important; 
+}
+
+/* === Sort Indicators === */
+.sortable { 
+    cursor: pointer; 
+    position: relative; 
+    user-select: none; 
+}
+.sort-indicator { 
+    display: inline-flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    width: 1em; 
+    height: 1em; 
+    margin-left: 4px; 
+    vertical-align: middle; 
+    color: #9ca3af; 
+    transition: color 0.2s ease-in-out; 
+}
+.sortable .sort-indicator::before { 
+    content: '▲'; 
+    font-size: 0.8em; 
+    line-height: 0.5; 
+    opacity: 0.4; 
+}
+.sortable .sort-indicator::after { 
+    content: '▼'; 
+    font-size: 0.8em; 
+    line-height: 0.5; 
+    opacity: 0.4; 
+}
+.sortable:hover .sort-indicator { 
+    color: #374151; 
+}
+.sortable.sorted-asc .sort-indicator::before { 
+    opacity: 1; 
+    color: #3b82f6; 
+}
+.sortable.sorted-asc .sort-indicator::after { 
+    opacity: 0.4; 
+}
+.sortable.sorted-desc .sort-indicator::after { 
+    opacity: 1; 
+    color: #3b82f6; 
+}
+.sortable.sorted-desc .sort-indicator::before { 
+    opacity: 0.4; 
+}
+
+/* === Draggable Headers === */
+.draggable-header {
+    cursor: move;
+    cursor: grab;
+}
+.draggable-header:active {
+    cursor: grabbing;
+}
+.sortable-ghost {
+    opacity: 0.4;
+    background-color: #c7d2fe; /* indigo-200 */
+}
+.sortable-drag {
+    opacity: 0.95;
+    transform: rotate(-2deg);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+}
+
+
+/* === Table Header Colors === */
+.header-bg-blue { background-color: hsl(217, 95%, var(--special-header-lightness)) !important; color: hsl(217, 80%, var(--header-text-lightness)) !important; }
+.header-bg-green { background-color: hsl(145, 80%, var(--special-header-lightness)) !important; color: hsl(145, 70%, var(--header-text-lightness)) !important; }
+.header-bg-yellow { background-color: hsl(45, 95%, var(--special-header-lightness)) !important; color: hsl(45, 80%, var(--header-text-lightness)) !important; }
+
+.header-group-1 { background-color: hsl(30, 90%, var(--header-lightness)); }
+.header-group-2 { background-color: hsl(90, 90%, var(--header-lightness)); }
+.header-group-3 { background-color: hsl(180, 90%, var(--header-lightness)); }
+.header-group-4 { background-color: hsl(240, 90%, var(--header-lightness)); }
+.header-group-5 { background-color: hsl(300, 90%, var(--header-lightness)); }
+.header-group-6 { background-color: hsl(0, 90%, var(--header-lightness)); }
+.header-group-7 { background-color: hsl(160, 80%, var(--header-lightness)) !important; }
+.header-group-8 { background-color: hsl(280, 80%, var(--header-lightness)) !important; }
+.header-group-9 { background-color: hsl(70, 80%, var(--header-lightness)) !important; }
+.header-group-10 { background-color: hsl(190, 80%, var(--header-lightness)) !important; }
+.header-group-11 { background-color: hsl(340, 80%, var(--header-lightness)) !important; }
+.header-group-12 { background-color: hsl(20, 80%, var(--header-lightness)) !important; }
+
+.department-header-tv { background-color: #e0e7ff; color: #3730a3; }
+.department-header-kho { background-color: #d1fae5; color: #065f46; }
+.department-header-tt { background-color: #fef3c7; color: #92400e; }
+.category-header-ict { background-color: #dbeafe; color: #1e40af; }
+.category-header-phukien { background-color: #fee2e2; color: #991b1b; }
+.category-header-giadung { background-color: #fef9c3; color: #854d0e; }
+.category-header-ce { background-color: #e0f2fe; color: #0c4a6e; }
+.category-header-baohiem { background-color: #f3e8ff; color: #6b21a8; }
+.header-bg-indigo { background-color: #e0e7ff; color: #3730a3; }
+.header-bg-purple { background-color: #f3e8ff; color: #6b21a8; }
+
+.qdc-group-title { font-weight: 600; }
+.qdc-group-ict { background-color: hsl(190, 80%, var(--special-header-lightness)); }
+.qdc-group-vas { background-color: hsl(140, 80%, var(--special-header-lightness)); }
+.qdc-group-giadung { background-color: hsl(0, 80%, var(--special-header-lightness)); }
+.qdc-group-sim { background-color: hsl(40, 80%, var(--special-header-lightness)); }
+
+.competition-header-doanhthu { border-color: #a78bfa; background-color: hsl(260, 90%, var(--bg-lightness)); }
+.competition-header-soluong { border-color: #facc15; background-color: hsl(50, 90%, var(--bg-lightness)); }
+.header-highlight-special { background-color: hsl(25, 90%, var(--header-lightness)) !important; }
+.competition-row-below-100 td { background-color: #fee2e2; color: #991b1b; }
+
+.header-highlight { background-color: hsl(50, 95%, var(--special-header-lightness)) !important; }

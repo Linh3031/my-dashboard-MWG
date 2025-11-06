@@ -1,0 +1,13 @@
+/* Version 1.0 - Specific: Realtime (Refactored from v6.19) */
+/* Chứa các style CHỈ dành riêng cho tab Realtime */
+
+#video-container iframe {
+    aspect-ratio: 16 / 9;
+    width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+}
+
+.rt-customer-details table { 
+    font-size: 0.8rem; 
+}

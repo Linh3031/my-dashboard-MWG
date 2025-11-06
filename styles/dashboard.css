@@ -1,0 +1,26 @@
+/* Version 6.20.1 - Fix: Remove underscores from import paths */
+/* File này là file CSS chính mới.
+  Nó KHÔNG chứa style, mà chỉ @import các file "partial" (file con)
+  theo đúng thứ tự.
+*/
+
+/* 1. Nền tảng (Variables, body, scrollbar) */
+@import url('base.css');
+
+/* 2. Bố cục chính (Sidebar, main-content, drawers) */
+@import url('layout.css');
+
+/* 3. Linh kiện UI (Buttons, cards, modals, inputs) */
+@import url('components.css');
+
+/* 4. Bảng biểu (Table styles, sort indicators, header colors) */
+@import url('tables.css');
+
+/* 5. Ghi đè thư viện (Choices.js) */
+@import url('vendor.css');
+
+/* 6. Style chuyên biệt cho từng tab */
+@import url('specific-sknv.css');
+@import url('specific-tdv.css');
+@import url('specific-composer.css');
+@import url('specific-realtime.css');

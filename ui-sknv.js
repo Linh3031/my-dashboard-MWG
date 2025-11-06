@@ -1,3 +1,5 @@
+// Version 6.32 - Add 'Tổng Đạt' column and sticky columns to pasted competition table
+// Version 6.31 - Fix capture logic to support vertical stitching
 // Version 6.30 - YC: Logic cho CSS v6.19 (Vòng tròn xám 4+, Huy chương Top 3)
 // Version 6.28 - YC: Bỏ icon cờ (summary) & Thêm w-full (bảng thu nhập)
 // Version 6.27 - Fix CRITICAL syntax error 'ax' from v6.26
@@ -29,7 +31,9 @@ export const uiSknv = {
         }
         placeholder.classList.add('hidden');
 
-        let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"><div class="p-4 header-group-2 text-gray-800"><h3 class="text-xl font-bold uppercase">Thu nhập nhân viên</h3><p class="text-sm italic text-gray-600">(đơn vị tính: Triệu đồng)</p></div>`;
+        // *** START: SỬA LỖI (v6.31) - Xóa 'overflow-hidden' ***
+        let finalHTML = `<div class="bg-white rounded-xl shadow-md border border-gray-200"><div class="p-4 header-group-2 text-gray-800"><h3 class="text-xl font-bold uppercase">Thu nhập nhân viên</h3><p class="text-sm italic text-gray-600">(đơn vị tính: Triệu đồng)</p></div>`;
+        // *** END: SỬA LỖI (v6.31) ***
 
         const groupedByDept = {};
         reportData.forEach(item => {
@@ -82,7 +86,8 @@ export const uiSknv = {
         const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
         
         // *** YÊU CẦU 3 (v6.28): Thêm 'w-full' để bảng co giãn 100% ***
-        let tableHTML = `<div class="department-block"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title} <span class="text-sm font-normal text-gray-500">(Thu nhập DK TB: ${uiComponents.formatRevenue(averageProjectedIncome)})</span></h4><div class="overflow-x-auto"><table class="w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="thunhap" data-capture-columns="8">
+        // *** START: SỬA LỖI (v6.31) - Thêm data-capture-group="report-part" ***
+        let tableHTML = `<div class="department-block" data-capture-group="report-part"><h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${title} <span class="text-sm font-normal text-gray-500">(Thu nhập DK TB: ${uiComponents.formatRevenue(averageProjectedIncome)})</span></h4><div class="overflow-x-auto"><table class="w-full text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="thunhap" data-capture-columns="6">
           <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                  <tr>
                     <th class="${headerClass('hoTen')}" data-sort="hoTen">Họ Tên <span class="sort-indicator"></span></th>
@@ -316,7 +321,7 @@ export const uiSknv = {
                         <div data-capture-group="1" class="overflow-x-auto">${uiSknv.renderSknvQdcTable(employeeData, departmentAverages)}</div>
                         <div data-capture-group="1" class="overflow-x-auto">${uiSknv.renderSknvNganhHangTable(employeeData)}</div>
                     </div>
-                    </div>
+                     </div>
             </div>`;
             feather.replace();
         console.log("[ui-sknv.js renderSknvDetail] === Render complete ==="); // Log mới
@@ -426,7 +431,9 @@ export const uiSknv = {
                 console.log(`[ui-sknv.js displaySknvSummaryReport] Rendering department group: ${deptName}`); 
                 const sortedDeptEmployees = [...groupedByDept[deptName]].sort((a, b) => (b.totalAbove || 0) - (a.totalAbove || 0)); 
 
-                finalCardsHtml += `<div class="sknv-department-group">`; 
+                // *** START: SỬA LỖI (v6.31) - Thêm data-capture-group="report-part" ***
+                finalCardsHtml += `<div class="sknv-department-group" data-capture-group="report-part">`; 
+                // *** END: SỬA LỖI (v6.31) ***
                 
                 // *** YÊU CẦU 1 (v6.28): Bỏ icon cờ ***
                 finalCardsHtml += `<h4 class="sknv-department-header ${deptName.includes('Tư Vấn - ĐM') ? 'sknv-department-header--priority' : ''}">${deptName}</h4>`; 
@@ -496,7 +503,10 @@ export const uiSknv = {
                 finalCardsHtml += `</div></div>`; 
             }
         });
-        container.innerHTML = `<div data-capture-group="1">${finalCardsHtml}</div>`; 
+        
+        // *** START: SỬA LỖI (v6.31) - Xóa 'data-capture-group="1"' ***
+        container.innerHTML = finalCardsHtml;
+        // *** END: SỬA LỖI (v6.31) ***
 
         if (typeof feather !== 'undefined') { 
             feather.replace(); 
@@ -521,7 +531,7 @@ export const uiSknv = {
         const { key, direction } = sortState;
         
         const dataArray = Object.entries(doanhThuTheoNganhHang || {}) 
-            .map(([name, values]) => ({ name, ...values }))
+             .map(([name, values]) => ({ name, ...values }))
             .filter(item => (item.revenue || 0) > 0); 
         console.log(`[ui-sknv.js renderSknvNganhHangTable] Data array length: ${dataArray.length}`); 
 
@@ -665,6 +675,30 @@ export const uiSknv = {
         const departmentOrder = utils.getSortedDepartmentList(reportData);
         const sortStateKey = 'sknv_thidua_pasted';
         
+        // *** START: YÊU CẦU MỚI (TÍNH TOÁN TRƯỚC) ***
+        // Tính toán trước điểm chuẩn (TB bộ phận) cho tất cả các cột
+        const deptAverages = {}; // { "BP Tư Vấn": { "tenGoc1": 10.5, "tenGoc2": 5.2 }, ... }
+        departmentOrder.forEach(deptName => {
+            const deptData = groupedByDept[deptName];
+            const deptAvg = {};
+            
+            columnSettings.forEach(col => {
+                let total = 0;
+                let count = 0;
+                deptData.forEach(emp => {
+                    const compData = emp.competitions.find(c => c.tenGoc === col.tenGoc);
+                    const giaTri = compData?.giaTri || 0;
+                    if (giaTri > 0) { // Chỉ tính trung bình cho các NV có bán
+                        total += giaTri;
+                        count++;
+                    }
+                });
+                deptAvg[col.tenGoc] = count > 0 ? total / count : 0;
+            });
+            deptAverages[deptName] = deptAvg;
+        });
+        // *** END: YÊU CẦU MỚI (TÍNH TOÁN TRƯỚC) ***
+        
         departmentOrder.forEach(deptName => {
             if (groupedByDept[deptName]) {
                 const deptData = groupedByDept[deptName];
@@ -683,6 +717,30 @@ export const uiSknv = {
                         valA = a.competitions.find(c => c.tenGoc === sortCol.tenGoc)?.giaTri || 0;
                         valB = b.competitions.find(c => c.tenGoc === sortCol.tenGoc)?.giaTri || 0;
                         return direction === 'asc' ? valA - valB : valB - valA;
+                        
+                    } else if (key === 'totalScore') {
+                        // *** START: YÊU CẦU MỚI (SẮP XẾP TỔNG ĐẠT) ***
+                        // Phải tính toán lại điểm ở đây để sắp xếp
+                        const avgScores = deptAverages[deptName];
+                        
+                        let scoreA = 0;
+                        a.competitions.forEach(comp => {
+                            if (avgScores[comp.tenGoc] > 0 && comp.giaTri >= avgScores[comp.tenGoc]) {
+                                scoreA++;
+                            }
+                        });
+                        
+                        let scoreB = 0;
+                        b.competitions.forEach(comp => {
+                            if (avgScores[comp.tenGoc] > 0 && comp.giaTri >= avgScores[comp.tenGoc]) {
+                                scoreB++;
+                            }
+                        });
+                        
+                        valA = scoreA;
+                        valB = scoreB;
+                        return direction === 'asc' ? valA - valB : valB - valA;
+                        // *** END: YÊU CẦU MỚI (SẮP XẾP TỔNG ĐẠT) ***
                         
                     } else { // Sắp xếp theo 'hoTen'
                         valA = a[key] || ''; 
@@ -705,11 +763,11 @@ export const uiSknv = {
                     <h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${deptName}</h4>
                     <div class="overflow-x-auto sknv-pasted-competition-scroller"> 
                     
-                    <table class="text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="${1 + visibleColumns.length}">
+                    <table class="text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="${2 + visibleColumns.length}">
                          <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                             <tr>
-                                <th class="${headerClass('hoTen')}" data-sort="hoTen" style="min-width: 150px; white-space: nowrap;">Nhân viên <span class="sort-indicator"></span></th>
-                            
+                                <th class="${headerClass('hoTen')} sticky-col sticky-col-1" data-sort="hoTen" style="min-width: 150px; white-space: nowrap;">Nhân viên <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('totalScore')} sticky-col sticky-col-2 text-center" data-sort="totalScore" style="min-width: 80px;">Tổng đạt <span class="sort-indicator"></span></th>
                                 ${visibleColumns.map((header, index) => `
                                      <th class="${headerClass(header.id)} text-center header-group-${index % 12 + 1}" 
                                          data-sort="${header.id}" 
@@ -732,9 +790,22 @@ export const uiSknv = {
 
                 // Render dòng nhân viên
                 sortedData.forEach(item => {
+                    // *** START: YÊU CẦU MỚI (TÍNH ĐIỂM) ***
+                    let totalScore = 0;
+                    const deptAvg = deptAverages[item.boPhan] || {};
+                    item.competitions.forEach(comp => {
+                        const avg = deptAvg[comp.tenGoc];
+                        // Chỉ cộng điểm nếu TB > 0 (có người bán) và NV >= TB
+                        if (avg > 0 && comp.giaTri >= avg) {
+                            totalScore++;
+                        }
+                    });
+                    // *** END: YÊU CẦU MỚI (TÍNH ĐIỂM) ***
+                
                     finalHTML += `<tr class="hover:bg-gray-50">
-                        <td class="px-4 py-2 font-semibold whitespace-nowrap">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</td>
+                        <td class="px-4 py-2 font-semibold whitespace-nowrap sticky-col sticky-col-1">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</td>
                         
+                        <td class="px-2 py-2 text-center font-bold text-green-600 sticky-col sticky-col-2">${totalScore}</td>
                         ${visibleColumns.map(col => {
                              const compData = item.competitions.find(c => c.tenGoc === col.tenGoc);
                              const giaTri = compData?.giaTri || 0;
@@ -757,16 +828,16 @@ export const uiSknv = {
                 finalHTML += `</tbody>
                      <tfoot class="table-footer font-bold">
                         <tr class="bg-gray-100">
-                            <td class="px-4 py-2 text-left">Tổng</td>
-                            ${visibleColumns.map(col => {
+                            <td class="px-4 py-2 text-left sticky-col sticky-col-1">Tổng</td>
+                            <td class="px-2 py-2 sticky-col sticky-col-2"></td> ${visibleColumns.map(col => {
                                 const total = deptTotals.get(col.tenGoc) || 0;
                                 const formattedTotal = total === 0 ? '-' : uiComponents.formatNumber(total, 0);
                                 return `<td class="px-2 py-2 text-right">${formattedTotal}</td>`;
                             }).join('')}
                         </tr>
                          <tr class="bg-gray-100">
-                            <td class="px-4 py-2 text-left">Trung Bình</td>
-                            ${visibleColumns.map(col => {
+                            <td class="px-4 py-2 text-left sticky-col sticky-col-1">Trung Bình</td>
+                            <td class="px-2 py-2 sticky-col sticky-col-2"></td> ${visibleColumns.map(col => {
                                 const total = deptTotals.get(col.tenGoc) || 0;
                                 const count = validEmployeeCount.get(col.tenGoc) || 0;
                                 const avg = count > 0 ? total / count : 0;

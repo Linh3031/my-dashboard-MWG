@@ -1,4 +1,14 @@
 [
+     {
+    "version": "3.8",
+    "date": "06/11/2025",
+    "notes": [
+      "Thêm cột tính tổng đạt cho thi đua NV LK : Mỗi ngành hàng sẽ so sánh số bán nhân viên với TB bộ phận, nếu trên TB thì +1, dưới TB =0, nhân viên có số tổng đạt cao là đang chạy ngành hàng tốt",
+      "Thêm tính năng cố định cột tên nhân viên và tổng đạt khi kéo cuộn ngang xem dễ dàng hơn",
+      "Sửa lỗi chụp ảnh tab thu nhập",
+      "Sửa lỗi tab thi đua vùng TNB do file gốc bị thay đổi tên sheet"
+    ]
+  },  
     {
     "version": "3.7",
     "date": "01/11/2025",

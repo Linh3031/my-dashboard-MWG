@@ -1,0 +1,568 @@
+/* Version 1.1 - Add sticky column styles for pasted competition table */
+/* Chứa các style CHỈ dành riêng cho tab Sức Khỏe Nhân Viên (SKNV) */
+
+#sknv-details-container .sknv-subtable-header th { 
+    font-size: 0.875em; 
+    font-weight: 600; 
+    background-color: #f3f4f6; 
+}
+
+/* === START: SKNV INFOGRAPHIC CARD STYLES (V6.0) === */
+.sknv-summary-grid {
+    display: grid;
+    grid-template-columns: 1fr; /* Default to 1 column for mobile */
+    gap: 1.5rem;
+}
+
+@media (min-width: 768px) { /* 2 columns for tablets 
+*/
+    .sknv-summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+}
+}
+
+@media (min-width: 1280px) { /* 4 columns for large desktops */
+    .sknv-summary-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.sknv-card {
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    padding: 1rem; /* UPDATED: Compact padding */
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* UPDATED: Softer shadow */
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem; /* UPDATED: Reduced gap */
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+    cursor: pointer;
+    position: relative; /* Added for medal positioning */
+}
+.sknv-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+}
+
+.sknv-card__header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.sknv-card__avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 9999px;
+    background-color: #eef2ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    /* (v6.18) Thêm position relative để canh số Top 3 */
+    position: relative;
+}
+
+.sknv-card__avatar svg {
+    width: 24px;
+    height: 24px;
+    color: #4338ca;
+}
+
+.sknv-card__info {
+    flex-grow: 1;
+    min-width: 0;
+}
+.sknv-card__info .name {
+    font-weight: 700;
+    color: #111827;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+}
+
+.sknv-card__info .id {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.sknv-card__main-kpi {
+    text-align: center;
+    margin: 0.25rem 0; /* UPDATED: Reduced margin */
+}
+
+.sknv-card__main-kpi .value {
+    font-size: 2.5rem; /* UPDATED: Reduced font size */
+    font-weight: 800;
+    line-height: 1;
+    color: #4b5563;
+}
+
+.sknv-card__main-kpi .total {
+    font-size: 1.25rem; /* UPDATED */
+    font-weight: 600;
+    color: #9ca3af;
+}
+
+.sknv-card__main-kpi .label {
+    display: block;
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+    font-weight: 500;
+}
+
+.sknv-card-kpi-strong { border-top: 4px solid #16a34a; } /* UPDATED: Added top border */
+.sknv-card-kpi-medium { border-top: 4px solid #f59e0b; } /* UPDATED: Added top border 
+*/
+.sknv-card-kpi-weak { border-top: 4px solid #ef4444; } /* UPDATED: Added top border */
+.sknv-card-kpi-strong .value { color: #16a34a; }
+.sknv-card-kpi-medium .value { color: #f59e0b; }
+.sknv-card-kpi-weak .value { color: #ef4444; }
+
+.sknv-card__sub-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem; /* UPDATED: Reduced gap */
+    border-top: 1px solid #f3f4f6;
+    padding-top: 0.75rem; /* UPDATED: Reduced padding */
+}
+
+.sknv-card__sub-kpi-item {
+    background-color: #f9fafb;
+    border-radius: 0.5rem;
+    padding: 0.5rem; /* UPDATED: Reduced padding */
+    text-align: center;
+    transition: background-color 0.2s ease-in-out;
+}
+
+/* === START: NEW SUB-KPI LAYOUT === */
+.sknv-card__sub-kpi-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+}
+.sknv-card__sub-kpi-header .feather {
+    width: 1rem;
+    height: 1rem;
+    stroke-width: 2;
+    color: #6b7280;
+}
+.sknv-card__sub-kpi-header .label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #4b5563;
+}
+.sknv-card__sub-kpi-item .value {
+    font-size: 0.875rem;
+    font-weight: 700;
+    margin-top: 2px;
+    display: block; /* Ensures it's on a new line */
+}
+/* === END: NEW SUB-KPI LAYOUT === */
+
+.sknv-card__sub-kpi-item.strong { 
+border-bottom: 3px solid #22c55e; }
+.sknv-card__sub-kpi-item.medium { border-bottom: 3px solid #f59e0b; }
+.sknv-card__sub-kpi-item.weak { border-bottom: 3px solid #ef4444; }
+/* === END: SKNV INFOGRAPHIC CARD STYLES === */
+
+/* === START: SKNV Department Grouping Styles (V6.1) === */
+.sknv-department-group {
+    margin-bottom: 2.5rem; /* Space between department groups */
+}
+
+.sknv-department-group:last-child {
+    margin-bottom: 1rem; /* Less space for the last group */
+}
+
+.sknv-department-header {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #1f2937; /* Dark gray for general headers */
+    padding-bottom: 0.75rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 3px solid #d1d5db; /* Light gray border */
+    position: relative;
+    padding-left: 0.5rem;
+    /* (v6.18) Thêm flex để icon canh giữa */
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* (v6.18) Định dạng cho icon (nếu có) */
+.sknv-department-header .header-icon {
+    width: 1.4rem;
+    height: 1.4rem;
+}
+
+.sknv-department-header--priority {
+    color: #2563eb; /* Blue for priority department */
+    border-bottom-color: #3b82f6; /* Matching blue border */
+    background-color: #e0f2fe; /* Light blue background */
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem 0.5rem 0 0;
+    margin-bottom: 0; /* Remove bottom margin to connect with cards */
+    
+display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* (v6.18) Bỏ icon FontAwesome cũ */
+.sknv-department-header--priority::before {
+    content: none;
+}
+
+/* Adjust grid gap and padding for priority department to integrate better */
+.sknv-department-header--priority + .sknv-summary-grid {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    margin-top: 0; /* Remove top margin */
+    padding-top: 1.5rem; /* Add padding inside grid */
+    border: 1px solid #c7d2fe;
+    background-color: #f3f4f6; /* Slightly different background */
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-bottom: 1rem;
+    border-top: none;
+}
+/* === END: SKNV Department Grouping Styles === */
+
+/* === START: SKNV DETAIL VIEW & MEDALS (V6.4) === */
+/* NEW: Wrapper for compact detail view */
+#sknv-detail-capture-area {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+.sknv-detail-header-card 
+{
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1rem; /* UPDATED: Compact padding */
+    background-color: #eff6ff; /* blue-50 */
+    border: 1px solid #dbeafe; /* blue-200 */
+    border-top: 4px solid #3b82f6; /* blue-500 */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+.sknv-detail-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 9999px;
+    background-color: #dbeafe; /* blue-200 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.sknv-detail-avatar svg {
+    width: 32px;
+    height: 32px;
+    color: #1e40af; /* blue-800 */
+}
+.sknv-detail-info .name {
+    color: #1e40af; /* UPDATED: Dark blue color */
+}
+.sknv-detail-info .department,
+.sknv-detail-info .kpi-summary {
+    color: #1f2937; /* dark text */
+}
+.sknv-detail-info .kpi-summary .font-bold {
+    color: #1d4ed8; /* darker blue */
+}
+.sknv-detail-info .name {
+    font-size: 1.5rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+.sknv-detail-info .department {
+ 
+   font-size: 1rem;
+    font-weight: 500;
+}
+.sknv-detail-info .kpi-summary {
+    margin-top: 0.5rem;
+    font-weight: 600;
+}
+
+.sknv-detail-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem; /* UPDATED: Compact padding */
+    color: #ffffff;
+}
+.sknv-detail-card-header .header-icon {
+    width: 20px;
+    height: 20px;
+}
+.sknv-header-blue { background-color: #2563eb; }
+.sknv-header-green { background-color: #16a34a; }
+.sknv-header-orange { background-color: #f97316; }
+.sknv-header-yellow { background-color: #ca8a04; }
+.sknv-header-indigo { background-color: #4f46e5; }
+.sknv-header-purple { background-color: #7e22ce; }
+
+.sknv-detail-grid-body {
+    padding: 0.75rem 1rem; /* UPDATED: Compact padding */
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); /* UPDATED */
+    gap: 0.75rem; /* UPDATED */
+}
+.sknv-detail-metric-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 0.5rem; /* UPDATED: Compact padding */
+    background-color: #f9fafb;
+    border-radius: 0.5rem;
+    border: 1px solid #f3f4f6;
+    transition: all 0.2s ease-in-out;
+}
+.sknv-detail-metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+0 2px 4px -2px rgba(0, 0, 0, 0.1);
+}
+.sknv-detail-metric-card .label {
+    font-weight: 600;
+    font-size: 0.8rem; /* UPDATED */
+    color: #374151;
+}
+.sknv-detail-metric-card .value {
+    font-weight: 700; /* UPDATED */
+    font-size: 1.375rem; /* UPDATED: Reduced font size */
+    line-height: 1.2;
+    color: #111827;
+    margin: 0.25rem 0;
+}
+.sknv-detail-metric-card .average {
+    font-size: 0.7rem; /* UPDATED */
+    color: #6b7280;
+    font-style: italic;
+}
+.sknv-detail-metric-card .evaluation-badge {
+    margin-top: 0.5rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 0.7rem; /* UPDATED */
+}
+.evaluation-badge.text-green-600 { background-color: #dcfce7; }
+.evaluation-badge.text-yellow-600 { background-color: #fef9c3; }
+
+.medal-container {
+    position: absolute; /* Changed for positioning */
+    /* (v6.19) YC: Tăng size + điều chỉnh vị trí */
+    top: -10px;
+    left: 10px;
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+}
+.medal-container svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3)); /* Add a nice shadow */
+}
+
+/* NEW: Compact tables in detail view */
+#sknv-details-container .sknv-subtable-header {
+    font-size: 0.8rem;
+}
+#sknv-details-container .table-bordered td,
+#sknv-details-container .table-bordered th {
+    padding: 0.5rem;
+}
+/* === END: SKNV DETAIL VIEW & MEDALS === */
+
+/* === START: SKNV Rank Number Styles (v6.19 - Phương án A Mới) === */
+
+/* 1. (v6.19) Định dạng cho số thứ tự (1, 2, 3) của Top 3 */
+.sknv-card__avatar-rank {
+    font-size: 1.75rem; /* 28px */
+    font-weight: 700; /* font-bold */
+    line-height: 1;
+    /* Canh số vào giữa vòng tròn */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    /* (v6.19) Nằm đè lên trên SVG huy chương */
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 12; /* Nằm trên huy chương (z-11) */
+    color: #ffffff; /* (v6.19) Màu trắng cho Top 3 */
+}
+
+/* 2. (v6.19) Ẩn nền xanh của avatar Top 3, để huy chương SVG lo việc hiển thị */
+.sknv-card:has(.medal-container) .sknv-card__avatar {
+    background-color: transparent;
+}
+
+/* 3. (v6.19) Định dạng cho Vòng tròn hạng 4+ (Đơn thuần) */
+.sknv-card__avatar--standard {
+    background-color: #e5e7eb; /* (v6.19) Vòng tròn xám (gray-200) */
+}
+
+/* 4. (v6.19) Định dạng cho SỐ hạng 4+ */
+.sknv-card__avatar--standard .sknv-card__avatar-rank {
+    color: #4b5563; /* (v6.19) Số màu xám đậm (gray-600) */
+    position: static; /* (v6.19) Reset lại position, không cần đè */
+}
+
+/* 5. (v6.19) Bỏ SVG Huy chương Thường (nếu có từ v6.18) */
+.sknv-card__avatar-medal {
+    display: none;
+}
+/* === END: SKNV Rank Number Styles === */
+
+/* === START: Declaration Accordion Styles (v6.11) === */
+.declaration-group {
+    border-bottom: 1px solid #e5e7eb; /* gray-200 */
+}
+.declaration-group:last-child {
+    border-bottom: none;
+}
+.declaration-group summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0.5rem;
+    cursor: pointer;
+    font-size: 1.125rem; /* text-lg */
+    font-weight: 700; /* font-bold 
+*/
+    color: #374151; /* gray-700 */
+    list-style: none; /* Hide default marker */
+}
+.declaration-group summary::-webkit-details-marker {
+    display: none; /* Hide default marker for Chrome */
+}
+.declaration-group summary:hover {
+    background-color: #f9fafb; /* gray-50 */
+}
+.declaration-group summary::after {
+    content: '+';
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: #6b7280; /* gray-500 */
+    transition: transform 0.2s ease-in-out;
+}
+.declaration-group[open] > summary::after {
+    transform: rotate(45deg);
+    content: '×';
+}
+.declaration-content {
+    padding: 1rem 0.5rem 1.5rem 0.5rem;
+}
+/* === END: Declaration Accordion Styles === */
+
+/* === START: Pasted Competition Column Toggles & Header Wrap (v6.15) === */
+
+/* Container for the toggle buttons */
+#pasted-competition-column-toggles {
+    padding: 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.25rem;
+    background-color: #f9fafb; /* gray-50 */
+}
+
+/* Label for the toggles */
+#pasted-competition-column-toggles .non-draggable {
+    font-size: 0.875rem; /* text-sm */
+    font-weight: 600; /* font-semibold */
+    margin-right: 0.5rem; /* mr-2 */
+    color: #374151; /* gray-700 */
+}
+
+/* Styles for the table headers to allow wrapping */
+#pasted-competition-report-container table th {
+    white-space: normal; /* Allow text wrapping */
+    vertical-align: middle;
+    line-height: 1.3;
+    max-width: 150px; /* Set a max-width */
+    width: 120px; /* Set a base width */
+}
+
+/* Keep employee name header slightly wider and no-wrap */
+#pasted-competition-report-container table th[data-sort="hoTen"] {
+    white-space: nowrap;
+    width: 150px; 
+    min-width: 150px;
+}
+/* === END: Pasted Competition Styles === */
+
+/* === START: LOGIN MODAL STYLES (V6.7) === */
+#login-modal .modal__overlay {
+    cursor: not-allowed;
+}
+
+#login-modal .modal__container {
+    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+}
+
+#login-modal input[type="email"]:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+    outline: none;
+}
+/* === END: LOGIN MODAL STYLES === */
+
+/* === START: Sticky Columns for Pasted Competition Table (v1.1) === */
+
+/* 1. Container: Phải bật 'overflow-x-auto' (đã có) và 'position: relative' (quan trọng) */
+.sknv-pasted-competition-scroller {
+    position: relative; /* Bắt buộc để z-index của sticky hoạt động */
+}
+
+/* 2. Các ô tiêu đề (th) cần "đóng băng" */
+#pasted-competition-report-container table th.sticky-col {
+    position: -webkit-sticky; /* cho Safari */
+    position: sticky;
+    z-index: 2; /* Phải cao hơn z-index của các ô (td) */
+    background-color: #e5e7eb; /* gray-200 (màu nền thead) - Rất quan trọng */
+}
+
+/* 3. Các ô dữ liệu (td) cần "đóng băng" */
+#pasted-competition-report-container table td.sticky-col {
+    position: -webkit-sticky; /* cho Safari */
+    position: sticky;
+    z-index: 1; /* Phải cao hơn các ô td khác, nhưng thấp hơn th */
+    background-color: #ffffff; /* Màu nền của dòng (trắng) */
+}
+
+/* 4. Đảm bảo dòng chẵn/lẻ cũng được ghi đè màu nền */
+#pasted-competition-report-container table tr:nth-child(even) td.sticky-col {
+    background-color: #f9fafb; /* gray-50 (màu dòng chẵn) */
+}
+
+/* 5. Định vị cho từng cột */
+.sticky-col.sticky-col-1 {
+    left: 0; /* Cột đầu tiên */
+}
+
+.sticky-col.sticky-col-2 {
+    left: 150px; /* Cột thứ 2 - Phải bằng độ rộng của cột 1 (min-width: 150px từ CSS cũ) */
+}
+
+/* 6. (An toàn) Đảm bảo footer cũng được "đóng băng" */
+#pasted-competition-report-container table tfoot td.sticky-col {
+    background-color: hsl(210, 20%, var(--header-lightness)); /* Màu footer */
+    z-index: 3; /* Nằm trên cả tiêu đề và nội dung */
+}
+/* === END: Sticky Columns (v1.1) === */
