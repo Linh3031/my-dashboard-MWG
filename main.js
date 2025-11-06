@@ -56,7 +56,7 @@ const app = {
     },
     // === END: FIX LỖI ===
 
-    currentVersion: '3.7', // Giữ nguyên version này, bạn có thể tự cập nhật sau khi tích hợp xong
+    currentVersion: '3.8', // Giữ nguyên version này, bạn có thể tự cập nhật sau khi tích hợp xong
     storage: storage,
     unsubscribeDataListener: null,
     _isInitialized: false,
