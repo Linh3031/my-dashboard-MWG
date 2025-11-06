@@ -1,3 +1,4 @@
+// Version 3.10 - Refactor: Import and merge uiReports module
 // Version 3.9 - Call renderCompetitionNameMappingTable in renderAdminPage
 // Version 3.8 - Final Merge: Add renderAdminPage
 // MODULE: UI FACADE (Mặt tiền Giao diện)
@@ -8,6 +9,7 @@ import { uiSknv } from './ui-sknv.js';
 import { uiRealtime } from './ui-realtime.js';
 import { uiThiDuaVung } from './ui-thidua-vung.js';
 import { uiCompetition } from './ui-competition.js';
+import { uiReports } from './ui-reports.js'; // <<< TÁCH PHILE: ĐÃ THÊM
 import { appState } from './state.js'; // <<< GĐ 4: Đã thêm
 import { firebase } from './firebase.js'; // <<< GĐ 4: Đã thêm
 
@@ -19,6 +21,7 @@ const ui = {
     ...uiRealtime,
     ...uiThiDuaVung,
     ...uiCompetition,
+    ...uiReports, // <<< TÁCH PHILE: ĐÃ THÊM
 
     // === START: GIAI ĐOẠN 4 (MODIFIED v3.9) ===
     async renderAdminPage() {

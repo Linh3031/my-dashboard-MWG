@@ -1,4 +1,5 @@
-// Version 4.2 - Add uiCompetition import
+// Version 4.4 - Refactor: Update report function calls from uiComponents to ui
+// Version 4.3 - Fix 'this' context bug for modal popups
 // MODULE: UI REALTIME
 // Chứa TOÀN BỘ logic và hàm render giao diện cho tab "Doanh thu Realtime".
 
@@ -74,7 +75,8 @@ export const uiRealtime = {
             if (isViewingDetail) {
                 this.handleEmployeeDetailChange(detailInfo.employeeId); //
             } else {
-                uiComponents.displayEmployeeRevenueReport(filteredReport, 'realtime-revenue-report-container', 'realtime_dt_nhanvien'); // Sử dụng uiComponents
+                // === SỬA LỖI 1/3: Gọi từ `ui` thay vì `uiComponents` ===
+                ui.displayEmployeeRevenueReport(filteredReport, 'realtime-revenue-report-container', 'realtime_dt_nhanvien'); //
                 this.handleEmployeeDetailChange(null); //
             }
         }
@@ -86,8 +88,13 @@ export const uiRealtime = {
         this.renderRealtimeQdcTable(supermarketReport); //
         const realtimeChuaXuatReport = services.generateRealtimeChuaXuatReport(filteredRealtimeYCX); //
         this.renderRealtimeChuaXuatTable(realtimeChuaXuatReport); //
-        uiComponents.displayEmployeeEfficiencyReport(filteredReport, 'realtime-efficiency-report-container', 'realtime_hieuqua_nhanvien'); // Sử dụng uiComponents
-        uiComponents.displayCategoryRevenueReport(filteredReport, 'realtime-category-revenue-report-container', 'realtime'); // Sử dụng uiComponents
+        
+        // === SỬA LỖI 2/3: Gọi từ `ui` thay vì `uiComponents` ===
+        ui.displayEmployeeEfficiencyReport(filteredReport, 'realtime-efficiency-report-container', 'realtime_hieuqua_nhanvien'); //
+        
+        // === SỬA LỖI 3/3: Gọi từ `ui` thay vì `uiComponents` ===
+        ui.displayCategoryRevenueReport(filteredReport, 'realtime-category-revenue-report-container', 'realtime'); //
+        
         this.handleBrandFilterChange(); //
 
         const competitionReportData = services.calculateCompetitionFocusReport( //
@@ -172,7 +179,8 @@ export const uiRealtime = {
         this.renderRealtimeBrandReport(reportData, dthangViewType); //
     },
 
-    updateRealtimeSupermarketTitle: (warehouse, dateTime) => {
+    // === SỬA LỖI: Chuyển từ arrow function sang shorthand method ===
+    updateRealtimeSupermarketTitle(warehouse, dateTime) {
         const titleEl = document.getElementById('realtime-supermarket-title'); //
         if(titleEl) titleEl.textContent = `Báo cáo Realtime ${warehouse ? 'kho ' + warehouse : 'toàn bộ'} - ${dateTime.toLocaleTimeString('vi-VN')} ${dateTime.toLocaleDateString('vi-VN')}`; //
     },
@@ -251,7 +259,8 @@ export const uiRealtime = {
         uiComponents.toggleModal('selection-modal', true); // Sử dụng uiComponents
     },
 
-    renderRealtimeKpiCards: (data, settings) => { //
+    // === SỬA LỖI: Chuyển từ arrow function sang shorthand method ===
+    renderRealtimeKpiCards(data, settings) {
         const { doanhThu, doanhThuQuyDoi, doanhThuChuaXuat, doanhThuQuyDoiChuaXuat, doanhThuTraGop, hieuQuaQuyDoi, tyLeTraCham } = data; //
         const { goals: rtGoals } = settings; //
 
@@ -283,7 +292,8 @@ export const uiRealtime = {
         if(dtTcSubEl) dtTcSubEl.innerHTML = `% thực trả chậm: <span class="font-bold">${uiComponents.formatPercentage(tyLeTraCham)}</span>`; //
     },
 
-    renderRealtimeChuaXuatTable: (reportData) => { //
+    // === SỬA LỖI: Chuyển từ arrow function sang shorthand method ===
+    renderRealtimeChuaXuatTable(reportData) {
         const container = document.getElementById('realtime-unexported-revenue-content'); //
         if (!container) return; //
         if (!reportData || reportData.length === 0) {
@@ -330,7 +340,8 @@ export const uiRealtime = {
              </tr></tfoot></table></div>`; //
     },
 
-    renderRealtimeCategoryDetailsTable: (data) => { //
+    // === SỬA LỖI: Chuyển từ arrow function sang shorthand method ===
+    renderRealtimeCategoryDetailsTable(data) {
         const container = document.getElementById('realtime-category-details-content'); //
         const cardHeader = document.getElementById('realtime-category-title'); //
         if (!container || !cardHeader ||!data || !data.nganhHangChiTiet) { if(container) container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; return; } //
@@ -385,7 +396,8 @@ export const uiRealtime = {
             </tbody></table></div>`; //
     },
 
-    renderRealtimeEfficiencyTable: (data, goals) => { //
+    // === SỬA LỖI: Chuyển từ arrow function sang shorthand method ===
+    renderRealtimeEfficiencyTable(data, goals) {
          const container = document.getElementById('realtime-efficiency-content'); //
         const cardHeader = document.getElementById('realtime-efficiency-title'); //
 
@@ -455,7 +467,8 @@ export const uiRealtime = {
              </div>`; //
     },
 
-    renderRealtimeQdcTable: (data) => { //
+    // === SỬA LỖI: Chuyển từ arrow function sang shorthand method ===
+    renderRealtimeQdcTable(data) {
         const container = document.getElementById('realtime-qdc-content'); //
         const cardHeader = document.getElementById('realtime-qdc-title'); //
         if (!container || !cardHeader || !data || !data.qdc) { if(container) container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; return; } //
@@ -501,7 +514,8 @@ export const uiRealtime = {
             </tbody></table></div>`; //
     },
 
-    renderRealtimeEmployeeDetail: (detailData, employeeName, containerId = 'realtime-employee-detail-container') => { //
+    // === SỬA LỖI: Chuyển từ arrow function sang shorthand method ===
+    renderRealtimeEmployeeDetail(detailData, employeeName, containerId = 'realtime-employee-detail-container') {
         const container = document.getElementById(containerId); //
         if (!container) return; //
 
@@ -580,7 +594,8 @@ export const uiRealtime = {
         container.innerHTML = headerHtml + contentHtml; //
     },
 
-    renderRealtimeBrandReport: (data, viewType = 'brand') => { //
+    // === SỬA LỖI: Chuyển từ arrow function sang shorthand method ===
+    renderRealtimeBrandReport(data, viewType = 'brand') {
         const container = document.getElementById('realtime-brand-report-container'); //
         if (!container) return; //
         const { byBrand, byEmployee } = data; //
@@ -620,7 +635,7 @@ export const uiRealtime = {
             item => `<tr class="border-t">
                 <td class="px-4 py-2 font-medium">${item.name}</td>
                 <td class="px-4 py-2 text-right font-bold">${uiComponents.formatNumber(item.quantity)}</td>
-                <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.revenue)}</td>
+                <td classZ="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.revenue)}</td>
              </tr>`, 'realtime_brand_employee' //
         );
 

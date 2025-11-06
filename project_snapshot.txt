@@ -11098,6 +11098,10 @@ export { uiCompetition };
 --- END FILE: ./ui-competition.js ---
 
 --- START FILE: ./ui-components.js ---
+// Version 3.29 - Refactor: Extract notifications & debugTools
+// Version 3.28 - Refactor: Extract modalManager to ui-modal-manager.js
+// Version 3.27 - Fix: Populate warehouse selectors in Goal Settings drawer
+// Version 3.26 - Refactor: Extract formatters to ui-formatters.js
 // Version 3.25 - Add missing functions: populateAllFilters (fixes F5 crash) and updateBrandFilterOptions (fixes Realtime crash)
 // Version 3.24 - Add updateBrandFilterOptions to fix realtime tab crash
 // Version 3.23 - Add renderCompetitionNameMappingTable
@@ -11113,6 +11117,10 @@ import { services } from './services.js';
 import { utils } from './utils.js';
 import { settingsService } from './modules/settings.service.js';
 import { ui } from './ui.js';
+import { formatters } from './ui-formatters.js'; // (v3.26)
+import { modalManager } from './ui-modal-manager.js'; // (v3.28)
+import { notifications } from './ui-notifications.js'; // <<< THÊM MỚI (v3.29)
+import { debugTools } from './ui-debug.js'; // <<< THÊM MỚI (v3.29)
 
 export const uiComponents = {
     // === START: NEW FUNCTION (FIX FOR VẤN ĐỀ 1) ===
@@ -11168,6 +11176,29 @@ export const uiComponents = {
                     if (currentVal) empChoices.setValue(currentVal);
                 }
             });
+
+            // === START: SỬA LỖI (v3.27) - Điền dữ liệu cho Goal Settings Drawer ===
+            try {
+                const goalWarehouseOptions = uniqueWarehouses.map(item => ({ value: item, label: item }));
+                
+                const luykeGoalSelect = document.getElementById('luyke-goal-warehouse-select');
+                if (luykeGoalSelect) {
+                    luykeGoalSelect.innerHTML = goalWarehouseOptions.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join('');
+                }
+
+                const rtGoalSelect = document.getElementById('rt-goal-warehouse-select');
+                if (rtGoalSelect) {
+                    rtGoalSelect.innerHTML = goalWarehouseOptions.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join('');
+                }
+                
+                // Sau khi điền, gọi hàm load setting để chọn đúng kho (nếu có)
+                settingsService.loadAndApplyLuykeGoalSettings();
+                settingsService.loadAndApplyRealtimeGoalSettings();
+
+            } catch (goalError) {
+                console.error("[ui-components.js populateAllFilters] Lỗi khi điền bộ lọc cho Goal Drawer:", goalError);
+            }
+            // === END: SỬA LỖI (v3.27) ===
 
             console.log("[ui-components.js populateAllFilters] Đã điền xong bộ lọc.");
         } catch (error) {
@@ -11435,23 +11466,23 @@ export const uiComponents = {
 
              tableHTML += `<tr class="interactive-row" data-employee-id="${item.maNV}" data-source-tab="${sourceTab}">
                     <td class="px-4 py-2 font-semibold line-clamp-2 employee-name-cell">
-                        <a href="#">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</a>
+                        <a href="#">${formatters.getShortEmployeeName(item.hoTen, item.maNV)}</a>
                     </td>
-                    <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThu)}</td>
-                    <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThuQuyDoi)}</td>
-                     <td class="px-4 py-2 text-right font-bold ${qdClass}">${uiComponents.formatPercentage(item.hieuQuaQuyDoi)}</td>
-                    <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThuTraGop)}</td>
-                    <td class="px-4 py-2 text-right font-bold ${tcClass}">${uiComponents.formatPercentage(item.tyLeTraCham)}</td>
-                    <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThuChuaXuat)}</td></tr>`;
+                    <td class="px-4 py-2 text-right font-bold">${formatters.formatRevenue(item.doanhThu)}</td>
+                    <td class="px-4 py-2 text-right font-bold">${formatters.formatRevenue(item.doanhThuQuyDoi)}</td>
+                     <td class="px-4 py-2 text-right font-bold ${qdClass}">${formatters.formatPercentage(item.hieuQuaQuyDoi)}</td>
+                    <td class="px-4 py-2 text-right font-bold">${formatters.formatRevenue(item.doanhThuTraGop)}</td>
+                    <td class="px-4 py-2 text-right font-bold ${tcClass}">${formatters.formatPercentage(item.tyLeTraCham)}</td>
+                    <td class="px-4 py-2 text-right font-bold">${formatters.formatRevenue(item.doanhThuChuaXuat)}</td></tr>`;
         });
          tableHTML += `</tbody><tfoot class="table-footer font-bold"><tr>
                       <td class="px-4 py-2">Tổng</td>
-                     <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThu)}</td>
-                     <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuQuyDoi)}</td>
-                   <td class="px-4 py-2 text-right">${uiComponents.formatPercentage(totals.hieuQuaQuyDoi)}</td>
-                   <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuTraGop)}</td>
-                     <td class="px-4 py-2 text-right">${uiComponents.formatPercentage(totals.tyLeTraCham)}</td>
-                     <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuChuaXuat)}</td>
+                     <td class="px-4 py-2 text-right">${formatters.formatRevenue(totals.doanhThu)}</td>
+                     <td class="px-4 py-2 text-right">${formatters.formatRevenue(totals.doanhThuQuyDoi)}</td>
+                   <td class="px-4 py-2 text-right">${formatters.formatPercentage(totals.hieuQuaQuyDoi)}</td>
+                   <td class="px-4 py-2 text-right">${formatters.formatRevenue(totals.doanhThuTraGop)}</td>
+                     <td class="px-4 py-2 text-right">${formatters.formatPercentage(totals.tyLeTraCham)}</td>
+                     <td class="px-4 py-2 text-right">${formatters.formatRevenue(totals.doanhThuChuaXuat)}</td>
                   </tr></tfoot></table></div></div>`;
         return tableHTML;
     },
@@ -11518,11 +11549,11 @@ export const uiComponents = {
         });
 
         const formatMap = {
-            dtICT: (val) => uiComponents.formatRevenue(val),
-            dtPhuKien: (val) => uiComponents.formatRevenue(val),
-            dtCE: (val) => uiComponents.formatRevenue(val),
-            dtGiaDung: (val) => uiComponents.formatRevenue(val),
-            defaultPercent: (val) => uiComponents.formatPercentage(val)
+            dtICT: (val) => formatters.formatRevenue(val),
+            dtPhuKien: (val) => formatters.formatRevenue(val),
+            dtCE: (val) => formatters.formatRevenue(val),
+            dtGiaDung: (val) => formatters.formatRevenue(val),
+            defaultPercent: (val) => formatters.formatPercentage(val)
         };
 
         const totals = data.reduce((acc, item) => {
@@ -11586,7 +11617,7 @@ export const uiComponents = {
 
              tableHTML += `<tr class="interactive-row" data-employee-id="${item.maNV}" data-source-tab="sknv">
                 <td class="px-4 py-2 font-semibold line-clamp-2 employee-name-cell">
-                     <a href="#">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</a>
+                     <a href="#">${formatters.getShortEmployeeName(item.hoTen, item.maNV)}</a>
                  </td>
                  ${visibleColumns.map(col => {
                     const value = item[col.id];
@@ -11772,39 +11803,14 @@ export const uiComponents = {
     // ... (Các hàm khác như showProgressBar, hideProgressBar, etc. giữ nguyên) ...
     showProgressBar: (elementId) => { const el = document.getElementById(`progress-${elementId}`); if(el) el.classList.remove('hidden'); },
     hideProgressBar: (elementId) => { const el = document.getElementById(`progress-${elementId}`); if(el) el.classList.add('hidden'); },
-    showNotification: (message, type = 'success') => {
-        const notification = document.getElementById('notification');
-        if (!notification) return;
-        notification.textContent = message;
-        notification.className = `fixed bottom-5 right-5 p-4 rounded-lg shadow-md text-white z-[1200] opacity-0 transition-opacity duration-500 transform translate-y-10 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
-        void notification.offsetWidth;
-        notification.classList.remove('hidden', 'opacity-0', 'translate-y-10');
-        notification.classList.add('opacity-100', 'translate-y-0');
+    
+    // <<< === START: KHỐI CODE BỊ XÓA (v3.29) === >>>
+    // 3 HÀM (showNotification, showUpdateNotification, updateUsageCounter)
+    // ĐÃ BỊ XÓA KHỎI ĐÂY.
+    // <<< === END: KHỐI CODE BỊ XÓA === >>>
 
-        setTimeout(() => {
-             notification.classList.remove('opacity-100', 'translate-y-0');
-             notification.classList.add('opacity-0', 'translate-y-10');
-             setTimeout(() => notification.classList.add('hidden'), 500);
-        }, 3000);
-    },
-    showUpdateNotification() {
-        const notification = document.getElementById('update-notification');
-        if (notification) {
-             notification.classList.remove('hidden');
-             const button = notification.querySelector('button');
-             if (button && !button.onclick) {
-                button.onclick = () => window.location.reload();
-             }
-         }
-    },
-     updateUsageCounter: (statsData) => {
-        const visitorCountEl = document.getElementById('visitor-count');
-         const actionCountEl = document.getElementById('action-count');
-         const userCountEl = document.getElementById('user-count');
-         if (visitorCountEl) visitorCountEl.textContent = statsData?.pageLoads ? uiComponents.formatNumber(statsData.pageLoads) : '0';
-         if (actionCountEl) actionCountEl.textContent = statsData?.actionsTaken ? uiComponents.formatNumber(statsData.actionsTaken) : '0';
-         if (userCountEl) userCountEl.textContent = statsData?.totalUsers ? uiComponents.formatNumber(statsData.totalUsers) : '0';
-     },
+    ...notifications, // <<< THÊM MỚI (v3.29)
+
      updateFileStatus(uiId, fileName = '', statusText, statusType = 'default', showDownloadButton = false, metadata = null, dataType = '', warehouse = '') {
          const fileNameSpan = document.getElementById(`file-name-${uiId}`);
          const fileStatusSpan = document.getElementById(`file-status-${uiId}`);
@@ -11820,12 +11826,12 @@ export const uiComponents = {
              if (metadata && metadata.updatedAt) {
                  const timestampDate = metadata.updatedAt.toDate ? metadata.updatedAt.toDate() : new Date(metadata.updatedAt);
                  if (!isNaN(timestampDate)) {
-                     timeAgo = this.formatTimeAgo(timestampDate);
+                     timeAgo = formatters.formatTimeAgo(timestampDate); // (v3.28)
                  }
              }
 
              if (statusType === 'success' && metadata) {
-                 countText = metadata.rowCount ? `${uiComponents.formatNumber(metadata.rowCount)} dòng` : '';
+                 countText = metadata.rowCount ? `${formatters.formatNumber(metadata.rowCount)} dòng` : ''; // (v3.28)
                  finalStatusText = `✓ Đã đồng bộ cloud ${countText} ${timeAgo}`.trim();
              } else if (statusType === 'default' && showDownloadButton && metadata) {
                  finalStatusText = `Có cập nhật mới từ ${metadata.updatedBy || 'ai đó'} ${timeAgo}`;
@@ -11856,7 +11862,7 @@ export const uiComponents = {
              if (metadata && metadata.updatedAt) {
                  const timestampDate = metadata.updatedAt.toDate ? metadata.updatedAt.toDate() : new Date(metadata.updatedAt);
                  if (!isNaN(timestampDate)) {
-                     timeAgo = this.formatTimeAgo(timestampDate);
+                     timeAgo = formatters.formatTimeAgo(timestampDate); // (v3.28)
                  }
              }
 
@@ -11882,104 +11888,10 @@ export const uiComponents = {
              content.classList.toggle('hidden', show);
          }
      },
-    formatNumber: (value, decimals = 0) => {
-        if (isNaN(value) || value === null) return '0';
-        return new Intl.NumberFormat('vi-VN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(value);
-    },
-    formatRevenue(value, decimals = 1) {
-         if (!isFinite(value) || value === null || value === 0) return '-';
-         const millions = value / 1000000;
-         const roundedValue = parseFloat(millions.toFixed(decimals));
-         if (roundedValue === 0 && millions !== 0) {
-              return millions > 0 ? '> 0' : '< 0';
-         }
-         return new Intl.NumberFormat('vi-VN', {
-             minimumFractionDigits: 0,
-             maximumFractionDigits: decimals
-         }).format(roundedValue);
-     },
-     formatNumberOrDash: (value, decimals = 1) => {
-         if (!isFinite(value) || value === null || value === 0) return '-';
-          const roundedValue = parseFloat(value.toFixed(decimals));
-          if (roundedValue === 0 && value !== 0) {
-               return value > 0 ? '> 0' : '< 0';
-          }
-           if (roundedValue === 0) return '-';
-          return new Intl.NumberFormat('vi-VN', {
-              minimumFractionDigits: 0,
-              maximumFractionDigits: decimals
-          }).format(roundedValue);
-      },
-     formatPercentage: (value, decimals = 0) => {
-         if (!isFinite(value) || value === null) return '-';
-          if (value === 0) return '-';
-          const percentageValue = value * 100;
-          const roundedValue = parseFloat(percentageValue.toFixed(decimals));
-          if (roundedValue === 0 && percentageValue !== 0) {
-             return percentageValue > 0 ? '> 0%' : '< 0%';
-          }
-         return new Intl.NumberFormat('vi-VN', {
-             minimumFractionDigits: decimals,
-              maximumFractionDigits: decimals
-          }).format(roundedValue) + '%';
-      },
-    formatTimeAgo(date) {
-         if (!date || !(date instanceof Date) || isNaN(date)) return '';
-         const seconds = Math.floor((new Date() - date) / 1000);
-         let interval = seconds / 31536000;
-         if (interval > 1) return Math.floor(interval) + " năm trước";
-         interval = seconds / 2592000;
-         if (interval > 1) return Math.floor(interval) + " tháng trước";
-         interval = seconds / 86400;
-         if (interval > 1) return Math.floor(interval) + " ngày trước";
-         interval = seconds / 3600;
-         if (interval > 1) return Math.floor(interval) + " giờ trước";
-         interval = seconds / 60;
-         if (interval > 1) return Math.floor(interval) + " phút trước";
-         return "vài giây trước";
-     },
-    getShortEmployeeName(hoTen, maNV) {
-        if (!hoTen) return maNV || '';
-        const nameParts = hoTen.split(' ').filter(p => p);
-        let displayName = hoTen;
-        if (nameParts.length > 2) {
-            displayName = nameParts.slice(-2).join(' ');
-        }
-        return `${displayName} - ${maNV}`;
-    },
-    toggleModal(modalId, show) {
-        const modal = document.getElementById(modalId);
-        if (!modal) return;
-        modal.classList.toggle('hidden', !show);
-    },
-    toggleDrawer(drawerId, show) {
-        const drawer = document.getElementById(drawerId);
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('drawer-overlay');
 
-        if (!drawer || !sidebar || !overlay) return;
-        if (show) {
-            drawer.classList.remove('hidden');
-            setTimeout(() => {
-                 drawer.classList.add('open');
-                 sidebar.classList.add('menu-locked');
-                 overlay.classList.remove('hidden');
-            }, 10);
-        } else {
-            drawer.classList.remove('open');
-            sidebar.classList.remove('menu-locked');
-            overlay.classList.add('hidden');
-            setTimeout(() => {
-                 if (!drawer.classList.contains('open')) {
-                     drawer.classList.add('hidden');
-                 }
-             }, 300);
-        }
-    },
-    closeAllDrawers() {
-        this.toggleDrawer('interface-drawer', false);
-        this.toggleDrawer('goal-drawer', false);
-    },
+    ...formatters, // (v3.26)
+    ...modalManager, // (v3.28)
+
     handleSubTabClick(button) {
         const nav = button.closest('nav');
         if (!nav) return;
@@ -12113,7 +12025,7 @@ export const uiComponents = {
                     <p class="text-gray-800">${item.content}</p>
                      <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">
                          <span class="font-semibold">${userNameDisplay}</span>
-                         <span>${this.formatTimeAgo(item.timestamp)}</span>
+                         <span>${formatters.formatTimeAgo(item.timestamp)}</span> 
                          ${appState.isAdmin ? `<button class="reply-btn text-blue-600 hover:underline">Trả lời</button>` : ''}
                     </div>
                     <div class="ml-6 mt-4 space-y-3">
@@ -12121,7 +12033,7 @@ export const uiComponents = {
                              <div class="bg-gray-100 rounded-lg p-3">
                                 <p class="text-gray-700 text-sm">${reply.content}</p>
                                  <div class="text-xs text-gray-500 mt-2">
-                                     <strong>Admin</strong> - ${this.formatTimeAgo(reply.timestamp instanceof Date ? reply.timestamp : reply.timestamp?.toDate())}
+                                     <strong>Admin</strong> - ${formatters.formatTimeAgo(reply.timestamp instanceof Date ? reply.timestamp : reply.timestamp?.toDate())} 
                                  </div>
                             </div>`).join('')}
                     </div>
@@ -12151,178 +12063,12 @@ export const uiComponents = {
          if (settings.kpiSubColor) root.style.setProperty('--kpi-sub-color', settings.kpiSubColor);
      },
 
-    displayDebugInfo(fileType) {
-        // ... (Giữ nguyên)
-         const resultsContainer = document.getElementById('debug-results-container');
-         if (!fileType) {
-             if (resultsContainer) resultsContainer.innerHTML = '<p class="text-gray-500">Chưa có file nào được tải lên để kiểm tra.</p>';
-             return;
-         }
-         if (resultsContainer && resultsContainer.innerHTML.includes('Chưa có file nào')) resultsContainer.innerHTML = '';
+    // <<< === START: KHỐI CODE BỊ XÓA (v3.29) === >>>
+    // 4 HÀM (displayDebugInfo, displayPastedDebugInfo, displayThiDuaVungDebugInfo, renderCompetitionDebugReport)
+    // ĐÃ BỊ XÓA KHỎI ĐÂY.
+    // <<< === END: KHỐI CODE BỊ XÓA === >>>
 
-         const debugData = appState.debugInfo[fileType];
-         if (!debugData) return;
-
-         const fileInputEl = document.querySelector(`#file-${fileType}`);
-         const fileName = fileInputEl?.dataset.name || fileType;
-         let tableHTML = `<div class="p-2 border rounded-md bg-white mb-4"><h4 class="font-bold text-gray-800 mb-2">${fileName}</h4><table class="min-w-full text-sm">
-             <thead class="bg-gray-100"><tr><th class="px-2 py-1 text-left font-semibold text-gray-600">Yêu cầu</th><th class="px-2 py-1 text-left font-semibold text-gray-600">Cột tìm thấy</th><th class="px-2 py-1 text-center font-semibold text-gray-600">Trạng thái</th></tr></thead><tbody>`;
-         (debugData.required || []).forEach(res => {
-             const statusClass = res.status ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100';
-             tableHTML += `<tr class="border-t"><td class="px-2 py-1 font-medium">${res.displayName}</td><td class="px-2 py-1 font-mono">${res.foundName}</td><td class="px-2 py-1 text-center font-bold ${statusClass}">${res.status ? 'OK' : 'LỖI'}</td></tr>`;
-         });
-         tableHTML += `</tbody></table>`;
-         if (debugData.firstFiveMsnv && debugData.firstFiveMsnv.length > 0) {
-             tableHTML += `<div class="mt-2 p-2 bg-gray-50 rounded"><p class="text-xs font-semibold">5 MSNV đầu tiên đọc được:</p><ul class="text-xs font-mono list-disc list-inside">${debugData.firstFiveMsnv.map(msnv => `<li>"${msnv}"</li>`).join('')}</ul></div>`;
-         }
-         tableHTML += `</div>`;
-
-         const existingEl = document.getElementById(`debug-table-${fileType}`);
-         if (existingEl) {
-              existingEl.innerHTML = tableHTML;
-         } else if (resultsContainer) {
-             const wrapper = document.createElement('div');
-             wrapper.id = `debug-table-${fileType}`;
-             wrapper.innerHTML = tableHTML;
-             resultsContainer.appendChild(wrapper);
-         }
-     },
-    displayPastedDebugInfo(dataType) {
-        // ... (Giữ nguyên)
-         const container = document.getElementById('pasted-debug-results-container');
-         if (!container) return;
-
-         const debugData = appState.debugInfo[dataType];
-         if (!debugData) {
-             container.innerHTML = '';
-             return;
-         }
-
-         let content = `<div class="p-2 border rounded-md bg-white mb-4">
-            <h4 class="font-bold text-gray-800 mb-2">Chẩn đoán dữ liệu dán: ${dataType.replace('-pasted', '')}</h4>`;
-
-         if (debugData.found && debugData.found.length > 0) {
-             content += '<ul>';
-             debugData.found.forEach(item => {
-                 content += `<li class="text-sm ${item.status ? 'text-green-700' : 'text-red-700'}"><strong>${item.name}:</strong> ${item.value}</li>`;
-             });
-             content += '</ul>';
-         }
-
-         content += `<p class="text-xs italic mt-2"><strong>Trạng thái xử lý:</strong> ${debugData.status}</p></div>`;
-         container.innerHTML = content;
-     },
-    displayThiDuaVungDebugInfo() {
-        // ... (Giữ nguyên)
-        const resultsContainer = document.getElementById('debug-results-container');
-        if (!resultsContainer) return;
-
-        const renderDebugTable = (title, data) => {
-             if (!data || data.length === 0) {
-                 return `<div class="p-2 border rounded-md bg-white mb-4">
-                      <h4 class="font-bold text-gray-800 mb-2">${title}</h4>
-                      <p class="text-gray-500">Không có dữ liệu để hiển thị.</p>
-                  </div>`;
-            }
-
-             const headers = Object.keys(data[0]);
-            let tableHTML = `<div class="p-2 border rounded-md bg-white mb-4">
-                  <h4 class="font-bold text-gray-800 mb-2">${title}</h4>
-                <div class="overflow-x-auto">
-                     <table class="min-w-full text-xs">
-                        <thead class="bg-gray-100">
-                             <tr>${headers.map(h => `<th class="px-2 py-1 text-left font-semibold text-gray-600 whitespace-nowrap">${h}</th>`).join('')}</tr>
-                        </thead>
-                         <tbody>`;
-            data.forEach(row => {
-                tableHTML += `<tr class="border-t">`;
-                headers.forEach(header => {
-                    tableHTML += `<td class="px-2 py-1 font-mono">${row[header] !== undefined ? row[header] : ''}</td>`;
-                });
-                tableHTML += `</tr>`;
-            });
-
-            tableHTML += `</tbody></table></div></div>`;
-            return tableHTML;
-        };
-
-        const tongRaw = appState.debugInfo?.thiDuaVungTongRaw?.slice(0, 10) || [];
-        const chiTietRaw = appState.debugInfo?.thiDuaVungChiTietRaw?.slice(0, 10) || [];
-
-        let finalHTML = renderDebugTable('Thi Đua Vùng - Sheet TONG (10 dòng đầu)', tongRaw);
-        finalHTML += renderDebugTable('Thi Đua Vùng - Sheet CHITIET (10 dòng đầu)', chiTietRaw);
-
-        const existingEl = document.getElementById('debug-table-thidua-vung');
-        if (existingEl) {
-            existingEl.innerHTML = finalHTML;
-        } else {
-            const wrapper = document.createElement('div');
-            wrapper.id = `debug-table-thidua-vung`;
-            wrapper.innerHTML = finalHTML;
-            resultsContainer.appendChild(wrapper);
-        }
-    },
-    renderCompetitionDebugReport(debugResults) {
-        // ... (Giữ nguyên)
-         const container = document.getElementById('debug-competition-results');
-        if (!container) return;
-
-        if (!debugResults || debugResults.length === 0) {
-             container.innerHTML = '<p class="text-gray-600">Không có dữ liệu để phân tích.</p>';
-            return;
-        }
-
-        const validCount = debugResults.filter(r => r.isOverallValid).length;
-        const totalCount = debugResults.length;
-        const checkHeaders = ['HTX Hợp lệ', 'Đã thu', 'Chưa hủy', 'Chưa trả', 'Đã xuất'];
-
-        let tableHTML = `
-            <div class="p-4 bg-white border rounded-lg">
-                <h4 class="font-bold text-lg mb-2">Kết quả Phân tích File: <span class="text-green-600">${validCount}</span> / ${totalCount} dòng hợp lệ</h4>
-                 <div class="overflow-x-auto max-h-[600px]">
-                     <table class="min-w-full text-xs table-bordered competition-debug-table">
-                         <thead class="bg-gray-100 sticky top-0">
-                             <tr>
-                                <th class="p-2">Người tạo</th>
-                                 <th class="p-2">Nhóm hàng</th>
-                                 <th class="p-2">HT Xuất</th>
-                                 <th class="p-2">TT Thu tiền</th>
-                                 <th class="p-2">TT Hủy</th>
-                                <th class="p-2">TT Trả</th>
-                                 <th class="p-2">TT Xuất</th>
-                                 ${checkHeaders.map(h => `<th class="p-2">${h}</th>`).join('')}
-                                 <th class="p-2">Tổng thể</th>
-                             </tr>
-                         </thead>
-                        <tbody>`;
-
-        const renderCheck = (status) => `<td class="text-center font-bold text-lg">${status ? '<span class="text-green-500">✅</span>' : '<span class="text-red-500">❌</span>'}</td>`;
-
-        debugResults.forEach(result => {
-            const rowClass = result.isOverallValid ? 'bg-green-50' : 'bg-red-50';
-            const { rowData, checks, isOverallValid } = result;
-             tableHTML += `
-                <tr class="${rowClass}">
-                     <td class="p-2">${rowData.nguoiTao || ''}</td>
-                     <td class="p-2">${rowData.nhomHang || ''}</td>
-                     <td class="p-2">${rowData.hinhThucXuat || ''}</td>
-                     <td class="p-2">${rowData.trangThaiThuTien || ''}</td>
-                    <td class="p-2">${rowData.trangThaiHuy || ''}</td>
-                     <td class="p-2">${rowData.tinhTrangTra || ''}</td>
-                    <td class="p-2">${rowData.trangThaiXuat || ''}</td>
-                    ${renderCheck(checks.isDoanhThuHTX)}
-                    ${renderCheck(checks.isThuTien)}
-                    ${renderCheck(checks.isChuaHuy)}
-                    ${renderCheck(checks.isChuaTra)}
-                    ${renderCheck(checks.isDaXuat)}
-                    ${renderCheck(isOverallValid)}
-                </tr>
-            `;
-        });
-
-        tableHTML += '</tbody></table></div></div>';
-        container.innerHTML = tableHTML;
-    },
+    ...debugTools, // <<< THÊM MỚI (v3.29)
 
     // *** MODIFIED FUNCTION (v3.21) - SỬA LỖI CÚ PHÁP ***
     renderUserStatsTable(users) {
@@ -12381,8 +12127,8 @@ export const uiComponents = {
             tableHTML += `
                 <tr class="hover:bg-gray-50">
                     <td class="px-4 py-2 font-medium text-gray-900">${user.email}</td>
-                    <td class="px-4 py-2 text-right font-bold">${this.formatNumber(user.loginCount || 0)}</td>
-                    <td class="px-4 py-2 text-right font-bold">${this.formatNumber(user.actionsTaken || 0)}</td>
+                    <td class="px-4 py-2 text-right font-bold">${formatters.formatNumber(user.loginCount || 0)}</td>
+                    <td class="px-4 py-2 text-right font-bold">${formatters.formatNumber(user.actionsTaken || 0)}</td>
                      <td class="px-4 py-2 text-right">${formattedLastLogin}</td>
                 </tr>
             `;
@@ -12446,6 +12192,318 @@ export const uiComponents = {
     // *** END: NEW FUNCTION (v3.23) ***
 };
 --- END FILE: ./ui-components.js ---
+
+--- START FILE: ./ui-debug.js ---
+// Version 1.0 - Initial extraction from ui-components
+// MODULE: UI DEBUG TOOLS
+// Chứa các hàm render các bảng chẩn đoán và gỡ lỗi.
+
+import { appState } from './state.js';
+
+export const debugTools = {
+    /**
+     * Hiển thị kết quả chẩn đoán cho một file đã tải lên.
+     * @param {string} fileType - Loại file (ví dụ: 'ycx', 'danhsachnv').
+     */
+    displayDebugInfo(fileType) {
+         const resultsContainer = document.getElementById('debug-results-container');
+         if (!fileType) {
+             if (resultsContainer) resultsContainer.innerHTML = '<p class="text-gray-500">Chưa có file nào được tải lên để kiểm tra.</p>';
+             return;
+         }
+         if (resultsContainer && resultsContainer.innerHTML.includes('Chưa có file nào')) resultsContainer.innerHTML = '';
+
+         const debugData = appState.debugInfo[fileType];
+         if (!debugData) return;
+
+         const fileInputEl = document.querySelector(`#file-${fileType}`);
+         const fileName = fileInputEl?.dataset.name || fileType;
+         let tableHTML = `<div class="p-2 border rounded-md bg-white mb-4"><h4 class="font-bold text-gray-800 mb-2">${fileName}</h4><table class="min-w-full text-sm">
+             <thead class="bg-gray-100"><tr><th class="px-2 py-1 text-left font-semibold text-gray-600">Yêu cầu</th><th class="px-2 py-1 text-left font-semibold text-gray-600">Cột tìm thấy</th><th class="px-2 py-1 text-center font-semibold text-gray-600">Trạng thái</th></tr></thead><tbody>`;
+         (debugData.required || []).forEach(res => {
+             const statusClass = res.status ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100';
+             tableHTML += `<tr class="border-t"><td class="px-2 py-1 font-medium">${res.displayName}</td><td class="px-2 py-1 font-mono">${res.foundName}</td><td class="px-2 py-1 text-center font-bold ${statusClass}">${res.status ? 'OK' : 'LỖI'}</td></tr>`;
+         });
+         tableHTML += `</tbody></table>`;
+         if (debugData.firstFiveMsnv && debugData.firstFiveMsnv.length > 0) {
+             tableHTML += `<div class="mt-2 p-2 bg-gray-50 rounded"><p class="text-xs font-semibold">5 MSNV đầu tiên đọc được:</p><ul class="text-xs font-mono list-disc list-inside">${debugData.firstFiveMsnv.map(msnv => `<li>"${msnv}"</li>`).join('')}</ul></div>`;
+         }
+         tableHTML += `</div>`;
+
+         const existingEl = document.getElementById(`debug-table-${fileType}`);
+         if (existingEl) {
+              existingEl.innerHTML = tableHTML;
+         } else if (resultsContainer) {
+             const wrapper = document.createElement('div');
+             wrapper.id = `debug-table-${fileType}`;
+             wrapper.innerHTML = tableHTML;
+             resultsContainer.appendChild(wrapper);
+         }
+     },
+
+    /**
+     * Hiển thị kết quả chẩn đoán cho dữ liệu dán (paste).
+     * @param {string} dataType - Loại dữ liệu (ví dụ: 'thiduanv-pasted').
+     */
+    displayPastedDebugInfo(dataType) {
+         const container = document.getElementById('pasted-debug-results-container');
+         if (!container) return;
+
+         const debugData = appState.debugInfo[dataType];
+         if (!debugData) {
+             container.innerHTML = '';
+             return;
+         }
+
+         let content = `<div class="p-2 border rounded-md bg-white mb-4">
+            <h4 class="font-bold text-gray-800 mb-2">Chẩn đoán dữ liệu dán: ${dataType.replace('-pasted', '')}</h4>`;
+
+         if (debugData.found && debugData.found.length > 0) {
+             content += '<ul>';
+             debugData.found.forEach(item => {
+                 content += `<li class="text-sm ${item.status ? 'text-green-700' : 'text-red-700'}"><strong>${item.name}:</strong> ${item.value}</li>`;
+             });
+             content += '</ul>';
+         }
+
+         content += `<p class="text-xs italic mt-2"><strong>Trạng thái xử lý:</strong> ${debugData.status}</p></div>`;
+         container.innerHTML = content;
+     },
+
+    /**
+     * Hiển thị bảng gỡ lỗi cho file Thi Đua Vùng.
+     */
+    displayThiDuaVungDebugInfo() {
+        const resultsContainer = document.getElementById('debug-results-container');
+        if (!resultsContainer) return;
+
+        const renderDebugTable = (title, data) => {
+             if (!data || data.length === 0) {
+                 return `<div class="p-2 border rounded-md bg-white mb-4">
+                      <h4 class="font-bold text-gray-800 mb-2">${title}</h4>
+                      <p class="text-gray-500">Không có dữ liệu để hiển thị.</p>
+                  </div>`;
+            }
+
+             const headers = Object.keys(data[0]);
+            let tableHTML = `<div class="p-2 border rounded-md bg-white mb-4">
+                  <h4 class="font-bold text-gray-800 mb-2">${title}</h4>
+                <div class="overflow-x-auto">
+                     <table class="min-w-full text-xs">
+                        <thead class="bg-gray-100">
+                             <tr>${headers.map(h => `<th class="px-2 py-1 text-left font-semibold text-gray-600 whitespace-nowrap">${h}</th>`).join('')}</tr>
+                        </thead>
+                         <tbody>`;
+            data.forEach(row => {
+                tableHTML += `<tr class="border-t">`;
+                headers.forEach(header => {
+                    tableHTML += `<td class="px-2 py-1 font-mono">${row[header] !== undefined ? row[header] : ''}</td>`;
+                });
+                tableHTML += `</tr>`;
+            });
+
+            tableHTML += `</tbody></table></div></div>`;
+            return tableHTML;
+        };
+
+        const tongRaw = appState.debugInfo?.thiDuaVungTongRaw?.slice(0, 10) || [];
+        const chiTietRaw = appState.debugInfo?.thiDuaVungChiTietRaw?.slice(0, 10) || [];
+
+        let finalHTML = renderDebugTable('Thi Đua Vùng - Sheet TONG (10 dòng đầu)', tongRaw);
+        finalHTML += renderDebugTable('Thi Đua Vùng - Sheet CHITIET (10 dòng đầu)', chiTietRaw);
+
+        const existingEl = document.getElementById('debug-table-thidua-vung');
+        if (existingEl) {
+            existingEl.innerHTML = finalHTML;
+        } else {
+            const wrapper = document.createElement('div');
+            wrapper.id = `debug-table-thidua-vung`;
+            wrapper.innerHTML = finalHTML;
+            resultsContainer.appendChild(wrapper);
+        }
+    },
+
+    /**
+     * Hiển thị bảng gỡ lỗi cho file Thi Đua (dùng để kiểm tra logic lọc).
+     * @param {Array} debugResults - Dữ liệu đã xử lý từ service.
+     */
+    renderCompetitionDebugReport(debugResults) {
+         const container = document.getElementById('debug-competition-results');
+        if (!container) return;
+
+        if (!debugResults || debugResults.length === 0) {
+             container.innerHTML = '<p class="text-gray-600">Không có dữ liệu để phân tích.</p>';
+            return;
+        }
+
+        const validCount = debugResults.filter(r => r.isOverallValid).length;
+        const totalCount = debugResults.length;
+        const checkHeaders = ['HTX Hợp lệ', 'Đã thu', 'Chưa hủy', 'Chưa trả', 'Đã xuất'];
+
+        let tableHTML = `
+            <div class="p-4 bg-white border rounded-lg">
+                <h4 class="font-bold text-lg mb-2">Kết quả Phân tích File: <span class="text-green-600">${validCount}</span> / ${totalCount} dòng hợp lệ</h4>
+                 <div class="overflow-x-auto max-h-[600px]">
+                     <table class="min-w-full text-xs table-bordered competition-debug-table">
+                         <thead class="bg-gray-100 sticky top-0">
+                             <tr>
+                                <th class="p-2">Người tạo</th>
+                                 <th class="p-2">Nhóm hàng</th>
+                                 <th class="p-2">HT Xuất</th>
+                                 <th class="p-2">TT Thu tiền</th>
+                                 <th class="p-2">TT Hủy</th>
+                                <th class="p-2">TT Trả</th>
+                                 <th class="p-2">TT Xuất</th>
+                                 ${checkHeaders.map(h => `<th class="p-2">${h}</th>`).join('')}
+                                 <th class="p-2">Tổng thể</th>
+                             </tr>
+                         </thead>
+                        <tbody>`;
+
+        const renderCheck = (status) => `<td class="text-center font-bold text-lg">${status ? '<span class="text-green-500">✅</span>' : '<span class="text-red-500">❌</span>'}</td>`;
+
+        debugResults.forEach(result => {
+            const rowClass = result.isOverallValid ? 'bg-green-50' : 'bg-red-50';
+            const { rowData, checks, isOverallValid } = result;
+             tableHTML += `
+                <tr class="${rowClass}">
+                     <td class="p-2">${rowData.nguoiTao || ''}</td>
+                     <td class="p-2">${rowData.nhomHang || ''}</td>
+                     <td class="p-2">${rowData.hinhThucXuat || ''}</td>
+                     <td class="p-2">${rowData.trangThaiThuTien || ''}</td>
+                    <td class="p-2">${rowData.trangThaiHuy || ''}</td>
+                     <td class="p-2">${rowData.tinhTrangTra || ''}</td>
+                    <td class="p-2">${rowData.trangThaiXuat || ''}</td>
+                    ${renderCheck(checks.isDoanhThuHTX)}
+                    ${renderCheck(checks.isThuTien)}
+                    ${renderCheck(checks.isChuaHuy)}
+                    ${renderCheck(checks.isChuaTra)}
+                    ${renderCheck(checks.isDaXuat)}
+                    ${renderCheck(isOverallValid)}
+                </tr>
+            `;
+        });
+
+        tableHTML += '</tbody></table></div></div>';
+        container.innerHTML = tableHTML;
+    },
+};
+--- END FILE: ./ui-debug.js ---
+
+--- START FILE: ./ui-formatters.js ---
+// Version 1.0 - Initial extraction from ui-components
+// MODULE: UI FORMATTERS
+// Chứa các hàm thuần túy để định dạng dữ liệu (tách ra từ ui-components.js)
+// Những hàm này không phụ thuộc vào DOM hoặc appState.
+
+export const formatters = {
+    /**
+     * Định dạng số theo chuẩn Việt Nam.
+     * @param {number} value - Giá trị số.
+     * @param {number} decimals - Số chữ số thập phân.
+     * @returns {string} - Chuỗi đã định dạng.
+     */
+    formatNumber: (value, decimals = 0) => {
+        if (isNaN(value) || value === null) return '0';
+        return new Intl.NumberFormat('vi-VN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(value);
+    },
+
+    /**
+     * Định dạng doanh thu (chia cho 1 triệu) và trả về chuỗi.
+     * @param {number} value - Giá trị doanh thu.
+     * @param {number} decimals - Số chữ số thập phân.
+     * @returns {string} - Chuỗi đã định dạng (ví dụ: '1.5' hoặc '-')
+     */
+    formatRevenue(value, decimals = 1) {
+         if (!isFinite(value) || value === null || value === 0) return '-';
+         const millions = value / 1000000;
+         const roundedValue = parseFloat(millions.toFixed(decimals));
+         if (roundedValue === 0 && millions !== 0) {
+              return millions > 0 ? '> 0' : '< 0';
+         }
+         return new Intl.NumberFormat('vi-VN', {
+             minimumFractionDigits: 0,
+             maximumFractionDigits: decimals
+         }).format(roundedValue);
+     },
+
+     /**
+      * Định dạng số, trả về '-' nếu là 0.
+      * @param {number} value - Giá trị số.
+      * @param {number} decimals - Số chữ số thập phân.
+      * @returns {string} - Chuỗi đã định dạng (ví dụ: '1.5' hoặc '-')
+      */
+     formatNumberOrDash: (value, decimals = 1) => {
+         if (!isFinite(value) || value === null || value === 0) return '-';
+          const roundedValue = parseFloat(value.toFixed(decimals));
+          if (roundedValue === 0 && value !== 0) {
+               return value > 0 ? '> 0' : '< 0';
+          }
+           if (roundedValue === 0) return '-';
+          return new Intl.NumberFormat('vi-VN', {
+              minimumFractionDigits: 0,
+              maximumFractionDigits: decimals
+          }).format(roundedValue);
+      },
+
+      /**
+       * Định dạng số thành phần trăm (nhân 100).
+       * @param {number} value - Giá trị (ví dụ: 0.25).
+       * @param {number} decimals - Số chữ số thập phân.
+       * @returns {string} - Chuỗi đã định dạng (ví dụ: '25%')
+       */
+     formatPercentage: (value, decimals = 0) => {
+         if (!isFinite(value) || value === null) return '-';
+          if (value === 0) return '-';
+          const percentageValue = value * 100;
+          const roundedValue = parseFloat(percentageValue.toFixed(decimals));
+          if (roundedValue === 0 && percentageValue !== 0) {
+             return percentageValue > 0 ? '> 0%' : '< 0%';
+          }
+         return new Intl.NumberFormat('vi-VN', {
+             minimumFractionDigits: decimals,
+              maximumFractionDigits: decimals
+          }).format(roundedValue) + '%';
+      },
+
+    /**
+     * Chuyển đổi đối tượng Date thành chuỗi "X [phút/giờ/ngày] trước".
+     * @param {Date} date - Đối tượng Date.
+     * @returns {string} - Chuỗi thời gian tương đối.
+     */
+    formatTimeAgo(date) {
+         if (!date || !(date instanceof Date) || isNaN(date)) return '';
+         const seconds = Math.floor((new Date() - date) / 1000);
+         let interval = seconds / 31536000;
+         if (interval > 1) return Math.floor(interval) + " năm trước";
+         interval = seconds / 2592000;
+         if (interval > 1) return Math.floor(interval) + " tháng trước";
+         interval = seconds / 86400;
+         if (interval > 1) return Math.floor(interval) + " ngày trước";
+         interval = seconds / 3600;
+         if (interval > 1) return Math.floor(interval) + " giờ trước";
+         interval = seconds / 60;
+         if (interval > 1) return Math.floor(interval) + " phút trước";
+         return "vài giây trước";
+     },
+
+    /**
+     * Lấy tên rút gọn của nhân viên (Tên cuối + MSNV).
+     * @param {string} hoTen - Họ và tên đầy đủ.
+     * @param {string} maNV - Mã nhân viên.
+     * @returns {string} - Tên rút gọn (ví dụ: "Văn A - 12345")
+     */
+    getShortEmployeeName(hoTen, maNV) {
+        if (!hoTen) return maNV || '';
+        const nameParts = hoTen.split(' ').filter(p => p);
+        let displayName = hoTen;
+        if (nameParts.length > 2) {
+            displayName = nameParts.slice(-2).join(' ');
+        }
+        return `${displayName} - ${maNV}`;
+    },
+};
+--- END FILE: ./ui-formatters.js ---
 
 --- START FILE: ./ui-luyke.js ---
 // Version 2.11 - Critical Fix: Restore all missing functions and add renderLuykeEmployeeDetail
@@ -13164,6 +13222,123 @@ export const uiLuyke = {
     },
 };
 --- END FILE: ./ui-luyke.js ---
+
+--- START FILE: ./ui-modal-manager.js ---
+// Version 1.0 - Initial extraction from ui-components
+// MODULE: UI MODAL MANAGER
+// Chứa các hàm thuần túy để quản lý trạng thái hiển thị của Modals và Drawers.
+
+export const modalManager = {
+    /**
+     * Bật hoặc tắt một modal.
+     * @param {string} modalId - ID của modal (ví dụ: 'login-modal').
+     * @param {boolean} show - True để hiện, false để ẩn.
+     */
+    toggleModal(modalId, show) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        modal.classList.toggle('hidden', !show);
+    },
+
+    /**
+     * Bật hoặc tắt một drawer (thanh cài đặt bên).
+     * @param {string} drawerId - ID của drawer (ví dụ: 'interface-drawer').
+     * @param {boolean} show - True để hiện, false để ẩn.
+     */
+    toggleDrawer(drawerId, show) {
+        const drawer = document.getElementById(drawerId);
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('drawer-overlay');
+
+        if (!drawer || !sidebar || !overlay) return;
+        if (show) {
+            drawer.classList.remove('hidden');
+            setTimeout(() => {
+                 drawer.classList.add('open');
+                 sidebar.classList.add('menu-locked');
+                 overlay.classList.remove('hidden');
+            }, 10);
+        } else {
+            drawer.classList.remove('open');
+            sidebar.classList.remove('menu-locked');
+            overlay.classList.add('hidden');
+            setTimeout(() => {
+                 if (!drawer.classList.contains('open')) {
+                     drawer.classList.add('hidden');
+                 }
+             }, 300);
+        }
+    },
+
+    /**
+     * Đóng tất cả các drawer đang mở.
+     */
+    closeAllDrawers() {
+        // Chúng ta gọi hàm `toggleDrawer` nội bộ
+        this.toggleDrawer('interface-drawer', false);
+        this.toggleDrawer('goal-drawer', false);
+    },
+};
+--- END FILE: ./ui-modal-manager.js ---
+
+--- START FILE: ./ui-notifications.js ---
+// Version 1.0 - Initial extraction from ui-components
+// MODULE: UI NOTIFICATIONS
+// Chứa các hàm hiển thị thông báo, pop-up và cập nhật bộ đếm.
+
+import { formatters } from './ui-formatters.js';
+
+export const notifications = {
+    /**
+     * Hiển thị một thông báo pop-up ngắn.
+     * @param {string} message - Nội dung thông báo.
+     * @param {string} type - 'success' hoặc 'error'.
+     */
+    showNotification: (message, type = 'success') => {
+        const notification = document.getElementById('notification');
+        if (!notification) return;
+        notification.textContent = message;
+        notification.className = `fixed bottom-5 right-5 p-4 rounded-lg shadow-md text-white z-[1200] opacity-0 transition-opacity duration-500 transform translate-y-10 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
+        void notification.offsetWidth;
+        notification.classList.remove('hidden', 'opacity-0', 'translate-y-10');
+        notification.classList.add('opacity-100', 'translate-y-0');
+
+        setTimeout(() => {
+             notification.classList.remove('opacity-100', 'translate-y-0');
+             notification.classList.add('opacity-0', 'translate-y-10');
+             setTimeout(() => notification.classList.add('hidden'), 500);
+        }, 3000);
+    },
+
+    /**
+     * Hiển thị thông báo cập nhật phiên bản (nếu có).
+     */
+    showUpdateNotification() {
+        const notification = document.getElementById('update-notification');
+        if (notification) {
+             notification.classList.remove('hidden');
+             const button = notification.querySelector('button');
+             if (button && !button.onclick) {
+                button.onclick = () => window.location.reload();
+             }
+         }
+    },
+
+    /**
+     * Cập nhật các đồng hồ đếm trên trang chủ.
+     * @param {object} statsData - Dữ liệu từ 'analytics/site_stats'.
+     */
+     updateUsageCounter: (statsData) => {
+        const visitorCountEl = document.getElementById('visitor-count');
+         const actionCountEl = document.getElementById('action-count');
+         const userCountEl = document.getElementById('user-count');
+         // Sử dụng formatters trực tiếp
+         if (visitorCountEl) visitorCountEl.textContent = statsData?.pageLoads ? formatters.formatNumber(statsData.pageLoads) : '0';
+         if (actionCountEl) actionCountEl.textContent = statsData?.actionsTaken ? formatters.formatNumber(statsData.actionsTaken) : '0';
+         if (userCountEl) userCountEl.textContent = statsData?.totalUsers ? formatters.formatNumber(statsData.totalUsers) : '0';
+     },
+};
+--- END FILE: ./ui-notifications.js ---
 
 --- START FILE: ./ui-realtime.js ---
 // Version 4.2 - Add uiCompetition import
