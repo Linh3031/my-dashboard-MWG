@@ -1,7 +1,7 @@
+// Version 4.47 - Refactor: Remove direct dependency on ui-components.js, use ui.js facade instead.
 // Version 4.46 - Fix bug: Move ALL_DATA_MAPPING inside the app object
 // Version 4.45 - Fix critical syntax errors (remove all source tags)
-// Version 4.44 - Call loadPastedCompetitionViewSettings after pasting thi dua data
-// Version 4.43 - Add deep logging for saving/loading pasted data (Debug Problem 1)
+// ... (các phiên bản trước giữ nguyên)
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -29,7 +29,7 @@ import { modalPreview } from './components/modal-preview.js';
 import { modalSelection } from './components/modal-selection.js';
 import { settingsService } from './modules/settings.service.js';
 import { highlightService } from './modules/highlight.service.js';
-import { uiComponents } from './ui-components.js';
+// <<< ĐÃ XÓA (v4.47) >>> import { uiComponents } from './ui-components.js';
 
 const LOCAL_DATA_VERSIONS_KEY = '_localDataVersions';
 const LOCAL_METADATA_PREFIX = '_localMetadata_';
@@ -40,7 +40,7 @@ const RAW_PASTE_THIDUANV_KEY = 'raw_paste_thiduanv'; // === FIX 2a.2 (Thêm) ===
 
 const app = {
     // === START: FIX LỖI ===
-    // Di chuyển ALL_DATA_MAPPING từ bên ngoài vào đây
+    // Di chuyển ALL_DATA_MAPPING từ bên ngoài vào bên trong đối tượng 'app'
     ALL_DATA_MAPPING: {
         // Daily Files
         'ycx': { stateKey: 'ycxData', saveKey: 'saved_ycx', isPasted: false, uiId: 'ycx', firestoreKey: 'ycx' },
@@ -101,16 +101,16 @@ const app = {
             ui.showNotification("Lỗi khởi tạo. Vui lòng thử tải lại trang.", "error");
             const mainContent = document.getElementById('main-content');
             if (mainContent) {
-                 mainContent.innerHTML = '<div class="placeholder-message notification-error">Lỗi nghiêm trọng, không thể khởi động ứng dụng. Vui lòng kiểm tra kết nối mạng, cài đặt Firebase Rules và thử lại.</div>';
+                    mainContent.innerHTML = '<div class="placeholder-message notification-error">Lỗi nghiêm trọng, không thể khởi động ứng dụng. Vui lòng kiểm tra kết nối mạng, cài đặt Firebase Rules và thử lại.</div>';
             }
         }
     },
 
     async continueInit() {
         if (!appState.currentUser || !appState.currentUser.email) {
-             console.error("continueInit called without user email in appState.");
-             ui.showNotification("Lỗi: Không tìm thấy thông tin người dùng.", "error");
-             return;
+                console.error("continueInit called without user email in appState.");
+                ui.showNotification("Lỗi: Không tìm thấy thông tin người dùng.", "error");
+                return;
         }
         console.log(`Email identification complete: ${appState.currentUser.email}. Continuing app initialization...`);
 
@@ -148,12 +148,12 @@ const app = {
             
             // === FIX 1a (Thêm) ===
             // Cập nhật trạng thái UI sau khi tải từ cloud, thay vì để trống
-            uiComponents.updateFileStatus('category-structure', 'Tải từ Cloud', `✓ Đã tải ${categories.length} nhóm & ${brands.length} hãng.`, 'success', false);
+            ui.updateFileStatus('category-structure', 'Tải từ Cloud', `✓ Đã tải ${categories.length} nhóm & ${brands.length} hãng.`, 'success', false); // <<< SỬA (v4.47)
             // === END FIX ===
 
         } catch (error) {
-             console.error("Error loading category data after auth:", error);
-             ui.showNotification("Không thể tải cấu trúc ngành hàng từ cloud.", "error");
+                console.error("Error loading category data after auth:", error);
+                ui.showNotification("Không thể tải cấu trúc ngành hàng từ cloud.", "error");
         }
 
         console.log("Loading calculation declarations from Firestore...");
@@ -167,8 +167,8 @@ const app = {
             const decHeSoEl = document.getElementById('declaration-heso');
             if (decHeSoEl) decHeSoEl.value = declarations.heSoQuyDoi || Object.entries(config.DEFAULT_DATA.HE_SO_QUY_DOI).map(([k, v]) => `${k},${v}`).join('\n');
         } catch (error) {
-             console.error("Error loading declarations after auth:", error);
-             ui.showNotification("Không thể tải khai báo tính toán từ cloud.", "error");
+                console.error("Error loading declarations after auth:", error);
+                ui.showNotification("Không thể tải khai báo tính toán từ cloud.", "error");
         }
         
         // *** NEW (v4.41): Load competition name mappings from Firestore ***
@@ -177,13 +177,13 @@ const app = {
             appState.competitionNameMappings = await firebase.loadCompetitionNameMappings();
             console.log("Successfully loaded competition name mappings from Firestore.");
         } catch (error) {
-             console.error("Error loading competition name mappings:", error);
-             ui.showNotification("Không thể tải tên rút gọn (thi đua) từ cloud.", "error");
-             appState.competitionNameMappings = {}; // Ensure it's an object on failure
+                console.error("Error loading competition name mappings:", error);
+                ui.showNotification("Không thể tải tên rút gọn (thi đua) từ cloud.", "error");
+                appState.competitionNameMappings = {}; // Ensure it's an object on failure
         }
         // *** END NEW ***
 
-         initializeEventListeners(this);
+            initializeEventListeners(this);
         await this.loadDataFromStorage();
 
         const savedWarehouse = localStorage.getItem('selectedWarehouse');
@@ -217,46 +217,46 @@ const app = {
                 const currentStatusIsCache = fileStatusSpan?.textContent?.includes('Đã tải');
 
                 if (currentStatusIsCache) {
-                     if (metadata && metadata.version > localVersionInfo.version) {
+                        if (metadata && metadata.version > localVersionInfo.version) {
                         console.log(`%c[continueInit] Cache loaded for ${firestoreKey}, but cloud v${metadata.version} is newer. Showing download button.`, "color: orange;");
-                        uiComponents.updateFileStatus(uiId, metadata.fileName || 'Cloud', '', 'default', true, metadata, firestoreKey, savedWarehouse);
-                     } else {
-                         console.log(`%c[continueInit] UI status for ${firestoreKey} was set by loadDataFromStorage (cache) and is up-to-date. Keeping it.`, "color: green;");
-                     }
+                        ui.updateFileStatus(uiId, metadata.fileName || 'Cloud', '', 'default', true, metadata, firestoreKey, savedWarehouse); // <<< SỬA (v4.47)
+                        } else {
+                            console.log(`%c[continueInit] UI status for ${firestoreKey} was set by loadDataFromStorage (cache) and is up-to-date. Keeping it.`, "color: green;");
+                        }
                 } else if (metadata) {
-                     if (metadata.version > localVersionInfo.version) {
-                        uiComponents.updateFileStatus(uiId, metadata.fileName || 'Cloud', '', 'default', true, metadata, firestoreKey, savedWarehouse);
+                        if (metadata.version > localVersionInfo.version) {
+                        ui.updateFileStatus(uiId, metadata.fileName || 'Cloud', '', 'default', true, metadata, firestoreKey, savedWarehouse); // <<< SỬA (v4.47)
                         console.log(`%c[continueInit] UI status for ${firestoreKey} requires download (Cloud v${metadata.version} > Local v${localVersionInfo.version}).`, "color: green;");
                     } else {
-                         uiComponents.updateFileStatus(uiId, metadata.fileName || 'Cloud', '', 'default', true, metadata, firestoreKey, savedWarehouse);
+                            ui.updateFileStatus(uiId, metadata.fileName || 'Cloud', '', 'default', true, metadata, firestoreKey, savedWarehouse); // <<< SỬA (v4.47)
                         console.log(`%c[continueInit] UI status for ${firestoreKey} requires download (v${metadata.version}). Cache empty or not loaded.`, "color: orange;");
                     }
                 } else {
-                     uiComponents.updateFileStatus(uiId, '', `Đang chờ đồng bộ từ kho ${savedWarehouse}...`, 'default');
+                        ui.updateFileStatus(uiId, '', `Đang chờ đồng bộ từ kho ${savedWarehouse}...`, 'default'); // <<< SỬA (v4.47)
                     console.log(`%c[continueInit] No metadata for ${firestoreKey}, waiting for sync.`, "color: orange;");
                 }
             });
             console.log(`%c[continueInit] Finished checking sync status.`, "color: teal; font-weight: bold;");
 
         } else {
-             Object.keys(this.ALL_DATA_MAPPING).filter(k => !this.ALL_DATA_MAPPING[k].isPasted).forEach(fileTypeKey => {
-                 uiComponents.updateFileStatus(this.ALL_DATA_MAPPING[fileTypeKey].uiId, '', 'Chọn kho để đồng bộ...', 'default');
-             });
-             const dsnvFilename = localStorage.getItem(LOCAL_DSNV_FILENAME_KEY);
-             if (!dsnvFilename) {
-                 uiComponents.updateFileStatus('danhsachnv', '', 'Chưa thêm file', 'default');
-             }
+                Object.keys(this.ALL_DATA_MAPPING).filter(k => !this.ALL_DATA_MAPPING[k].isPasted).forEach(fileTypeKey => {
+                    ui.updateFileStatus(this.ALL_DATA_MAPPING[fileTypeKey].uiId, '', 'Chọn kho để đồng bộ...', 'default'); // <<< SỬA (v4.47)
+                });
+                const dsnvFilename = localStorage.getItem(LOCAL_DSNV_FILENAME_KEY);
+                if (!dsnvFilename) {
+                    ui.updateFileStatus('danhsachnv', '', 'Chưa thêm file', 'default'); // <<< SỬA (v4.47)
+                }
         }
 
         if (appState.danhSachNhanVien.length > 0) {
-            uiComponents.populateWarehouseSelector();
+            ui.populateWarehouseSelector(); // <<< SỬA (v4.47)
         } else {
-             console.error("[main.js continueInit] CRITICAL: appState.danhSachNhanVien is empty! Warehouse selector cannot be populated.");
-             const selector = document.getElementById('data-warehouse-selector');
-             if (selector) {
-                 selector.innerHTML = '<option value="">-- Vui lòng tải Danh sách Nhân viên --</option>';
-                 selector.disabled = true;
-             }
+                console.error("[main.js continueInit] CRITICAL: appState.danhSachNhanVien is empty! Warehouse selector cannot be populated.");
+                const selector = document.getElementById('data-warehouse-selector');
+                if (selector) {
+                    selector.innerHTML = '<option value="">-- Vui lòng tải Danh sách Nhân viên --</option>';
+                    selector.disabled = true;
+                }
         }
 
         settingsService.loadInterfaceSettings();
@@ -295,7 +295,7 @@ const app = {
 
                 const updatedBy = cloudMetadata.updatedBy;
                 const cloudServerTimestampObj = cloudMetadata.updatedAt;
-                 const updatedTime = cloudServerTimestampObj
+                    const updatedTime = cloudServerTimestampObj
                     ? ui.formatTimeAgo(cloudServerTimestampObj.toDate ? cloudServerTimestampObj.toDate() : new Date(cloudServerTimestampObj))
                     : 'vừa xong';
 
@@ -313,7 +313,7 @@ const app = {
                 if (cloudVersion > lastLocalVersion) {
                     shouldUpdateLocalInfo = true;
                 } else if (cloudVersion === lastLocalVersion && cloudLocalTimestamp > lastLocalTimestamp) {
-                  shouldUpdateLocalInfo = true;
+                    shouldUpdateLocalInfo = true;
                 }
 
                 if (shouldUpdateLocalInfo) {
@@ -326,24 +326,24 @@ const app = {
                     }
 
                     if (appState.currentUser && updatedBy === appState.currentUser.email) {
-                         if (isPasted) {
+                            if (isPasted) {
                             let processedCount = 0;
                             // *** MODIFIED (v4.40) ***
                             // Logic đếm số lượng cho pastedThiduaNVBI đã được chuyển sang hàm handleThiduaNVPaste
                             // Ở đây chỉ cần cập nhật trạng thái chung
                             if (stateKey && processFunc && cloudMetadata.content && dataType !== 'pastedThiduaNVBI') {
                                 try {
-                                     const processed = processFunc(cloudMetadata.content);
+                                        const processed = processFunc(cloudMetadata.content);
                                     processedCount = processed?.length || 0;
                                 } catch (e) { console.error(`Error processing pasted content during status update for ${dataType}:`, e); }
                             } else if (dataType === 'pastedThiduaNVBI') {
-                                 // Tải lại dữ liệu đã xử lý từ localStorage (do chính người dùng này lưu)
+                                    // Tải lại dữ liệu đã xử lý từ localStorage (do chính người dùng này lưu)
                                 const processedData = JSON.parse(localStorage.getItem(saveKey) || '[]');
                                 processedCount = processedData.length;
                             }
-                             uiComponents.updatePasteStatus(uiId, '', 'success', cloudMetadata, processedCount);
+                                ui.updatePasteStatus(uiId, '', 'success', cloudMetadata, processedCount); // <<< SỬA (v4.47)
                         } else {
-                             uiComponents.updateFileStatus(uiId, fileName, '', 'success', false, cloudMetadata);
+                                ui.updateFileStatus(uiId, fileName, '', 'success', false, cloudMetadata); // <<< SỬA (v4.47)
                         }
                     } else {
                         showSyncNotification = true;
@@ -352,9 +352,9 @@ const app = {
                             const content = cloudMetadata.content || '';
                             let processedCount = 0;
                             try {
-                                 // *** MODIFIED (v4.40) ***
-                                 if (dataType === 'pastedThiduaNVBI') {
-                                     // Đây là logic quan trọng: Dữ liệu thi đua cần chạy qua BỘ XỬ LÝ ĐẦY ĐỦ
+                                    // *** MODIFIED (v4.40) ***
+                                    if (dataType === 'pastedThiduaNVBI') {
+                                        // Đây là logic quan trọng: Dữ liệu thi đua cần chạy qua BỘ XỬ LÝ ĐẦY ĐỦ
                                     // 1. Phân tích cú pháp
                                     const parsedData = services.parsePastedThiDuaTableData(content);
                                     if (!parsedData.success) throw new Error(parsedData.error);
@@ -368,7 +368,7 @@ const app = {
                                     // 4. Lưu kết quả đã xử lý (KHÔNG LƯU NỘI DUNG THÔ)
                                     appState[stateKey] = processedData;
                                     localStorage.setItem(saveKey, JSON.stringify(processedData)); // Lưu mảng đã xử lý
-                                     processedCount = processedData.length;
+                                        processedCount = processedData.length;
 
                                     // === FIX 2a.1 (Thêm) ===
                                     localStorage.setItem(RAW_PASTE_THIDUANV_KEY, content); // Lưu cả text thô
@@ -377,52 +377,52 @@ const app = {
                                     // === END FIX ===
 
                                 } else {
-                                     // Logic cũ cho các ô dán khác
+                                        // Logic cũ cho các ô dán khác
                                     localStorage.setItem(saveKey, content);
                                     if (stateKey && processFunc) {
-                                         const processedData = processFunc(content);
+                                            const processedData = processFunc(content);
                                         appState[stateKey] = processedData;
                                         processedCount = processedData?.length || 0;
                                     } else if (stateKey) {
-                                         console.warn(`Missing processFunc for pasted data ${dataType}`);
+                                            console.warn(`Missing processFunc for pasted data ${dataType}`);
                                     } else if (uiId === 'status-luyke') {
                                         document.getElementById('paste-luyke').value = content;
                                     }
                                 }
                                 // *** END MODIFIED (v4.40) ***
 
-                                 if (!this._localDataVersions[currentWarehouse]) this._localDataVersions[currentWarehouse] = {};
+                                    if (!this._localDataVersions[currentWarehouse]) this._localDataVersions[currentWarehouse] = {};
                                 this._localDataVersions[currentWarehouse][dataType] = { version: cloudVersion, timestamp: cloudLocalTimestamp };
                                 localStorage.setItem(LOCAL_DATA_VERSIONS_KEY, JSON.stringify(this._localDataVersions));
 
-                                uiComponents.updatePasteStatus(uiId, '', 'success', cloudMetadata, processedCount);
+                                ui.updatePasteStatus(uiId, '', 'success', cloudMetadata, processedCount); // <<< SỬA (v4.47)
                                 this.updateAndRenderCurrentTab();
                                 // Cập nhật bảng khai báo nếu admin đang mở
                                 if (dataType === 'pastedThiduaNVBI' && appState.isAdmin && document.getElementById('declaration-section')?.classList.contains('hidden') === false) {
                                     ui.renderAdminPage();
                                 }
                             } catch (e) {
-                                 console.error(`Error processing pasted data ${dataType} from cloud:`, e);
-                                uiComponents.updatePasteStatus(uiId, `Lỗi xử lý v${cloudVersion} từ cloud.`, 'error');
+                                    console.error(`Error processing pasted data ${dataType} from cloud:`, e);
+                                ui.updatePasteStatus(uiId, `Lỗi xử lý v${cloudVersion} từ cloud.`, 'error'); // <<< SỬA (v4.47)
                             }
                         } else {
-                            uiComponents.updateFileStatus(uiId, fileName, '', 'default', true, cloudMetadata, dataType, currentWarehouse);
+                            ui.updateFileStatus(uiId, fileName, '', 'default', true, cloudMetadata, dataType, currentWarehouse); // <<< SỬA (v4.47)
                         }
                     }
                 } else {
                     const reasonText = '';
                     if (appState.currentUser && updatedBy === appState.currentUser.email) {
-                         const statusText = `✓ Đã đồng bộ cloud ${updatedTime} ${reasonText}`.trim();
-                         isPasted ? uiComponents.updatePasteStatus(uiId, statusText, 'success', cloudMetadata) : uiComponents.updateFileStatus(uiId, fileName, statusText, 'success', false, cloudMetadata);
+                            const statusText = `✓ Đã đồng bộ cloud ${updatedTime} ${reasonText}`.trim();
+                            isPasted ? ui.updatePasteStatus(uiId, statusText, 'success', cloudMetadata) : ui.updateFileStatus(uiId, fileName, statusText, 'success', false, cloudMetadata); // <<< SỬA (v4.47)
                     } else {
-                         const statusText = `ⓘ ${updatedBy} cập nhật ${updatedTime} ${reasonText}`.trim();
-                          isPasted ? uiComponents.updatePasteStatus(uiId, statusText, 'default', cloudMetadata) : uiComponents.updateFileStatus(uiId, fileName, statusText, 'default', false, cloudMetadata);
+                            const statusText = `ⓘ ${updatedBy} cập nhật ${updatedTime} ${reasonText}`.trim();
+                            isPasted ? ui.updatePasteStatus(uiId, statusText, 'default', cloudMetadata) : ui.updateFileStatus(uiId, fileName, statusText, 'default', false, cloudMetadata); // <<< SỬA (v4.47)
                     }
                 }
             } else {
-                 if (dataType === 'giocong' || dataType === 'thuongnong' || dataType.startsWith('pasted')) {
-                     console.warn(`%c[handleCloudDataUpdate @ ${receivedTime}] No valid METADATA structure found (version or timestamp missing) for WATCHED dataType ${dataType}. Received:`, "color: red; font-weight: bold;", cloudMetadata);
-                 }
+                    if (dataType === 'giocong' || dataType === 'thuongnong' || dataType.startsWith('pasted')) {
+                        console.warn(`%c[handleCloudDataUpdate @ ${receivedTime}] No valid METADATA structure found (version or timestamp missing) for WATCHED dataType ${dataType}. Received:`, "color: red; font-weight: bold;", cloudMetadata);
+                    }
             }
         }
         if (showSyncNotification) {
@@ -458,10 +458,10 @@ const app = {
             const expectedFileName = metadata.fileName || `${dataType}_v${expectedVersion}.xlsx`;
 
             if (!downloadURL) {
-                 throw new Error("URL tải xuống không hợp lệ trong thông tin đồng bộ.");
+                    throw new Error("URL tải xuống không hợp lệ trong thông tin đồng bộ.");
             }
 
-            uiComponents.updateFileStatus(uiId, expectedFileName, `Đang tải file...`, 'default', false);
+            ui.updateFileStatus(uiId, expectedFileName, `Đang tải file...`, 'default', false); // <<< SỬA (v4.47)
             ui.showProgressBar(uiId);
 
             console.log(`[handleDownloadAndProcessData] Fetching file from: ${downloadURL}`);
@@ -473,7 +473,7 @@ const app = {
             console.log(`[handleDownloadAndProcessData] File downloaded successfully. Blob size: ${fileBlob.size}`);
             const downloadedFile = new File([fileBlob], expectedFileName, { type: fileBlob.type });
 
-            uiComponents.updateFileStatus(uiId, expectedFileName, `Đang xử lý file...`, 'default');
+            ui.updateFileStatus(uiId, expectedFileName, `Đang xử lý file...`, 'default'); // <<< SỬA (v4.47)
 
             const workbook = await this.handleFileRead(downloadedFile);
             const rawData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
@@ -484,7 +484,7 @@ const app = {
             console.log(`[handleDownloadAndProcessData] File processing result - Success: ${success}, Rows: ${normalizedData?.length}`);
 
             if (!success) {
-                 throw new Error(`File tải về lỗi: Thiếu cột ${missingColumns.join(', ')}.`);
+                    throw new Error(`File tải về lỗi: Thiếu cột ${missingColumns.join(', ')}.`);
             }
 
             appState[stateKey] = normalizedData;
@@ -499,10 +499,10 @@ const app = {
                 localStorage.setItem(LOCAL_DATA_VERSIONS_KEY, JSON.stringify(this._localDataVersions));
                 console.log(`%c[handleDownloadAndProcessData] CRITICAL FIX: Updated local version tracker to (v${expectedVersion}, t${expectedTimestamp}) and saved to localStorage.`, "color: purple; font-weight: bold;");
             } catch (e) {
-                 console.error("[handleDownloadAndProcessData] Error saving updated versions/timestamps to localStorage:", e);
+                    console.error("[handleDownloadAndProcessData] Error saving updated versions/timestamps to localStorage:", e);
             }
 
-            uiComponents.updateFileStatus(uiId, expectedFileName, '', 'success', false, metadata);
+            ui.updateFileStatus(uiId, expectedFileName, '', 'success', false, metadata); // <<< SỬA (v4.47)
             ui.showNotification(`Đã tải và xử lý thành công dữ liệu ${dataType} (v${expectedVersion})!`, 'success');
 
             this.updateAndRenderCurrentTab();
@@ -510,18 +510,18 @@ const app = {
         } catch (error) {
             console.error(`%c[handleDownloadAndProcessData] Error processing ${dataType} @ ${warehouse}:`, "color: red;", error);
             ui.showNotification(`Lỗi khi tải/xử lý dữ liệu ${dataType}: ${error.message}`, 'error');
-             if (metadata) {
-                  const statusText = `Lỗi tải/xử lý. Thử lại?`;
-                   uiComponents.updateFileStatus(uiId, metadata.fileName || 'Cloud', statusText, 'error', true, metadata, dataType, warehouse);
-             } else {
-                  const fallbackMetadata = this._getSavedMetadata(warehouse, dataType);
-                  if(fallbackMetadata) {
-                      const statusText = `Lỗi tải/xử lý. Thử lại?`;
-                      uiComponents.updateFileStatus(uiId, fallbackMetadata.fileName || 'Cloud', statusText, 'error', true, fallbackMetadata, dataType, warehouse);
-                  } else {
-                      uiComponents.updateFileStatus(uiId, 'Cloud', 'Lỗi tải/xử lý. Không tìm thấy thông tin.', 'error', false);
-                  }
-             }
+                if (metadata) {
+                    const statusText = `Lỗi tải/xử lý. Thử lại?`;
+                        ui.updateFileStatus(uiId, metadata.fileName || 'Cloud', statusText, 'error', true, metadata, dataType, warehouse); // <<< SỬA (v4.47)
+                } else {
+                    const fallbackMetadata = this._getSavedMetadata(warehouse, dataType);
+                    if(fallbackMetadata) {
+                        const statusText = `Lỗi tải/xử lý. Thử lại?`;
+                        ui.updateFileStatus(uiId, fallbackMetadata.fileName || 'Cloud', statusText, 'error', true, fallbackMetadata, dataType, warehouse); // <<< SỬA (v4.47)
+                    } else {
+                        ui.updateFileStatus(uiId, 'Cloud', 'Lỗi tải/xử lý. Không tìm thấy thông tin.', 'error', false); // <<< SỬA (v4.47)
+                    }
+                }
         } finally {
             ui.hideProgressBar(uiId);
         }
@@ -550,7 +550,7 @@ const app = {
             const currentVersion = versionInfo.version || this.currentVersion;
             marqueeText.textContent = `🔥 Chi tiết bản cập nhật - Phiên bản ${currentVersion}`;
             marqueeContainer.addEventListener('click', async () => {
-                 try {
+                    try {
                     const changelogRes = await fetch(`./changelog.json?v=${new Date().getTime()}`);
                     const changelogData = await changelogRes.json();
                     const modalTitle = document.getElementById('help-modal-title');
@@ -589,7 +589,7 @@ const app = {
             if (!response.ok) return;
             const serverConfig = await response.json();
             if (serverConfig.version && serverConfig.version !== this.currentVersion) {
-                 console.log(`Phiên bản mới ${serverConfig.version} đã sẵn sàng!`);
+                    console.log(`Phiên bản mới ${serverConfig.version} đã sẵn sàng!`);
                 const changelogRes = await fetch(`./changelog.json?v=${new Date().getTime()}`);
                 const changelogData = await changelogRes.json();
                 const newVersionDetails = changelogData.find(log => log.version === serverConfig.version);
@@ -600,8 +600,8 @@ const app = {
                     notesContainer.innerHTML = `
                         <p class="text-sm font-semibold text-gray-700 mb-2">Nội dung cập nhật:</p>
                         <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
-                             ${newVersionDetails.notes.map(note => `<li>${note}</li>`).join('')}
-                         </ul>
+                                ${newVersionDetails.notes.map(note => `<li>${note}</li>`).join('')}
+                            </ul>
                     `;
                 } else if (notesContainer) {
                     notesContainer.innerHTML = '<p class="text-sm text-gray-500">Không thể tải chi tiết cập nhật.</p>';
@@ -609,13 +609,13 @@ const app = {
                 ui.toggleModal('force-update-modal', true);
             }
         } catch (error) {
-             console.error('Không thể kiểm tra phiên bản mới:', error);
+                console.error('Không thể kiểm tra phiên bản mới:', error);
         }
     },
 
     async loadDataFromStorage() {
         // ... (Giữ nguyên)
- 
+    
         let dsnvLoadSuccess = false;
         const loadSavedFile = async (saveKey, stateKey, fileType, uiId) => {
             console.log(`[main.js loadDataFromStorage] Attempting to load ${saveKey} from IndexedDB...`);
@@ -623,16 +623,16 @@ const app = {
             try {
                 savedData = await this.storage.getItem(saveKey);
             } catch (indexedDbError) {
-                 console.error(`[main.js loadDataFromStorage] CRITICAL Error reading ${saveKey} from IndexedDB:`, indexedDbError);
-                 uiComponents.updateFileStatus(uiId, '', `Lỗi đọc cache IndexedDB!`, 'error');
-                 if (saveKey === 'saved_danhsachnv') {
-                     const selector = document.getElementById('data-warehouse-selector');
-                     if (selector) {
-                         selector.innerHTML = '<option value="">Lỗi tải DSNV từ cache!</option>';
-                         selector.disabled = true;
-                     }
-                 }
-                 return;
+                    console.error(`[main.js loadDataFromStorage] CRITICAL Error reading ${saveKey} from IndexedDB:`, indexedDbError);
+                    ui.updateFileStatus(uiId, '', `Lỗi đọc cache IndexedDB!`, 'error'); // <<< SỬA (v4.47)
+                    if (saveKey === 'saved_danhsachnv') {
+                        const selector = document.getElementById('data-warehouse-selector');
+                        if (selector) {
+                            selector.innerHTML = '<option value="">Lỗi tải DSNV từ cache!</option>';
+                            selector.disabled = true;
+                        }
+                    }
+                    return;
             }
 
             if (!savedData) {
@@ -643,8 +643,8 @@ const app = {
             console.log(`[main.js loadDataFromStorage] Found ${saveKey} in IndexedDB.`);
             try {
                 if (saveKey === 'saved_category_structure') {
-                     if (appState.categoryStructure.length > 0 || appState.brandList.length > 0) {
-                         // Đã được xử lý bởi logic Fix 1a, không cần làm gì ở đây
+                        if (appState.categoryStructure.length > 0 || appState.brandList.length > 0) {
+                            // Đã được xử lý bởi logic Fix 1a, không cần làm gì ở đây
                     }
                     return;
                 }
@@ -663,53 +663,53 @@ const app = {
                     const firestoreKey = mappingEntry ? mappingEntry.firestoreKey : null;
 
                     if (saveKey === 'saved_danhsachnv') {
-                         dsnvLoadSuccess = true;
-                         fileNameToShow = localStorage.getItem(LOCAL_DSNV_FILENAME_KEY) || fileNameToShow;
+                            dsnvLoadSuccess = true;
+                            fileNameToShow = localStorage.getItem(LOCAL_DSNV_FILENAME_KEY) || fileNameToShow;
                     } else if (firestoreKey && !mappingEntry.isPasted) {
-                         const currentWarehouse = localStorage.getItem('selectedWarehouse');
-                         if (currentWarehouse) {
-                             metadata = this._getSavedMetadata(currentWarehouse, firestoreKey);
-                             if (metadata) {
-                                  fileNameToShow = metadata.fileName || fileNameToShow;
-                                 console.log(`[main.js loadDataFromStorage] Found metadata for ${firestoreKey}, will use it in status update.`);
-                             } else {
-                                 console.log(`[main.js loadDataFromStorage] No metadata found in localStorage for ${firestoreKey}, using basic cache status.`);
-                             }
-                         } else {
-                             console.log(`[main.js loadDataFromStorage] No warehouse selected, using basic cache status for ${firestoreKey}.`);
-                         }
+                            const currentWarehouse = localStorage.getItem('selectedWarehouse');
+                            if (currentWarehouse) {
+                                metadata = this._getSavedMetadata(currentWarehouse, firestoreKey);
+                                if (metadata) {
+                                        fileNameToShow = metadata.fileName || fileNameToShow;
+                                    console.log(`[main.js loadDataFromStorage] Found metadata for ${firestoreKey}, will use it in status update.`);
+                                } else {
+                                    console.log(`[main.js loadDataFromStorage] No metadata found in localStorage for ${firestoreKey}, using basic cache status.`);
+                                }
+                            } else {
+                                console.log(`[main.js loadDataFromStorage] No warehouse selected, using basic cache status for ${firestoreKey}.`);
+                            }
                     }
 
-                    uiComponents.updateFileStatus(uiId, fileNameToShow, statusText, statusType, false, metadata);
+                    ui.updateFileStatus(uiId, fileNameToShow, statusText, statusType, false, metadata); // <<< SỬA (v4.47)
 
                     if (stateKey === 'danhSachNhanVien') {
                         console.log("[main.js loadDataFromStorage] Updating employee maps after loading DSNV from cache.");
                         services.updateEmployeeMaps();
                     }
                 } else {
-                     console.error(`[main.js loadDataFromStorage] Invalid or empty data array found in cache for ${saveKey}.`);
-                     uiComponents.updateFileStatus(uiId, '', `Lỗi dữ liệu cache.`, 'error');
-                     try {
-                         await this.storage.setItem(saveKey, null);
-                         console.log(`[main.js loadDataFromStorage] Cleared potentially corrupted cache for ${saveKey}.`);
-                     } catch(clearError) {
-                         console.error(`[main.js loadDataFromStorage] Failed to clear corrupted cache for ${saveKey}:`, clearError);
-                     }
+                        console.error(`[main.js loadDataFromStorage] Invalid or empty data array found in cache for ${saveKey}.`);
+                        ui.updateFileStatus(uiId, '', `Lỗi dữ liệu cache.`, 'error'); // <<< SỬA (v4.47)
+                        try {
+                            await this.storage.setItem(saveKey, null);
+                            console.log(`[main.js loadDataFromStorage] Cleared potentially corrupted cache for ${saveKey}.`);
+                        } catch(clearError) {
+                            console.error(`[main.js loadDataFromStorage] Failed to clear corrupted cache for ${saveKey}:`, clearError);
+                        }
                 }
-             } catch (e) {
+                } catch (e) {
                 console.error(`[main.js loadDataFromStorage] Lỗi xử lý ${saveKey} từ IndexedDB:`, e);
-                uiComponents.updateFileStatus(uiId, '', `Lỗi xử lý cache.`, 'error');
+                ui.updateFileStatus(uiId, '', `Lỗi xử lý cache.`, 'error'); // <<< SỬA (v4.47)
             }
         };
 
         await loadSavedFile('saved_danhsachnv', 'danhSachNhanVien', 'danhsachnv', 'danhsachnv');
         if (!dsnvLoadSuccess) {
-              console.error("[main.js loadDataFromStorage] CRITICAL: Failed to load 'saved_danhsachnv' from IndexedDB. App state might be incorrect.");
+                console.error("[main.js loadDataFromStorage] CRITICAL: Failed to load 'saved_danhsachnv' from IndexedDB. App state might be incorrect.");
             const selector = document.getElementById('data-warehouse-selector');
-             if (selector) {
-                 selector.innerHTML = '<option value="">Lỗi tải DSNV từ cache!</option>';
-                 selector.disabled = true;
-             }
+                if (selector) {
+                    selector.innerHTML = '<option value="">Lỗi tải DSNV từ cache!</option>';
+                    selector.disabled = true;
+                }
         }
 
         await loadSavedFile('saved_ycx_thangtruoc', 'ycxDataThangTruoc', 'ycx', 'ycx-thangtruoc');
@@ -719,7 +719,7 @@ const app = {
         await loadSavedFile('saved_thuongnong', 'thuongNongData', 'thuongnong', 'thuongnong');
 
         try {
-             const savedLuykeGoals = localStorage.getItem('luykeGoalSettings');
+                const savedLuykeGoals = localStorage.getItem('luykeGoalSettings');
             if(savedLuykeGoals) appState.luykeGoalSettings = JSON.parse(savedLuykeGoals);
             const savedRealtimeGoals = localStorage.getItem('realtimeGoalSettings');
             if (savedRealtimeGoals) appState.realtimeGoalSettings = JSON.parse(savedRealtimeGoals);
@@ -768,7 +768,7 @@ const app = {
 
         const loadPasted = (saveKey, stateKey, uiId, processFunc) => {
             // === START: DEBUG (v4.43) ===
-             console.log(`%c[DEBUG loadPastedDataFromStorage] Đang xử lý key: ${saveKey}`, "color: brown;");
+                console.log(`%c[DEBUG loadPastedDataFromStorage] Đang xử lý key: ${saveKey}`, "color: brown;");
             // === END: DEBUG ===
             
             const pastedText = localStorage.getItem(saveKey); // Đây là text thô (ngoại trừ daily_paste_thiduanv)
@@ -782,16 +782,16 @@ const app = {
             // === END: DEBUG ===
 
             if (pastedText) {
-                 const el = document.getElementById(uiId.replace('status-', 'paste-'));
-                 
-                 // === FIX 2a.2 (Sửa) ===
-                 // Không điền text thô cho ô thi đua NV, vì chúng ta lưu *dữ liệu đã xử lý* vào key đó
-                 if (el && saveKey !== 'daily_paste_thiduanv') {
+                    const el = document.getElementById(uiId.replace('status-', 'paste-'));
+                    
+                    // === FIX 2a.2 (Sửa) ===
+                    // Không điền text thô cho ô thi đua NV, vì chúng ta lưu *dữ liệu đã xử lý* vào key đó
+                    if (el && saveKey !== 'daily_paste_thiduanv') {
                     el.value = pastedText;
-                 }
-                 // === END FIX ===
+                    }
+                    // === END FIX ===
 
-                 let processedCount = 0;
+                    let processedCount = 0;
                 
                 // === FIX 2a.2 (Sửa) ===
                 if (saveKey === 'daily_paste_thiduanv') {
@@ -807,10 +807,10 @@ const app = {
                     // === FIX 2a.3 (Thêm) ===
                     // Xử lý ngay dữ liệu Lũy kế dán vào để appState.competitionData sẵn sàng
                     try {
-                       services.parseCompetitionDataFromLuyKe(pastedText);
-                       console.log("[loadPastedData] Parsed luyke paste data from cache.");
+                        services.parseCompetitionDataFromLuyKe(pastedText);
+                        console.log("[loadPastedData] Parsed luyke paste data from cache.");
                     } catch(e) {
-                       console.warn("Lỗi xử lý 'paste-luyke' từ cache khi tải trang:", e);
+                        console.warn("Lỗi xử lý 'paste-luyke' từ cache khi tải trang:", e);
                     }
                     // === END FIX ===
                 }
@@ -822,18 +822,18 @@ const app = {
                 if (kho && mappingInfo) {
                     metadata = this._getSavedMetadata(kho, mappingInfo.firestoreKey);
                     if (metadata) {
-                         uiComponents.updatePasteStatus(uiId, '', 'success', metadata, processedCount);
+                            ui.updatePasteStatus(uiId, '', 'success', metadata, processedCount); // <<< SỬA (v4.47)
                     } else {
-                         // === FIX 2b.2 (Sửa) ===
-                         let countMsg = processedCount > 0 ? `(${processedCount} NV)` : '';
-                         if (uiId === 'status-luyke') countMsg = ''; // Lũy kế không đếm
-                         uiComponents.updatePasteStatus(uiId, `✓ Đã tải ${countMsg} (chưa đồng bộ)`, 'success', null, processedCount);
+                            // === FIX 2b.2 (Sửa) ===
+                            let countMsg = processedCount > 0 ? `(${processedCount} NV)` : '';
+                            if (uiId === 'status-luyke') countMsg = ''; // Lũy kế không đếm
+                            ui.updatePasteStatus(uiId, `✓ Đã tải ${countMsg} (chưa đồng bộ)`, 'success', null, processedCount); // <<< SỬA (v4.47)
                     }
                 } else if (pastedText) {
-                     // === FIX 2b.2 (Sửa) ===
-                     let countMsg = processedCount > 0 ? `(${processedCount} NV)` : '';
-                     if (uiId === 'status-luyke') countMsg = '';
-                     uiComponents.updatePasteStatus(uiId, `✓ Đã tải ${countMsg} (chưa chọn kho)`, 'success', null, processedCount);
+                        // === FIX 2b.2 (Sửa) ===
+                        let countMsg = processedCount > 0 ? `(${processedCount} NV)` : '';
+                        if (uiId === 'status-luyke') countMsg = '';
+                        ui.updatePasteStatus(uiId, `✓ Đã tải ${countMsg} (chưa chọn kho)`, 'success', null, processedCount); // <<< SỬA (v4.47)
                 }
             }
         };
@@ -872,7 +872,7 @@ const app = {
 
         if (!mappingInfo) {
             if (fileType === 'danhsachnv') {
-                 return this.handleDsnvUpload(e, file);
+                    return this.handleDsnvUpload(e, file);
             }
             console.error(`[handleFileInputChange] No mapping info found for fileType: ${fileType}`);
             return;
@@ -880,7 +880,7 @@ const app = {
 
         const { stateKey, saveKey, firestoreKey } = mappingInfo;
         const dataName = fileInput.dataset.name || fileType;
-        uiComponents.updateFileStatus(fileType, file.name, 'Đang đọc & chuẩn hóa...', 'default');
+        ui.updateFileStatus(fileType, file.name, 'Đang đọc & chuẩn hóa...', 'default'); // <<< SỬA (v4.47)
         ui.showProgressBar(fileType);
 
         try {
@@ -891,14 +891,14 @@ const app = {
             ui.displayDebugInfo(fileType);
 
             if (!success) {
-                 const errorMessage = `Lỗi file "${dataName}": Thiếu cột: ${missingColumns.join(', ')}.`;
-                 uiComponents.updateFileStatus(fileType, file.name, `Lỗi: Thiếu cột dữ liệu.`, 'error');
-                 ui.showNotification(errorMessage, 'error');
-                 if (document.getElementById('debug-tool-container')?.classList.contains('hidden')) {
-                     document.getElementById('toggle-debug-btn')?.click();
-                 }
-                 ui.hideProgressBar(fileType);
-                 return;
+                    const errorMessage = `Lỗi file "${dataName}": Thiếu cột: ${missingColumns.join(', ')}.`;
+                    ui.updateFileStatus(fileType, file.name, `Lỗi: Thiếu cột dữ liệu.`, 'error'); // <<< SỬA (v4.47)
+                    ui.showNotification(errorMessage, 'error');
+                    if (document.getElementById('debug-tool-container')?.classList.contains('hidden')) {
+                        document.getElementById('toggle-debug-btn')?.click();
+                    }
+                    ui.hideProgressBar(fileType);
+                    return;
             }
 
             appState[stateKey] = normalizedData;
@@ -915,7 +915,7 @@ const app = {
             let currentFirestoreKey = null;
             try {
                 console.log("[DEBUG STEP 1] Getting warehouseToSync..."); // Log added
-                 warehouseToSync = appState.selectedWarehouse;
+                    warehouseToSync = appState.selectedWarehouse;
                 console.log(`[DEBUG STEP 2] warehouseToSync = ${warehouseToSync}`); // Log added
         
                 console.log("[DEBUG STEP 3] Getting firestoreKey..."); // Log added
@@ -925,9 +925,9 @@ const app = {
                 console.log(`%c[DEBUG PRE-SYNC CHECK] File Type: ${fileType}, Warehouse: ${warehouseToSync}, Firestore Key: ${currentFirestoreKey}`, "color: purple; font-weight: bold;");
 
                 if (warehouseToSync && currentFirestoreKey) {
-                     console.log(`%c[DEBUG SYNC BLOCK START] Entering cloud sync block for ${fileType} (Firestore Key: ${currentFirestoreKey})`, "color: magenta;");
+                        console.log(`%c[DEBUG SYNC BLOCK START] Entering cloud sync block for ${fileType} (Firestore Key: ${currentFirestoreKey})`, "color: magenta;");
 
-                    uiComponents.updateFileStatus(fileType, file.name, `Đang chuẩn bị đồng bộ cloud...`, 'default');
+                    ui.updateFileStatus(fileType, file.name, `Đang chuẩn bị đồng bộ cloud...`, 'default'); // <<< SỬA (v4.47)
                     let localDataVersions = this._localDataVersions;
                     const currentVersion = localDataVersions?.[warehouseToSync]?.[currentFirestoreKey]?.version || 0;
                     const newVersion = currentVersion + 1;
@@ -939,21 +939,21 @@ const app = {
                     console.log(`%c[handleFileInputChange] Cloud Upload for ${currentFirestoreKey}:`, "color: magenta; font-weight: bold;");
 
                     const onProgress = (progress) => {
-                         uiComponents.updateFileStatus(fileType, file.name, `Đang tải lên cloud... ${Math.round(progress)}%`, 'default');
+                            ui.updateFileStatus(fileType, file.name, `Đang tải lên cloud... ${Math.round(progress)}%`, 'default'); // <<< SỬA (v4.47)
                     };
 
                     try {
                         const downloadURL = await firebase.uploadFileToStorage(file, storagePath, onProgress);
-                        uiComponents.updateFileStatus(fileType, file.name, `Upload xong, đang lưu thông tin...`, 'default');
+                        ui.updateFileStatus(fileType, file.name, `Upload xong, đang lưu thông tin...`, 'default'); // <<< SỬA (v4.47)
 
                         const metadata = {
-                             storagePath: storagePath,
+                                storagePath: storagePath,
                             downloadURL: downloadURL,
                             version: newVersion,
                             timestamp: uploadTimestamp,
                             rowCount: normalizedData.length,
-                             fileName: file.name
-                         };
+                                fileName: file.name
+                            };
 
                         await firebase.saveMetadataToFirestore(warehouseToSync, currentFirestoreKey, metadata);
 
@@ -963,7 +963,7 @@ const app = {
                             localStorage.setItem(metadataKey, JSON.stringify(metadataToSaveLocally));
                             console.log(`[handleFileInputChange] Saved metadata for ${currentFirestoreKey} to localStorage ('${metadataKey}') immediately.`);
                         } catch(lsError) {
-                              console.error(`[handleFileInputChange] Error saving metadata for ${currentFirestoreKey} to localStorage:`, lsError);
+                                console.error(`[handleFileInputChange] Error saving metadata for ${currentFirestoreKey} to localStorage:`, lsError);
                         }
 
                         if (!localDataVersions[warehouseToSync]) localDataVersions[warehouseToSync] = {};
@@ -973,33 +973,33 @@ const app = {
 
                         console.log(`%c[handleFileInputChange] Successfully uploaded ${currentFirestoreKey} (v${newVersion}).`, "color: magenta;");
 
-                         uiComponents.updateFileStatus(fileType, file.name, '', 'success', false, metadataToSaveLocally);
+                            ui.updateFileStatus(fileType, file.name, '', 'success', false, metadataToSaveLocally); // <<< SỬA (v4.47)
 
-                     } catch (syncError) {
+                        } catch (syncError) {
                         console.error(`%c[handleFileInputChange] Cloud sync failed for ${currentFirestoreKey}:`, "color: red;", syncError);
-                        uiComponents.updateFileStatus(fileType, file.name, `Lỗi đồng bộ cloud: ${syncError.message}`, 'error');
+                        ui.updateFileStatus(fileType, file.name, `Lỗi đồng bộ cloud: ${syncError.message}`, 'error'); // <<< SỬA (v4.47)
                     }
-                     console.log(`%c[DEBUG SYNC BLOCK END] Finished cloud sync block for ${fileType}`, "color: magenta;");
+                        console.log(`%c[DEBUG SYNC BLOCK END] Finished cloud sync block for ${fileType}`, "color: magenta;");
                 } else {
-                     console.log(`%c[DEBUG SYNC SKIP] Skipping cloud sync for ${fileType}. Warehouse selected: ${!!warehouseToSync}, Firestore key exists: ${!!currentFirestoreKey}`, "color: orange;");
-                     if (currentFirestoreKey) {
-                         uiComponents.updateFileStatus(fileType, file.name, `✓ Đã tải ${normalizedData.length} dòng (Chưa đồng bộ).`, 'success', false, null);
-                     }
+                        console.log(`%c[DEBUG SYNC SKIP] Skipping cloud sync for ${fileType}. Warehouse selected: ${!!warehouseToSync}, Firestore key exists: ${!!currentFirestoreKey}`, "color: orange;");
+                        if (currentFirestoreKey) {
+                            ui.updateFileStatus(fileType, file.name, `✓ Đã tải ${normalizedData.length} dòng (Chưa đồng bộ).`, 'success', false, null); // <<< SỬA (v4.47)
+                        }
                 }
 
             } catch(preSyncError) {
-                 // ** ADDED v4.36: Catch errors before sync check **
-                 console.error(`%c[DEBUG PRE-SYNC ERROR] Error before sync check for ${fileType}:`, "color: red; font-weight: bold;", preSyncError);
-                 uiComponents.updateFileStatus(fileType, file.name, `Lỗi chuẩn bị đồng bộ: ${preSyncError.message}`, 'error');
-                 // ** END ADDED **
+                    // ** ADDED v4.36: Catch errors before sync check **
+                    console.error(`%c[DEBUG PRE-SYNC ERROR] Error before sync check for ${fileType}:`, "color: red; font-weight: bold;", preSyncError);
+                    ui.updateFileStatus(fileType, file.name, `Lỗi chuẩn bị đồng bộ: ${preSyncError.message}`, 'error'); // <<< SỬA (v4.47)
+                    // ** END ADDED **
             }
 
             console.log(`%c[DEBUG PRE-RENDER] About to call updateAndRenderCurrentTab for ${fileType}`, "color: blue;");
             this.updateAndRenderCurrentTab();
 
         } catch (error) {
-             console.error(`Lỗi xử lý file ${dataName}:`, error);
-            uiComponents.updateFileStatus(fileType, file.name, `Lỗi đọc file: ${error.message}`, 'error');
+                console.error(`Lỗi xử lý file ${dataName}:`, error);
+            ui.updateFileStatus(fileType, file.name, `Lỗi đọc file: ${error.message}`, 'error'); // <<< SỬA (v4.47)
             ui.showNotification(`Lỗi khi xử lý file "${dataName}".`, 'error');
         } finally {
             ui.hideProgressBar(fileType);
@@ -1015,7 +1015,7 @@ const app = {
         const stateKey = 'danhSachNhanVien';
         const saveKey = 'saved_danhsachnv';
 
-        uiComponents.updateFileStatus(fileType, file.name, 'Đang đọc & chuẩn hóa...', 'default');
+        ui.updateFileStatus(fileType, file.name, 'Đang đọc & chuẩn hóa...', 'default'); // <<< SỬA (v4.47)
         ui.showProgressBar(fileType);
 
         try {
@@ -1025,11 +1025,11 @@ const app = {
             ui.displayDebugInfo(fileType);
 
             if (!success) {
-                 const errorMessage = `Lỗi file "${dataName}": Thiếu cột: ${missingColumns.join(', ')}.`;
-                uiComponents.updateFileStatus(fileType, file.name, `Lỗi: Thiếu cột dữ liệu.`, 'error');
+                    const errorMessage = `Lỗi file "${dataName}": Thiếu cột: ${missingColumns.join(', ')}.`;
+                ui.updateFileStatus(fileType, file.name, `Lỗi: Thiếu cột dữ liệu.`, 'error'); // <<< SỬA (v4.47)
                 ui.showNotification(errorMessage, 'error');
                 if (document.getElementById('debug-tool-container')?.classList.contains('hidden')) {
-                     document.getElementById('toggle-debug-btn')?.click();
+                        document.getElementById('toggle-debug-btn')?.click();
                 }
                 return;
             }
@@ -1037,29 +1037,29 @@ const app = {
             appState[stateKey] = normalizedData;
             services.updateEmployeeMaps();
             ui.populateAllFilters();
-            uiComponents.populateWarehouseSelector();
+            ui.populateWarehouseSelector(); // <<< SỬA (v4.47)
 
             try {
                 localStorage.setItem(LOCAL_DSNV_FILENAME_KEY, file.name);
                 console.log(`[handleDsnvUpload] Saved DSNV filename '${file.name}' to localStorage.`);
             } catch (lsError) {
-                 console.error("[handleDsnvUpload] Error saving DSNV filename to localStorage:", lsError);
+                    console.error("[handleDsnvUpload] Error saving DSNV filename to localStorage:", lsError);
             }
 
-             ui.showNotification(`Tải thành công file "${dataName}"!`, 'success');
+                ui.showNotification(`Tải thành công file "${dataName}"!`, 'success');
 
             if (saveKey) {
-                 console.log(`[handleDsnvUpload] Saving normalized data (${normalizedData.length} rows) to cache: ${saveKey}`);
-                 await this.storage.setItem(saveKey, normalizedData);
+                    console.log(`[handleDsnvUpload] Saving normalized data (${normalizedData.length} rows) to cache: ${saveKey}`);
+                    await this.storage.setItem(saveKey, normalizedData);
             }
 
-            uiComponents.updateFileStatus(fileType, file.name, `✓ Đã tải ${normalizedData.length} dòng.`, 'success', false, null);
+            ui.updateFileStatus(fileType, file.name, `✓ Đã tải ${normalizedData.length} dòng.`, 'success', false, null); // <<< SỬA (v4.47)
             this.updateAndRenderCurrentTab();
 
         } catch (error) {
-             console.error(`Lỗi xử lý file ${dataName}:`, error);
-             uiComponents.updateFileStatus(fileType, file.name, `Lỗi đọc file: ${error.message}`, 'error');
-             ui.showNotification(`Lỗi khi xử lý file "${dataName}".`, 'error');
+                console.error(`Lỗi xử lý file ${dataName}:`, error);
+                ui.updateFileStatus(fileType, file.name, `Lỗi đọc file: ${error.message}`, 'error'); // <<< SỬA (v4.47)
+                ui.showNotification(`Lỗi khi xử lý file "${dataName}".`, 'error');
         } finally {
             ui.hideProgressBar(fileType);
             e.target.value = '';
@@ -1070,23 +1070,23 @@ const app = {
     handleFileRead(file) {
         // ... (Giữ nguyên)
         return new Promise((resolve, reject) => {
-             if (!file) return reject(new Error("No file provided."));
-             const reader = new FileReader();
-             reader.onload = (event) => {
-                 try {
+                if (!file) return reject(new Error("No file provided."));
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
                     const data = new Uint8Array(event.target.result);
                     const workbook = XLSX.read(data, { type: 'array', cellDates: true });
                     resolve(workbook);
                 } catch (err) { reject(err); }
-             };
-             reader.onerror = (err) => reject(new Error("Could not read the file: " + err));
-             reader.readAsArrayBuffer(file);
+                };
+                reader.onerror = (err) => reject(new Error("Could not read the file: " + err));
+                reader.readAsArrayBuffer(file);
         });
     },
 
     updateAndRenderCurrentTab() {
         // ... (Giữ nguyên)
-        uiComponents.renderCompetitionConfigUI();
+        ui.renderCompetitionConfigUI(); // <<< SỬA (v4.47)
         const activeTab = document.querySelector('.page-section:not(.hidden)');
         if (!activeTab) {
             return;
@@ -1100,11 +1100,11 @@ const app = {
     },
 
     switchTab(targetId) {
-         // ... (Giữ nguyên)
+            // ... (Giữ nguyên)
         document.querySelectorAll('.page-section').forEach(section => section.classList.toggle('hidden', section.id !== targetId));
         document.querySelectorAll('.nav-link').forEach(link => {
-             const isActive = link.getAttribute('href') === `#${targetId}`;
-             link.classList.toggle('bg-blue-100', isActive);
+                const isActive = link.getAttribute('href') === `#${targetId}`;
+                link.classList.toggle('bg-blue-100', isActive);
             link.classList.toggle('text-blue-700', isActive);
         });
         if (targetId === 'home-section') ui.renderHomePage();
@@ -1117,12 +1117,12 @@ const app = {
 
     async loadAndApplyBookmarkLink() {
         // ... (Giữ nguyên)
-         try {
+            try {
             const bookmarkUrl = await firebase.getBookmarkDownloadURL();
             const linkElement = document.getElementById('download-bookmark-link');
             if (linkElement) linkElement.href = bookmarkUrl;
         } catch (error) {
-             console.error("Không thể tải link bookmark:", error);
+                console.error("Không thể tải link bookmark:", error);
             const linkElement = document.getElementById('download-bookmark-link');
             if (linkElement) linkElement.style.display = 'none';
         }
@@ -1138,7 +1138,7 @@ const app = {
         // *** MODIFIED (v4.40): Chỉ lưu text thô nếu đó KHÔNG PHẢI là thi đua NV
         // Dữ liệu thi đua NV sẽ được lưu dưới dạng JSON đã xử lý ở hàm riêng
         if (dataType !== 'pastedThiduaNVBI') {
-             // === START: DEBUG (v4.43) ===
+                // === START: DEBUG (v4.43) ===
             try {
                 localStorage.setItem(localStorageKey, pastedText);
                 console.log(`%c[DEBUG _handlePastedDataSync]   > Đã LƯU (setItem) text thô vào localStorage key: ${localStorageKey}`, "color: darkcyan;");
@@ -1153,7 +1153,7 @@ const app = {
         
         // *** MODIFIED (v4.40) ***
         if (dataType === 'pastedThiduaNVBI') {
-             // Logic này chỉ chạy khi GỌI TỪ CLOUD (handleCloudDataUpdate)
+                // Logic này chỉ chạy khi GỌI TỪ CLOUD (handleCloudDataUpdate)
             // Vì _handlePastedDataSync không còn được gọi trực tiếp bởi handleThiduaNVPaste
             const parsedData = services.parsePastedThiDuaTableData(pastedText);
             if(parsedData.success) {
@@ -1167,21 +1167,21 @@ const app = {
             }
         } 
         // *** END MODIFIED ***
-         else if (stateKey && processFunc) {
+            else if (stateKey && processFunc) {
             processedData = processFunc(pastedText);
             appState[stateKey] = processedData;
             processedCount = processedData?.length || 0;
         } else if (uiId === 'status-luyke') {
-             // Cập nhật giá trị ô input nếu cần (hàm handleLuykePaste sẽ làm việc này)
+                // Cập nhật giá trị ô input nếu cần (hàm handleLuykePaste sẽ làm việc này)
         }
 
         if (!kho) {
-            uiComponents.updatePasteStatus(uiId, '✓ Đã nhận (Chọn kho để đồng bộ)', 'success', null, processedCount);
+            ui.updatePasteStatus(uiId, '✓ Đã nhận (Chọn kho để đồng bộ)', 'success', null, processedCount); // <<< SỬA (v4.47)
             if (dataType !== 'pastedLuykeBI') this.updateAndRenderCurrentTab();
             return;
         }
 
-        uiComponents.updatePasteStatus(uiId, 'Đang đồng bộ cloud...', 'default');
+        ui.updatePasteStatus(uiId, 'Đang đồng bộ cloud...', 'default'); // <<< SỬA (v4.47)
 
         try {
             const localDataVersions = this._localDataVersions;
@@ -1195,7 +1195,7 @@ const app = {
                 version: versionInfo.version,
                 timestamp: versionInfo.timestamp,
                 updatedBy: appState.currentUser.email
-             };
+                };
 
             await firebase.savePastedDataToFirestore(kho, dataType, metadata.content, versionInfo);
 
@@ -1207,15 +1207,15 @@ const app = {
             const metadataToSaveLocally = { ...metadata, updatedAt: new Date() };
             localStorage.setItem(metadataKey, JSON.stringify(metadataToSaveLocally));
 
-             uiComponents.updatePasteStatus(uiId, '', 'success', metadataToSaveLocally, processedCount);
+                ui.updatePasteStatus(uiId, '', 'success', metadataToSaveLocally, processedCount); // <<< SỬA (v4.47)
 
         } catch (error) {
             console.error(`[${dataType} Paste] Cloud sync failed:`, error);
-            uiComponents.updatePasteStatus(uiId, `Lỗi đồng bộ cloud: ${error.message}`, 'error');
+            ui.updatePasteStatus(uiId, `Lỗi đồng bộ cloud: ${error.message}`, 'error'); // <<< SỬA (v4.47)
         }
 
         if (dataType !== 'pastedLuykeBI') {
-             this.updateAndRenderCurrentTab();
+                this.updateAndRenderCurrentTab();
         }
     },
 
@@ -1235,18 +1235,18 @@ const app = {
         }
         // === END: DEBUG ===
         
-        uiComponents.updatePasteStatus(mappingInfo.uiId, '✓ Đã nhận dữ liệu.', 'success');
+        ui.updatePasteStatus(mappingInfo.uiId, '✓ Đã nhận dữ liệu.', 'success'); // <<< SỬA (v4.47)
 
         if (kho) {
-             await this._handlePastedDataSync(
-                 pastedText,
-                 kho,
-                 mappingInfo.firestoreKey,
-                 mappingInfo.uiId,
-                 mappingInfo.saveKey
-             );
+                await this._handlePastedDataSync(
+                    pastedText,
+                    kho,
+                    mappingInfo.firestoreKey,
+                    mappingInfo.uiId,
+                    mappingInfo.saveKey
+                );
         }
-         this.updateAndRenderCurrentTab();
+            this.updateAndRenderCurrentTab();
     },
 
     // *** START: HÀM ĐƯỢC CẬP NHẬT (v4.44) ***
@@ -1266,7 +1266,7 @@ const app = {
             console.log(`%c[DEBUG handleThiduaNVPaste] Đã LƯU (setItem) text thô vào localStorage key: ${RAW_PASTE_THIDUANV_KEY} (Độ dài: ${pastedText.length})`, "color: green;");
             // === END: DEBUG ===
         } catch (e) {
-             console.warn("Không thể lưu raw_paste_thiduanv vào localStorage:", e);
+                console.warn("Không thể lưu raw_paste_thiduanv vào localStorage:", e);
         }
         // === END FIX ===
 
@@ -1282,7 +1282,7 @@ const app = {
 
             // 3. Chuẩn hóa dữ liệu (Tra cứu DSNV, áp dụng tên rút gọn)
             // Chúng ta dùng appState.competitionData (từ Lũy kế) để lấy mục tiêu
-             const processedData = services.processThiDuaNhanVienData(parsedData, appState.competitionData);
+                const processedData = services.processThiDuaNhanVienData(parsedData, appState.competitionData);
             
             // 4. Lưu kết quả ĐÃ XỬ LÝ vào appState và localStorage
             appState[stateKey] = processedData;
@@ -1316,7 +1316,7 @@ const app = {
 
         } catch (error) {
             console.error("Lỗi khi xử lý dữ liệu dán Thi đua NV:", error);
-            uiComponents.updatePasteStatus(uiId, `Lỗi: ${error.message}`, 'error');
+            ui.updatePasteStatus(uiId, `Lỗi: ${error.message}`, 'error'); // <<< SỬA (v4.47)
             // Hiển thị debug nếu có
             const debugContainer = document.getElementById('debug-tool-container');
             if (debugContainer?.classList.contains('hidden')) {
@@ -1333,7 +1333,7 @@ const app = {
         const mappingInfo = this.ALL_DATA_MAPPING['pastedThuongERP'];
         
         // === START: DEBUG (v4.43) ===
-         try {
+            try {
             localStorage.setItem(mappingInfo.saveKey, pastedText);
             console.log(`%c[DEBUG handleErpPaste] Đã LƯU (setItem) vào localStorage key: ${mappingInfo.saveKey} (Độ dài: ${pastedText.length})`, "color: green;");
         } catch (e) {
@@ -1342,24 +1342,24 @@ const app = {
         // === END: DEBUG ===
 
         await this._handlePastedDataSync(
-             pastedText,
+                pastedText,
             kho,
             mappingInfo.firestoreKey,
             mappingInfo.uiId,
             mappingInfo.saveKey,
-             mappingInfo.stateKey,
-             mappingInfo.processFunc
+                mappingInfo.stateKey,
+                mappingInfo.processFunc
         );
     },
 
     async handleErpThangTruocPaste(e) {
         // ... (Giữ nguyên)
-         const pastedText = e.target.value;
-         const kho = appState.selectedWarehouse;
-         const mappingInfo = this.ALL_DATA_MAPPING['pastedThuongERPThangTruoc'];
-         
-         // === START: DEBUG (v4.43) ===
-         try {
+            const pastedText = e.target.value;
+            const kho = appState.selectedWarehouse;
+            const mappingInfo = this.ALL_DATA_MAPPING['pastedThuongERPThangTruoc'];
+            
+            // === START: DEBUG (v4.43) ===
+            try {
             localStorage.setItem(mappingInfo.saveKey, pastedText);
             console.log(`%c[DEBUG handleErpThangTruocPaste] Đã LƯU (setItem) vào localStorage key: ${mappingInfo.saveKey} (Độ dài: ${pastedText.length})`, "color: green;");
         } catch (lsError) {
@@ -1367,9 +1367,9 @@ const app = {
         }
         // === END: DEBUG ===
 
-         await this._handlePastedDataSync(
-             pastedText,
-             kho,
+            await this._handlePastedDataSync(
+                pastedText,
+                kho,
             mappingInfo.firestoreKey,
             mappingInfo.uiId,
             mappingInfo.saveKey,
@@ -1396,21 +1396,21 @@ const app = {
                 ui.showNotification(`Tải thành công ${normalizedData.length} dòng realtime!`, 'success');
                 this.updateAndRenderCurrentTab();
             } else {
-                 ui.showNotification(`File realtime lỗi: Thiếu cột ${missingColumns.join(', ')}.`, 'error');
-                 const debugContainer = document.getElementById('debug-tool-container');
-                 if (debugContainer?.classList.contains('hidden')) {
-                     document.getElementById('toggle-debug-btn')?.click();
-                 }
+                    ui.showNotification(`File realtime lỗi: Thiếu cột ${missingColumns.join(', ')}.`, 'error');
+                    const debugContainer = document.getElementById('debug-tool-container');
+                    if (debugContainer?.classList.contains('hidden')) {
+                        document.getElementById('toggle-debug-btn')?.click();
+                    }
             }
         } catch (err) { ui.showNotification(`Có lỗi khi đọc file: ${err.message}`, 'error'); console.error(err); }
     },
 
     async handleCategoryFile(e) {
         // ... (Giữ nguyên)
-         const fileInput = e.target;
+            const fileInput = e.target;
         const file = fileInput.files[0];
         if (!file) return;
-        uiComponents.updateFileStatus('category-structure', file.name, 'Đang xử lý...', 'default');
+        ui.updateFileStatus('category-structure', file.name, 'Đang xử lý...', 'default'); // <<< SỬA (v4.47)
         ui.showProgressBar('category-structure');
         try {
             const workbook = await this.handleFileRead(file);
@@ -1428,12 +1428,12 @@ const app = {
                 appState.categoryStructure = categoryResult.normalizedData;
                 appState.brandList = brandResult.normalizedData;
                 await firebase.saveCategoryDataToFirestore({ categories: categoryResult.normalizedData, brands: brandResult.normalizedData });
-                uiComponents.updateFileStatus('category-structure', file.name, `✓ Đã xử lý và đồng bộ ${categoryResult.normalizedData.length} nhóm & ${brandResult.normalizedData.length} hãng.`, 'success');
+                ui.updateFileStatus('category-structure', file.name, `✓ Đã xử lý và đồng bộ ${categoryResult.normalizedData.length} nhóm & ${brandResult.normalizedData.length} hãng.`, 'success'); // <<< SỬA (v4.47)
             } else {
-                 ui.showNotification(`Lỗi xử lý file khai báo: ${categoryResult.error}`, 'error');
+                    ui.showNotification(`Lỗi xử lý file khai báo: ${categoryResult.error}`, 'error');
             }
         } catch (error) {
-            uiComponents.updateFileStatus('category-structure', file.name, `Lỗi: ${error.message}`, 'error');
+            ui.updateFileStatus('category-structure', file.name, `Lỗi: ${error.message}`, 'error'); // <<< SỬA (v4.47)
         } finally {
             ui.hideProgressBar('category-structure');
             fileInput.value = '';
@@ -1445,7 +1445,7 @@ const app = {
         const fileInput = e.target;
         const file = fileInput.files[0];
         if (!file) return;
-        uiComponents.updateFileStatus('thidua-vung', file.name, 'Đang xử lý...', 'default');
+        ui.updateFileStatus('thidua-vung', file.name, 'Đang xử lý...', 'default'); // <<< SỬA (v4.47)
         try {
             const workbook = await this.handleFileRead(file);
             const { chiTietData, tongData } = services.processThiDuaVungFile(workbook);
@@ -1459,9 +1459,9 @@ const app = {
                 choicesInstance.clearStore();
                 choicesInstance.setChoices(supermarketNames.map(name => ({ value: name, label: name })), 'value', 'label', true);
             }
-            uiComponents.updateFileStatus('thidua-vung', file.name, `✓ Đã xử lý ${supermarketNames.length} siêu thị.`, 'success');
+            ui.updateFileStatus('thidua-vung', file.name, `✓ Đã xử lý ${supermarketNames.length} siêu thị.`, 'success'); // <<< SỬA (v4.47)
         } catch (error) {
-            uiComponents.updateFileStatus('thidua-vung', file.name, `Lỗi: ${error.message}`, 'error');
+            ui.updateFileStatus('thidua-vung', file.name, `Lỗi: ${error.message}`, 'error'); // <<< SỬA (v4.47)
         }
     },
 
@@ -1501,9 +1501,9 @@ const app = {
 
     handleThiDuaViewChange(e) {
         // ... (Giữ nguyên)
-         const button = e.target.closest('.view-switcher__btn');
+            const button = e.target.closest('.view-switcher__btn');
         if (button) {
-             document.querySelectorAll('#thidua-view-selector .view-switcher__btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('#thidua-view-selector .view-switcher__btn').forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
             const view = button.dataset.view;
             const thiduaEmployeeSelectorEl = document.getElementById('thidua-employee-selector-container');
@@ -1533,13 +1533,13 @@ const app = {
         const addBtn = document.getElementById('add-competition-btn');
         if (!form || !addBtn) return;
         if (show) {
-            uiComponents.populateCompetitionFilters();
-            uiComponents.populateCompetitionBrandFilter();
+            ui.populateCompetitionFilters(); // <<< SỬA (v4.47)
+            ui.populateCompetitionBrandFilter(); // <<< SỬA (v4.47)
         }
         form.classList.toggle('hidden', !show);
         addBtn.classList.toggle('hidden', show);
         if (show && !isEdit) {
-             form.reset();
+                form.reset();
             document.getElementById('competition-id').value = '';
             appState.choices['competition_group']?.removeActiveItems();
             appState.choices['competition_brand']?.removeActiveItems();
@@ -1619,7 +1619,7 @@ const app = {
     },
 
 
-     _saveCompetitionConfigs() {
+        _saveCompetitionConfigs() {
         // ... (Giữ nguyên)
         localStorage.setItem('competitionConfigs', JSON.stringify(appState.competitionConfigs));
     },
@@ -1628,13 +1628,13 @@ const app = {
         // ... (Giữ nguyên)
         ui.showNotification('Đang chuẩn bị file mẫu...', 'success');
         try {
-             const url = await firebase.getTemplateDownloadURL();
-             const link = document.createElement('a');
-             link.href = url;
-             link.download = 'Danh_Sach_Nhan_Vien_Mau.xlsx';
-             document.body.appendChild(link);
-             link.click();
-             document.body.removeChild(link);
+                const url = await firebase.getTemplateDownloadURL();
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'Danh_Sach_Nhan_Vien_Mau.xlsx';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
         } catch (error) {
             console.error("Lỗi khi tải file mẫu:", error);
             ui.showNotification('Không thể tải file mẫu. Vui lòng thử lại.', 'error');
@@ -1660,28 +1660,28 @@ const app = {
 
     handleContrastChange(e) {
         // ... (Giữ nguyên)
-          const level = e.target.value;
-         localStorage.setItem('contrastLevel', level);
-         document.documentElement.dataset.contrast = level;
+            const level = e.target.value;
+            localStorage.setItem('contrastLevel', level);
+            document.documentElement.dataset.contrast = level;
     },
 
     handleHighlightColorChange(prefix) {
         // ... (Giữ nguyên)
         const activeType = appState.highlightSettings[prefix]?.type;
         if (activeType) {
-             const choicesInstance = appState.choices[`${prefix}_highlight_${activeType}`];
-             if(choicesInstance) {
+                const choicesInstance = appState.choices[`${prefix}_highlight_${activeType}`];
+                if(choicesInstance) {
                 const values = choicesInstance.getValue(true);
                 const colorEl = document.getElementById(`${prefix}-highlight-color`);
                 const color = colorEl ? colorEl.value : '#ffff00';
                 appState.highlightSettings[prefix] = { type: activeType, values, color };
                 localStorage.setItem('highlightSettings', JSON.stringify(appState.highlightSettings));
                 highlightService.applyHighlights(prefix);
-             }
+                }
         }
     },
 
-     handleClearHighlight(prefix) {
+        handleClearHighlight(prefix) {
         // ... (Giữ nguyên)
         appState.highlightSettings[prefix] = {};
         localStorage.setItem('highlightSettings', JSON.stringify(appState.highlightSettings));
@@ -1691,7 +1691,7 @@ const app = {
         highlightService.applyHighlights(prefix);
     },
 
-     async saveDeclarations() {
+        async saveDeclarations() {
         // ... (Giữ nguyên)
         const ycxEl = document.getElementById('declaration-ycx');
         const ycxGopEl = document.getElementById('declaration-ycx-gop');
@@ -1715,10 +1715,10 @@ const app = {
         const sknvEl = document.getElementById('edit-help-sknv');
         const realtimeEl = document.getElementById('edit-help-realtime');
         const contents = {
-             data: dataEl ? dataEl.value : '',
-             luyke: luykeEl ? luykeEl.value : '',
-             sknv: sknvEl ? sknvEl.value : '',
-             realtime: realtimeEl ? realtimeEl.value : ''
+                data: dataEl ? dataEl.value : '',
+                luyke: luykeEl ? luykeEl.value : '',
+                sknv: sknvEl ? sknvEl.value : '',
+                realtime: realtimeEl ? realtimeEl.value : ''
         };
         firebase.saveHelpContent(contents);
     },
@@ -1738,13 +1738,13 @@ const app = {
         const replyForm = feedbackItem.querySelector('.reply-form-container');
         if (!replyForm) return;
         if (e.target.classList.contains('reply-btn')) { replyForm.classList.remove('hidden'); }
-         if (e.target.classList.contains('cancel-reply-btn')) { replyForm.classList.add('hidden'); }
+            if (e.target.classList.contains('cancel-reply-btn')) { replyForm.classList.add('hidden'); }
         if (e.target.classList.contains('submit-reply-btn')) {
-             const textarea = replyForm.querySelector('textarea');
-             if(textarea){
+                const textarea = replyForm.querySelector('textarea');
+                if(textarea){
                 const success = await firebase.submitReply(docId, textarea.value.trim());
                 if (success) { textarea.value = ''; replyForm.classList.add('hidden'); }
-             }
+                }
         }
     },
 
@@ -1781,33 +1781,33 @@ const app = {
         if(contextTabsContainer) contextTabsContainer.innerHTML = '';
         if(contextContentContainer) contextContentContainer.innerHTML = '';
         if (mainViewNav && contextTabsContainer && contextContentContainer) {
-             const subTabButtons = mainViewNav.querySelectorAll('.sub-tab-btn');
+                const subTabButtons = mainViewNav.querySelectorAll('.sub-tab-btn');
             subTabButtons.forEach(btn => {
-                 const subTabId = btn.dataset.target;
+                    const subTabId = btn.dataset.target;
                 const isActive = btn.classList.contains('active');
                 const newTabBtn = document.createElement('button');
                 newTabBtn.className = `composer__tab-btn ${isActive ? 'active' : ''}`;
                 newTabBtn.dataset.target = `context-pane-${subTabId}`;
                 newTabBtn.textContent = btn.textContent.trim();
-                 newTabBtn.addEventListener('click', () => {
+                    newTabBtn.addEventListener('click', () => {
                     contextTabsContainer.querySelectorAll('.composer__tab-btn').forEach(t => t.classList.remove('active'));
                     contextContentContainer.querySelectorAll('.composer__context-pane').forEach(c => c.classList.add('hidden'));
                     newTabBtn.classList.add('active');
                     const targetPane = document.getElementById(`context-pane-${subTabId}`);
                     if(targetPane) targetPane.classList.remove('hidden');
                 });
-                 contextTabsContainer.appendChild(newTabBtn);
-                 const newContentPane = document.createElement('div');
-                 newContentPane.id = `context-pane-${subTabId}`;
-                 newContentPane.className = `composer__context-pane ${!isActive ? 'hidden' : ''}`;
-                 const textarea = document.createElement('textarea');
-                 textarea.className = 'composer__textarea';
-                 textarea.rows = 15;
-                 textarea.placeholder = `Soạn thảo nhận xét cho tab ${btn.textContent.trim()}...`;
-                 if (!appState.composerTemplates[sectionId]) appState.composerTemplates[sectionId] = {};
-                 textarea.value = appState.composerTemplates[sectionId]?.[subTabId] || '';
-                 newContentPane.appendChild(textarea);
-                 contextContentContainer.appendChild(newContentPane);
+                    contextTabsContainer.appendChild(newTabBtn);
+                    const newContentPane = document.createElement('div');
+                    newContentPane.id = `context-pane-${subTabId}`;
+                    newContentPane.className = `composer__context-pane ${!isActive ? 'hidden' : ''}`;
+                    const textarea = document.createElement('textarea');
+                    textarea.className = 'composer__textarea';
+                    textarea.rows = 15;
+                    textarea.placeholder = `Soạn thảo nhận xét cho tab ${btn.textContent.trim()}...`;
+                    if (!appState.composerTemplates[sectionId]) appState.composerTemplates[sectionId] = {};
+                    textarea.value = appState.composerTemplates[sectionId]?.[subTabId] || '';
+                    newContentPane.appendChild(textarea);
+                    contextContentContainer.appendChild(newContentPane);
             });
             contextTabsContainer.classList.toggle('hidden', contextTabsContainer.children.length === 0);
         }
@@ -1826,18 +1826,18 @@ const app = {
             const nav = e.target.closest('.composer__nav');
             const content = nav?.nextElementSibling;
             if (nav && content) {
-                 nav.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
-                 content.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
-                 e.target.classList.add('active');
-                 const targetId = e.target.dataset.tab;
-                 const targetContent = content.querySelector(`#${targetId}`);
-                 if (targetContent) targetContent.classList.add('active');
+                    nav.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
+                    content.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
+                    e.target.classList.add('active');
+                    const targetId = e.target.dataset.tab;
+                    const targetContent = content.querySelector(`#${targetId}`);
+                    if (targetContent) targetContent.classList.add('active');
             }
             return;
         }
         if (e.target.matches('.composer__icon-btn, .composer__tag-btn')) {
-             if (!activeTextarea) { ui.showNotification("Vui lòng chọn một tab nội dung để chèn thẻ.", "error"); return; }
-             let tagToInsert = e.target.dataset.tag;
+                if (!activeTextarea) { ui.showNotification("Vui lòng chọn một tab nội dung để chèn thẻ.", "error"); return; }
+                let tagToInsert = e.target.dataset.tag;
             if (e.target.dataset.tagTemplate) {
                 const deptFilterEl = document.getElementById('composer-dept-filter');
                 const dept = deptFilterEl ? deptFilterEl.value : 'ALL';
@@ -1846,41 +1846,41 @@ const app = {
             ui.insertComposerTag(activeTextarea, tagToInsert || e.target.textContent);
             return;
         }
-         if (e.target.id === 'save-composer-template-btn') {
+            if (e.target.id === 'save-composer-template-btn') {
             if (!activeTextarea) return;
             const activeContextTab = modal.querySelector('#composer-context-tabs .composer__tab-btn.active');
             const subTabId = activeContextTab?.dataset.target.replace('context-pane-', '');
             if (subTabId) {
-                 if (!appState.composerTemplates[sectionId]) appState.composerTemplates[sectionId] ={};
+                    if (!appState.composerTemplates[sectionId]) appState.composerTemplates[sectionId] ={};
                 appState.composerTemplates[sectionId][subTabId] = activeTextarea.value;
                 localStorage.setItem('composerTemplates', JSON.stringify(appState.composerTemplates));
                 ui.showNotification(`Đã lưu mẫu cho tab con!`, 'success');
             } else { ui.showNotification(`Không tìm thấy tab con để lưu.`, 'error'); }
         }
         if (e.target.id === 'copy-composed-notification-btn') {
-             if (!activeTextarea) { ui.showNotification("Lỗi: Không tìm thấy ô nội dung đang hoạt động.", "error"); return; }
-             const template = activeTextarea.value;
-             const filteredReportData = this._getFilteredReportData(sectionId);
-             const supermarketReport = services.aggregateReport(filteredReportData);
-             const warehouseEl = document.getElementById(`${sectionId}-filter-warehouse`);
-             const selectedWarehouse = warehouseEl ? warehouseEl.value : null;
-             const goals = sectionId === 'realtime' ? settingsService.getRealtimeGoalSettings(selectedWarehouse).goals : settingsService.getLuykeGoalSettings(selectedWarehouse).goals;
-             const pasteLuykeEl = document.getElementById('paste-luyke');
-             const competitionDataForComposer = services.parseCompetitionDataFromLuyKe(pasteLuykeEl?.value || '');
-             const processedText = services.processComposerTemplate(template, supermarketReport, goals, filteredReportData, competitionDataForComposer, sectionId);
-             ui.showPreviewAndCopy(processedText);
+                if (!activeTextarea) { ui.showNotification("Lỗi: Không tìm thấy ô nội dung đang hoạt động.", "error"); return; }
+                const template = activeTextarea.value;
+                const filteredReportData = this._getFilteredReportData(sectionId);
+                const supermarketReport = services.aggregateReport(filteredReportData);
+                const warehouseEl = document.getElementById(`${sectionId}-filter-warehouse`);
+                const selectedWarehouse = warehouseEl ? warehouseEl.value : null;
+                const goals = sectionId === 'realtime' ? settingsService.getRealtimeGoalSettings(selectedWarehouse).goals : settingsService.getLuykeGoalSettings(selectedWarehouse).goals;
+                const pasteLuykeEl = document.getElementById('paste-luyke');
+                const competitionDataForComposer = services.parseCompetitionDataFromLuyKe(pasteLuykeEl?.value || '');
+                const processedText = services.processComposerTemplate(template, supermarketReport, goals, filteredReportData, competitionDataForComposer, sectionId);
+                ui.showPreviewAndCopy(processedText);
         }
     },
 
     async loadAndDisplayQrCode() {
         // ... (Giữ nguyên)
-         try {
+            try {
             const qrUrl = await firebase.getQrCodeDownloadURL();
             const imgEl = document.getElementById('header-qr-image');
             if (imgEl) imgEl.src = qrUrl;
         }
         catch (error) {
-             console.error("Không thể tải mã QR:", error);
+                console.error("Không thể tải mã QR:", error);
             const container = document.querySelector('.header-qr-container');
             if (container) container.style.display = 'none';
         }
