@@ -1,4 +1,4 @@
-/* Version 1.0 - Specific: SKNV (Refactored from v6.19) */
+/* Version 1.1 - Add sticky column styles for pasted competition table */
 /* Chứa các style CHỈ dành riêng cho tab Sức Khỏe Nhân Viên (SKNV) */
 
 #sknv-details-container .sknv-subtable-header th { 
@@ -522,3 +522,47 @@ filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3)); /* Add a nice shadow */
     outline: none;
 }
 /* === END: LOGIN MODAL STYLES === */
+
+/* === START: Sticky Columns for Pasted Competition Table (v1.1) === */
+
+/* 1. Container: Phải bật 'overflow-x-auto' (đã có) và 'position: relative' (quan trọng) */
+.sknv-pasted-competition-scroller {
+    position: relative; /* Bắt buộc để z-index của sticky hoạt động */
+}
+
+/* 2. Các ô tiêu đề (th) cần "đóng băng" */
+#pasted-competition-report-container table th.sticky-col {
+    position: -webkit-sticky; /* cho Safari */
+    position: sticky;
+    z-index: 2; /* Phải cao hơn z-index của các ô (td) */
+    background-color: #e5e7eb; /* gray-200 (màu nền thead) - Rất quan trọng */
+}
+
+/* 3. Các ô dữ liệu (td) cần "đóng băng" */
+#pasted-competition-report-container table td.sticky-col {
+    position: -webkit-sticky; /* cho Safari */
+    position: sticky;
+    z-index: 1; /* Phải cao hơn các ô td khác, nhưng thấp hơn th */
+    background-color: #ffffff; /* Màu nền của dòng (trắng) */
+}
+
+/* 4. Đảm bảo dòng chẵn/lẻ cũng được ghi đè màu nền */
+#pasted-competition-report-container table tr:nth-child(even) td.sticky-col {
+    background-color: #f9fafb; /* gray-50 (màu dòng chẵn) */
+}
+
+/* 5. Định vị cho từng cột */
+.sticky-col.sticky-col-1 {
+    left: 0; /* Cột đầu tiên */
+}
+
+.sticky-col.sticky-col-2 {
+    left: 150px; /* Cột thứ 2 - Phải bằng độ rộng của cột 1 (min-width: 150px từ CSS cũ) */
+}
+
+/* 6. (An toàn) Đảm bảo footer cũng được "đóng băng" */
+#pasted-competition-report-container table tfoot td.sticky-col {
+    background-color: hsl(210, 20%, var(--header-lightness)); /* Màu footer */
+    z-index: 3; /* Nằm trên cả tiêu đề và nội dung */
+}
+/* === END: Sticky Columns (v1.1) === */
