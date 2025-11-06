@@ -1,6 +1,5 @@
+// Version 4.48 - Refactor: Di dời 14+ hàm xử lý data sang data.service.js
 // Version 4.47 - Refactor: Remove direct dependency on ui-components.js, use ui.js facade instead.
-// Version 4.46 - Fix bug: Move ALL_DATA_MAPPING inside the app object
-// Version 4.45 - Fix critical syntax errors (remove all source tags)
 // ... (các phiên bản trước giữ nguyên)
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
@@ -29,14 +28,12 @@ import { modalPreview } from './components/modal-preview.js';
 import { modalSelection } from './components/modal-selection.js';
 import { settingsService } from './modules/settings.service.js';
 import { highlightService } from './modules/highlight.service.js';
-// <<< ĐÃ XÓA (v4.47) >>> import { uiComponents } from './ui-components.js';
+import { dataService } from './services/data.service.js'; // <<< THÊM MỚI (v4.48)
 
 const LOCAL_DATA_VERSIONS_KEY = '_localDataVersions';
 const LOCAL_METADATA_PREFIX = '_localMetadata_';
-const LOCAL_DSNV_FILENAME_KEY = '_localDsnvFilename'; // Key for DSNV filename
-const RAW_PASTE_THIDUANV_KEY = 'raw_paste_thiduanv'; // === FIX 2a.2 (Thêm) ===
-
-// [ĐÃ DI CHUYỂN] Khối ALL_DATA_MAPPING đã được di chuyển vào bên trong đối tượng 'app' bên dưới
+const LOCAL_DSNV_FILENAME_KEY = '_localDsnvFilename';
+const RAW_PASTE_THIDUANV_KEY = 'raw_paste_thiduanv';
 
 const app = {
     // === START: FIX LỖI ===
@@ -183,7 +180,8 @@ const app = {
         }
         // *** END NEW ***
 
-            initializeEventListeners(this);
+        initializeEventListeners(this);
+        dataService.init(this); // <<< THÊM MỚI (v4.48): Khởi động data service
         await this.loadDataFromStorage();
 
         const savedWarehouse = localStorage.getItem('selectedWarehouse');
@@ -191,8 +189,10 @@ const app = {
             appState.selectedWarehouse = savedWarehouse;
             if(this.unsubscribeDataListener) this.unsubscribeDataListener();
             console.log(`Re-attaching listener for saved warehouse: ${savedWarehouse}`);
+            
+            // <<< CẬP NHẬT (v4.48): Trỏ callback đến dataService >>>
             this.unsubscribeDataListener = firebase.listenForDataChanges(savedWarehouse, (cloudData) => {
-                this.handleCloudDataUpdate(cloudData);
+                dataService.handleCloudDataUpdate(cloudData);
             });
 
             console.log(`%c[continueInit] Checking sync status for warehouse ${savedWarehouse} (AFTER loadDataFromStorage)...`, "color: teal; font-weight: bold;");
@@ -204,7 +204,9 @@ const app = {
                 if (!mappingInfo) return;
 
                 const { firestoreKey, uiId } = mappingInfo;
-                const metadata = this._getSavedMetadata(savedWarehouse, firestoreKey);
+                
+                // <<< CẬP NHẬT (v4.48): Gọi hàm helper từ dataService >>>
+                const metadata = dataService._getSavedMetadata(savedWarehouse, firestoreKey); 
                 const localVersionInfo = this._localDataVersions?.[savedWarehouse]?.[firestoreKey] || { version: 0, timestamp: 0 };
 
                 console.log(`%c[continueInit] --> Checking ${firestoreKey}:`, "color: teal;");
@@ -271,273 +273,23 @@ const app = {
         setInterval(() => this.checkForUpdates(), 15 * 60 * 1000);
     },
 
-    async handleCloudDataUpdate(cloudData) {
-        // ... (Giữ nguyên)
-        const receivedTime = new Date().toLocaleTimeString();
-        console.log(`%c[handleCloudDataUpdate @ ${receivedTime}] Received data snapshot from Firestore listener:`, "color: blue; font-weight: bold;", JSON.stringify(cloudData).substring(0, 500) + "...");
-        let showSyncNotification = false;
-
-        const currentWarehouse = appState.selectedWarehouse;
-        if (!currentWarehouse) {
-            console.warn(`[handleCloudDataUpdate @ ${receivedTime}] Received update but no warehouse selected. Ignoring.`);
-            return;
-        }
-
-        for (const [dataType, mappingInfo] of Object.entries(this.ALL_DATA_MAPPING)) {
-            const cloudMetadata = cloudData[dataType];
-            const { stateKey, saveKey, isPasted, uiId, processFunc } = mappingInfo;
-
-            if (dataType === 'giocong' || dataType === 'thuongnong' || dataType.startsWith('pasted')) {
-                console.log(`%c[handleCloudDataUpdate @ ${receivedTime}] --> Processing METADATA for WATCHED dataType: ${dataType}`, "color: fuchsia; font-weight: bold;", cloudMetadata);
-            }
-
-            if (cloudMetadata && typeof cloudMetadata === 'object' && cloudMetadata.version !== undefined && cloudMetadata.timestamp !== undefined) {
-
-                const updatedBy = cloudMetadata.updatedBy;
-                const cloudServerTimestampObj = cloudMetadata.updatedAt;
-                    const updatedTime = cloudServerTimestampObj
-                    ? ui.formatTimeAgo(cloudServerTimestampObj.toDate ? cloudServerTimestampObj.toDate() : new Date(cloudServerTimestampObj))
-                    : 'vừa xong';
-
-
-                const cloudVersion = cloudMetadata.version || 0;
-                const cloudLocalTimestamp = cloudMetadata.timestamp || 0;
-                const rowCount = cloudMetadata.rowCount || 0;
-                const fileName = cloudMetadata.fileName || 'Cloud';
-
-                const localVersionInfo = this._localDataVersions?.[currentWarehouse]?.[dataType] || { version: 0, timestamp: 0 };
-                const lastLocalVersion = localVersionInfo.version;
-                const lastLocalTimestamp = localVersionInfo.timestamp;
-
-                let shouldUpdateLocalInfo = false;
-                if (cloudVersion > lastLocalVersion) {
-                    shouldUpdateLocalInfo = true;
-                } else if (cloudVersion === lastLocalVersion && cloudLocalTimestamp > lastLocalTimestamp) {
-                    shouldUpdateLocalInfo = true;
-                }
-
-                if (shouldUpdateLocalInfo) {
-                    const metadataKey = `${LOCAL_METADATA_PREFIX}${currentWarehouse}_${dataType}`;
-                    try {
-                        localStorage.setItem(metadataKey, JSON.stringify(cloudMetadata));
-                        console.log(`%c[handleCloudDataUpdate @ ${receivedTime}] Saved received metadata for ${dataType} @ ${currentWarehouse} to localStorage ('${metadataKey}').`, "color: green; font-weight: bold;");
-                    } catch (e) {
-                        console.error(`Error saving metadata for ${dataType} to localStorage:`, e);
-                    }
-
-                    if (appState.currentUser && updatedBy === appState.currentUser.email) {
-                            if (isPasted) {
-                            let processedCount = 0;
-                            // *** MODIFIED (v4.40) ***
-                            // Logic đếm số lượng cho pastedThiduaNVBI đã được chuyển sang hàm handleThiduaNVPaste
-                            // Ở đây chỉ cần cập nhật trạng thái chung
-                            if (stateKey && processFunc && cloudMetadata.content && dataType !== 'pastedThiduaNVBI') {
-                                try {
-                                        const processed = processFunc(cloudMetadata.content);
-                                    processedCount = processed?.length || 0;
-                                } catch (e) { console.error(`Error processing pasted content during status update for ${dataType}:`, e); }
-                            } else if (dataType === 'pastedThiduaNVBI') {
-                                    // Tải lại dữ liệu đã xử lý từ localStorage (do chính người dùng này lưu)
-                                const processedData = JSON.parse(localStorage.getItem(saveKey) || '[]');
-                                processedCount = processedData.length;
-                            }
-                                ui.updatePasteStatus(uiId, '', 'success', cloudMetadata, processedCount); // <<< SỬA (v4.47)
-                        } else {
-                                ui.updateFileStatus(uiId, fileName, '', 'success', false, cloudMetadata); // <<< SỬA (v4.47)
-                        }
-                    } else {
-                        showSyncNotification = true;
-                        if (isPasted) {
-                            console.log(`%c[handleCloudDataUpdate] Pasted data ${dataType} is new. Processing content...`, "color: darkcyan; font-weight: bold;");
-                            const content = cloudMetadata.content || '';
-                            let processedCount = 0;
-                            try {
-                                    // *** MODIFIED (v4.40) ***
-                                    if (dataType === 'pastedThiduaNVBI') {
-                                        // Đây là logic quan trọng: Dữ liệu thi đua cần chạy qua BỘ XỬ LÝ ĐẦY ĐỦ
-                                    // 1. Phân tích cú pháp
-                                    const parsedData = services.parsePastedThiDuaTableData(content);
-                                    if (!parsedData.success) throw new Error(parsedData.error);
-                                    
-                                    // 2. Cập nhật Bảng Ánh Xạ (nhưng không ghi đè tên rút gọn đã có)
-                                    services.updateCompetitionNameMappings(parsedData.mainHeaders);
-                                    
-                                    // 3. Chuẩn hóa (tra cứu DSNV, áp dụng tên rút gọn)
-                                    const processedData = services.processThiDuaNhanVienData(parsedData, appState.competitionData);
-                                    
-                                    // 4. Lưu kết quả đã xử lý (KHÔNG LƯU NỘI DUNG THÔ)
-                                    appState[stateKey] = processedData;
-                                    localStorage.setItem(saveKey, JSON.stringify(processedData)); // Lưu mảng đã xử lý
-                                        processedCount = processedData.length;
-
-                                    // === FIX 2a.1 (Thêm) ===
-                                    localStorage.setItem(RAW_PASTE_THIDUANV_KEY, content); // Lưu cả text thô
-                                    const el = document.getElementById('paste-thiduanv');
-                                    if (el) el.value = content;
-                                    // === END FIX ===
-
-                                } else {
-                                        // Logic cũ cho các ô dán khác
-                                    localStorage.setItem(saveKey, content);
-                                    if (stateKey && processFunc) {
-                                            const processedData = processFunc(content);
-                                        appState[stateKey] = processedData;
-                                        processedCount = processedData?.length || 0;
-                                    } else if (stateKey) {
-                                            console.warn(`Missing processFunc for pasted data ${dataType}`);
-                                    } else if (uiId === 'status-luyke') {
-                                        document.getElementById('paste-luyke').value = content;
-                                    }
-                                }
-                                // *** END MODIFIED (v4.40) ***
-
-                                    if (!this._localDataVersions[currentWarehouse]) this._localDataVersions[currentWarehouse] = {};
-                                this._localDataVersions[currentWarehouse][dataType] = { version: cloudVersion, timestamp: cloudLocalTimestamp };
-                                localStorage.setItem(LOCAL_DATA_VERSIONS_KEY, JSON.stringify(this._localDataVersions));
-
-                                ui.updatePasteStatus(uiId, '', 'success', cloudMetadata, processedCount); // <<< SỬA (v4.47)
-                                this.updateAndRenderCurrentTab();
-                                // Cập nhật bảng khai báo nếu admin đang mở
-                                if (dataType === 'pastedThiduaNVBI' && appState.isAdmin && document.getElementById('declaration-section')?.classList.contains('hidden') === false) {
-                                    ui.renderAdminPage();
-                                }
-                            } catch (e) {
-                                    console.error(`Error processing pasted data ${dataType} from cloud:`, e);
-                                ui.updatePasteStatus(uiId, `Lỗi xử lý v${cloudVersion} từ cloud.`, 'error'); // <<< SỬA (v4.47)
-                            }
-                        } else {
-                            ui.updateFileStatus(uiId, fileName, '', 'default', true, cloudMetadata, dataType, currentWarehouse); // <<< SỬA (v4.47)
-                        }
-                    }
-                } else {
-                    const reasonText = '';
-                    if (appState.currentUser && updatedBy === appState.currentUser.email) {
-                            const statusText = `✓ Đã đồng bộ cloud ${updatedTime} ${reasonText}`.trim();
-                            isPasted ? ui.updatePasteStatus(uiId, statusText, 'success', cloudMetadata) : ui.updateFileStatus(uiId, fileName, statusText, 'success', false, cloudMetadata); // <<< SỬA (v4.47)
-                    } else {
-                            const statusText = `ⓘ ${updatedBy} cập nhật ${updatedTime} ${reasonText}`.trim();
-                            isPasted ? ui.updatePasteStatus(uiId, statusText, 'default', cloudMetadata) : ui.updateFileStatus(uiId, fileName, statusText, 'default', false, cloudMetadata); // <<< SỬA (v4.47)
-                    }
-                }
-            } else {
-                    if (dataType === 'giocong' || dataType === 'thuongnong' || dataType.startsWith('pasted')) {
-                        console.warn(`%c[handleCloudDataUpdate @ ${receivedTime}] No valid METADATA structure found (version or timestamp missing) for WATCHED dataType ${dataType}. Received:`, "color: red; font-weight: bold;", cloudMetadata);
-                    }
-            }
-        }
-        if (showSyncNotification) {
-            ui.showNotification('Có bản cập nhật dữ liệu mới từ cloud!', 'success');
-        }
-    },
-
-    async handleDownloadAndProcessData(dataType, warehouse) {
-        // ... (Giữ nguyên)
-        console.log(`%c[handleDownloadAndProcessData] User requested download for ${dataType} @ ${warehouse}`, "color: darkcyan; font-weight: bold;");
-        const metadataKey = `${LOCAL_METADATA_PREFIX}${warehouse}_${dataType}`;
-
-        const mappingInfo = Object.values(this.ALL_DATA_MAPPING).find(m => m.firestoreKey === dataType);
-
-        if (!mappingInfo || mappingInfo.isPasted) {
-            console.error(`[handleDownloadAndProcessData] Invalid or non-file dataType: ${dataType}`);
-            ui.showNotification(`Lỗi: Loại dữ liệu không hợp lệ (${dataType}).`, 'error');
-            return;
-        }
-        const { stateKey, saveKey, uiId } = mappingInfo;
-
-        let metadata;
-
-        try {
-            const storedMetadata = localStorage.getItem(metadataKey);
-            if (!storedMetadata) {
-                throw new Error(`Không tìm thấy thông tin đồng bộ (${metadataKey}) trong localStorage.`);
-            }
-            metadata = JSON.parse(storedMetadata);
-            const downloadURL = metadata.downloadURL;
-            const expectedVersion = metadata.version;
-            const expectedTimestamp = metadata.timestamp;
-            const expectedFileName = metadata.fileName || `${dataType}_v${expectedVersion}.xlsx`;
-
-            if (!downloadURL) {
-                    throw new Error("URL tải xuống không hợp lệ trong thông tin đồng bộ.");
-            }
-
-            ui.updateFileStatus(uiId, expectedFileName, `Đang tải file...`, 'default', false); // <<< SỬA (v4.47)
-            ui.showProgressBar(uiId);
-
-            console.log(`[handleDownloadAndProcessData] Fetching file from: ${downloadURL}`);
-            const response = await fetch(downloadURL);
-            if (!response.ok) {
-                throw new Error(`Tải file thất bại: ${response.status} ${response.statusText}`);
-            }
-            const fileBlob = await response.blob();
-            console.log(`[handleDownloadAndProcessData] File downloaded successfully. Blob size: ${fileBlob.size}`);
-            const downloadedFile = new File([fileBlob], expectedFileName, { type: fileBlob.type });
-
-            ui.updateFileStatus(uiId, expectedFileName, `Đang xử lý file...`, 'default'); // <<< SỬA (v4.47)
-
-            const workbook = await this.handleFileRead(downloadedFile);
-            const rawData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-
-            const normalizeType = dataType.replace('_thangtruoc', '');
-
-            const { normalizedData, success, missingColumns } = services.normalizeData(rawData, normalizeType);
-            console.log(`[handleDownloadAndProcessData] File processing result - Success: ${success}, Rows: ${normalizedData?.length}`);
-
-            if (!success) {
-                    throw new Error(`File tải về lỗi: Thiếu cột ${missingColumns.join(', ')}.`);
-            }
-
-            appState[stateKey] = normalizedData;
-            if (saveKey) {
-                console.log(`[handleDownloadAndProcessData] Saving downloaded & processed data (${normalizedData.length} rows) to cache: ${saveKey}`);
-                await this.storage.setItem(saveKey, normalizedData);
-            }
-
-            if (!this._localDataVersions[warehouse]) this._localDataVersions[warehouse] = {};
-            this._localDataVersions[warehouse][dataType] = { version: expectedVersion, timestamp: expectedTimestamp };
-            try {
-                localStorage.setItem(LOCAL_DATA_VERSIONS_KEY, JSON.stringify(this._localDataVersions));
-                console.log(`%c[handleDownloadAndProcessData] CRITICAL FIX: Updated local version tracker to (v${expectedVersion}, t${expectedTimestamp}) and saved to localStorage.`, "color: purple; font-weight: bold;");
-            } catch (e) {
-                    console.error("[handleDownloadAndProcessData] Error saving updated versions/timestamps to localStorage:", e);
-            }
-
-            ui.updateFileStatus(uiId, expectedFileName, '', 'success', false, metadata); // <<< SỬA (v4.47)
-            ui.showNotification(`Đã tải và xử lý thành công dữ liệu ${dataType} (v${expectedVersion})!`, 'success');
-
-            this.updateAndRenderCurrentTab();
-
-        } catch (error) {
-            console.error(`%c[handleDownloadAndProcessData] Error processing ${dataType} @ ${warehouse}:`, "color: red;", error);
-            ui.showNotification(`Lỗi khi tải/xử lý dữ liệu ${dataType}: ${error.message}`, 'error');
-                if (metadata) {
-                    const statusText = `Lỗi tải/xử lý. Thử lại?`;
-                        ui.updateFileStatus(uiId, metadata.fileName || 'Cloud', statusText, 'error', true, metadata, dataType, warehouse); // <<< SỬA (v4.47)
-                } else {
-                    const fallbackMetadata = this._getSavedMetadata(warehouse, dataType);
-                    if(fallbackMetadata) {
-                        const statusText = `Lỗi tải/xử lý. Thử lại?`;
-                        ui.updateFileStatus(uiId, fallbackMetadata.fileName || 'Cloud', statusText, 'error', true, fallbackMetadata, dataType, warehouse); // <<< SỬA (v4.47)
-                    } else {
-                        ui.updateFileStatus(uiId, 'Cloud', 'Lỗi tải/xử lý. Không tìm thấy thông tin.', 'error', false); // <<< SỬA (v4.47)
-                    }
-                }
-        } finally {
-            ui.hideProgressBar(uiId);
-        }
-    },
-
-    _getSavedMetadata(warehouse, dataType) {
-        // ... (Giữ nguyên)
-        const metadataKey = `${LOCAL_METADATA_PREFIX}${warehouse}_${dataType}`;
-        try {
-            const storedMetadata = localStorage.getItem(metadataKey);
-            return storedMetadata ? JSON.parse(storedMetadata) : null;
-        } catch (e) {
-            console.error(`Error reading metadata ${metadataKey} from localStorage:`, e);
-            return null;
-        }
-    },
+    // <<< START: XÓA BỎ KHỐI HÀM (v4.48) >>>
+    // 14 hàm sau đã được di dời sang 'data.service.js'
+    // async handleCloudDataUpdate(cloudData) { ... }
+    // async handleDownloadAndProcessData(dataType, warehouse) { ... }
+    // _getSavedMetadata(warehouse, dataType) { ... }
+    // async handleFileInputChange(e) { ... }
+    // async handleDsnvUpload(e, file) { ... }
+    // handleFileRead(file) { ... }
+    // async _handlePastedDataSync(...) { ... }
+    // async handleLuykePaste() { ... }
+    // async handleThiduaNVPaste() { ... }
+    // async handleErpPaste() { ... }
+    // async handleErpThangTruocPaste(e) { ... }
+    // async handleRealtimeFileInput(e) { ... }
+    // async handleCategoryFile(e) { ... }
+    // async handleThiDuaVungFileInput(e) { ... }
+    // <<< END: XÓA BỎ KHỐI HÀM (v4.48) >>>
 
     async setupMarquee() {
         // ... (Giữ nguyên)
@@ -668,7 +420,8 @@ const app = {
                     } else if (firestoreKey && !mappingEntry.isPasted) {
                             const currentWarehouse = localStorage.getItem('selectedWarehouse');
                             if (currentWarehouse) {
-                                metadata = this._getSavedMetadata(currentWarehouse, firestoreKey);
+                                // <<< CẬP NHẬT (v4.48): Gọi hàm helper từ dataService >>>
+                                metadata = dataService._getSavedMetadata(currentWarehouse, firestoreKey);
                                 if (metadata) {
                                         fileNameToShow = metadata.fileName || fileNameToShow;
                                     console.log(`[main.js loadDataFromStorage] Found metadata for ${firestoreKey}, will use it in status update.`);
@@ -820,7 +573,8 @@ const app = {
                 const mappingInfo = Object.values(this.ALL_DATA_MAPPING).find(m => m.saveKey === saveKey);
                 let metadata = null;
                 if (kho && mappingInfo) {
-                    metadata = this._getSavedMetadata(kho, mappingInfo.firestoreKey);
+                    // <<< CẬP NHẬT (v4.48): Gọi hàm helper từ dataService >>>
+                    metadata = dataService._getSavedMetadata(kho, mappingInfo.firestoreKey);
                     if (metadata) {
                             ui.updatePasteStatus(uiId, '', 'success', metadata, processedCount); // <<< SỬA (v4.47)
                     } else {
@@ -857,231 +611,6 @@ const app = {
             if (el) el.value = rawThiDuaPaste;
         }
         // === END FIX ===
-    },
-
-
-    async handleFileInputChange(e) {
-        // ... (Giữ nguyên như phiên bản bạn cung cấp - đã có log chi tiết)
-        const fileInput = e.target;
-        const file = fileInput.files[0];
-        const fileType = fileInput.id.replace('file-', '');
-
-        const mappingInfo = Object.values(this.ALL_DATA_MAPPING).find(m => m.uiId === fileType);
-
-        if (!file) return;
-
-        if (!mappingInfo) {
-            if (fileType === 'danhsachnv') {
-                    return this.handleDsnvUpload(e, file);
-            }
-            console.error(`[handleFileInputChange] No mapping info found for fileType: ${fileType}`);
-            return;
-        }
-
-        const { stateKey, saveKey, firestoreKey } = mappingInfo;
-        const dataName = fileInput.dataset.name || fileType;
-        ui.updateFileStatus(fileType, file.name, 'Đang đọc & chuẩn hóa...', 'default'); // <<< SỬA (v4.47)
-        ui.showProgressBar(fileType);
-
-        try {
-            const workbook = await this.handleFileRead(file);
-            const rawData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-            const normalizeType = fileType.replace('-thangtruoc', '');
-            const { normalizedData, success, missingColumns } = services.normalizeData(rawData, normalizeType);
-            ui.displayDebugInfo(fileType);
-
-            if (!success) {
-                    const errorMessage = `Lỗi file "${dataName}": Thiếu cột: ${missingColumns.join(', ')}.`;
-                    ui.updateFileStatus(fileType, file.name, `Lỗi: Thiếu cột dữ liệu.`, 'error'); // <<< SỬA (v4.47)
-                    ui.showNotification(errorMessage, 'error');
-                    if (document.getElementById('debug-tool-container')?.classList.contains('hidden')) {
-                        document.getElementById('toggle-debug-btn')?.click();
-                    }
-                    ui.hideProgressBar(fileType);
-                    return;
-            }
-
-            appState[stateKey] = normalizedData;
-            ui.showNotification(`Tải thành công file "${dataName}"!`, 'success');
-
-            if (saveKey) {
-                console.log(`[handleFileInputChange] Saving normalized data (${normalizedData.length} rows) to cache: ${saveKey}`);
-                await this.storage.setItem(saveKey, normalizedData);
-                console.log(`%c[DEBUG POST-CACHE] Successfully saved ${fileType} to cache. Proceeding...`, "color: brown;");
-            }
-
-            // --- Section before sync check ---
-            let warehouseToSync = null;
-            let currentFirestoreKey = null;
-            try {
-                console.log("[DEBUG STEP 1] Getting warehouseToSync..."); // Log added
-                    warehouseToSync = appState.selectedWarehouse;
-                console.log(`[DEBUG STEP 2] warehouseToSync = ${warehouseToSync}`); // Log added
-        
-                console.log("[DEBUG STEP 3] Getting firestoreKey..."); // Log added
-                currentFirestoreKey = firestoreKey; // Use the firestoreKey from mappingInfo
-                console.log(`[DEBUG STEP 4] firestoreKey = ${currentFirestoreKey}`); // Log added
-
-                console.log(`%c[DEBUG PRE-SYNC CHECK] File Type: ${fileType}, Warehouse: ${warehouseToSync}, Firestore Key: ${currentFirestoreKey}`, "color: purple; font-weight: bold;");
-
-                if (warehouseToSync && currentFirestoreKey) {
-                        console.log(`%c[DEBUG SYNC BLOCK START] Entering cloud sync block for ${fileType} (Firestore Key: ${currentFirestoreKey})`, "color: magenta;");
-
-                    ui.updateFileStatus(fileType, file.name, `Đang chuẩn bị đồng bộ cloud...`, 'default'); // <<< SỬA (v4.47)
-                    let localDataVersions = this._localDataVersions;
-                    const currentVersion = localDataVersions?.[warehouseToSync]?.[currentFirestoreKey]?.version || 0;
-                    const newVersion = currentVersion + 1;
-                    const uploadTimestamp = Date.now();
-
-                    const fileExtension = file.name.substring(file.name.lastIndexOf('.'));
-                    const storagePath = `uploads/${warehouseToSync}/${currentFirestoreKey}_v${newVersion}${fileExtension}`;
-
-                    console.log(`%c[handleFileInputChange] Cloud Upload for ${currentFirestoreKey}:`, "color: magenta; font-weight: bold;");
-
-                    const onProgress = (progress) => {
-                            ui.updateFileStatus(fileType, file.name, `Đang tải lên cloud... ${Math.round(progress)}%`, 'default'); // <<< SỬA (v4.47)
-                    };
-
-                    try {
-                        const downloadURL = await firebase.uploadFileToStorage(file, storagePath, onProgress);
-                        ui.updateFileStatus(fileType, file.name, `Upload xong, đang lưu thông tin...`, 'default'); // <<< SỬA (v4.47)
-
-                        const metadata = {
-                                storagePath: storagePath,
-                            downloadURL: downloadURL,
-                            version: newVersion,
-                            timestamp: uploadTimestamp,
-                            rowCount: normalizedData.length,
-                                fileName: file.name
-                            };
-
-                        await firebase.saveMetadataToFirestore(warehouseToSync, currentFirestoreKey, metadata);
-
-                        const metadataKey = `${LOCAL_METADATA_PREFIX}${warehouseToSync}_${currentFirestoreKey}`;
-                        const metadataToSaveLocally = { ...metadata, updatedAt: new Date() };
-                        try {
-                            localStorage.setItem(metadataKey, JSON.stringify(metadataToSaveLocally));
-                            console.log(`[handleFileInputChange] Saved metadata for ${currentFirestoreKey} to localStorage ('${metadataKey}') immediately.`);
-                        } catch(lsError) {
-                                console.error(`[handleFileInputChange] Error saving metadata for ${currentFirestoreKey} to localStorage:`, lsError);
-                        }
-
-                        if (!localDataVersions[warehouseToSync]) localDataVersions[warehouseToSync] = {};
-                        localDataVersions[warehouseToSync][currentFirestoreKey] = { version: newVersion, timestamp: uploadTimestamp };
-                        localStorage.setItem(LOCAL_DATA_VERSIONS_KEY, JSON.stringify(localDataVersions));
-                        this._localDataVersions = localDataVersions;
-
-                        console.log(`%c[handleFileInputChange] Successfully uploaded ${currentFirestoreKey} (v${newVersion}).`, "color: magenta;");
-
-                            ui.updateFileStatus(fileType, file.name, '', 'success', false, metadataToSaveLocally); // <<< SỬA (v4.47)
-
-                        } catch (syncError) {
-                        console.error(`%c[handleFileInputChange] Cloud sync failed for ${currentFirestoreKey}:`, "color: red;", syncError);
-                        ui.updateFileStatus(fileType, file.name, `Lỗi đồng bộ cloud: ${syncError.message}`, 'error'); // <<< SỬA (v4.47)
-                    }
-                        console.log(`%c[DEBUG SYNC BLOCK END] Finished cloud sync block for ${fileType}`, "color: magenta;");
-                } else {
-                        console.log(`%c[DEBUG SYNC SKIP] Skipping cloud sync for ${fileType}. Warehouse selected: ${!!warehouseToSync}, Firestore key exists: ${!!currentFirestoreKey}`, "color: orange;");
-                        if (currentFirestoreKey) {
-                            ui.updateFileStatus(fileType, file.name, `✓ Đã tải ${normalizedData.length} dòng (Chưa đồng bộ).`, 'success', false, null); // <<< SỬA (v4.47)
-                        }
-                }
-
-            } catch(preSyncError) {
-                    // ** ADDED v4.36: Catch errors before sync check **
-                    console.error(`%c[DEBUG PRE-SYNC ERROR] Error before sync check for ${fileType}:`, "color: red; font-weight: bold;", preSyncError);
-                    ui.updateFileStatus(fileType, file.name, `Lỗi chuẩn bị đồng bộ: ${preSyncError.message}`, 'error'); // <<< SỬA (v4.47)
-                    // ** END ADDED **
-            }
-
-            console.log(`%c[DEBUG PRE-RENDER] About to call updateAndRenderCurrentTab for ${fileType}`, "color: blue;");
-            this.updateAndRenderCurrentTab();
-
-        } catch (error) {
-                console.error(`Lỗi xử lý file ${dataName}:`, error);
-            ui.updateFileStatus(fileType, file.name, `Lỗi đọc file: ${error.message}`, 'error'); // <<< SỬA (v4.47)
-            ui.showNotification(`Lỗi khi xử lý file "${dataName}".`, 'error');
-        } finally {
-            ui.hideProgressBar(fileType);
-            fileInput.value = '';
-            console.log(`%c[DEBUG FUNCTION END] handleFileInputChange finished for ${fileType}`, "color: gray;");
-        }
-    },
-
-    async handleDsnvUpload(e, file) {
-        // ... (Giữ nguyên)
-        const fileType = 'danhsachnv';
-        const dataName = 'Danh sách nhân viên';
-        const stateKey = 'danhSachNhanVien';
-        const saveKey = 'saved_danhsachnv';
-
-        ui.updateFileStatus(fileType, file.name, 'Đang đọc & chuẩn hóa...', 'default'); // <<< SỬA (v4.47)
-        ui.showProgressBar(fileType);
-
-        try {
-            const workbook = await this.handleFileRead(file);
-            const rawData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-            const { normalizedData, success, missingColumns } = services.normalizeData(rawData, fileType);
-            ui.displayDebugInfo(fileType);
-
-            if (!success) {
-                    const errorMessage = `Lỗi file "${dataName}": Thiếu cột: ${missingColumns.join(', ')}.`;
-                ui.updateFileStatus(fileType, file.name, `Lỗi: Thiếu cột dữ liệu.`, 'error'); // <<< SỬA (v4.47)
-                ui.showNotification(errorMessage, 'error');
-                if (document.getElementById('debug-tool-container')?.classList.contains('hidden')) {
-                        document.getElementById('toggle-debug-btn')?.click();
-                }
-                return;
-            }
-
-            appState[stateKey] = normalizedData;
-            services.updateEmployeeMaps();
-            ui.populateAllFilters();
-            ui.populateWarehouseSelector(); // <<< SỬA (v4.47)
-
-            try {
-                localStorage.setItem(LOCAL_DSNV_FILENAME_KEY, file.name);
-                console.log(`[handleDsnvUpload] Saved DSNV filename '${file.name}' to localStorage.`);
-            } catch (lsError) {
-                    console.error("[handleDsnvUpload] Error saving DSNV filename to localStorage:", lsError);
-            }
-
-                ui.showNotification(`Tải thành công file "${dataName}"!`, 'success');
-
-            if (saveKey) {
-                    console.log(`[handleDsnvUpload] Saving normalized data (${normalizedData.length} rows) to cache: ${saveKey}`);
-                    await this.storage.setItem(saveKey, normalizedData);
-            }
-
-            ui.updateFileStatus(fileType, file.name, `✓ Đã tải ${normalizedData.length} dòng.`, 'success', false, null); // <<< SỬA (v4.47)
-            this.updateAndRenderCurrentTab();
-
-        } catch (error) {
-                console.error(`Lỗi xử lý file ${dataName}:`, error);
-                ui.updateFileStatus(fileType, file.name, `Lỗi đọc file: ${error.message}`, 'error'); // <<< SỬA (v4.47)
-                ui.showNotification(`Lỗi khi xử lý file "${dataName}".`, 'error');
-        } finally {
-            ui.hideProgressBar(fileType);
-            e.target.value = '';
-        }
-    },
-
-
-    handleFileRead(file) {
-        // ... (Giữ nguyên)
-        return new Promise((resolve, reject) => {
-                if (!file) return reject(new Error("No file provided."));
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    try {
-                    const data = new Uint8Array(event.target.result);
-                    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
-                    resolve(workbook);
-                } catch (err) { reject(err); }
-                };
-                reader.onerror = (err) => reject(new Error("Could not read the file: " + err));
-                reader.readAsArrayBuffer(file);
-        });
     },
 
     updateAndRenderCurrentTab() {
@@ -1125,343 +654,6 @@ const app = {
                 console.error("Không thể tải link bookmark:", error);
             const linkElement = document.getElementById('download-bookmark-link');
             if (linkElement) linkElement.style.display = 'none';
-        }
-    },
-
-    async _handlePastedDataSync(pastedText, kho, dataType, uiId, localStorageKey, stateKey = null, processFunc = null) {
-        // ... (Giữ nguyên)
-        
-        // === START: DEBUG (v4.43) ===
-        console.log(`%c[DEBUG _handlePastedDataSync] Bắt đầu đồng bộ cho: ${dataType}`, "color: darkcyan; font-weight: bold;");
-        // === END: DEBUG ===
-
-        // *** MODIFIED (v4.40): Chỉ lưu text thô nếu đó KHÔNG PHẢI là thi đua NV
-        // Dữ liệu thi đua NV sẽ được lưu dưới dạng JSON đã xử lý ở hàm riêng
-        if (dataType !== 'pastedThiduaNVBI') {
-                // === START: DEBUG (v4.43) ===
-            try {
-                localStorage.setItem(localStorageKey, pastedText);
-                console.log(`%c[DEBUG _handlePastedDataSync]   > Đã LƯU (setItem) text thô vào localStorage key: ${localStorageKey}`, "color: darkcyan;");
-            } catch (e) {
-                console.error(`%c[DEBUG _handlePastedDataSync]   > LỖI khi lưu text thô vào localStorage key: ${localStorageKey}`, "color: red;", e);
-            }
-            // === END: DEBUG ===
-        }
-
-        let processedData = null;
-        let processedCount = 0;
-        
-        // *** MODIFIED (v4.40) ***
-        if (dataType === 'pastedThiduaNVBI') {
-                // Logic này chỉ chạy khi GỌI TỪ CLOUD (handleCloudDataUpdate)
-            // Vì _handlePastedDataSync không còn được gọi trực tiếp bởi handleThiduaNVPaste
-            const parsedData = services.parsePastedThiDuaTableData(pastedText);
-            if(parsedData.success) {
-                services.updateCompetitionNameMappings(parsedData.mainHeaders);
-                processedData = services.processThiDuaNhanVienData(parsedData, appState.competitionData);
-                appState[stateKey] = processedData;
-                processedCount = processedData.length;
-                localStorage.setItem(localStorageKey, JSON.stringify(processedData)); // Lưu JSON đã xử lý
-            } else {
-                throw new Error(parsedData.error || "Lỗi phân tích cú pháp dữ liệu thi đua từ cloud");
-            }
-        } 
-        // *** END MODIFIED ***
-            else if (stateKey && processFunc) {
-            processedData = processFunc(pastedText);
-            appState[stateKey] = processedData;
-            processedCount = processedData?.length || 0;
-        } else if (uiId === 'status-luyke') {
-                // Cập nhật giá trị ô input nếu cần (hàm handleLuykePaste sẽ làm việc này)
-        }
-
-        if (!kho) {
-            ui.updatePasteStatus(uiId, '✓ Đã nhận (Chọn kho để đồng bộ)', 'success', null, processedCount); // <<< SỬA (v4.47)
-            if (dataType !== 'pastedLuykeBI') this.updateAndRenderCurrentTab();
-            return;
-        }
-
-        ui.updatePasteStatus(uiId, 'Đang đồng bộ cloud...', 'default'); // <<< SỬA (v4.47)
-
-        try {
-            const localDataVersions = this._localDataVersions;
-            const currentVersion = localDataVersions?.[kho]?.[dataType]?.version || 0;
-            const newVersion = currentVersion + 1;
-            const uploadTimestamp = Date.now();
-            const versionInfo = { version: newVersion, timestamp: uploadTimestamp };
-
-            const metadata = {
-                content: pastedText, // Luôn đồng bộ TEXT THÔ lên cloud
-                version: versionInfo.version,
-                timestamp: versionInfo.timestamp,
-                updatedBy: appState.currentUser.email
-                };
-
-            await firebase.savePastedDataToFirestore(kho, dataType, metadata.content, versionInfo);
-
-            if (!localDataVersions[kho]) localDataVersions[kho] = {};
-            localDataVersions[kho][dataType] = versionInfo;
-            localStorage.setItem(LOCAL_DATA_VERSIONS_KEY, JSON.stringify(localDataVersions));
-
-            const metadataKey = `${LOCAL_METADATA_PREFIX}${kho}_${dataType}`;
-            const metadataToSaveLocally = { ...metadata, updatedAt: new Date() };
-            localStorage.setItem(metadataKey, JSON.stringify(metadataToSaveLocally));
-
-                ui.updatePasteStatus(uiId, '', 'success', metadataToSaveLocally, processedCount); // <<< SỬA (v4.47)
-
-        } catch (error) {
-            console.error(`[${dataType} Paste] Cloud sync failed:`, error);
-            ui.updatePasteStatus(uiId, `Lỗi đồng bộ cloud: ${error.message}`, 'error'); // <<< SỬA (v4.47)
-        }
-
-        if (dataType !== 'pastedLuykeBI') {
-                this.updateAndRenderCurrentTab();
-        }
-    },
-
-
-    async handleLuykePaste() {
-        // ... (Giữ nguyên)
-        const pastedText = document.getElementById('paste-luyke')?.value || '';
-        const kho = appState.selectedWarehouse;
-        const mappingInfo = this.ALL_DATA_MAPPING['pastedLuykeBI'];
-
-        // === START: DEBUG (v4.43) ===
-        try {
-            localStorage.setItem(mappingInfo.saveKey, pastedText);
-            console.log(`%c[DEBUG handleLuykePaste] Đã LƯU (setItem) vào localStorage key: ${mappingInfo.saveKey} (Độ dài: ${pastedText.length})`, "color: green;");
-        } catch (e) {
-            console.error(`%c[DEBUG handleLuykePaste] LỖI khi lưu vào localStorage key: ${mappingInfo.saveKey}`, "color: red;", e);
-        }
-        // === END: DEBUG ===
-        
-        ui.updatePasteStatus(mappingInfo.uiId, '✓ Đã nhận dữ liệu.', 'success'); // <<< SỬA (v4.47)
-
-        if (kho) {
-                await this._handlePastedDataSync(
-                    pastedText,
-                    kho,
-                    mappingInfo.firestoreKey,
-                    mappingInfo.uiId,
-                    mappingInfo.saveKey
-                );
-        }
-            this.updateAndRenderCurrentTab();
-    },
-
-    // *** START: HÀM ĐƯỢC CẬP NHẬT (v4.44) ***
-    async handleThiduaNVPaste() {
-        const pastedText = document.getElementById('paste-thiduanv')?.value || '';
-        const kho = appState.selectedWarehouse;
-        const mappingInfo = this.ALL_DATA_MAPPING['pastedThiduaNVBI'];
-        if (!mappingInfo) return;
-
-        const { stateKey, saveKey, firestoreKey, uiId } = mappingInfo;
-
-        // === FIX 2a.1 (Thêm) ===
-        // Lưu văn bản thô để tải lại khi F5
-        try {
-            localStorage.setItem(RAW_PASTE_THIDUANV_KEY, pastedText);
-            // === START: DEBUG (v4.43) ===
-            console.log(`%c[DEBUG handleThiduaNVPaste] Đã LƯU (setItem) text thô vào localStorage key: ${RAW_PASTE_THIDUANV_KEY} (Độ dài: ${pastedText.length})`, "color: green;");
-            // === END: DEBUG ===
-        } catch (e) {
-                console.warn("Không thể lưu raw_paste_thiduanv vào localStorage:", e);
-        }
-        // === END FIX ===
-
-        try {
-            // 1. Phân tích cú pháp văn bản thô (Theo thuật toán của bạn)
-            const parsedData = services.parsePastedThiDuaTableData(pastedText);
-            if (!parsedData.success) {
-                throw new Error(parsedData.error || "Lỗi phân tích cú pháp dữ liệu.");
-            }
-
-            // 2. Cập nhật Bảng Ánh Xạ Tên
-            services.updateCompetitionNameMappings(parsedData.mainHeaders);
-
-            // 3. Chuẩn hóa dữ liệu (Tra cứu DSNV, áp dụng tên rút gọn)
-            // Chúng ta dùng appState.competitionData (từ Lũy kế) để lấy mục tiêu
-                const processedData = services.processThiDuaNhanVienData(parsedData, appState.competitionData);
-            
-            // 4. Lưu kết quả ĐÃ XỬ LÝ vào appState và localStorage
-            appState[stateKey] = processedData;
-            localStorage.setItem(saveKey, JSON.stringify(processedData)); // Lưu mảng JSON đã xử lý
-            
-            // *** START: NEW (v4.44) ***
-            // Tải/Hợp nhất cài đặt cột SAU KHI appState.pastedThiDuaReportData đã được cập nhật
-            settingsService.loadPastedCompetitionViewSettings();
-            console.log("[main.js handleThiduaNVPaste] Đã tải và hợp nhất cài đặt cột thi đua.");
-            // *** END: NEW (v4.44) ***
-
-            const processedCount = processedData.length;
-            
-            // 5. Đồng bộ TEXT THÔ lên Cloud (sử dụng logic _handlePastedDataSync)
-            await this._handlePastedDataSync(
-                pastedText, // Gửi text thô lên cloud
-                kho,
-                firestoreKey,
-                uiId,
-                saveKey, // saveKey này bây giờ lưu JSON, nhưng _handlePastedDataSync không dùng nó để ghi
-                stateKey, // stateKey này đã được cập nhật
-                null // Không cần processFunc ở đây nữa
-            );
-
-            // 6. Cập nhật giao diện
-            this.updateAndRenderCurrentTab();
-            // Cập nhật Tab Khai báo nếu Admin đang xem
-            if (appState.isAdmin && document.getElementById('declaration-section')?.classList.contains('hidden') === false) {
-                ui.renderAdminPage();
-            }
-
-        } catch (error) {
-            console.error("Lỗi khi xử lý dữ liệu dán Thi đua NV:", error);
-            ui.updatePasteStatus(uiId, `Lỗi: ${error.message}`, 'error'); // <<< SỬA (v4.47)
-            // Hiển thị debug nếu có
-            const debugContainer = document.getElementById('debug-tool-container');
-            if (debugContainer?.classList.contains('hidden')) {
-                document.getElementById('toggle-debug-btn')?.click();
-            }
-        }
-    },
-    // *** END: HÀM ĐƯỢC CẬP NHẬT (v4.44) ***
-
-    async handleErpPaste() {
-        // ... (Giữ nguyên)
-        const pastedText = document.getElementById('paste-thuongerp')?.value || '';
-        const kho = appState.selectedWarehouse;
-        const mappingInfo = this.ALL_DATA_MAPPING['pastedThuongERP'];
-        
-        // === START: DEBUG (v4.43) ===
-            try {
-            localStorage.setItem(mappingInfo.saveKey, pastedText);
-            console.log(`%c[DEBUG handleErpPaste] Đã LƯU (setItem) vào localStorage key: ${mappingInfo.saveKey} (Độ dài: ${pastedText.length})`, "color: green;");
-        } catch (e) {
-            console.error(`%c[DEBUG handleErpPaste] LỖI khi lưu vào localStorage key: ${mappingInfo.saveKey}`, "color: red;", e);
-        }
-        // === END: DEBUG ===
-
-        await this._handlePastedDataSync(
-                pastedText,
-            kho,
-            mappingInfo.firestoreKey,
-            mappingInfo.uiId,
-            mappingInfo.saveKey,
-                mappingInfo.stateKey,
-                mappingInfo.processFunc
-        );
-    },
-
-    async handleErpThangTruocPaste(e) {
-        // ... (Giữ nguyên)
-            const pastedText = e.target.value;
-            const kho = appState.selectedWarehouse;
-            const mappingInfo = this.ALL_DATA_MAPPING['pastedThuongERPThangTruoc'];
-            
-            // === START: DEBUG (v4.43) ===
-            try {
-            localStorage.setItem(mappingInfo.saveKey, pastedText);
-            console.log(`%c[DEBUG handleErpThangTruocPaste] Đã LƯU (setItem) vào localStorage key: ${mappingInfo.saveKey} (Độ dài: ${pastedText.length})`, "color: green;");
-        } catch (lsError) {
-            console.error(`%c[DEBUG handleErpThangTruocPaste] LỖI khi lưu vào localStorage key: ${mappingInfo.saveKey}`, "color: red;", lsError);
-        }
-        // === END: DEBUG ===
-
-            await this._handlePastedDataSync(
-                pastedText,
-                kho,
-            mappingInfo.firestoreKey,
-            mappingInfo.uiId,
-            mappingInfo.saveKey,
-            mappingInfo.stateKey,
-            mappingInfo.processFunc
-        );
-    },
-
-    async handleRealtimeFileInput(e) {
-        // ... (Giữ nguyên)
-        const file = e.target.files[0];
-        if (!file) return;
-        ui.showNotification('Đang xử lý file realtime...', 'success');
-        appState.realtimeYCXData = [];
-        e.target.value = '';
-        try {
-            const workbook = await this.handleFileRead(file);
-            const rawData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-            const { normalizedData, success, missingColumns } = services.normalizeData(rawData, 'ycx');
-            ui.displayDebugInfo('ycx-realtime');
-            if (success) {
-                appState.realtimeYCXData = normalizedData;
-                uiRealtime.populateRealtimeBrandCategoryFilter();
-                ui.showNotification(`Tải thành công ${normalizedData.length} dòng realtime!`, 'success');
-                this.updateAndRenderCurrentTab();
-            } else {
-                    ui.showNotification(`File realtime lỗi: Thiếu cột ${missingColumns.join(', ')}.`, 'error');
-                    const debugContainer = document.getElementById('debug-tool-container');
-                    if (debugContainer?.classList.contains('hidden')) {
-                        document.getElementById('toggle-debug-btn')?.click();
-                    }
-            }
-        } catch (err) { ui.showNotification(`Có lỗi khi đọc file: ${err.message}`, 'error'); console.error(err); }
-    },
-
-    async handleCategoryFile(e) {
-        // ... (Giữ nguyên)
-            const fileInput = e.target;
-        const file = fileInput.files[0];
-        if (!file) return;
-        ui.updateFileStatus('category-structure', file.name, 'Đang xử lý...', 'default'); // <<< SỬA (v4.47)
-        ui.showProgressBar('category-structure');
-        try {
-            const workbook = await this.handleFileRead(file);
-            const categorySheet = workbook.Sheets[workbook.SheetNames[0]];
-            const categoryRawData = XLSX.utils.sheet_to_json(categorySheet);
-            const categoryResult = services.normalizeCategoryStructureData(categoryRawData);
-            let brandResult = { success: true, normalizedData: [] };
-            const brandSheetName = workbook.SheetNames.find(name => name.toLowerCase().trim() === 'hãng');
-            if (brandSheetName) {
-                const brandSheet = workbook.Sheets[brandSheetName];
-                const brandRawData = XLSX.utils.sheet_to_json(brandSheet);
-                brandResult = services.normalizeBrandData(brandRawData);
-            }
-            if(categoryResult.success) {
-                appState.categoryStructure = categoryResult.normalizedData;
-                appState.brandList = brandResult.normalizedData;
-                await firebase.saveCategoryDataToFirestore({ categories: categoryResult.normalizedData, brands: brandResult.normalizedData });
-                ui.updateFileStatus('category-structure', file.name, `✓ Đã xử lý và đồng bộ ${categoryResult.normalizedData.length} nhóm & ${brandResult.normalizedData.length} hãng.`, 'success'); // <<< SỬA (v4.47)
-            } else {
-                    ui.showNotification(`Lỗi xử lý file khai báo: ${categoryResult.error}`, 'error');
-            }
-        } catch (error) {
-            ui.updateFileStatus('category-structure', file.name, `Lỗi: ${error.message}`, 'error'); // <<< SỬA (v4.47)
-        } finally {
-            ui.hideProgressBar('category-structure');
-            fileInput.value = '';
-        }
-    },
-
-    async handleThiDuaVungFileInput(e) {
-        // ... (Giữ nguyên)
-        const fileInput = e.target;
-        const file = fileInput.files[0];
-        if (!file) return;
-        ui.updateFileStatus('thidua-vung', file.name, 'Đang xử lý...', 'default'); // <<< SỬA (v4.47)
-        try {
-            const workbook = await this.handleFileRead(file);
-            const { chiTietData, tongData } = services.processThiDuaVungFile(workbook);
-            if (!tongData || tongData.length === 0) throw new Error('Không tìm thấy dữ liệu hợp lệ trong sheet "TONG".');
-            appState.thiDuaVungChiTiet = chiTietData;
-            appState.thiDuaVungTong = tongData;
-            const supermarketKey = Object.keys(tongData[0]).find(k => k.trim().toLowerCase().includes('siêu thị'));
-            const supermarketNames = [...new Set(tongData.map(row => row[supermarketKey]).filter(Boolean))].sort();
-            const choicesInstance = appState.choices.thiDuaVung_sieuThi;
-            if (choicesInstance) {
-                choicesInstance.clearStore();
-                choicesInstance.setChoices(supermarketNames.map(name => ({ value: name, label: name })), 'value', 'label', true);
-            }
-            ui.updateFileStatus('thidua-vung', file.name, `✓ Đã xử lý ${supermarketNames.length} siêu thị.`, 'success'); // <<< SỬA (v4.47)
-        } catch (error) {
-            ui.updateFileStatus('thidua-vung', file.name, `Lỗi: ${error.message}`, 'error'); // <<< SỬA (v4.47)
         }
     },
 
@@ -1512,13 +704,13 @@ const app = {
         }
     },
 
-    async handleCompetitionDebugFile(e) {
+    async handleCompetitionDebugFile(e) { // <<< GIỮ LẠI (v4.48)
         // ... (Giữ nguyên)
         const file = e.target.files[0];
         if (!file) return;
         ui.showNotification('Đang phân tích file gỡ lỗi...', 'success');
         try {
-            const workbook = await this.handleFileRead(file);
+            const workbook = await this._handleFileRead(file); // <<< SẼ GÂY LỖI
             const rawData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
             const debugResults = services.debugCompetitionFiltering(rawData);
             ui.renderCompetitionDebugReport(debugResults);
@@ -1578,7 +770,7 @@ const app = {
     },
 
     _handleCompetitionDelete(index) {
-        // ... (GiGiữ nguyên)
+        // ... (Giữ nguyên)
         appState.competitionConfigs.splice(index, 1);
         this._saveCompetitionConfigs();
         this.updateAndRenderCurrentTab();
@@ -1624,7 +816,7 @@ const app = {
         localStorage.setItem('competitionConfigs', JSON.stringify(appState.competitionConfigs));
     },
 
-    async handleTemplateDownload() {
+    async handleTemplateDownload() { // <<< GIỮ LẠI (v4.48)
         // ... (Giữ nguyên)
         ui.showNotification('Đang chuẩn bị file mẫu...', 'success');
         try {

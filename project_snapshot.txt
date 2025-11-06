@@ -4205,10 +4205,10 @@ id="luyke-efficiency-content"></div></div>
 --- END FILE: ./index.html ---
 
 --- START FILE: ./main.js ---
+// Version 4.47 - Refactor: Remove direct dependency on ui-components.js, use ui.js facade instead.
 // Version 4.46 - Fix bug: Move ALL_DATA_MAPPING inside the app object
 // Version 4.45 - Fix critical syntax errors (remove all source tags)
-// Version 4.44 - Call loadPastedCompetitionViewSettings after pasting thi dua data
-// Version 4.43 - Add deep logging for saving/loading pasted data (Debug Problem 1)
+// ... (các phiên bản trước giữ nguyên)
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -4236,7 +4236,7 @@ import { modalPreview } from './components/modal-preview.js';
 import { modalSelection } from './components/modal-selection.js';
 import { settingsService } from './modules/settings.service.js';
 import { highlightService } from './modules/highlight.service.js';
-import { uiComponents } from './ui-components.js';
+// <<< ĐÃ XÓA (v4.47) >>> import { uiComponents } from './ui-components.js';
 
 const LOCAL_DATA_VERSIONS_KEY = '_localDataVersions';
 const LOCAL_METADATA_PREFIX = '_localMetadata_';
@@ -4247,7 +4247,7 @@ const RAW_PASTE_THIDUANV_KEY = 'raw_paste_thiduanv'; // === FIX 2a.2 (Thêm) ===
 
 const app = {
     // === START: FIX LỖI ===
-    // Di chuyển ALL_DATA_MAPPING từ bên ngoài vào đây
+    // Di chuyển ALL_DATA_MAPPING từ bên ngoài vào bên trong đối tượng 'app'
     ALL_DATA_MAPPING: {
         // Daily Files
         'ycx': { stateKey: 'ycxData', saveKey: 'saved_ycx', isPasted: false, uiId: 'ycx', firestoreKey: 'ycx' },
@@ -4308,16 +4308,16 @@ const app = {
             ui.showNotification("Lỗi khởi tạo. Vui lòng thử tải lại trang.", "error");
             const mainContent = document.getElementById('main-content');
             if (mainContent) {
-                 mainContent.innerHTML = '<div class="placeholder-message notification-error">Lỗi nghiêm trọng, không thể khởi động ứng dụng. Vui lòng kiểm tra kết nối mạng, cài đặt Firebase Rules và thử lại.</div>';
+                    mainContent.innerHTML = '<div class="placeholder-message notification-error">Lỗi nghiêm trọng, không thể khởi động ứng dụng. Vui lòng kiểm tra kết nối mạng, cài đặt Firebase Rules và thử lại.</div>';
             }
         }
     },
 
     async continueInit() {
         if (!appState.currentUser || !appState.currentUser.email) {
-             console.error("continueInit called without user email in appState.");
-             ui.showNotification("Lỗi: Không tìm thấy thông tin người dùng.", "error");
-             return;
+                console.error("continueInit called without user email in appState.");
+                ui.showNotification("Lỗi: Không tìm thấy thông tin người dùng.", "error");
+                return;
         }
         console.log(`Email identification complete: ${appState.currentUser.email}. Continuing app initialization...`);
 
@@ -4355,12 +4355,12 @@ const app = {
             
             // === FIX 1a (Thêm) ===
             // Cập nhật trạng thái UI sau khi tải từ cloud, thay vì để trống
-            uiComponents.updateFileStatus('category-structure', 'Tải từ Cloud', `✓ Đã tải ${categories.length} nhóm & ${brands.length} hãng.`, 'success', false);
+            ui.updateFileStatus('category-structure', 'Tải từ Cloud', `✓ Đã tải ${categories.length} nhóm & ${brands.length} hãng.`, 'success', false); // <<< SỬA (v4.47)
             // === END FIX ===
 
         } catch (error) {
-             console.error("Error loading category data after auth:", error);
-             ui.showNotification("Không thể tải cấu trúc ngành hàng từ cloud.", "error");
+                console.error("Error loading category data after auth:", error);
+                ui.showNotification("Không thể tải cấu trúc ngành hàng từ cloud.", "error");
         }
 
         console.log("Loading calculation declarations from Firestore...");
@@ -4374,8 +4374,8 @@ const app = {
             const decHeSoEl = document.getElementById('declaration-heso');
             if (decHeSoEl) decHeSoEl.value = declarations.heSoQuyDoi || Object.entries(config.DEFAULT_DATA.HE_SO_QUY_DOI).map(([k, v]) => `${k},${v}`).join('\n');
         } catch (error) {
-             console.error("Error loading declarations after auth:", error);
-             ui.showNotification("Không thể tải khai báo tính toán từ cloud.", "error");
+                console.error("Error loading declarations after auth:", error);
+                ui.showNotification("Không thể tải khai báo tính toán từ cloud.", "error");
         }
         
         // *** NEW (v4.41): Load competition name mappings from Firestore ***
@@ -4384,13 +4384,13 @@ const app = {
             appState.competitionNameMappings = await firebase.loadCompetitionNameMappings();
             console.log("Successfully loaded competition name mappings from Firestore.");
         } catch (error) {
-             console.error("Error loading competition name mappings:", error);
-             ui.showNotification("Không thể tải tên rút gọn (thi đua) từ cloud.", "error");
-             appState.competitionNameMappings = {}; // Ensure it's an object on failure
+                console.error("Error loading competition name mappings:", error);
+                ui.showNotification("Không thể tải tên rút gọn (thi đua) từ cloud.", "error");
+                appState.competitionNameMappings = {}; // Ensure it's an object on failure
         }
         // *** END NEW ***
 
-         initializeEventListeners(this);
+            initializeEventListeners(this);
         await this.loadDataFromStorage();
 
         const savedWarehouse = localStorage.getItem('selectedWarehouse');
@@ -4424,46 +4424,46 @@ const app = {
                 const currentStatusIsCache = fileStatusSpan?.textContent?.includes('Đã tải');
 
                 if (currentStatusIsCache) {
-                     if (metadata && metadata.version > localVersionInfo.version) {
+                        if (metadata && metadata.version > localVersionInfo.version) {
                         console.log(`%c[continueInit] Cache loaded for ${firestoreKey}, but cloud v${metadata.version} is newer. Showing download button.`, "color: orange;");
-                        uiComponents.updateFileStatus(uiId, metadata.fileName || 'Cloud', '', 'default', true, metadata, firestoreKey, savedWarehouse);
-                     } else {
-                         console.log(`%c[continueInit] UI status for ${firestoreKey} was set by loadDataFromStorage (cache) and is up-to-date. Keeping it.`, "color: green;");
-                     }
+                        ui.updateFileStatus(uiId, metadata.fileName || 'Cloud', '', 'default', true, metadata, firestoreKey, savedWarehouse); // <<< SỬA (v4.47)
+                        } else {
+                            console.log(`%c[continueInit] UI status for ${firestoreKey} was set by loadDataFromStorage (cache) and is up-to-date. Keeping it.`, "color: green;");
+                        }
                 } else if (metadata) {
-                     if (metadata.version > localVersionInfo.version) {
-                        uiComponents.updateFileStatus(uiId, metadata.fileName || 'Cloud', '', 'default', true, metadata, firestoreKey, savedWarehouse);
+                        if (metadata.version > localVersionInfo.version) {
+                        ui.updateFileStatus(uiId, metadata.fileName || 'Cloud', '', 'default', true, metadata, firestoreKey, savedWarehouse); // <<< SỬA (v4.47)
                         console.log(`%c[continueInit] UI status for ${firestoreKey} requires download (Cloud v${metadata.version} > Local v${localVersionInfo.version}).`, "color: green;");
                     } else {
-                         uiComponents.updateFileStatus(uiId, metadata.fileName || 'Cloud', '', 'default', true, metadata, firestoreKey, savedWarehouse);
+                            ui.updateFileStatus(uiId, metadata.fileName || 'Cloud', '', 'default', true, metadata, firestoreKey, savedWarehouse); // <<< SỬA (v4.47)
                         console.log(`%c[continueInit] UI status for ${firestoreKey} requires download (v${metadata.version}). Cache empty or not loaded.`, "color: orange;");
                     }
                 } else {
-                     uiComponents.updateFileStatus(uiId, '', `Đang chờ đồng bộ từ kho ${savedWarehouse}...`, 'default');
+                        ui.updateFileStatus(uiId, '', `Đang chờ đồng bộ từ kho ${savedWarehouse}...`, 'default'); // <<< SỬA (v4.47)
                     console.log(`%c[continueInit] No metadata for ${firestoreKey}, waiting for sync.`, "color: orange;");
                 }
             });
             console.log(`%c[continueInit] Finished checking sync status.`, "color: teal; font-weight: bold;");
 
         } else {
-             Object.keys(this.ALL_DATA_MAPPING).filter(k => !this.ALL_DATA_MAPPING[k].isPasted).forEach(fileTypeKey => {
-                 uiComponents.updateFileStatus(this.ALL_DATA_MAPPING[fileTypeKey].uiId, '', 'Chọn kho để đồng bộ...', 'default');
-             });
-             const dsnvFilename = localStorage.getItem(LOCAL_DSNV_FILENAME_KEY);
-             if (!dsnvFilename) {
-                 uiComponents.updateFileStatus('danhsachnv', '', 'Chưa thêm file', 'default');
-             }
+                Object.keys(this.ALL_DATA_MAPPING).filter(k => !this.ALL_DATA_MAPPING[k].isPasted).forEach(fileTypeKey => {
+                    ui.updateFileStatus(this.ALL_DATA_MAPPING[fileTypeKey].uiId, '', 'Chọn kho để đồng bộ...', 'default'); // <<< SỬA (v4.47)
+                });
+                const dsnvFilename = localStorage.getItem(LOCAL_DSNV_FILENAME_KEY);
+                if (!dsnvFilename) {
+                    ui.updateFileStatus('danhsachnv', '', 'Chưa thêm file', 'default'); // <<< SỬA (v4.47)
+                }
         }
 
         if (appState.danhSachNhanVien.length > 0) {
-            uiComponents.populateWarehouseSelector();
+            ui.populateWarehouseSelector(); // <<< SỬA (v4.47)
         } else {
-             console.error("[main.js continueInit] CRITICAL: appState.danhSachNhanVien is empty! Warehouse selector cannot be populated.");
-             const selector = document.getElementById('data-warehouse-selector');
-             if (selector) {
-                 selector.innerHTML = '<option value="">-- Vui lòng tải Danh sách Nhân viên --</option>';
-                 selector.disabled = true;
-             }
+                console.error("[main.js continueInit] CRITICAL: appState.danhSachNhanVien is empty! Warehouse selector cannot be populated.");
+                const selector = document.getElementById('data-warehouse-selector');
+                if (selector) {
+                    selector.innerHTML = '<option value="">-- Vui lòng tải Danh sách Nhân viên --</option>';
+                    selector.disabled = true;
+                }
         }
 
         settingsService.loadInterfaceSettings();
@@ -4502,7 +4502,7 @@ const app = {
 
                 const updatedBy = cloudMetadata.updatedBy;
                 const cloudServerTimestampObj = cloudMetadata.updatedAt;
-                 const updatedTime = cloudServerTimestampObj
+                    const updatedTime = cloudServerTimestampObj
                     ? ui.formatTimeAgo(cloudServerTimestampObj.toDate ? cloudServerTimestampObj.toDate() : new Date(cloudServerTimestampObj))
                     : 'vừa xong';
 
@@ -4520,7 +4520,7 @@ const app = {
                 if (cloudVersion > lastLocalVersion) {
                     shouldUpdateLocalInfo = true;
                 } else if (cloudVersion === lastLocalVersion && cloudLocalTimestamp > lastLocalTimestamp) {
-                  shouldUpdateLocalInfo = true;
+                    shouldUpdateLocalInfo = true;
                 }
 
                 if (shouldUpdateLocalInfo) {
@@ -4533,24 +4533,24 @@ const app = {
                     }
 
                     if (appState.currentUser && updatedBy === appState.currentUser.email) {
-                         if (isPasted) {
+                            if (isPasted) {
                             let processedCount = 0;
                             // *** MODIFIED (v4.40) ***
                             // Logic đếm số lượng cho pastedThiduaNVBI đã được chuyển sang hàm handleThiduaNVPaste
                             // Ở đây chỉ cần cập nhật trạng thái chung
                             if (stateKey && processFunc && cloudMetadata.content && dataType !== 'pastedThiduaNVBI') {
                                 try {
-                                     const processed = processFunc(cloudMetadata.content);
+                                        const processed = processFunc(cloudMetadata.content);
                                     processedCount = processed?.length || 0;
                                 } catch (e) { console.error(`Error processing pasted content during status update for ${dataType}:`, e); }
                             } else if (dataType === 'pastedThiduaNVBI') {
-                                 // Tải lại dữ liệu đã xử lý từ localStorage (do chính người dùng này lưu)
+                                    // Tải lại dữ liệu đã xử lý từ localStorage (do chính người dùng này lưu)
                                 const processedData = JSON.parse(localStorage.getItem(saveKey) || '[]');
                                 processedCount = processedData.length;
                             }
-                             uiComponents.updatePasteStatus(uiId, '', 'success', cloudMetadata, processedCount);
+                                ui.updatePasteStatus(uiId, '', 'success', cloudMetadata, processedCount); // <<< SỬA (v4.47)
                         } else {
-                             uiComponents.updateFileStatus(uiId, fileName, '', 'success', false, cloudMetadata);
+                                ui.updateFileStatus(uiId, fileName, '', 'success', false, cloudMetadata); // <<< SỬA (v4.47)
                         }
                     } else {
                         showSyncNotification = true;
@@ -4559,9 +4559,9 @@ const app = {
                             const content = cloudMetadata.content || '';
                             let processedCount = 0;
                             try {
-                                 // *** MODIFIED (v4.40) ***
-                                 if (dataType === 'pastedThiduaNVBI') {
-                                     // Đây là logic quan trọng: Dữ liệu thi đua cần chạy qua BỘ XỬ LÝ ĐẦY ĐỦ
+                                    // *** MODIFIED (v4.40) ***
+                                    if (dataType === 'pastedThiduaNVBI') {
+                                        // Đây là logic quan trọng: Dữ liệu thi đua cần chạy qua BỘ XỬ LÝ ĐẦY ĐỦ
                                     // 1. Phân tích cú pháp
                                     const parsedData = services.parsePastedThiDuaTableData(content);
                                     if (!parsedData.success) throw new Error(parsedData.error);
@@ -4575,7 +4575,7 @@ const app = {
                                     // 4. Lưu kết quả đã xử lý (KHÔNG LƯU NỘI DUNG THÔ)
                                     appState[stateKey] = processedData;
                                     localStorage.setItem(saveKey, JSON.stringify(processedData)); // Lưu mảng đã xử lý
-                                     processedCount = processedData.length;
+                                        processedCount = processedData.length;
 
                                     // === FIX 2a.1 (Thêm) ===
                                     localStorage.setItem(RAW_PASTE_THIDUANV_KEY, content); // Lưu cả text thô
@@ -4584,52 +4584,52 @@ const app = {
                                     // === END FIX ===
 
                                 } else {
-                                     // Logic cũ cho các ô dán khác
+                                        // Logic cũ cho các ô dán khác
                                     localStorage.setItem(saveKey, content);
                                     if (stateKey && processFunc) {
-                                         const processedData = processFunc(content);
+                                            const processedData = processFunc(content);
                                         appState[stateKey] = processedData;
                                         processedCount = processedData?.length || 0;
                                     } else if (stateKey) {
-                                         console.warn(`Missing processFunc for pasted data ${dataType}`);
+                                            console.warn(`Missing processFunc for pasted data ${dataType}`);
                                     } else if (uiId === 'status-luyke') {
                                         document.getElementById('paste-luyke').value = content;
                                     }
                                 }
                                 // *** END MODIFIED (v4.40) ***
 
-                                 if (!this._localDataVersions[currentWarehouse]) this._localDataVersions[currentWarehouse] = {};
+                                    if (!this._localDataVersions[currentWarehouse]) this._localDataVersions[currentWarehouse] = {};
                                 this._localDataVersions[currentWarehouse][dataType] = { version: cloudVersion, timestamp: cloudLocalTimestamp };
                                 localStorage.setItem(LOCAL_DATA_VERSIONS_KEY, JSON.stringify(this._localDataVersions));
 
-                                uiComponents.updatePasteStatus(uiId, '', 'success', cloudMetadata, processedCount);
+                                ui.updatePasteStatus(uiId, '', 'success', cloudMetadata, processedCount); // <<< SỬA (v4.47)
                                 this.updateAndRenderCurrentTab();
                                 // Cập nhật bảng khai báo nếu admin đang mở
                                 if (dataType === 'pastedThiduaNVBI' && appState.isAdmin && document.getElementById('declaration-section')?.classList.contains('hidden') === false) {
                                     ui.renderAdminPage();
                                 }
                             } catch (e) {
-                                 console.error(`Error processing pasted data ${dataType} from cloud:`, e);
-                                uiComponents.updatePasteStatus(uiId, `Lỗi xử lý v${cloudVersion} từ cloud.`, 'error');
+                                    console.error(`Error processing pasted data ${dataType} from cloud:`, e);
+                                ui.updatePasteStatus(uiId, `Lỗi xử lý v${cloudVersion} từ cloud.`, 'error'); // <<< SỬA (v4.47)
                             }
                         } else {
-                            uiComponents.updateFileStatus(uiId, fileName, '', 'default', true, cloudMetadata, dataType, currentWarehouse);
+                            ui.updateFileStatus(uiId, fileName, '', 'default', true, cloudMetadata, dataType, currentWarehouse); // <<< SỬA (v4.47)
                         }
                     }
                 } else {
                     const reasonText = '';
                     if (appState.currentUser && updatedBy === appState.currentUser.email) {
-                         const statusText = `✓ Đã đồng bộ cloud ${updatedTime} ${reasonText}`.trim();
-                         isPasted ? uiComponents.updatePasteStatus(uiId, statusText, 'success', cloudMetadata) : uiComponents.updateFileStatus(uiId, fileName, statusText, 'success', false, cloudMetadata);
+                            const statusText = `✓ Đã đồng bộ cloud ${updatedTime} ${reasonText}`.trim();
+                            isPasted ? ui.updatePasteStatus(uiId, statusText, 'success', cloudMetadata) : ui.updateFileStatus(uiId, fileName, statusText, 'success', false, cloudMetadata); // <<< SỬA (v4.47)
                     } else {
-                         const statusText = `ⓘ ${updatedBy} cập nhật ${updatedTime} ${reasonText}`.trim();
-                          isPasted ? uiComponents.updatePasteStatus(uiId, statusText, 'default', cloudMetadata) : uiComponents.updateFileStatus(uiId, fileName, statusText, 'default', false, cloudMetadata);
+                            const statusText = `ⓘ ${updatedBy} cập nhật ${updatedTime} ${reasonText}`.trim();
+                            isPasted ? ui.updatePasteStatus(uiId, statusText, 'default', cloudMetadata) : ui.updateFileStatus(uiId, fileName, statusText, 'default', false, cloudMetadata); // <<< SỬA (v4.47)
                     }
                 }
             } else {
-                 if (dataType === 'giocong' || dataType === 'thuongnong' || dataType.startsWith('pasted')) {
-                     console.warn(`%c[handleCloudDataUpdate @ ${receivedTime}] No valid METADATA structure found (version or timestamp missing) for WATCHED dataType ${dataType}. Received:`, "color: red; font-weight: bold;", cloudMetadata);
-                 }
+                    if (dataType === 'giocong' || dataType === 'thuongnong' || dataType.startsWith('pasted')) {
+                        console.warn(`%c[handleCloudDataUpdate @ ${receivedTime}] No valid METADATA structure found (version or timestamp missing) for WATCHED dataType ${dataType}. Received:`, "color: red; font-weight: bold;", cloudMetadata);
+                    }
             }
         }
         if (showSyncNotification) {
@@ -4665,10 +4665,10 @@ const app = {
             const expectedFileName = metadata.fileName || `${dataType}_v${expectedVersion}.xlsx`;
 
             if (!downloadURL) {
-                 throw new Error("URL tải xuống không hợp lệ trong thông tin đồng bộ.");
+                    throw new Error("URL tải xuống không hợp lệ trong thông tin đồng bộ.");
             }
 
-            uiComponents.updateFileStatus(uiId, expectedFileName, `Đang tải file...`, 'default', false);
+            ui.updateFileStatus(uiId, expectedFileName, `Đang tải file...`, 'default', false); // <<< SỬA (v4.47)
             ui.showProgressBar(uiId);
 
             console.log(`[handleDownloadAndProcessData] Fetching file from: ${downloadURL}`);
@@ -4680,7 +4680,7 @@ const app = {
             console.log(`[handleDownloadAndProcessData] File downloaded successfully. Blob size: ${fileBlob.size}`);
             const downloadedFile = new File([fileBlob], expectedFileName, { type: fileBlob.type });
 
-            uiComponents.updateFileStatus(uiId, expectedFileName, `Đang xử lý file...`, 'default');
+            ui.updateFileStatus(uiId, expectedFileName, `Đang xử lý file...`, 'default'); // <<< SỬA (v4.47)
 
             const workbook = await this.handleFileRead(downloadedFile);
             const rawData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
@@ -4691,7 +4691,7 @@ const app = {
             console.log(`[handleDownloadAndProcessData] File processing result - Success: ${success}, Rows: ${normalizedData?.length}`);
 
             if (!success) {
-                 throw new Error(`File tải về lỗi: Thiếu cột ${missingColumns.join(', ')}.`);
+                    throw new Error(`File tải về lỗi: Thiếu cột ${missingColumns.join(', ')}.`);
             }
 
             appState[stateKey] = normalizedData;
@@ -4706,10 +4706,10 @@ const app = {
                 localStorage.setItem(LOCAL_DATA_VERSIONS_KEY, JSON.stringify(this._localDataVersions));
                 console.log(`%c[handleDownloadAndProcessData] CRITICAL FIX: Updated local version tracker to (v${expectedVersion}, t${expectedTimestamp}) and saved to localStorage.`, "color: purple; font-weight: bold;");
             } catch (e) {
-                 console.error("[handleDownloadAndProcessData] Error saving updated versions/timestamps to localStorage:", e);
+                    console.error("[handleDownloadAndProcessData] Error saving updated versions/timestamps to localStorage:", e);
             }
 
-            uiComponents.updateFileStatus(uiId, expectedFileName, '', 'success', false, metadata);
+            ui.updateFileStatus(uiId, expectedFileName, '', 'success', false, metadata); // <<< SỬA (v4.47)
             ui.showNotification(`Đã tải và xử lý thành công dữ liệu ${dataType} (v${expectedVersion})!`, 'success');
 
             this.updateAndRenderCurrentTab();
@@ -4717,18 +4717,18 @@ const app = {
         } catch (error) {
             console.error(`%c[handleDownloadAndProcessData] Error processing ${dataType} @ ${warehouse}:`, "color: red;", error);
             ui.showNotification(`Lỗi khi tải/xử lý dữ liệu ${dataType}: ${error.message}`, 'error');
-             if (metadata) {
-                  const statusText = `Lỗi tải/xử lý. Thử lại?`;
-                   uiComponents.updateFileStatus(uiId, metadata.fileName || 'Cloud', statusText, 'error', true, metadata, dataType, warehouse);
-             } else {
-                  const fallbackMetadata = this._getSavedMetadata(warehouse, dataType);
-                  if(fallbackMetadata) {
-                      const statusText = `Lỗi tải/xử lý. Thử lại?`;
-                      uiComponents.updateFileStatus(uiId, fallbackMetadata.fileName || 'Cloud', statusText, 'error', true, fallbackMetadata, dataType, warehouse);
-                  } else {
-                      uiComponents.updateFileStatus(uiId, 'Cloud', 'Lỗi tải/xử lý. Không tìm thấy thông tin.', 'error', false);
-                  }
-             }
+                if (metadata) {
+                    const statusText = `Lỗi tải/xử lý. Thử lại?`;
+                        ui.updateFileStatus(uiId, metadata.fileName || 'Cloud', statusText, 'error', true, metadata, dataType, warehouse); // <<< SỬA (v4.47)
+                } else {
+                    const fallbackMetadata = this._getSavedMetadata(warehouse, dataType);
+                    if(fallbackMetadata) {
+                        const statusText = `Lỗi tải/xử lý. Thử lại?`;
+                        ui.updateFileStatus(uiId, fallbackMetadata.fileName || 'Cloud', statusText, 'error', true, fallbackMetadata, dataType, warehouse); // <<< SỬA (v4.47)
+                    } else {
+                        ui.updateFileStatus(uiId, 'Cloud', 'Lỗi tải/xử lý. Không tìm thấy thông tin.', 'error', false); // <<< SỬA (v4.47)
+                    }
+                }
         } finally {
             ui.hideProgressBar(uiId);
         }
@@ -4757,7 +4757,7 @@ const app = {
             const currentVersion = versionInfo.version || this.currentVersion;
             marqueeText.textContent = `🔥 Chi tiết bản cập nhật - Phiên bản ${currentVersion}`;
             marqueeContainer.addEventListener('click', async () => {
-                 try {
+                    try {
                     const changelogRes = await fetch(`./changelog.json?v=${new Date().getTime()}`);
                     const changelogData = await changelogRes.json();
                     const modalTitle = document.getElementById('help-modal-title');
@@ -4796,7 +4796,7 @@ const app = {
             if (!response.ok) return;
             const serverConfig = await response.json();
             if (serverConfig.version && serverConfig.version !== this.currentVersion) {
-                 console.log(`Phiên bản mới ${serverConfig.version} đã sẵn sàng!`);
+                    console.log(`Phiên bản mới ${serverConfig.version} đã sẵn sàng!`);
                 const changelogRes = await fetch(`./changelog.json?v=${new Date().getTime()}`);
                 const changelogData = await changelogRes.json();
                 const newVersionDetails = changelogData.find(log => log.version === serverConfig.version);
@@ -4807,8 +4807,8 @@ const app = {
                     notesContainer.innerHTML = `
                         <p class="text-sm font-semibold text-gray-700 mb-2">Nội dung cập nhật:</p>
                         <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
-                             ${newVersionDetails.notes.map(note => `<li>${note}</li>`).join('')}
-                         </ul>
+                                ${newVersionDetails.notes.map(note => `<li>${note}</li>`).join('')}
+                            </ul>
                     `;
                 } else if (notesContainer) {
                     notesContainer.innerHTML = '<p class="text-sm text-gray-500">Không thể tải chi tiết cập nhật.</p>';
@@ -4816,13 +4816,13 @@ const app = {
                 ui.toggleModal('force-update-modal', true);
             }
         } catch (error) {
-             console.error('Không thể kiểm tra phiên bản mới:', error);
+                console.error('Không thể kiểm tra phiên bản mới:', error);
         }
     },
 
     async loadDataFromStorage() {
         // ... (Giữ nguyên)
- 
+    
         let dsnvLoadSuccess = false;
         const loadSavedFile = async (saveKey, stateKey, fileType, uiId) => {
             console.log(`[main.js loadDataFromStorage] Attempting to load ${saveKey} from IndexedDB...`);
@@ -4830,16 +4830,16 @@ const app = {
             try {
                 savedData = await this.storage.getItem(saveKey);
             } catch (indexedDbError) {
-                 console.error(`[main.js loadDataFromStorage] CRITICAL Error reading ${saveKey} from IndexedDB:`, indexedDbError);
-                 uiComponents.updateFileStatus(uiId, '', `Lỗi đọc cache IndexedDB!`, 'error');
-                 if (saveKey === 'saved_danhsachnv') {
-                     const selector = document.getElementById('data-warehouse-selector');
-                     if (selector) {
-                         selector.innerHTML = '<option value="">Lỗi tải DSNV từ cache!</option>';
-                         selector.disabled = true;
-                     }
-                 }
-                 return;
+                    console.error(`[main.js loadDataFromStorage] CRITICAL Error reading ${saveKey} from IndexedDB:`, indexedDbError);
+                    ui.updateFileStatus(uiId, '', `Lỗi đọc cache IndexedDB!`, 'error'); // <<< SỬA (v4.47)
+                    if (saveKey === 'saved_danhsachnv') {
+                        const selector = document.getElementById('data-warehouse-selector');
+                        if (selector) {
+                            selector.innerHTML = '<option value="">Lỗi tải DSNV từ cache!</option>';
+                            selector.disabled = true;
+                        }
+                    }
+                    return;
             }
 
             if (!savedData) {
@@ -4850,8 +4850,8 @@ const app = {
             console.log(`[main.js loadDataFromStorage] Found ${saveKey} in IndexedDB.`);
             try {
                 if (saveKey === 'saved_category_structure') {
-                     if (appState.categoryStructure.length > 0 || appState.brandList.length > 0) {
-                         // Đã được xử lý bởi logic Fix 1a, không cần làm gì ở đây
+                        if (appState.categoryStructure.length > 0 || appState.brandList.length > 0) {
+                            // Đã được xử lý bởi logic Fix 1a, không cần làm gì ở đây
                     }
                     return;
                 }
@@ -4870,53 +4870,53 @@ const app = {
                     const firestoreKey = mappingEntry ? mappingEntry.firestoreKey : null;
 
                     if (saveKey === 'saved_danhsachnv') {
-                         dsnvLoadSuccess = true;
-                         fileNameToShow = localStorage.getItem(LOCAL_DSNV_FILENAME_KEY) || fileNameToShow;
+                            dsnvLoadSuccess = true;
+                            fileNameToShow = localStorage.getItem(LOCAL_DSNV_FILENAME_KEY) || fileNameToShow;
                     } else if (firestoreKey && !mappingEntry.isPasted) {
-                         const currentWarehouse = localStorage.getItem('selectedWarehouse');
-                         if (currentWarehouse) {
-                             metadata = this._getSavedMetadata(currentWarehouse, firestoreKey);
-                             if (metadata) {
-                                  fileNameToShow = metadata.fileName || fileNameToShow;
-                                 console.log(`[main.js loadDataFromStorage] Found metadata for ${firestoreKey}, will use it in status update.`);
-                             } else {
-                                 console.log(`[main.js loadDataFromStorage] No metadata found in localStorage for ${firestoreKey}, using basic cache status.`);
-                             }
-                         } else {
-                             console.log(`[main.js loadDataFromStorage] No warehouse selected, using basic cache status for ${firestoreKey}.`);
-                         }
+                            const currentWarehouse = localStorage.getItem('selectedWarehouse');
+                            if (currentWarehouse) {
+                                metadata = this._getSavedMetadata(currentWarehouse, firestoreKey);
+                                if (metadata) {
+                                        fileNameToShow = metadata.fileName || fileNameToShow;
+                                    console.log(`[main.js loadDataFromStorage] Found metadata for ${firestoreKey}, will use it in status update.`);
+                                } else {
+                                    console.log(`[main.js loadDataFromStorage] No metadata found in localStorage for ${firestoreKey}, using basic cache status.`);
+                                }
+                            } else {
+                                console.log(`[main.js loadDataFromStorage] No warehouse selected, using basic cache status for ${firestoreKey}.`);
+                            }
                     }
 
-                    uiComponents.updateFileStatus(uiId, fileNameToShow, statusText, statusType, false, metadata);
+                    ui.updateFileStatus(uiId, fileNameToShow, statusText, statusType, false, metadata); // <<< SỬA (v4.47)
 
                     if (stateKey === 'danhSachNhanVien') {
                         console.log("[main.js loadDataFromStorage] Updating employee maps after loading DSNV from cache.");
                         services.updateEmployeeMaps();
                     }
                 } else {
-                     console.error(`[main.js loadDataFromStorage] Invalid or empty data array found in cache for ${saveKey}.`);
-                     uiComponents.updateFileStatus(uiId, '', `Lỗi dữ liệu cache.`, 'error');
-                     try {
-                         await this.storage.setItem(saveKey, null);
-                         console.log(`[main.js loadDataFromStorage] Cleared potentially corrupted cache for ${saveKey}.`);
-                     } catch(clearError) {
-                         console.error(`[main.js loadDataFromStorage] Failed to clear corrupted cache for ${saveKey}:`, clearError);
-                     }
+                        console.error(`[main.js loadDataFromStorage] Invalid or empty data array found in cache for ${saveKey}.`);
+                        ui.updateFileStatus(uiId, '', `Lỗi dữ liệu cache.`, 'error'); // <<< SỬA (v4.47)
+                        try {
+                            await this.storage.setItem(saveKey, null);
+                            console.log(`[main.js loadDataFromStorage] Cleared potentially corrupted cache for ${saveKey}.`);
+                        } catch(clearError) {
+                            console.error(`[main.js loadDataFromStorage] Failed to clear corrupted cache for ${saveKey}:`, clearError);
+                        }
                 }
-             } catch (e) {
+                } catch (e) {
                 console.error(`[main.js loadDataFromStorage] Lỗi xử lý ${saveKey} từ IndexedDB:`, e);
-                uiComponents.updateFileStatus(uiId, '', `Lỗi xử lý cache.`, 'error');
+                ui.updateFileStatus(uiId, '', `Lỗi xử lý cache.`, 'error'); // <<< SỬA (v4.47)
             }
         };
 
         await loadSavedFile('saved_danhsachnv', 'danhSachNhanVien', 'danhsachnv', 'danhsachnv');
         if (!dsnvLoadSuccess) {
-              console.error("[main.js loadDataFromStorage] CRITICAL: Failed to load 'saved_danhsachnv' from IndexedDB. App state might be incorrect.");
+                console.error("[main.js loadDataFromStorage] CRITICAL: Failed to load 'saved_danhsachnv' from IndexedDB. App state might be incorrect.");
             const selector = document.getElementById('data-warehouse-selector');
-             if (selector) {
-                 selector.innerHTML = '<option value="">Lỗi tải DSNV từ cache!</option>';
-                 selector.disabled = true;
-             }
+                if (selector) {
+                    selector.innerHTML = '<option value="">Lỗi tải DSNV từ cache!</option>';
+                    selector.disabled = true;
+                }
         }
 
         await loadSavedFile('saved_ycx_thangtruoc', 'ycxDataThangTruoc', 'ycx', 'ycx-thangtruoc');
@@ -4926,7 +4926,7 @@ const app = {
         await loadSavedFile('saved_thuongnong', 'thuongNongData', 'thuongnong', 'thuongnong');
 
         try {
-             const savedLuykeGoals = localStorage.getItem('luykeGoalSettings');
+                const savedLuykeGoals = localStorage.getItem('luykeGoalSettings');
             if(savedLuykeGoals) appState.luykeGoalSettings = JSON.parse(savedLuykeGoals);
             const savedRealtimeGoals = localStorage.getItem('realtimeGoalSettings');
             if (savedRealtimeGoals) appState.realtimeGoalSettings = JSON.parse(savedRealtimeGoals);
@@ -4975,7 +4975,7 @@ const app = {
 
         const loadPasted = (saveKey, stateKey, uiId, processFunc) => {
             // === START: DEBUG (v4.43) ===
-             console.log(`%c[DEBUG loadPastedDataFromStorage] Đang xử lý key: ${saveKey}`, "color: brown;");
+                console.log(`%c[DEBUG loadPastedDataFromStorage] Đang xử lý key: ${saveKey}`, "color: brown;");
             // === END: DEBUG ===
             
             const pastedText = localStorage.getItem(saveKey); // Đây là text thô (ngoại trừ daily_paste_thiduanv)
@@ -4989,16 +4989,16 @@ const app = {
             // === END: DEBUG ===
 
             if (pastedText) {
-                 const el = document.getElementById(uiId.replace('status-', 'paste-'));
-                 
-                 // === FIX 2a.2 (Sửa) ===
-                 // Không điền text thô cho ô thi đua NV, vì chúng ta lưu *dữ liệu đã xử lý* vào key đó
-                 if (el && saveKey !== 'daily_paste_thiduanv') {
+                    const el = document.getElementById(uiId.replace('status-', 'paste-'));
+                    
+                    // === FIX 2a.2 (Sửa) ===
+                    // Không điền text thô cho ô thi đua NV, vì chúng ta lưu *dữ liệu đã xử lý* vào key đó
+                    if (el && saveKey !== 'daily_paste_thiduanv') {
                     el.value = pastedText;
-                 }
-                 // === END FIX ===
+                    }
+                    // === END FIX ===
 
-                 let processedCount = 0;
+                    let processedCount = 0;
                 
                 // === FIX 2a.2 (Sửa) ===
                 if (saveKey === 'daily_paste_thiduanv') {
@@ -5014,10 +5014,10 @@ const app = {
                     // === FIX 2a.3 (Thêm) ===
                     // Xử lý ngay dữ liệu Lũy kế dán vào để appState.competitionData sẵn sàng
                     try {
-                       services.parseCompetitionDataFromLuyKe(pastedText);
-                       console.log("[loadPastedData] Parsed luyke paste data from cache.");
+                        services.parseCompetitionDataFromLuyKe(pastedText);
+                        console.log("[loadPastedData] Parsed luyke paste data from cache.");
                     } catch(e) {
-                       console.warn("Lỗi xử lý 'paste-luyke' từ cache khi tải trang:", e);
+                        console.warn("Lỗi xử lý 'paste-luyke' từ cache khi tải trang:", e);
                     }
                     // === END FIX ===
                 }
@@ -5029,18 +5029,18 @@ const app = {
                 if (kho && mappingInfo) {
                     metadata = this._getSavedMetadata(kho, mappingInfo.firestoreKey);
                     if (metadata) {
-                         uiComponents.updatePasteStatus(uiId, '', 'success', metadata, processedCount);
+                            ui.updatePasteStatus(uiId, '', 'success', metadata, processedCount); // <<< SỬA (v4.47)
                     } else {
-                         // === FIX 2b.2 (Sửa) ===
-                         let countMsg = processedCount > 0 ? `(${processedCount} NV)` : '';
-                         if (uiId === 'status-luyke') countMsg = ''; // Lũy kế không đếm
-                         uiComponents.updatePasteStatus(uiId, `✓ Đã tải ${countMsg} (chưa đồng bộ)`, 'success', null, processedCount);
+                            // === FIX 2b.2 (Sửa) ===
+                            let countMsg = processedCount > 0 ? `(${processedCount} NV)` : '';
+                            if (uiId === 'status-luyke') countMsg = ''; // Lũy kế không đếm
+                            ui.updatePasteStatus(uiId, `✓ Đã tải ${countMsg} (chưa đồng bộ)`, 'success', null, processedCount); // <<< SỬA (v4.47)
                     }
                 } else if (pastedText) {
-                     // === FIX 2b.2 (Sửa) ===
-                     let countMsg = processedCount > 0 ? `(${processedCount} NV)` : '';
-                     if (uiId === 'status-luyke') countMsg = '';
-                     uiComponents.updatePasteStatus(uiId, `✓ Đã tải ${countMsg} (chưa chọn kho)`, 'success', null, processedCount);
+                        // === FIX 2b.2 (Sửa) ===
+                        let countMsg = processedCount > 0 ? `(${processedCount} NV)` : '';
+                        if (uiId === 'status-luyke') countMsg = '';
+                        ui.updatePasteStatus(uiId, `✓ Đã tải ${countMsg} (chưa chọn kho)`, 'success', null, processedCount); // <<< SỬA (v4.47)
                 }
             }
         };
@@ -5079,7 +5079,7 @@ const app = {
 
         if (!mappingInfo) {
             if (fileType === 'danhsachnv') {
-                 return this.handleDsnvUpload(e, file);
+                    return this.handleDsnvUpload(e, file);
             }
             console.error(`[handleFileInputChange] No mapping info found for fileType: ${fileType}`);
             return;
@@ -5087,7 +5087,7 @@ const app = {
 
         const { stateKey, saveKey, firestoreKey } = mappingInfo;
         const dataName = fileInput.dataset.name || fileType;
-        uiComponents.updateFileStatus(fileType, file.name, 'Đang đọc & chuẩn hóa...', 'default');
+        ui.updateFileStatus(fileType, file.name, 'Đang đọc & chuẩn hóa...', 'default'); // <<< SỬA (v4.47)
         ui.showProgressBar(fileType);
 
         try {
@@ -5098,14 +5098,14 @@ const app = {
             ui.displayDebugInfo(fileType);
 
             if (!success) {
-                 const errorMessage = `Lỗi file "${dataName}": Thiếu cột: ${missingColumns.join(', ')}.`;
-                 uiComponents.updateFileStatus(fileType, file.name, `Lỗi: Thiếu cột dữ liệu.`, 'error');
-                 ui.showNotification(errorMessage, 'error');
-                 if (document.getElementById('debug-tool-container')?.classList.contains('hidden')) {
-                     document.getElementById('toggle-debug-btn')?.click();
-                 }
-                 ui.hideProgressBar(fileType);
-                 return;
+                    const errorMessage = `Lỗi file "${dataName}": Thiếu cột: ${missingColumns.join(', ')}.`;
+                    ui.updateFileStatus(fileType, file.name, `Lỗi: Thiếu cột dữ liệu.`, 'error'); // <<< SỬA (v4.47)
+                    ui.showNotification(errorMessage, 'error');
+                    if (document.getElementById('debug-tool-container')?.classList.contains('hidden')) {
+                        document.getElementById('toggle-debug-btn')?.click();
+                    }
+                    ui.hideProgressBar(fileType);
+                    return;
             }
 
             appState[stateKey] = normalizedData;
@@ -5122,7 +5122,7 @@ const app = {
             let currentFirestoreKey = null;
             try {
                 console.log("[DEBUG STEP 1] Getting warehouseToSync..."); // Log added
-                 warehouseToSync = appState.selectedWarehouse;
+                    warehouseToSync = appState.selectedWarehouse;
                 console.log(`[DEBUG STEP 2] warehouseToSync = ${warehouseToSync}`); // Log added
         
                 console.log("[DEBUG STEP 3] Getting firestoreKey..."); // Log added
@@ -5132,9 +5132,9 @@ const app = {
                 console.log(`%c[DEBUG PRE-SYNC CHECK] File Type: ${fileType}, Warehouse: ${warehouseToSync}, Firestore Key: ${currentFirestoreKey}`, "color: purple; font-weight: bold;");
 
                 if (warehouseToSync && currentFirestoreKey) {
-                     console.log(`%c[DEBUG SYNC BLOCK START] Entering cloud sync block for ${fileType} (Firestore Key: ${currentFirestoreKey})`, "color: magenta;");
+                        console.log(`%c[DEBUG SYNC BLOCK START] Entering cloud sync block for ${fileType} (Firestore Key: ${currentFirestoreKey})`, "color: magenta;");
 
-                    uiComponents.updateFileStatus(fileType, file.name, `Đang chuẩn bị đồng bộ cloud...`, 'default');
+                    ui.updateFileStatus(fileType, file.name, `Đang chuẩn bị đồng bộ cloud...`, 'default'); // <<< SỬA (v4.47)
                     let localDataVersions = this._localDataVersions;
                     const currentVersion = localDataVersions?.[warehouseToSync]?.[currentFirestoreKey]?.version || 0;
                     const newVersion = currentVersion + 1;
@@ -5146,21 +5146,21 @@ const app = {
                     console.log(`%c[handleFileInputChange] Cloud Upload for ${currentFirestoreKey}:`, "color: magenta; font-weight: bold;");
 
                     const onProgress = (progress) => {
-                         uiComponents.updateFileStatus(fileType, file.name, `Đang tải lên cloud... ${Math.round(progress)}%`, 'default');
+                            ui.updateFileStatus(fileType, file.name, `Đang tải lên cloud... ${Math.round(progress)}%`, 'default'); // <<< SỬA (v4.47)
                     };
 
                     try {
                         const downloadURL = await firebase.uploadFileToStorage(file, storagePath, onProgress);
-                        uiComponents.updateFileStatus(fileType, file.name, `Upload xong, đang lưu thông tin...`, 'default');
+                        ui.updateFileStatus(fileType, file.name, `Upload xong, đang lưu thông tin...`, 'default'); // <<< SỬA (v4.47)
 
                         const metadata = {
-                             storagePath: storagePath,
+                                storagePath: storagePath,
                             downloadURL: downloadURL,
                             version: newVersion,
                             timestamp: uploadTimestamp,
                             rowCount: normalizedData.length,
-                             fileName: file.name
-                         };
+                                fileName: file.name
+                            };
 
                         await firebase.saveMetadataToFirestore(warehouseToSync, currentFirestoreKey, metadata);
 
@@ -5170,7 +5170,7 @@ const app = {
                             localStorage.setItem(metadataKey, JSON.stringify(metadataToSaveLocally));
                             console.log(`[handleFileInputChange] Saved metadata for ${currentFirestoreKey} to localStorage ('${metadataKey}') immediately.`);
                         } catch(lsError) {
-                              console.error(`[handleFileInputChange] Error saving metadata for ${currentFirestoreKey} to localStorage:`, lsError);
+                                console.error(`[handleFileInputChange] Error saving metadata for ${currentFirestoreKey} to localStorage:`, lsError);
                         }
 
                         if (!localDataVersions[warehouseToSync]) localDataVersions[warehouseToSync] = {};
@@ -5180,33 +5180,33 @@ const app = {
 
                         console.log(`%c[handleFileInputChange] Successfully uploaded ${currentFirestoreKey} (v${newVersion}).`, "color: magenta;");
 
-                         uiComponents.updateFileStatus(fileType, file.name, '', 'success', false, metadataToSaveLocally);
+                            ui.updateFileStatus(fileType, file.name, '', 'success', false, metadataToSaveLocally); // <<< SỬA (v4.47)
 
-                     } catch (syncError) {
+                        } catch (syncError) {
                         console.error(`%c[handleFileInputChange] Cloud sync failed for ${currentFirestoreKey}:`, "color: red;", syncError);
-                        uiComponents.updateFileStatus(fileType, file.name, `Lỗi đồng bộ cloud: ${syncError.message}`, 'error');
+                        ui.updateFileStatus(fileType, file.name, `Lỗi đồng bộ cloud: ${syncError.message}`, 'error'); // <<< SỬA (v4.47)
                     }
-                     console.log(`%c[DEBUG SYNC BLOCK END] Finished cloud sync block for ${fileType}`, "color: magenta;");
+                        console.log(`%c[DEBUG SYNC BLOCK END] Finished cloud sync block for ${fileType}`, "color: magenta;");
                 } else {
-                     console.log(`%c[DEBUG SYNC SKIP] Skipping cloud sync for ${fileType}. Warehouse selected: ${!!warehouseToSync}, Firestore key exists: ${!!currentFirestoreKey}`, "color: orange;");
-                     if (currentFirestoreKey) {
-                         uiComponents.updateFileStatus(fileType, file.name, `✓ Đã tải ${normalizedData.length} dòng (Chưa đồng bộ).`, 'success', false, null);
-                     }
+                        console.log(`%c[DEBUG SYNC SKIP] Skipping cloud sync for ${fileType}. Warehouse selected: ${!!warehouseToSync}, Firestore key exists: ${!!currentFirestoreKey}`, "color: orange;");
+                        if (currentFirestoreKey) {
+                            ui.updateFileStatus(fileType, file.name, `✓ Đã tải ${normalizedData.length} dòng (Chưa đồng bộ).`, 'success', false, null); // <<< SỬA (v4.47)
+                        }
                 }
 
             } catch(preSyncError) {
-                 // ** ADDED v4.36: Catch errors before sync check **
-                 console.error(`%c[DEBUG PRE-SYNC ERROR] Error before sync check for ${fileType}:`, "color: red; font-weight: bold;", preSyncError);
-                 uiComponents.updateFileStatus(fileType, file.name, `Lỗi chuẩn bị đồng bộ: ${preSyncError.message}`, 'error');
-                 // ** END ADDED **
+                    // ** ADDED v4.36: Catch errors before sync check **
+                    console.error(`%c[DEBUG PRE-SYNC ERROR] Error before sync check for ${fileType}:`, "color: red; font-weight: bold;", preSyncError);
+                    ui.updateFileStatus(fileType, file.name, `Lỗi chuẩn bị đồng bộ: ${preSyncError.message}`, 'error'); // <<< SỬA (v4.47)
+                    // ** END ADDED **
             }
 
             console.log(`%c[DEBUG PRE-RENDER] About to call updateAndRenderCurrentTab for ${fileType}`, "color: blue;");
             this.updateAndRenderCurrentTab();
 
         } catch (error) {
-             console.error(`Lỗi xử lý file ${dataName}:`, error);
-            uiComponents.updateFileStatus(fileType, file.name, `Lỗi đọc file: ${error.message}`, 'error');
+                console.error(`Lỗi xử lý file ${dataName}:`, error);
+            ui.updateFileStatus(fileType, file.name, `Lỗi đọc file: ${error.message}`, 'error'); // <<< SỬA (v4.47)
             ui.showNotification(`Lỗi khi xử lý file "${dataName}".`, 'error');
         } finally {
             ui.hideProgressBar(fileType);
@@ -5222,7 +5222,7 @@ const app = {
         const stateKey = 'danhSachNhanVien';
         const saveKey = 'saved_danhsachnv';
 
-        uiComponents.updateFileStatus(fileType, file.name, 'Đang đọc & chuẩn hóa...', 'default');
+        ui.updateFileStatus(fileType, file.name, 'Đang đọc & chuẩn hóa...', 'default'); // <<< SỬA (v4.47)
         ui.showProgressBar(fileType);
 
         try {
@@ -5232,11 +5232,11 @@ const app = {
             ui.displayDebugInfo(fileType);
 
             if (!success) {
-                 const errorMessage = `Lỗi file "${dataName}": Thiếu cột: ${missingColumns.join(', ')}.`;
-                uiComponents.updateFileStatus(fileType, file.name, `Lỗi: Thiếu cột dữ liệu.`, 'error');
+                    const errorMessage = `Lỗi file "${dataName}": Thiếu cột: ${missingColumns.join(', ')}.`;
+                ui.updateFileStatus(fileType, file.name, `Lỗi: Thiếu cột dữ liệu.`, 'error'); // <<< SỬA (v4.47)
                 ui.showNotification(errorMessage, 'error');
                 if (document.getElementById('debug-tool-container')?.classList.contains('hidden')) {
-                     document.getElementById('toggle-debug-btn')?.click();
+                        document.getElementById('toggle-debug-btn')?.click();
                 }
                 return;
             }
@@ -5244,29 +5244,29 @@ const app = {
             appState[stateKey] = normalizedData;
             services.updateEmployeeMaps();
             ui.populateAllFilters();
-            uiComponents.populateWarehouseSelector();
+            ui.populateWarehouseSelector(); // <<< SỬA (v4.47)
 
             try {
                 localStorage.setItem(LOCAL_DSNV_FILENAME_KEY, file.name);
                 console.log(`[handleDsnvUpload] Saved DSNV filename '${file.name}' to localStorage.`);
             } catch (lsError) {
-                 console.error("[handleDsnvUpload] Error saving DSNV filename to localStorage:", lsError);
+                    console.error("[handleDsnvUpload] Error saving DSNV filename to localStorage:", lsError);
             }
 
-             ui.showNotification(`Tải thành công file "${dataName}"!`, 'success');
+                ui.showNotification(`Tải thành công file "${dataName}"!`, 'success');
 
             if (saveKey) {
-                 console.log(`[handleDsnvUpload] Saving normalized data (${normalizedData.length} rows) to cache: ${saveKey}`);
-                 await this.storage.setItem(saveKey, normalizedData);
+                    console.log(`[handleDsnvUpload] Saving normalized data (${normalizedData.length} rows) to cache: ${saveKey}`);
+                    await this.storage.setItem(saveKey, normalizedData);
             }
 
-            uiComponents.updateFileStatus(fileType, file.name, `✓ Đã tải ${normalizedData.length} dòng.`, 'success', false, null);
+            ui.updateFileStatus(fileType, file.name, `✓ Đã tải ${normalizedData.length} dòng.`, 'success', false, null); // <<< SỬA (v4.47)
             this.updateAndRenderCurrentTab();
 
         } catch (error) {
-             console.error(`Lỗi xử lý file ${dataName}:`, error);
-             uiComponents.updateFileStatus(fileType, file.name, `Lỗi đọc file: ${error.message}`, 'error');
-             ui.showNotification(`Lỗi khi xử lý file "${dataName}".`, 'error');
+                console.error(`Lỗi xử lý file ${dataName}:`, error);
+                ui.updateFileStatus(fileType, file.name, `Lỗi đọc file: ${error.message}`, 'error'); // <<< SỬA (v4.47)
+                ui.showNotification(`Lỗi khi xử lý file "${dataName}".`, 'error');
         } finally {
             ui.hideProgressBar(fileType);
             e.target.value = '';
@@ -5277,23 +5277,23 @@ const app = {
     handleFileRead(file) {
         // ... (Giữ nguyên)
         return new Promise((resolve, reject) => {
-             if (!file) return reject(new Error("No file provided."));
-             const reader = new FileReader();
-             reader.onload = (event) => {
-                 try {
+                if (!file) return reject(new Error("No file provided."));
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
                     const data = new Uint8Array(event.target.result);
                     const workbook = XLSX.read(data, { type: 'array', cellDates: true });
                     resolve(workbook);
                 } catch (err) { reject(err); }
-             };
-             reader.onerror = (err) => reject(new Error("Could not read the file: " + err));
-             reader.readAsArrayBuffer(file);
+                };
+                reader.onerror = (err) => reject(new Error("Could not read the file: " + err));
+                reader.readAsArrayBuffer(file);
         });
     },
 
     updateAndRenderCurrentTab() {
         // ... (Giữ nguyên)
-        uiComponents.renderCompetitionConfigUI();
+        ui.renderCompetitionConfigUI(); // <<< SỬA (v4.47)
         const activeTab = document.querySelector('.page-section:not(.hidden)');
         if (!activeTab) {
             return;
@@ -5307,11 +5307,11 @@ const app = {
     },
 
     switchTab(targetId) {
-         // ... (Giữ nguyên)
+            // ... (Giữ nguyên)
         document.querySelectorAll('.page-section').forEach(section => section.classList.toggle('hidden', section.id !== targetId));
         document.querySelectorAll('.nav-link').forEach(link => {
-             const isActive = link.getAttribute('href') === `#${targetId}`;
-             link.classList.toggle('bg-blue-100', isActive);
+                const isActive = link.getAttribute('href') === `#${targetId}`;
+                link.classList.toggle('bg-blue-100', isActive);
             link.classList.toggle('text-blue-700', isActive);
         });
         if (targetId === 'home-section') ui.renderHomePage();
@@ -5324,12 +5324,12 @@ const app = {
 
     async loadAndApplyBookmarkLink() {
         // ... (Giữ nguyên)
-         try {
+            try {
             const bookmarkUrl = await firebase.getBookmarkDownloadURL();
             const linkElement = document.getElementById('download-bookmark-link');
             if (linkElement) linkElement.href = bookmarkUrl;
         } catch (error) {
-             console.error("Không thể tải link bookmark:", error);
+                console.error("Không thể tải link bookmark:", error);
             const linkElement = document.getElementById('download-bookmark-link');
             if (linkElement) linkElement.style.display = 'none';
         }
@@ -5345,7 +5345,7 @@ const app = {
         // *** MODIFIED (v4.40): Chỉ lưu text thô nếu đó KHÔNG PHẢI là thi đua NV
         // Dữ liệu thi đua NV sẽ được lưu dưới dạng JSON đã xử lý ở hàm riêng
         if (dataType !== 'pastedThiduaNVBI') {
-             // === START: DEBUG (v4.43) ===
+                // === START: DEBUG (v4.43) ===
             try {
                 localStorage.setItem(localStorageKey, pastedText);
                 console.log(`%c[DEBUG _handlePastedDataSync]   > Đã LƯU (setItem) text thô vào localStorage key: ${localStorageKey}`, "color: darkcyan;");
@@ -5360,7 +5360,7 @@ const app = {
         
         // *** MODIFIED (v4.40) ***
         if (dataType === 'pastedThiduaNVBI') {
-             // Logic này chỉ chạy khi GỌI TỪ CLOUD (handleCloudDataUpdate)
+                // Logic này chỉ chạy khi GỌI TỪ CLOUD (handleCloudDataUpdate)
             // Vì _handlePastedDataSync không còn được gọi trực tiếp bởi handleThiduaNVPaste
             const parsedData = services.parsePastedThiDuaTableData(pastedText);
             if(parsedData.success) {
@@ -5374,21 +5374,21 @@ const app = {
             }
         } 
         // *** END MODIFIED ***
-         else if (stateKey && processFunc) {
+            else if (stateKey && processFunc) {
             processedData = processFunc(pastedText);
             appState[stateKey] = processedData;
             processedCount = processedData?.length || 0;
         } else if (uiId === 'status-luyke') {
-             // Cập nhật giá trị ô input nếu cần (hàm handleLuykePaste sẽ làm việc này)
+                // Cập nhật giá trị ô input nếu cần (hàm handleLuykePaste sẽ làm việc này)
         }
 
         if (!kho) {
-            uiComponents.updatePasteStatus(uiId, '✓ Đã nhận (Chọn kho để đồng bộ)', 'success', null, processedCount);
+            ui.updatePasteStatus(uiId, '✓ Đã nhận (Chọn kho để đồng bộ)', 'success', null, processedCount); // <<< SỬA (v4.47)
             if (dataType !== 'pastedLuykeBI') this.updateAndRenderCurrentTab();
             return;
         }
 
-        uiComponents.updatePasteStatus(uiId, 'Đang đồng bộ cloud...', 'default');
+        ui.updatePasteStatus(uiId, 'Đang đồng bộ cloud...', 'default'); // <<< SỬA (v4.47)
 
         try {
             const localDataVersions = this._localDataVersions;
@@ -5402,7 +5402,7 @@ const app = {
                 version: versionInfo.version,
                 timestamp: versionInfo.timestamp,
                 updatedBy: appState.currentUser.email
-             };
+                };
 
             await firebase.savePastedDataToFirestore(kho, dataType, metadata.content, versionInfo);
 
@@ -5414,15 +5414,15 @@ const app = {
             const metadataToSaveLocally = { ...metadata, updatedAt: new Date() };
             localStorage.setItem(metadataKey, JSON.stringify(metadataToSaveLocally));
 
-             uiComponents.updatePasteStatus(uiId, '', 'success', metadataToSaveLocally, processedCount);
+                ui.updatePasteStatus(uiId, '', 'success', metadataToSaveLocally, processedCount); // <<< SỬA (v4.47)
 
         } catch (error) {
             console.error(`[${dataType} Paste] Cloud sync failed:`, error);
-            uiComponents.updatePasteStatus(uiId, `Lỗi đồng bộ cloud: ${error.message}`, 'error');
+            ui.updatePasteStatus(uiId, `Lỗi đồng bộ cloud: ${error.message}`, 'error'); // <<< SỬA (v4.47)
         }
 
         if (dataType !== 'pastedLuykeBI') {
-             this.updateAndRenderCurrentTab();
+                this.updateAndRenderCurrentTab();
         }
     },
 
@@ -5442,18 +5442,18 @@ const app = {
         }
         // === END: DEBUG ===
         
-        uiComponents.updatePasteStatus(mappingInfo.uiId, '✓ Đã nhận dữ liệu.', 'success');
+        ui.updatePasteStatus(mappingInfo.uiId, '✓ Đã nhận dữ liệu.', 'success'); // <<< SỬA (v4.47)
 
         if (kho) {
-             await this._handlePastedDataSync(
-                 pastedText,
-                 kho,
-                 mappingInfo.firestoreKey,
-                 mappingInfo.uiId,
-                 mappingInfo.saveKey
-             );
+                await this._handlePastedDataSync(
+                    pastedText,
+                    kho,
+                    mappingInfo.firestoreKey,
+                    mappingInfo.uiId,
+                    mappingInfo.saveKey
+                );
         }
-         this.updateAndRenderCurrentTab();
+            this.updateAndRenderCurrentTab();
     },
 
     // *** START: HÀM ĐƯỢC CẬP NHẬT (v4.44) ***
@@ -5473,7 +5473,7 @@ const app = {
             console.log(`%c[DEBUG handleThiduaNVPaste] Đã LƯU (setItem) text thô vào localStorage key: ${RAW_PASTE_THIDUANV_KEY} (Độ dài: ${pastedText.length})`, "color: green;");
             // === END: DEBUG ===
         } catch (e) {
-             console.warn("Không thể lưu raw_paste_thiduanv vào localStorage:", e);
+                console.warn("Không thể lưu raw_paste_thiduanv vào localStorage:", e);
         }
         // === END FIX ===
 
@@ -5489,7 +5489,7 @@ const app = {
 
             // 3. Chuẩn hóa dữ liệu (Tra cứu DSNV, áp dụng tên rút gọn)
             // Chúng ta dùng appState.competitionData (từ Lũy kế) để lấy mục tiêu
-             const processedData = services.processThiDuaNhanVienData(parsedData, appState.competitionData);
+                const processedData = services.processThiDuaNhanVienData(parsedData, appState.competitionData);
             
             // 4. Lưu kết quả ĐÃ XỬ LÝ vào appState và localStorage
             appState[stateKey] = processedData;
@@ -5523,7 +5523,7 @@ const app = {
 
         } catch (error) {
             console.error("Lỗi khi xử lý dữ liệu dán Thi đua NV:", error);
-            uiComponents.updatePasteStatus(uiId, `Lỗi: ${error.message}`, 'error');
+            ui.updatePasteStatus(uiId, `Lỗi: ${error.message}`, 'error'); // <<< SỬA (v4.47)
             // Hiển thị debug nếu có
             const debugContainer = document.getElementById('debug-tool-container');
             if (debugContainer?.classList.contains('hidden')) {
@@ -5540,7 +5540,7 @@ const app = {
         const mappingInfo = this.ALL_DATA_MAPPING['pastedThuongERP'];
         
         // === START: DEBUG (v4.43) ===
-         try {
+            try {
             localStorage.setItem(mappingInfo.saveKey, pastedText);
             console.log(`%c[DEBUG handleErpPaste] Đã LƯU (setItem) vào localStorage key: ${mappingInfo.saveKey} (Độ dài: ${pastedText.length})`, "color: green;");
         } catch (e) {
@@ -5549,24 +5549,24 @@ const app = {
         // === END: DEBUG ===
 
         await this._handlePastedDataSync(
-             pastedText,
+                pastedText,
             kho,
             mappingInfo.firestoreKey,
             mappingInfo.uiId,
             mappingInfo.saveKey,
-             mappingInfo.stateKey,
-             mappingInfo.processFunc
+                mappingInfo.stateKey,
+                mappingInfo.processFunc
         );
     },
 
     async handleErpThangTruocPaste(e) {
         // ... (Giữ nguyên)
-         const pastedText = e.target.value;
-         const kho = appState.selectedWarehouse;
-         const mappingInfo = this.ALL_DATA_MAPPING['pastedThuongERPThangTruoc'];
-         
-         // === START: DEBUG (v4.43) ===
-         try {
+            const pastedText = e.target.value;
+            const kho = appState.selectedWarehouse;
+            const mappingInfo = this.ALL_DATA_MAPPING['pastedThuongERPThangTruoc'];
+            
+            // === START: DEBUG (v4.43) ===
+            try {
             localStorage.setItem(mappingInfo.saveKey, pastedText);
             console.log(`%c[DEBUG handleErpThangTruocPaste] Đã LƯU (setItem) vào localStorage key: ${mappingInfo.saveKey} (Độ dài: ${pastedText.length})`, "color: green;");
         } catch (lsError) {
@@ -5574,9 +5574,9 @@ const app = {
         }
         // === END: DEBUG ===
 
-         await this._handlePastedDataSync(
-             pastedText,
-             kho,
+            await this._handlePastedDataSync(
+                pastedText,
+                kho,
             mappingInfo.firestoreKey,
             mappingInfo.uiId,
             mappingInfo.saveKey,
@@ -5603,21 +5603,21 @@ const app = {
                 ui.showNotification(`Tải thành công ${normalizedData.length} dòng realtime!`, 'success');
                 this.updateAndRenderCurrentTab();
             } else {
-                 ui.showNotification(`File realtime lỗi: Thiếu cột ${missingColumns.join(', ')}.`, 'error');
-                 const debugContainer = document.getElementById('debug-tool-container');
-                 if (debugContainer?.classList.contains('hidden')) {
-                     document.getElementById('toggle-debug-btn')?.click();
-                 }
+                    ui.showNotification(`File realtime lỗi: Thiếu cột ${missingColumns.join(', ')}.`, 'error');
+                    const debugContainer = document.getElementById('debug-tool-container');
+                    if (debugContainer?.classList.contains('hidden')) {
+                        document.getElementById('toggle-debug-btn')?.click();
+                    }
             }
         } catch (err) { ui.showNotification(`Có lỗi khi đọc file: ${err.message}`, 'error'); console.error(err); }
     },
 
     async handleCategoryFile(e) {
         // ... (Giữ nguyên)
-         const fileInput = e.target;
+            const fileInput = e.target;
         const file = fileInput.files[0];
         if (!file) return;
-        uiComponents.updateFileStatus('category-structure', file.name, 'Đang xử lý...', 'default');
+        ui.updateFileStatus('category-structure', file.name, 'Đang xử lý...', 'default'); // <<< SỬA (v4.47)
         ui.showProgressBar('category-structure');
         try {
             const workbook = await this.handleFileRead(file);
@@ -5635,12 +5635,12 @@ const app = {
                 appState.categoryStructure = categoryResult.normalizedData;
                 appState.brandList = brandResult.normalizedData;
                 await firebase.saveCategoryDataToFirestore({ categories: categoryResult.normalizedData, brands: brandResult.normalizedData });
-                uiComponents.updateFileStatus('category-structure', file.name, `✓ Đã xử lý và đồng bộ ${categoryResult.normalizedData.length} nhóm & ${brandResult.normalizedData.length} hãng.`, 'success');
+                ui.updateFileStatus('category-structure', file.name, `✓ Đã xử lý và đồng bộ ${categoryResult.normalizedData.length} nhóm & ${brandResult.normalizedData.length} hãng.`, 'success'); // <<< SỬA (v4.47)
             } else {
-                 ui.showNotification(`Lỗi xử lý file khai báo: ${categoryResult.error}`, 'error');
+                    ui.showNotification(`Lỗi xử lý file khai báo: ${categoryResult.error}`, 'error');
             }
         } catch (error) {
-            uiComponents.updateFileStatus('category-structure', file.name, `Lỗi: ${error.message}`, 'error');
+            ui.updateFileStatus('category-structure', file.name, `Lỗi: ${error.message}`, 'error'); // <<< SỬA (v4.47)
         } finally {
             ui.hideProgressBar('category-structure');
             fileInput.value = '';
@@ -5652,7 +5652,7 @@ const app = {
         const fileInput = e.target;
         const file = fileInput.files[0];
         if (!file) return;
-        uiComponents.updateFileStatus('thidua-vung', file.name, 'Đang xử lý...', 'default');
+        ui.updateFileStatus('thidua-vung', file.name, 'Đang xử lý...', 'default'); // <<< SỬA (v4.47)
         try {
             const workbook = await this.handleFileRead(file);
             const { chiTietData, tongData } = services.processThiDuaVungFile(workbook);
@@ -5666,9 +5666,9 @@ const app = {
                 choicesInstance.clearStore();
                 choicesInstance.setChoices(supermarketNames.map(name => ({ value: name, label: name })), 'value', 'label', true);
             }
-            uiComponents.updateFileStatus('thidua-vung', file.name, `✓ Đã xử lý ${supermarketNames.length} siêu thị.`, 'success');
+            ui.updateFileStatus('thidua-vung', file.name, `✓ Đã xử lý ${supermarketNames.length} siêu thị.`, 'success'); // <<< SỬA (v4.47)
         } catch (error) {
-            uiComponents.updateFileStatus('thidua-vung', file.name, `Lỗi: ${error.message}`, 'error');
+            ui.updateFileStatus('thidua-vung', file.name, `Lỗi: ${error.message}`, 'error'); // <<< SỬA (v4.47)
         }
     },
 
@@ -5708,9 +5708,9 @@ const app = {
 
     handleThiDuaViewChange(e) {
         // ... (Giữ nguyên)
-         const button = e.target.closest('.view-switcher__btn');
+            const button = e.target.closest('.view-switcher__btn');
         if (button) {
-             document.querySelectorAll('#thidua-view-selector .view-switcher__btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('#thidua-view-selector .view-switcher__btn').forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
             const view = button.dataset.view;
             const thiduaEmployeeSelectorEl = document.getElementById('thidua-employee-selector-container');
@@ -5740,13 +5740,13 @@ const app = {
         const addBtn = document.getElementById('add-competition-btn');
         if (!form || !addBtn) return;
         if (show) {
-            uiComponents.populateCompetitionFilters();
-            uiComponents.populateCompetitionBrandFilter();
+            ui.populateCompetitionFilters(); // <<< SỬA (v4.47)
+            ui.populateCompetitionBrandFilter(); // <<< SỬA (v4.47)
         }
         form.classList.toggle('hidden', !show);
         addBtn.classList.toggle('hidden', show);
         if (show && !isEdit) {
-             form.reset();
+                form.reset();
             document.getElementById('competition-id').value = '';
             appState.choices['competition_group']?.removeActiveItems();
             appState.choices['competition_brand']?.removeActiveItems();
@@ -5826,7 +5826,7 @@ const app = {
     },
 
 
-     _saveCompetitionConfigs() {
+        _saveCompetitionConfigs() {
         // ... (Giữ nguyên)
         localStorage.setItem('competitionConfigs', JSON.stringify(appState.competitionConfigs));
     },
@@ -5835,13 +5835,13 @@ const app = {
         // ... (Giữ nguyên)
         ui.showNotification('Đang chuẩn bị file mẫu...', 'success');
         try {
-             const url = await firebase.getTemplateDownloadURL();
-             const link = document.createElement('a');
-             link.href = url;
-             link.download = 'Danh_Sach_Nhan_Vien_Mau.xlsx';
-             document.body.appendChild(link);
-             link.click();
-             document.body.removeChild(link);
+                const url = await firebase.getTemplateDownloadURL();
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'Danh_Sach_Nhan_Vien_Mau.xlsx';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
         } catch (error) {
             console.error("Lỗi khi tải file mẫu:", error);
             ui.showNotification('Không thể tải file mẫu. Vui lòng thử lại.', 'error');
@@ -5867,28 +5867,28 @@ const app = {
 
     handleContrastChange(e) {
         // ... (Giữ nguyên)
-          const level = e.target.value;
-         localStorage.setItem('contrastLevel', level);
-         document.documentElement.dataset.contrast = level;
+            const level = e.target.value;
+            localStorage.setItem('contrastLevel', level);
+            document.documentElement.dataset.contrast = level;
     },
 
     handleHighlightColorChange(prefix) {
         // ... (Giữ nguyên)
         const activeType = appState.highlightSettings[prefix]?.type;
         if (activeType) {
-             const choicesInstance = appState.choices[`${prefix}_highlight_${activeType}`];
-             if(choicesInstance) {
+                const choicesInstance = appState.choices[`${prefix}_highlight_${activeType}`];
+                if(choicesInstance) {
                 const values = choicesInstance.getValue(true);
                 const colorEl = document.getElementById(`${prefix}-highlight-color`);
                 const color = colorEl ? colorEl.value : '#ffff00';
                 appState.highlightSettings[prefix] = { type: activeType, values, color };
                 localStorage.setItem('highlightSettings', JSON.stringify(appState.highlightSettings));
                 highlightService.applyHighlights(prefix);
-             }
+                }
         }
     },
 
-     handleClearHighlight(prefix) {
+        handleClearHighlight(prefix) {
         // ... (Giữ nguyên)
         appState.highlightSettings[prefix] = {};
         localStorage.setItem('highlightSettings', JSON.stringify(appState.highlightSettings));
@@ -5898,7 +5898,7 @@ const app = {
         highlightService.applyHighlights(prefix);
     },
 
-     async saveDeclarations() {
+        async saveDeclarations() {
         // ... (Giữ nguyên)
         const ycxEl = document.getElementById('declaration-ycx');
         const ycxGopEl = document.getElementById('declaration-ycx-gop');
@@ -5922,10 +5922,10 @@ const app = {
         const sknvEl = document.getElementById('edit-help-sknv');
         const realtimeEl = document.getElementById('edit-help-realtime');
         const contents = {
-             data: dataEl ? dataEl.value : '',
-             luyke: luykeEl ? luykeEl.value : '',
-             sknv: sknvEl ? sknvEl.value : '',
-             realtime: realtimeEl ? realtimeEl.value : ''
+                data: dataEl ? dataEl.value : '',
+                luyke: luykeEl ? luykeEl.value : '',
+                sknv: sknvEl ? sknvEl.value : '',
+                realtime: realtimeEl ? realtimeEl.value : ''
         };
         firebase.saveHelpContent(contents);
     },
@@ -5945,13 +5945,13 @@ const app = {
         const replyForm = feedbackItem.querySelector('.reply-form-container');
         if (!replyForm) return;
         if (e.target.classList.contains('reply-btn')) { replyForm.classList.remove('hidden'); }
-         if (e.target.classList.contains('cancel-reply-btn')) { replyForm.classList.add('hidden'); }
+            if (e.target.classList.contains('cancel-reply-btn')) { replyForm.classList.add('hidden'); }
         if (e.target.classList.contains('submit-reply-btn')) {
-             const textarea = replyForm.querySelector('textarea');
-             if(textarea){
+                const textarea = replyForm.querySelector('textarea');
+                if(textarea){
                 const success = await firebase.submitReply(docId, textarea.value.trim());
                 if (success) { textarea.value = ''; replyForm.classList.add('hidden'); }
-             }
+                }
         }
     },
 
@@ -5988,33 +5988,33 @@ const app = {
         if(contextTabsContainer) contextTabsContainer.innerHTML = '';
         if(contextContentContainer) contextContentContainer.innerHTML = '';
         if (mainViewNav && contextTabsContainer && contextContentContainer) {
-             const subTabButtons = mainViewNav.querySelectorAll('.sub-tab-btn');
+                const subTabButtons = mainViewNav.querySelectorAll('.sub-tab-btn');
             subTabButtons.forEach(btn => {
-                 const subTabId = btn.dataset.target;
+                    const subTabId = btn.dataset.target;
                 const isActive = btn.classList.contains('active');
                 const newTabBtn = document.createElement('button');
                 newTabBtn.className = `composer__tab-btn ${isActive ? 'active' : ''}`;
                 newTabBtn.dataset.target = `context-pane-${subTabId}`;
                 newTabBtn.textContent = btn.textContent.trim();
-                 newTabBtn.addEventListener('click', () => {
+                    newTabBtn.addEventListener('click', () => {
                     contextTabsContainer.querySelectorAll('.composer__tab-btn').forEach(t => t.classList.remove('active'));
                     contextContentContainer.querySelectorAll('.composer__context-pane').forEach(c => c.classList.add('hidden'));
                     newTabBtn.classList.add('active');
                     const targetPane = document.getElementById(`context-pane-${subTabId}`);
                     if(targetPane) targetPane.classList.remove('hidden');
                 });
-                 contextTabsContainer.appendChild(newTabBtn);
-                 const newContentPane = document.createElement('div');
-                 newContentPane.id = `context-pane-${subTabId}`;
-                 newContentPane.className = `composer__context-pane ${!isActive ? 'hidden' : ''}`;
-                 const textarea = document.createElement('textarea');
-                 textarea.className = 'composer__textarea';
-                 textarea.rows = 15;
-                 textarea.placeholder = `Soạn thảo nhận xét cho tab ${btn.textContent.trim()}...`;
-                 if (!appState.composerTemplates[sectionId]) appState.composerTemplates[sectionId] = {};
-                 textarea.value = appState.composerTemplates[sectionId]?.[subTabId] || '';
-                 newContentPane.appendChild(textarea);
-                 contextContentContainer.appendChild(newContentPane);
+                    contextTabsContainer.appendChild(newTabBtn);
+                    const newContentPane = document.createElement('div');
+                    newContentPane.id = `context-pane-${subTabId}`;
+                    newContentPane.className = `composer__context-pane ${!isActive ? 'hidden' : ''}`;
+                    const textarea = document.createElement('textarea');
+                    textarea.className = 'composer__textarea';
+                    textarea.rows = 15;
+                    textarea.placeholder = `Soạn thảo nhận xét cho tab ${btn.textContent.trim()}...`;
+                    if (!appState.composerTemplates[sectionId]) appState.composerTemplates[sectionId] = {};
+                    textarea.value = appState.composerTemplates[sectionId]?.[subTabId] || '';
+                    newContentPane.appendChild(textarea);
+                    contextContentContainer.appendChild(newContentPane);
             });
             contextTabsContainer.classList.toggle('hidden', contextTabsContainer.children.length === 0);
         }
@@ -6033,18 +6033,18 @@ const app = {
             const nav = e.target.closest('.composer__nav');
             const content = nav?.nextElementSibling;
             if (nav && content) {
-                 nav.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
-                 content.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
-                 e.target.classList.add('active');
-                 const targetId = e.target.dataset.tab;
-                 const targetContent = content.querySelector(`#${targetId}`);
-                 if (targetContent) targetContent.classList.add('active');
+                    nav.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
+                    content.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
+                    e.target.classList.add('active');
+                    const targetId = e.target.dataset.tab;
+                    const targetContent = content.querySelector(`#${targetId}`);
+                    if (targetContent) targetContent.classList.add('active');
             }
             return;
         }
         if (e.target.matches('.composer__icon-btn, .composer__tag-btn')) {
-             if (!activeTextarea) { ui.showNotification("Vui lòng chọn một tab nội dung để chèn thẻ.", "error"); return; }
-             let tagToInsert = e.target.dataset.tag;
+                if (!activeTextarea) { ui.showNotification("Vui lòng chọn một tab nội dung để chèn thẻ.", "error"); return; }
+                let tagToInsert = e.target.dataset.tag;
             if (e.target.dataset.tagTemplate) {
                 const deptFilterEl = document.getElementById('composer-dept-filter');
                 const dept = deptFilterEl ? deptFilterEl.value : 'ALL';
@@ -6053,41 +6053,41 @@ const app = {
             ui.insertComposerTag(activeTextarea, tagToInsert || e.target.textContent);
             return;
         }
-         if (e.target.id === 'save-composer-template-btn') {
+            if (e.target.id === 'save-composer-template-btn') {
             if (!activeTextarea) return;
             const activeContextTab = modal.querySelector('#composer-context-tabs .composer__tab-btn.active');
             const subTabId = activeContextTab?.dataset.target.replace('context-pane-', '');
             if (subTabId) {
-                 if (!appState.composerTemplates[sectionId]) appState.composerTemplates[sectionId] ={};
+                    if (!appState.composerTemplates[sectionId]) appState.composerTemplates[sectionId] ={};
                 appState.composerTemplates[sectionId][subTabId] = activeTextarea.value;
                 localStorage.setItem('composerTemplates', JSON.stringify(appState.composerTemplates));
                 ui.showNotification(`Đã lưu mẫu cho tab con!`, 'success');
             } else { ui.showNotification(`Không tìm thấy tab con để lưu.`, 'error'); }
         }
         if (e.target.id === 'copy-composed-notification-btn') {
-             if (!activeTextarea) { ui.showNotification("Lỗi: Không tìm thấy ô nội dung đang hoạt động.", "error"); return; }
-             const template = activeTextarea.value;
-             const filteredReportData = this._getFilteredReportData(sectionId);
-             const supermarketReport = services.aggregateReport(filteredReportData);
-             const warehouseEl = document.getElementById(`${sectionId}-filter-warehouse`);
-             const selectedWarehouse = warehouseEl ? warehouseEl.value : null;
-             const goals = sectionId === 'realtime' ? settingsService.getRealtimeGoalSettings(selectedWarehouse).goals : settingsService.getLuykeGoalSettings(selectedWarehouse).goals;
-             const pasteLuykeEl = document.getElementById('paste-luyke');
-             const competitionDataForComposer = services.parseCompetitionDataFromLuyKe(pasteLuykeEl?.value || '');
-             const processedText = services.processComposerTemplate(template, supermarketReport, goals, filteredReportData, competitionDataForComposer, sectionId);
-             ui.showPreviewAndCopy(processedText);
+                if (!activeTextarea) { ui.showNotification("Lỗi: Không tìm thấy ô nội dung đang hoạt động.", "error"); return; }
+                const template = activeTextarea.value;
+                const filteredReportData = this._getFilteredReportData(sectionId);
+                const supermarketReport = services.aggregateReport(filteredReportData);
+                const warehouseEl = document.getElementById(`${sectionId}-filter-warehouse`);
+                const selectedWarehouse = warehouseEl ? warehouseEl.value : null;
+                const goals = sectionId === 'realtime' ? settingsService.getRealtimeGoalSettings(selectedWarehouse).goals : settingsService.getLuykeGoalSettings(selectedWarehouse).goals;
+                const pasteLuykeEl = document.getElementById('paste-luyke');
+                const competitionDataForComposer = services.parseCompetitionDataFromLuyKe(pasteLuykeEl?.value || '');
+                const processedText = services.processComposerTemplate(template, supermarketReport, goals, filteredReportData, competitionDataForComposer, sectionId);
+                ui.showPreviewAndCopy(processedText);
         }
     },
 
     async loadAndDisplayQrCode() {
         // ... (Giữ nguyên)
-         try {
+            try {
             const qrUrl = await firebase.getQrCodeDownloadURL();
             const imgEl = document.getElementById('header-qr-image');
             if (imgEl) imgEl.src = qrUrl;
         }
         catch (error) {
-             console.error("Không thể tải mã QR:", error);
+                console.error("Không thể tải mã QR:", error);
             const container = document.querySelector('.header-qr-container');
             if (container) container.style.display = 'none';
         }
@@ -10926,6 +10926,219 @@ filteredReport, filteredYCXData) {
 };
 --- END FILE: ./tab-sknv.js ---
 
+--- START FILE: ./ui-admin.js ---
+// Version 1.1 - Refactor: Moved renderCompetitionConfigUI from ui-components.js
+// MODULE: UI ADMIN
+// Chứa các hàm render cho trang Quản trị (Khai báo).
+
+import { appState } from './state.js';
+import { firebase } from './firebase.js';
+import { formatters } from './ui-formatters.js';
+
+/**
+ * Render bảng thống kê người dùng trong Trang Quản trị.
+ * (Đã di chuyển từ ui-components.js)
+ */
+const renderUserStatsTable = (users) => {
+    const container = document.getElementById('user-stats-container');
+    if (!container) return;
+
+    if (!users || users.length === 0) {
+        container.innerHTML = '<p class="text-gray-500">Không có dữ liệu người dùng.</p>';
+        return;
+    }
+
+    const sortState = appState.sortState.user_stats || { key: 'lastLogin', direction: 'desc' };
+    const { key, direction } = sortState;
+
+    const sortedUsers = [...users].sort((a, b) => {
+        let valA = a[key];
+            let valB = b[key];
+
+        if (key === 'lastLogin') {
+            valA = valA instanceof Date ? valA.getTime() : 0;
+            valB = valB instanceof Date ? valB.getTime() : 0;
+        }
+        else if (key === 'loginCount' || key === 'actionsTaken') {
+                valA = Number(valA) || 0;
+                valB = Number(valB) || 0;
+        }
+
+        if (valA < valB) return direction === 'asc' ? -1 : 1;
+        if (valA > valB) return direction === 'asc' ? 1 : -1;
+        return 0;
+    });
+
+    const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
+
+    let tableHTML = `
+        <div class="overflow-x-auto max-h-[600px]">
+            <table class="min-w-full text-sm table-bordered table-striped" data-table-type="user_stats">
+                    <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold sticky top-0">
+                    <tr>
+                        <th class="${headerClass('email')}" data-sort="email">Email <span class="sort-indicator"></span></th>
+                        <th class="${headerClass('loginCount')} text-right" data-sort="loginCount">Lượt truy cập <span class="sort-indicator"></span></th>
+                        <th class="${headerClass('actionsTaken')} text-right" data-sort="actionsTaken">Lượt sử dụng <span class="sort-indicator"></span></th>
+                            <th class="${headerClass('lastLogin')} text-right" data-sort="lastLogin">Lần cuối truy cập <span class="sort-indicator"></span></th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    sortedUsers.forEach(user => {
+        const lastLoginDate = user.lastLogin instanceof Date ? user.lastLogin : null;
+        const formattedLastLogin = lastLoginDate
+            ? `${lastLoginDate.toLocaleDateString('vi-VN')} ${lastLoginDate.toLocaleTimeString('vi-VN')}`
+                : 'Chưa rõ';
+
+        tableHTML += `
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-2 font-medium text-gray-900">${user.email}</td>
+                <td class="px-4 py-2 text-right font-bold">${formatters.formatNumber(user.loginCount || 0)}</td>
+                <td class="px-4 py-2 text-right font-bold">${formatters.formatNumber(user.actionsTaken || 0)}</td>
+                    <td class="px-4 py-2 text-right">${formattedLastLogin}</td>
+            </tr>
+        `;
+    });
+
+    tableHTML += `</tbody></table></div>`;
+    container.innerHTML = tableHTML;
+};
+
+/**
+ * Render bảng ánh xạ tên thi đua trong Tab Khai báo.
+ * (Đã di chuyển từ ui-components.js)
+ */
+const renderCompetitionNameMappingTable = () => {
+    const container = document.getElementById('competition-name-mapping-container');
+    if (!container) return;
+
+    const mappings = appState.competitionNameMappings || {};
+    const mappingEntries = Object.entries(mappings);
+
+    if (mappingEntries.length === 0) {
+            container.innerHTML = '<p class="text-gray-500 italic">Vui lòng dán dữ liệu "Thi đua nhân viên" ở tab "Cập nhật dữ liệu" để hệ thống tự động trích xuất tên...</p>';
+        return;
+    }
+
+    let tableHTML = `
+        <table class="min-w-full text-sm table-bordered bg-white">
+            <thead class="text-xs text-slate-800 uppercase bg-slate-100 font-bold">
+                <tr>
+                    <th class="px-4 py-2 text-left w-1/2">Tên Gốc (Từ dữ liệu dán)</th>
+                        <th class="px-4 py-2 text-left w-1/2">Tên Rút Gọn (Nhập để thay thế)</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    mappingEntries.forEach(([originalName, shortName]) => {
+        tableHTML += `
+            <tr class="border-t hover:bg-gray-50">
+                <td class="px-4 py-2 text-gray-600 align-top text-xs">
+                        ${originalName}
+                </td>
+                <td class="px-4 py-2 align-top">
+                    <input 
+                        type="text" 
+                        class="competition-name-input w-full p-1 border rounded-md text-sm" 
+                            value="${shortName || ''}" 
+                        data-original-name="${originalName}"
+                        placeholder="Nhập tên rút gọn..."
+                    >
+                </td>
+            </tr>
+        `;
+    });
+
+    tableHTML += `</tbody></table>`;
+    container.innerHTML = tableHTML;
+};
+
+/**
+ * Điền nội dung vào các trình chỉnh sửa Hướng dẫn trong Trang Quản trị.
+ * (Đã di chuyển từ ui-components.js)
+ */
+const renderAdminHelpEditors = () => {
+        if (appState.isAdmin) {
+        const dataEl = document.getElementById('edit-help-data');
+        if (dataEl) dataEl.value = appState.helpContent.data || '';
+        const luykeEl = document.getElementById('edit-help-luyke');
+        if (luykeEl) luykeEl.value = appState.helpContent.luyke || '';
+        const sknvEl = document.getElementById('edit-help-sknv');
+        if (sknvEl) sknvEl.value = appState.helpContent.sknv || '';
+        const realtimeEl = document.getElementById('edit-help-realtime');
+        if (realtimeEl) realtimeEl.value = appState.helpContent.realtime || '';
+    }
+};
+
+/**
+ * Render nội dung chính của Trang Quản trị (Khai báo).
+ * (Đã di chuyển từ ui.js)
+ */
+const renderAdminPage = async () => {
+    if (!appState.isAdmin) return;
+    
+    // Render bảng thống kê người dùng
+    const users = await firebase.getAllUsers();
+    renderUserStatsTable(users); // Gọi hàm nội bộ
+    
+    // Render các trình chỉnh sửa hướng dẫn
+    renderAdminHelpEditors(); // Gọi hàm nội bộ
+
+    // Render bảng ánh xạ tên thi đua
+    renderCompetitionNameMappingTable(); // Gọi hàm nội bộ
+};
+
+/**
+ * Render danh sách các chương trình thi đua đã tạo (trong tab Khai báo).
+ * (Đã di chuyển từ ui-components.js v3.31)
+ */
+const renderCompetitionConfigUI = () => {
+    const container = document.getElementById(`competition-list-container`);
+    if (!container) return;
+    const configs = appState.competitionConfigs || [];
+
+    if (configs.length === 0) {
+        container.innerHTML = '<p class="text-xs text-center text-gray-500 italic">Chưa có chương trình nào được tạo.</p>';
+        return;
+    }
+
+    container.innerHTML = configs.map((config, index) => {
+            return `
+                <div class="p-3 border rounded-lg bg-white flex justify-between items-center shadow-sm">
+                    <div>
+                        <div class="flex items-center gap-x-2">
+                            <p class="font-bold text-gray-800">${config.name}</p>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1 space-y-1">
+                            <p><strong>Hãng:</strong> <span class="font-semibold text-blue-600">${(config.brands || []).join(', ')}</span></p>
+                            <p><strong>Nhóm hàng:</strong> <span class="font-semibold">${(config.groups || []).length > 0 ? (config.groups || []).join(', ') : 'Tất cả'}</span></p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-x-2 flex-shrink-0">
+                        <button class="edit-competition-btn p-2 rounded-md hover:bg-gray-200 text-gray-600" data-index="${index}" title="Sửa chương trình">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        </button>
+                        <button class="delete-competition-btn p-2 rounded-md hover:bg-red-100 text-red-600" data-index="${index}" title="Xóa chương trình">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            `;
+    }).join('');
+};
+
+// Xuất khẩu đối tượng gộp
+export const uiAdmin = {
+    renderUserStatsTable,
+    renderCompetitionNameMappingTable,
+    renderAdminHelpEditors,
+    renderAdminPage,
+    renderCompetitionConfigUI // <<< THÊM MỚI (v1.1)
+};
+--- END FILE: ./ui-admin.js ---
+
 --- START FILE: ./ui-competition.js ---
 // Version 2.9 - Simplify multi-brand competition table header
 // MODULE: UI COMPETITION
@@ -11098,12 +11311,8 @@ export { uiCompetition };
 --- END FILE: ./ui-competition.js ---
 
 --- START FILE: ./ui-components.js ---
-// Version 3.30 - Refactor: Moved report rendering functions to ui-reports.js
-// Version 3.29 - Refactor: Extract notifications & debugTools
-// Version 3.28 - Refactor: Extract modalManager to ui-modal-manager.js
-// Version 3.27 - Fix: Populate warehouse selectors in Goal Settings drawer
-// Version 3.26 - Refactor: Extract formatters to ui-formatters.js
-// Version 3.25 - Add missing functions: populateAllFilters (fixes F5 crash) and updateBrandFilterOptions (fixes Realtime crash)
+// Version 3.32 - Refactor: Remove HomePage functions (moved to ui-home.js) and renderCompetitionConfigUI (moved to ui-admin.js)
+// Version 3.31 - Refactor: Remove admin and filter functions (moved to ui-admin.js and ui-filters.js)
 // ... (các phiên bản trước giữ nguyên)
 // MODULE: UI COMPONENTS
 // Chứa các hàm UI chung, tái sử dụng được trên toàn bộ ứng dụng.
@@ -11119,139 +11328,11 @@ import { notifications } from './ui-notifications.js'; // <<< THÊM MỚI (v3.29
 import { debugTools } from './ui-debug.js'; // <<< THÊM MỚI (v3.29)
 
 export const uiComponents = {
-    // === START: NEW FUNCTION (FIX FOR VẤN ĐỀ 1) ===
-    /**
-     * Điền dữ liệu vào tất cả các bộ lọc (Kho, Bộ phận, Nhân viên) trên các tab.
-     * Được gọi sau khi DSNV được tải.
-     */
-    populateAllFilters() {
-        console.log("[ui-components.js populateAllFilters] Đang điền dữ liệu vào tất cả bộ lọc...");
-        if (!appState.danhSachNhanVien || appState.danhSachNhanVien.length === 0) {
-            console.warn("[ui-components.js populateAllFilters] DSNV trống, không thể điền bộ lọc.");
-            return;
-        }
-
-        try {
-            const uniqueWarehouses = [...new Set(appState.danhSachNhanVien.map(nv => nv.maKho).filter(Boolean))].sort();
-            const uniqueDepartments = [...new Set(appState.danhSachNhanVien.map(nv => nv.boPhan).filter(Boolean))].sort();
-            const allEmployees = [...appState.danhSachNhanVien].sort((a, b) => a.hoTen.localeCompare(b.hoTen));
-
-            const warehouseOptions = [{ value: '', label: 'Tất cả Kho', selected: true }]
-                .concat(uniqueWarehouses.map(item => ({ value: item, label: item })));
-            
-            const departmentOptions = [{ value: '', label: 'Tất cả Bộ phận', selected: true }]
-                .concat(uniqueDepartments.map(item => ({ value: item, label: item })));
-
-            const employeeOptions = allEmployees.map(item => ({
-                value: String(item.maNV),
-                label: `${item.hoTen} - ${item.maNV} (${item.boPhan})`
-            }));
-
-            ['luyke', 'sknv', 'realtime'].forEach(prefix => {
-                const whChoices = appState.choices[`${prefix}_warehouse`];
-                if (whChoices) {
-                    const currentVal = whChoices.getValue(true);
-                    whChoices.clearStore();
-                    whChoices.setChoices(warehouseOptions, 'value', 'label', true);
-                    if (currentVal) whChoices.setValue([currentVal]);
-                }
-                
-                const deptChoices = appState.choices[`${prefix}_department`];
-                if (deptChoices) {
-                    const currentVal = deptChoices.getValue(true);
-                    deptChoices.clearStore();
-                    deptChoices.setChoices(departmentOptions, 'value', 'label', true);
-                    if (currentVal) deptChoices.setValue([currentVal]);
-                }
-
-                const empChoices = appState.choices[`${prefix}_employee`];
-                if (empChoices) {
-                    const currentVal = empChoices.getValue(true);
-                    empChoices.clearStore();
-                    empChoices.setChoices(employeeOptions, 'value', 'label', true);
-                    if (currentVal) empChoices.setValue(currentVal);
-                }
-            });
-
-            // === START: SỬA LỖI (v3.27) - Điền dữ liệu cho Goal Settings Drawer ===
-            try {
-                const goalWarehouseOptions = uniqueWarehouses.map(item => ({ value: item, label: item }));
-                
-                const luykeGoalSelect = document.getElementById('luyke-goal-warehouse-select');
-                if (luykeGoalSelect) {
-                    luykeGoalSelect.innerHTML = goalWarehouseOptions.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join('');
-                }
-
-                const rtGoalSelect = document.getElementById('rt-goal-warehouse-select');
-                if (rtGoalSelect) {
-                    rtGoalSelect.innerHTML = goalWarehouseOptions.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join('');
-                }
-                
-                // Sau khi điền, gọi hàm load setting để chọn đúng kho (nếu có)
-                settingsService.loadAndApplyLuykeGoalSettings();
-                settingsService.loadAndApplyRealtimeGoalSettings();
-
-            } catch (goalError) {
-                console.error("[ui-components.js populateAllFilters] Lỗi khi điền bộ lọc cho Goal Drawer:", goalError);
-            }
-            // === END: SỬA LỖI (v3.27) ===
-
-            console.log("[ui-components.js populateAllFilters] Đã điền xong bộ lọc.");
-        } catch (error) {
-            console.error("[ui-components.js populateAllFilters] Lỗi nghiêm trọng khi điền bộ lọc:", error);
-        }
-    },
-    // === END: NEW FUNCTION ===
-
-    // === START: NEW FUNCTION (FIX FOR VẤN ĐỀ 4) ===
-    /**
-     * Cập nhật danh sách 'Hãng' dựa trên 'Ngành hàng' đã chọn trong tab Realtime.
-     * @param {string} selectedCategory - Ngành hàng đã chọn.
-     */
-    updateBrandFilterOptions(selectedCategory) {
-        const brandFilterEl = document.getElementById('realtime-brand-filter');
-        const brandChoices = appState.choices['realtime_brand_filter']; 
-        
-        if (!brandFilterEl || !brandChoices) {
-            console.warn("[updateBrandFilterOptions] Lỗi: Brand filter hoặc Choices instance chưa sẵn sàng.");
-            return;
-        }
-
-        let availableBrands = [];
-        if (selectedCategory) {
-            // Lọc các hãng dựa trên ngành hàng đã chọn trong dữ liệu realtime
-            availableBrands = [...new Set(appState.realtimeYCXData
-                .filter(row => utils.cleanCategoryName(row.nganhHang) === selectedCategory)
-                .map(row => row.nhaSanXuat || 'Hãng khác')
-                .filter(Boolean))
-            ].sort();
-        } else {
-            // Nếu không chọn ngành hàng, hiển thị tất cả hãng có trong dữ liệu realtime
-            availableBrands = [...new Set(appState.realtimeYCXData
-                .map(row => row.nhaSanXuat || 'Hãng khác')
-                .filter(Boolean))
-            ].sort();
-        }
-
-        // Tạo danh sách options
-        let brandOptions = [{ value: '', label: 'Tất cả các hãng', selected: true }];
-        brandOptions = brandOptions.concat(availableBrands.map(brand => ({ value: brand, label: brand })));
-        
-        // Lấy giá trị hiện tại để cố gắng bảo toàn lựa chọn
-        const currentValue = brandChoices.getValue(true);
-        
-        // Cập nhật Choices.js
-        brandChoices.clearStore();
-        brandChoices.setChoices(brandOptions, 'value', 'label', true);
-        
-        // Cố gắng đặt lại giá trị cũ nếu nó vẫn tồn tại trong danh sách mới
-        if (currentValue && availableBrands.includes(currentValue)) {
-            brandChoices.setValue([currentValue]);
-        } else {
-             brandChoices.setValue(['']); // Reset về "Tất cả"
-        }
-    },
-    // === END: NEW FUNCTION ===
+    // === START: KHỐI HÀM ĐÃ BỊ XÓA (v3.31) ===
+    // 5 hàm (populateAllFilters, updateBrandFilterOptions, populateCompetitionFilters, 
+    // populateCompetitionBrandFilter, populateWarehouseSelector)
+    // ĐÃ BỊ XÓA khỏi đây vì đã tồn tại trong 'ui-filters.js'.
+    // === END: KHỐI HÀM ĐÃ BỊ XÓA ===
 
     renderSettingsButton(idSuffix) {
         return `<button id="settings-btn-${idSuffix}" class="settings-trigger-btn" title="Tùy chỉnh hiển thị">
@@ -11259,247 +11340,146 @@ export const uiComponents = {
         </button>`;
     },
 
-    renderCompetitionConfigUI() {
-        // ... (Giữ nguyên)
-        const container = document.getElementById(`competition-list-container`);
-        if (!container) return;
-        const configs = appState.competitionConfigs || [];
+    // === START: KHỐI HÀM ĐÃ BỊ XÓA (v3.32) ===
+    // 1 hàm (renderCompetitionConfigUI)
+    // ĐÃ BỊ XÓA khỏi đây vì đã chuyển sang 'ui-admin.js'.
+    // === END: KHỐI HÀM ĐÃ BỊ XÓA ===
 
-        if (configs.length === 0) {
-            container.innerHTML = '<p class="text-xs text-center text-gray-500 italic">Chưa có chương trình nào được tạo.</p>';
-            return;
-        }
+    // === START: KHỐI HÀM ĐÃ BỊ XÓA (v3.31) ===
+    // 2 hàm (populateCompetitionFilters, populateCompetitionBrandFilter)
+    // ĐÃ BỊ XÓA khỏi đây vì đã tồn tại trong 'ui-filters.js'.
+    // === END: KHỐI HÀM ĐÃ BỊ XÓA ===
 
-        container.innerHTML = configs.map((config, index) => {
-             return `
-                 <div class="p-3 border rounded-lg bg-white flex justify-between items-center shadow-sm">
-                      <div>
-                          <div class="flex items-center gap-x-2">
-                             <p class="font-bold text-gray-800">${config.name}</p>
-                          </div>
-                          <div class="text-xs text-gray-500 mt-1 space-y-1">
-                              <p><strong>Hãng:</strong> <span class="font-semibold text-blue-600">${(config.brands || []).join(', ')}</span></p>
-                              <p><strong>Nhóm hàng:</strong> <span class="font-semibold">${(config.groups || []).length > 0 ? (config.groups || []).join(', ') : 'Tất cả'}</span></p>
-                          </div>
-                      </div>
-                      <div class="flex items-center gap-x-2 flex-shrink-0">
-                         <button class="edit-competition-btn p-2 rounded-md hover:bg-gray-200 text-gray-600" data-index="${index}" title="Sửa chương trình">
-                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                          </button>
-                         <button class="delete-competition-btn p-2 rounded-md hover:bg-red-100 text-red-600" data-index="${index}" title="Xóa chương trình">
-                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                          </button>
-                      </div>
-                 </div>
-             `;
-        }).join('');
-    },
-    populateCompetitionFilters() {
-        // ... (Giữ nguyên)
-        const groupSelectInstance = appState.choices['competition_group'];
-        if (!groupSelectInstance) return;
-        const uniqueGroups = [...new Set(appState.categoryStructure.map(item => utils.cleanCategoryName(item.nhomHang)).filter(Boolean))].sort();
-        const groupOptions = uniqueGroups.map(group => ({ value: group, label: group }));
-        groupSelectInstance.clearStore();
-        groupSelectInstance.setChoices(groupOptions, 'value', 'label', true);
-    },
-    populateCompetitionBrandFilter() {
-        // ... (Giữ nguyên)
-        const brandSelectInstance = appState.choices['competition_brand'];
-        if (!brandSelectInstance) return;
-        const brands = appState.brandList || [];
-        const brandOptions = brands.map(brand => ({ value: brand, label: brand }));
-        brandSelectInstance.clearStore();
-        brandSelectInstance.setChoices(brandOptions, 'value', 'label', true);
-    },
     populateComposerDetailTags(supermarketReport) {
         // ... (Giữ nguyên)
-         const qdcContainer = document.getElementById('composer-qdc-tags-container');
-         const nganhHangContainer = document.getElementById('composer-nganhhang-tags-container');
-         if (!qdcContainer || !nganhHangContainer) return;
+            const qdcContainer = document.getElementById('composer-qdc-tags-container');
+            const nganhHangContainer = document.getElementById('composer-nganhhang-tags-container');
+            if (!qdcContainer || !nganhHangContainer) return;
 
-         qdcContainer.innerHTML = '<h5 class="composer__tag-group-title">Chọn Nhóm Hàng QĐC</h5>';
-         nganhHangContainer.innerHTML = '<h5 class="composer__tag-group-title">Chọn Ngành Hàng Chi Tiết</h5>';
+            qdcContainer.innerHTML = '<h5 class="composer__tag-group-title">Chọn Nhóm Hàng QĐC</h5>';
+            nganhHangContainer.innerHTML = '<h5 class="composer__tag-group-title">Chọn Ngành Hàng Chi Tiết</h5>';
 
-         const createTagButton = (tag, text) => {
-             const button = document.createElement('button');
-             button.className = 'composer__tag-btn';
-             button.dataset.tag = tag;
-             button.textContent = text;
-             return button;
-         };
+            const createTagButton = (tag, text) => {
+                const button = document.createElement('button');
+                button.className = 'composer__tag-btn';
+                button.dataset.tag = tag;
+                button.textContent = text;
+                return button;
+            };
 
-         if (supermarketReport && supermarketReport.qdc) {
-              const qdcItems = Object.values(supermarketReport.qdc)
-                 .filter(item => item.sl > 0)
-                 .sort((a,b) => b.dtqd - a.dtqd);
-             qdcItems.forEach(item => {
-                 const tag = `[QDC_INFO_${item.name}]`;
-                 qdcContainer.appendChild(createTagButton(tag, item.name));
-             });
-         }
-         if (supermarketReport && supermarketReport.nganhHangChiTiet) {
-             const nganhHangItems = Object.values(supermarketReport.nganhHangChiTiet)
-                 .filter(item => item.quantity > 0)
-                 .sort((a, b) => b.revenue - a.revenue)
-                 .slice(0, 15);
-             nganhHangItems.forEach(item => {
-                 const cleanName = utils.cleanCategoryName(item.name);
-                 const tag = `[NH_INFO_${cleanName}]`;
-                 nganhHangContainer.appendChild(createTagButton(tag, cleanName));
-            });
-         }
+            if (supermarketReport && supermarketReport.qdc) {
+                    const qdcItems = Object.values(supermarketReport.qdc)
+                    .filter(item => item.sl > 0)
+                    .sort((a,b) => b.dtqd - a.dtqd);
+                qdcItems.forEach(item => {
+                    const tag = `[QDC_INFO_${item.name}]`;
+                    qdcContainer.appendChild(createTagButton(tag, item.name));
+                });
+            }
+            if (supermarketReport && supermarketReport.nganhHangChiTiết) {
+                const nganhHangItems = Object.values(supermarketReport.nganhHangChiTiet)
+                    .filter(item => item.quantity > 0)
+                    .sort((a, b) => b.revenue - a.revenue)
+                    .slice(0, 15);
+                nganhHangItems.forEach(item => {
+                    const cleanName = utils.cleanCategoryName(item.name);
+                    const tag = `[NH_INFO_${cleanName}]`;
+                    nganhHangContainer.appendChild(createTagButton(tag, cleanName));
+                });
+            }
     },
     
     // === START: KHỐI HÀM ĐÃ BỊ XÓA ===
-    // displayEmployeeRevenueReport, renderRevenueTableForDepartment,
-    // displayEmployeeEfficiencyReport, renderEfficiencyTableForDepartment,
-    // renderCategoryTable, displayCategoryRevenueReport
-    // ĐÃ BỊ XÓA KHỎI ĐÂY và chuyển sang ui-reports.js
+    // (Đã chuyển sang ui-reports.js)
     // === END: KHỐI HÀM ĐÃ BỊ XÓA ===
 
-    populateWarehouseSelector() {
-        // ... (Giữ nguyên)
-        const selector = document.getElementById('data-warehouse-selector');
-        if (!selector) {
-            console.error("Không tìm thấy #data-warehouse-selector");
-            return;
-        }
+    // === START: KHỐI HÀM ĐÃ BỊ XÓA (v3.31) ===
+    // 1 hàm (populateWarehouseSelector)
+    // ĐÃ BỊ XÓA khỏi đây vì đã tồn tại trong 'ui-filters.js'.
+    // === END: KHỐI HÀM ĐÃ BỊ XÓA ===
 
-        if (!appState.danhSachNhanVien || appState.danhSachNhanVien.length === 0) {
-            selector.innerHTML = '<option value="">-- Vui lòng tải Danh sách Nhân viên --</option>';
-            selector.disabled = true;
-            console.log("populateWarehouseSelector: DSNV trống.");
-            return;
-        }
-
-        const uniqueWarehouses = [...new Set(appState.danhSachNhanVien.map(nv => String(nv.maKho).trim()).filter(Boolean))].sort();
-        console.log("populateWarehouseSelector: Các kho tìm thấy (dạng chuỗi):", uniqueWarehouses);
-
-        let optionsHTML = '<option value="">-- Chọn Kho --</option>';
-        optionsHTML += uniqueWarehouses.map(kho => `<option value="${kho}">${kho}</option>`).join('');
-        selector.innerHTML = optionsHTML;
-        selector.disabled = false;
-
-        let currentSelected = appState.selectedWarehouse ? String(appState.selectedWarehouse).trim() : null;
-        if (!currentSelected) {
-             const storedValue = localStorage.getItem('selectedWarehouse');
-             currentSelected = storedValue ? String(storedValue).trim() : '';
-        }
-        console.log("populateWarehouseSelector: Kho đang chọn (state/local, dạng chuỗi):", currentSelected);
-        if (currentSelected && uniqueWarehouses.includes(currentSelected)) {
-            selector.value = currentSelected;
-            if (appState.selectedWarehouse !== currentSelected) {
-                 appState.selectedWarehouse = currentSelected;
-                 console.log("populateWarehouseSelector: Đã cập nhật state.selectedWarehouse thành:", currentSelected);
-            }
-            console.log("populateWarehouseSelector: Đã chọn kho:", selector.value);
-        } else {
-             if (currentSelected && !uniqueWarehouses.includes(currentSelected)) {
-                 console.log(`populateWarehouseSelector: Kho đã lưu '${currentSelected}' không hợp lệ (không có trong ${uniqueWarehouses.join(',')}), đang reset.`);
-                 appState.selectedWarehouse = null;
-                 localStorage.removeItem('selectedWarehouse');
-                 selector.value = "";
-                 console.log("populateWarehouseSelector: Reset state về null và selector về '-- Chọn Kho --'.");
-             } else if (!currentSelected) {
-                 console.log("populateWarehouseSelector: Không có kho nào được lưu.");
-                 appState.selectedWarehouse = null;
-                 selector.value = "";
-                 console.log("populateWarehouseSelector: Reset state về null và selector về '-- Chọn Kho --'.");
-             } else {
-                 console.log(`populateWarehouseSelector: Kho '${currentSelected}' hợp lệ hoặc không có gì để reset.`);
-             }
-        }
-    },
-
-    // ... (Các hàm khác như showProgressBar, hideProgressBar, etc. giữ nguyên) ...
     showProgressBar: (elementId) => { const el = document.getElementById(`progress-${elementId}`); if(el) el.classList.remove('hidden'); },
     hideProgressBar: (elementId) => { const el = document.getElementById(`progress-${elementId}`); if(el) el.classList.add('hidden'); },
     
-    // <<< === START: KHỐI CODE BỊ XÓA (v3.29) === >>>
-    // 3 HÀM (showNotification, showUpdateNotification, updateUsageCounter)
-    // ĐÃ BỊ XÓA KHỎI ĐÂY.
-    // <<< === END: KHỐI CODE BỊ XÓA === >>>
+    ...notifications, // (v3.29)
 
-    ...notifications, // <<< THÊM MỚI (v3.29)
+        updateFileStatus(uiId, fileName = '', statusText, statusType = 'default', showDownloadButton = false, metadata = null, dataType = '', warehouse = '') {
+            const fileNameSpan = document.getElementById(`file-name-${uiId}`);
+            const fileStatusSpan = document.getElementById(`file-status-${uiId}`);
 
-     updateFileStatus(uiId, fileName = '', statusText, statusType = 'default', showDownloadButton = false, metadata = null, dataType = '', warehouse = '') {
-         const fileNameSpan = document.getElementById(`file-name-${uiId}`);
-         const fileStatusSpan = document.getElementById(`file-status-${uiId}`);
+            if (fileNameSpan) fileNameSpan.textContent = fileName || 'Chưa thêm file';
 
-         if (fileNameSpan) fileNameSpan.textContent = fileName || 'Chưa thêm file';
+            if (fileStatusSpan) {
+                let finalStatusText = statusText;
+                let timeAgo = '';
+                let buttonHTML = '';
+                let countText = '';
 
-         if (fileStatusSpan) {
-             let finalStatusText = statusText;
-             let timeAgo = '';
-             let buttonHTML = '';
-             let countText = '';
+                if (metadata && metadata.updatedAt) {
+                    const timestampDate = metadata.updatedAt.toDate ? metadata.updatedAt.toDate() : new Date(metadata.updatedAt);
+                    if (!isNaN(timestampDate)) {
+                        timeAgo = formatters.formatTimeAgo(timestampDate); // (v3.28)
+                    }
+                }
 
-             if (metadata && metadata.updatedAt) {
-                 const timestampDate = metadata.updatedAt.toDate ? metadata.updatedAt.toDate() : new Date(metadata.updatedAt);
-                 if (!isNaN(timestampDate)) {
-                     timeAgo = formatters.formatTimeAgo(timestampDate); // (v3.28)
-                 }
-             }
+                if (statusType === 'success' && metadata) {
+                    countText = metadata.rowCount ? `${formatters.formatNumber(metadata.rowCount)} dòng` : ''; // (v3.28)
+                    finalStatusText = `✓ Đã đồng bộ cloud ${countText} ${timeAgo}`.trim();
+                } else if (statusType === 'default' && showDownloadButton && metadata) {
+                    finalStatusText = `Có cập nhật mới từ ${metadata.updatedBy || 'ai đó'} ${timeAgo}`;
+                }
 
-             if (statusType === 'success' && metadata) {
-                 countText = metadata.rowCount ? `${formatters.formatNumber(metadata.rowCount)} dòng` : ''; // (v3.28)
-                 finalStatusText = `✓ Đã đồng bộ cloud ${countText} ${timeAgo}`.trim();
-             } else if (statusType === 'default' && showDownloadButton && metadata) {
-                 finalStatusText = `Có cập nhật mới từ ${metadata.updatedBy || 'ai đó'} ${timeAgo}`;
-             }
+                if (showDownloadButton && dataType && warehouse) {
+                    buttonHTML = `
+                        <button
+                            class="download-data-btn ml-2 px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200"
+                            data-type="${dataType}"
+                            data-warehouse="${warehouse}"
+                            title="Tải và xử lý phiên bản dữ liệu mới này">
+                            Tải & Xử lý
+                        </button>
+                    `;
+                }
 
-             if (showDownloadButton && dataType && warehouse) {
-                 buttonHTML = `
-                     <button
-                         class="download-data-btn ml-2 px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200"
-                         data-type="${dataType}"
-                         data-warehouse="${warehouse}"
-                         title="Tải và xử lý phiên bản dữ liệu mới này">
-                         Tải & Xử lý
-                     </button>
-                 `;
-             }
+                fileStatusSpan.innerHTML = `<span class="data-input-group__status-text data-input-group__status-text--${statusType}">${finalStatusText}</span>${buttonHTML}`;
+            }
+        },
+        updatePasteStatus(uiId, statusText, statusType = 'success', metadata = null, processedCount = 0) {
+            const statusSpan = document.getElementById(uiId);
+            if (statusSpan) {
+                let finalStatusText = statusText;
+                let timeAgo = '';
+                let countText = '';
 
-             fileStatusSpan.innerHTML = `<span class="data-input-group__status-text data-input-group__status-text--${statusType}">${finalStatusText}</span>${buttonHTML}`;
-         }
-     },
-     updatePasteStatus(uiId, statusText, statusType = 'success', metadata = null, processedCount = 0) {
-         const statusSpan = document.getElementById(uiId);
-         if (statusSpan) {
-             let finalStatusText = statusText;
-             let timeAgo = '';
-             let countText = '';
+                if (metadata && metadata.updatedAt) {
+                    const timestampDate = metadata.updatedAt.toDate ? metadata.updatedAt.toDate() : new Date(metadata.updatedAt);
+                    if (!isNaN(timestampDate)) {
+                        timeAgo = formatters.formatTimeAgo(timestampDate); // (v3.28)
+                    }
+                }
 
-             if (metadata && metadata.updatedAt) {
-                 const timestampDate = metadata.updatedAt.toDate ? metadata.updatedAt.toDate() : new Date(metadata.updatedAt);
-                 if (!isNaN(timestampDate)) {
-                     timeAgo = formatters.formatTimeAgo(timestampDate); // (v3.28)
-                 }
-             }
+                if (statusType === 'success' && metadata) {
+                    if ((uiId === 'status-thuongerp' || uiId === 'status-thuongerp-thangtruoc' || uiId === 'status-thiduanv') && processedCount > 0) {
+                        countText = `${processedCount} nhân viên`;
+                    } else if (uiId === 'status-luyke') {
+                        countText = '';
+                    }
+                    
+                    finalStatusText = `✓ Đã đồng bộ cloud ${countText} ${timeAgo}`.trim();
+                }
 
-             if (statusType === 'success' && metadata) {
-                 if ((uiId === 'status-thuongerp' || uiId === 'status-thuongerp-thangtruoc' || uiId === 'status-thiduanv') && processedCount > 0) {
-                     countText = `${processedCount} nhân viên`;
-                 } else if (uiId === 'status-luyke') {
-                    countText = '';
-                 }
-                 
-                 finalStatusText = `✓ Đã đồng bộ cloud ${countText} ${timeAgo}`.trim();
-             }
-
-             statusSpan.textContent = finalStatusText;
-             statusSpan.className = `data-input-group__status-text data-input-group__status-text--${statusType}`;
-         }
-     },
-     togglePlaceholder: (sectionId, show) => {
-         const placeholder = document.getElementById(`${sectionId}-placeholder`);
-         const content = document.getElementById(`${sectionId}-content`);
-         if (placeholder && content) {
-             placeholder.classList.toggle('hidden', !show);
-             content.classList.toggle('hidden', show);
-         }
-     },
+                statusSpan.textContent = finalStatusText;
+                statusSpan.className = `data-input-group__status-text data-input-group__status-text--${statusType}`;
+            }
+        },
+        togglePlaceholder: (sectionId, show) => {
+            const placeholder = document.getElementById(`${sectionId}-placeholder`);
+            const content = document.getElementById(`${sectionId}-content`);
+            if (placeholder && content) {
+                placeholder.classList.toggle('hidden', !show);
+                content.classList.toggle('hidden', show);
+            }
+        },
 
     ...formatters, // (v3.26)
     ...modalManager, // (v3.28)
@@ -11531,7 +11511,7 @@ export const uiComponents = {
     toggleDebugTool(button) {
         const container = document.getElementById('debug-tool-container');
         if (container) {
-             container.classList.toggle('hidden');
+                container.classList.toggle('hidden');
             button.textContent = container.classList.contains('hidden') ? 'Hiển thị Công cụ Gỡ lỗi' : 'Ẩn Công cụ Gỡ lỗi';
         }
     },
@@ -11546,11 +11526,11 @@ export const uiComponents = {
         this.toggleModal('help-modal', true);
     },
     showComposerModal(sectionId) {
-         this.toggleModal('composer-modal', true);
+            this.toggleModal('composer-modal', true);
         const firstTextarea = document.querySelector('#composer-context-content textarea');
         firstTextarea?.focus();
     },
-     insertComposerTag(textarea, tag) {
+        insertComposerTag(textarea, tag) {
         if (!textarea) return;
         const start = textarea.selectionStart;
         const end = textarea.selectionEnd;
@@ -11570,238 +11550,49 @@ export const uiComponents = {
         if (!contentEl) return;
         const content = contentEl.textContent;
         navigator.clipboard.writeText(content)
-             .then(() => {
-                uiComponents.showNotification('Đã sao chép nội dung!', 'success');
-                uiComponents.toggleModal('preview-modal', false);
-             })
-             .catch(err => {
+                .then(() => {
+                // Sử dụng ui.showNotification thay vì uiComponents.showNotification
+                ui.showNotification('Đã sao chép nội dung!', 'success');
+                ui.toggleModal('preview-modal', false);
+                })
+                .catch(err => {
                 console.error('Lỗi sao chép:', err);
-                 uiComponents.showNotification('Lỗi khi sao chép.', 'error');
-             });
-    },
-    renderAdminHelpEditors() {
-         if (appState.isAdmin) {
-            const dataEl = document.getElementById('edit-help-data');
-            if (dataEl) dataEl.value = appState.helpContent.data || '';
-            const luykeEl = document.getElementById('edit-help-luyke');
-            if (luykeEl) luykeEl.value = appState.helpContent.luyke || '';
-            const sknvEl = document.getElementById('edit-help-sknv');
-            if (sknvEl) sknvEl.value = appState.helpContent.sknv || '';
-            const realtimeEl = document.getElementById('edit-help-realtime');
-            if (realtimeEl) realtimeEl.value = appState.helpContent.realtime || '';
-        }
-    },
-    renderHomePage() {
-        this.renderUpdateHistory();
-        this.renderFeedbackSection();
-    },
-    async renderUpdateHistory() {
-        const container = document.getElementById('update-history-list');
-        if (!container) return;
-        try {
-             const response = await fetch(`./changelog.json?v=${new Date().getTime()}`);
-            if (!response.ok) throw new Error('Không thể tải lịch sử cập nhật.');
-            const updateHistory = await response.json();
-            container.innerHTML = updateHistory.map(item => `
-                <div class="bg-white rounded-xl shadow-md p-5 border border-gray-200">
-                      <h4 class="font-bold text-blue-600 mb-2">Phiên bản ${item.version} (${item.date})</h4>
-                     <ul class="list-disc list-inside text-gray-700 space-y-1 text-sm">
-                         ${item.notes.map(note => `<li>${note}</li>`).join('')}
-                    </ul>
-                 </div>`).join('');
-        } catch (error) {
-            console.error("Lỗi khi render lịch sử cập nhật:", error);
-            container.innerHTML = '<p class="text-red-500">Không thể tải lịch sử cập nhật.</p>';
-        }
-    },
-    renderFeedbackSection() {
-         const composerContainer = document.getElementById('feedback-composer');
-         const listContainer = document.getElementById('feedback-list');
-         if (!composerContainer || !listContainer) return;
-
-        composerContainer.innerHTML = `
-             <h4 class="text-lg font-semibold text-gray-800 mb-3">Gửi góp ý của bạn</h4>
-            <textarea id="feedback-textarea" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-3" rows="4" placeholder="Chúng tôi luôn lắng nghe ý kiến của bạn để cải thiện công cụ tốt hơn..."></textarea>
-             <button id="submit-feedback-btn" class="w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-indigo-700 transition">Gửi góp ý</button>
-        `;
-
-        if (!appState.feedbackList || appState.feedbackList.length === 0) {
-            listContainer.innerHTML = '<p class="text-center text-gray-500 mt-4">Chưa có góp ý nào.</p>';
-            return;
-        }
-
-         listContainer.innerHTML = appState.feedbackList.map(item => {
-            const userNameDisplay = item.user?.email || 'Người dùng ẩn danh';
-            return `
-                <div class="feedback-item bg-white rounded-xl shadow-md p-5 border border-gray-200" data-id="${item.id}">
-                    <p class="text-gray-800">${item.content}</p>
-                     <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">
-                         <span class="font-semibold">${userNameDisplay}</span>
-                         <span>${formatters.formatTimeAgo(item.timestamp)}</span> 
-                         ${appState.isAdmin ? `<button class="reply-btn text-blue-600 hover:underline">Trả lời</button>` : ''}
-                    </div>
-                    <div class="ml-6 mt-4 space-y-3">
-                         ${(item.replies || []).map(reply => `
-                             <div class="bg-gray-100 rounded-lg p-3">
-                                <p class="text-gray-700 text-sm">${reply.content}</p>
-                                 <div class="text-xs text-gray-500 mt-2">
-                                     <strong>Admin</strong> - ${formatters.formatTimeAgo(reply.timestamp instanceof Date ? reply.timestamp : reply.timestamp?.toDate())} 
-                                 </div>
-                            </div>`).join('')}
-                    </div>
-                    <div class="reply-form-container hidden ml-6 mt-4">
-                         <textarea class="w-full p-2 border rounded-lg text-sm" rows="2" placeholder="Viết câu trả lời..."></textarea>
-                         <div class="flex justify-end gap-2 mt-2">
-                            <button class="cancel-reply-btn text-sm text-gray-600 px-3 py-1 rounded-md hover:bg-gray-100">Hủy</button>
-                             <button class="submit-reply-btn text-sm bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700">Gửi</button>
-                        </div>
-                    </div>
-                </div>`;
-        }).join('');
+                    // Sử dụng ui.showNotification
+                    ui.showNotification('Lỗi khi sao chép.', 'error');
+                });
     },
 
-     applyInterfaceSettings(settings) {
-         const root = document.documentElement;
-         if (settings.kpiCard1Bg) root.style.setProperty('--kpi-card-1-bg', settings.kpiCard1Bg);
-         if (settings.kpiCard2Bg) root.style.setProperty('--kpi-card-2-bg', settings.kpiCard2Bg);
-         if (settings.kpiCard3Bg) root.style.setProperty('--kpi-card-3-bg', settings.kpiCard3Bg);
-         if (settings.kpiCard4Bg) root.style.setProperty('--kpi-card-4-bg', settings.kpiCard4Bg);
-         if (settings.kpiCard5Bg) root.style.setProperty('--kpi-card-5-bg', settings.kpiCard5Bg);
-         if (settings.kpiCard6Bg) root.style.setProperty('--kpi-card-6-bg', settings.kpiCard6Bg);
-         if (settings.kpiCard7Bg) root.style.setProperty('--kpi-card-7-bg', settings.kpiCard7Bg);
-         if (settings.kpiCard8Bg) root.style.setProperty('--kpi-card-8-bg', settings.kpiCard8Bg);
-         if (settings.kpiTitleColor) root.style.setProperty('--kpi-title-color', settings.kpiTitleColor);
-         if (settings.kpiMainColor) root.style.setProperty('--kpi-main-color', settings.kpiMainColor);
-         if (settings.kpiSubColor) root.style.setProperty('--kpi-sub-color', settings.kpiSubColor);
-     },
+    // === START: KHỐI HÀM ĐÃ BỊ XÓA (v3.31) ===
+    // 1 hàm (renderAdminHelpEditors)
+    // ĐÃ BỊ XÓA khỏi đây vì đã chuyển sang 'ui-admin.js'.
+    // === END: KHỐI HÀM ĐÃ BỊ XÓA ===
 
-    // <<< === START: KHỐI CODE BỊ XÓA (v3.29) === >>>
-    // 4 HÀM (displayDebugInfo, displayPastedDebugInfo, displayThiDuaVungDebugInfo, renderCompetitionDebugReport)
-    // ĐÃ BỊ XÓA KHỎI ĐÂY.
-    // <<< === END: KHỐI CODE BỊ XÓA === >>>
+    // === START: KHỐI HÀM ĐÃ BỊ XÓA (v3.32) ===
+    // 3 hàm (renderHomePage, renderUpdateHistory, renderFeedbackSection)
+    // ĐÃ BỊ XÓA khỏi đây vì đã chuyển sang 'ui-home.js'.
+    // === END: KHỐI HÀM ĐÃ BỊ XÓA ===
 
-    ...debugTools, // <<< THÊM MỚI (v3.29)
+    applyInterfaceSettings(settings) {
+            const root = document.documentElement;
+            if (settings.kpiCard1Bg) root.style.setProperty('--kpi-card-1-bg', settings.kpiCard1Bg);
+            if (settings.kpiCard2Bg) root.style.setProperty('--kpi-card-2-bg', settings.kpiCard2Bg);
+            if (settings.kpiCard3Bg) root.style.setProperty('--kpi-card-3-bg', settings.kpiCard3Bg);
+            if (settings.kpiCard4Bg) root.style.setProperty('--kpi-card-4-bg', settings.kpiCard4Bg);
+            if (settings.kpiCard5Bg) root.style.setProperty('--kpi-card-5-bg', settings.kpiCard5Bg);
+            if (settings.kpiCard6Bg) root.style.setProperty('--kpi-card-6-bg', settings.kpiCard6Bg);
+            if (settings.kpiCard7Bg) root.style.setProperty('--kpi-card-7-bg', settings.kpiCard7Bg);
+            if (settings.kpiCard8Bg) root.style.setProperty('--kpi-card-8-bg', settings.kpiCard8Bg);
+            if (settings.kpiTitleColor) root.style.setProperty('--kpi-title-color', settings.kpiTitleColor);
+            if (settings.kpiMainColor) root.style.setProperty('--kpi-main-color', settings.kpiMainColor);
+            if (settings.kpiSubColor) root.style.setProperty('--kpi-sub-color', settings.kpiSubColor);
+        },
 
-    // *** MODIFIED FUNCTION (v3.21) - SỬA LỖI CÚ PHÁP ***
-    renderUserStatsTable(users) {
-        const container = document.getElementById('user-stats-container');
-        if (!container) return;
+    ...debugTools, // (v3.29)
 
-        if (!users || users.length === 0) {
-            container.innerHTML = '<p class="text-gray-500">Không có dữ liệu người dùng.</p>';
-            return;
-        }
-
-        const sortState = appState.sortState.user_stats || { key: 'lastLogin', direction: 'desc' };
-        const { key, direction } = sortState;
-
-        const sortedUsers = [...users].sort((a, b) => {
-            let valA = a[key];
-             let valB = b[key];
-
-            if (key === 'lastLogin') {
-                valA = valA instanceof Date ? valA.getTime() : 0;
-                valB = valB instanceof Date ? valB.getTime() : 0;
-            }
-            else if (key === 'loginCount' || key === 'actionsTaken') {
-                 valA = Number(valA) || 0;
-                 valB = Number(valB) || 0;
-            }
-
-            if (valA < valB) return direction === 'asc' ? -1 : 1;
-            if (valA > valB) return direction === 'asc' ? 1 : -1;
-            return 0;
-        });
-
-        const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
-
-        let tableHTML = `
-            <div class="overflow-x-auto max-h-[600px]">
-                <table class="min-w-full text-sm table-bordered table-striped" data-table-type="user_stats">
-                     <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold sticky top-0">
-                        <tr>
-                            <th class="${headerClass('email')}" data-sort="email">Email <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('loginCount')} text-right" data-sort="loginCount">Lượt truy cập <span class="sort-indicator"></span></th>
-                            <th class="${headerClass('actionsTaken')} text-right" data-sort="actionsTaken">Lượt sử dụng <span class="sort-indicator"></span></th>
-                             <th class="${headerClass('lastLogin')} text-right" data-sort="lastLogin">Lần cuối truy cập <span class="sort-indicator"></span></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-        `;
-
-        sortedUsers.forEach(user => {
-            const lastLoginDate = user.lastLogin instanceof Date ? user.lastLogin : null;
-            const formattedLastLogin = lastLoginDate
-                ? `${lastLoginDate.toLocaleDateString('vi-VN')} ${lastLoginDate.toLocaleTimeString('vi-VN')}`
-                 : 'Chưa rõ';
-
-            // *** SỬA LỖI CÚ PHÁP: Đã sửa cách nhúng biến vào template string ***
-            tableHTML += `
-                <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2 font-medium text-gray-900">${user.email}</td>
-                    <td class="px-4 py-2 text-right font-bold">${formatters.formatNumber(user.loginCount || 0)}</td>
-                    <td class="px-4 py-2 text-right font-bold">${formatters.formatNumber(user.actionsTaken || 0)}</td>
-                     <td class="px-4 py-2 text-right">${formattedLastLogin}</td>
-                </tr>
-            `;
-            // *** KẾT THÚC SỬA LỖI ***
-        });
-
-        tableHTML += `</tbody></table></div>`;
-        container.innerHTML = tableHTML;
-    },
-    // *** END MODIFIED FUNCTION ***
-
-    // *** START: NEW FUNCTION (v3.23) ***
-    /**
-     * Render bảng ánh xạ tên thi đua trong Tab Khai báo.
-     */
-    renderCompetitionNameMappingTable() {
-        const container = document.getElementById('competition-name-mapping-container');
-        if (!container) return;
-
-        const mappings = appState.competitionNameMappings || {};
-        const mappingEntries = Object.entries(mappings);
-
-        if (mappingEntries.length === 0) {
-             container.innerHTML = '<p class="text-gray-500 italic">Vui lòng dán dữ liệu "Thi đua nhân viên" ở tab "Cập nhật dữ liệu" để hệ thống tự động trích xuất tên...</p>';
-            return;
-        }
-
-        let tableHTML = `
-            <table class="min-w-full text-sm table-bordered bg-white">
-                <thead class="text-xs text-slate-800 uppercase bg-slate-100 font-bold">
-                    <tr>
-                        <th class="px-4 py-2 text-left w-1/2">Tên Gốc (Từ dữ liệu dán)</th>
-                         <th class="px-4 py-2 text-left w-1/2">Tên Rút Gọn (Nhập để thay thế)</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-
-        mappingEntries.forEach(([originalName, shortName]) => {
-            tableHTML += `
-                <tr class="border-t hover:bg-gray-50">
-                    <td class="px-4 py-2 text-gray-600 align-top text-xs">
-                         ${originalName}
-                    </td>
-                    <td class="px-4 py-2 align-top">
-                        <input 
-                            type="text" 
-                            class="competition-name-input w-full p-1 border rounded-md text-sm" 
-                             value="${shortName || ''}" 
-                            data-original-name="${originalName}"
-                            placeholder="Nhập tên rút gọn..."
-                        >
-                    </td>
-                </tr>
-            `;
-        });
-
-        tableHTML += `</tbody></table>`;
-        container.innerHTML = tableHTML;
-    }
-    // *** END: NEW FUNCTION (v3.23) ***
+    // === START: KHỐI HÀM ĐÃ BỊ XÓA (v3.31) ===
+    // 2 hàm (renderUserStatsTable, renderCompetitionNameMappingTable)
+    // ĐÃ BỊ XÓA khỏi đây vì đã chuyển sang 'ui-admin.js'.
+    // === END: KHỐI HÀM ĐÃ BỊ XÓA ===
 };
 --- END FILE: ./ui-components.js ---
 
@@ -12003,7 +11794,219 @@ export const debugTools = {
 --- END FILE: ./ui-debug.js ---
 
 --- START FILE: ./ui-filters.js ---
+// Version 1.0 - Initial extraction from ui-components
+// MODULE: UI FILTERS
+// Chứa các hàm liên quan đến việc điền dữ liệu (populate) vào các bộ lọc Choices.js và select.
 
+import { appState } from './state.js';
+import { settingsService } from './modules/settings.service.js';
+import { utils } from './utils.js';
+
+export const uiFilters = {
+    /**
+     * Điền dữ liệu vào tất cả các bộ lọc (Kho, Bộ phận, Nhân viên) trên các tab.
+     * Được gọi sau khi DSNV được tải.
+     */
+    populateAllFilters() {
+        console.log("[ui-filters.js populateAllFilters] Đang điền dữ liệu vào tất cả bộ lọc...");
+        if (!appState.danhSachNhanVien || appState.danhSachNhanVien.length === 0) {
+            console.warn("[ui-filters.js populateAllFilters] DSNV trống, không thể điền bộ lọc.");
+            return;
+        }
+
+        try {
+            const uniqueWarehouses = [...new Set(appState.danhSachNhanVien.map(nv => nv.maKho).filter(Boolean))].sort();
+            const uniqueDepartments = [...new Set(appState.danhSachNhanVien.map(nv => nv.boPhan).filter(Boolean))].sort();
+            const allEmployees = [...appState.danhSachNhanVien].sort((a, b) => a.hoTen.localeCompare(b.hoTen));
+
+            const warehouseOptions = [{ value: '', label: 'Tất cả Kho', selected: true }]
+                .concat(uniqueWarehouses.map(item => ({ value: item, label: item })));
+            
+            const departmentOptions = [{ value: '', label: 'Tất cả Bộ phận', selected: true }]
+                .concat(uniqueDepartments.map(item => ({ value: item, label: item })));
+
+            const employeeOptions = allEmployees.map(item => ({
+                value: String(item.maNV),
+                label: `${item.hoTen} - ${item.maNV} (${item.boPhan})`
+            }));
+
+            ['luyke', 'sknv', 'realtime'].forEach(prefix => {
+                const whChoices = appState.choices[`${prefix}_warehouse`];
+                if (whChoices) {
+                    const currentVal = whChoices.getValue(true);
+                    whChoices.clearStore();
+                    whChoices.setChoices(warehouseOptions, 'value', 'label', true);
+                    if (currentVal) whChoices.setValue([currentVal]);
+                }
+                
+                const deptChoices = appState.choices[`${prefix}_department`];
+                if (deptChoices) {
+                    const currentVal = deptChoices.getValue(true);
+                    deptChoices.clearStore();
+                    deptChoices.setChoices(departmentOptions, 'value', 'label', true);
+                    if (currentVal) deptChoices.setValue([currentVal]);
+                }
+
+                const empChoices = appState.choices[`${prefix}_employee`];
+                if (empChoices) {
+                    const currentVal = empChoices.getValue(true);
+                    empChoices.clearStore();
+                    empChoices.setChoices(employeeOptions, 'value', 'label', true);
+                    if (currentVal) empChoices.setValue(currentVal);
+                }
+            });
+
+            // === START: SỬA LỖI (v3.27) - Điền dữ liệu cho Goal Settings Drawer ===
+            try {
+                const goalWarehouseOptions = uniqueWarehouses.map(item => ({ value: item, label: item }));
+                
+                const luykeGoalSelect = document.getElementById('luyke-goal-warehouse-select');
+                if (luykeGoalSelect) {
+                    luykeGoalSelect.innerHTML = goalWarehouseOptions.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join('');
+                }
+
+                const rtGoalSelect = document.getElementById('rt-goal-warehouse-select');
+                if (rtGoalSelect) {
+                    rtGoalSelect.innerHTML = goalWarehouseOptions.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join('');
+                }
+                
+                // Sau khi điền, gọi hàm load setting để chọn đúng kho (nếu có)
+                settingsService.loadAndApplyLuykeGoalSettings();
+                settingsService.loadAndApplyRealtimeGoalSettings();
+
+            } catch (goalError) {
+                console.error("[ui-filters.js populateAllFilters] Lỗi khi điền bộ lọc cho Goal Drawer:", goalError);
+            }
+            // === END: SỬA LỖI (v3.27) ===
+
+            console.log("[ui-filters.js populateAllFilters] Đã điền xong bộ lọc.");
+        } catch (error) {
+            console.error("[ui-filters.js populateAllFilters] Lỗi nghiêm trọng khi điền bộ lọc:", error);
+        }
+    },
+
+    /**
+     * Cập nhật danh sách 'Hãng' dựa trên 'Ngành hàng' đã chọn trong tab Realtime.
+     * @param {string} selectedCategory - Ngành hàng đã chọn.
+     */
+    updateBrandFilterOptions(selectedCategory) {
+        const brandFilterEl = document.getElementById('realtime-brand-filter');
+        const brandChoices = appState.choices['realtime_brand_filter']; 
+        
+        if (!brandFilterEl || !brandChoices) {
+            console.warn("[updateBrandFilterOptions] Lỗi: Brand filter hoặc Choices instance chưa sẵn sàng.");
+            return;
+        }
+
+        let availableBrands = [];
+        if (selectedCategory) {
+            // Lọc các hãng dựa trên ngành hàng đã chọn trong dữ liệu realtime
+            availableBrands = [...new Set(appState.realtimeYCXData
+                .filter(row => utils.cleanCategoryName(row.nganhHang) === selectedCategory)
+                .map(row => row.nhaSanXuat || 'Hãng khác')
+                .filter(Boolean))
+            ].sort();
+        } else {
+            // Nếu không chọn ngành hàng, hiển thị tất cả hãng có trong dữ liệu realtime
+            availableBrands = [...new Set(appState.realtimeYCXData
+                .map(row => row.nhaSanXuat || 'Hãng khác')
+                .filter(Boolean))
+            ].sort();
+        }
+
+        // Tạo danh sách options
+        let brandOptions = [{ value: '', label: 'Tất cả các hãng', selected: true }];
+        brandOptions = brandOptions.concat(availableBrands.map(brand => ({ value: brand, label: brand })));
+        
+        // Lấy giá trị hiện tại để cố gắng bảo toàn lựa chọn
+        const currentValue = brandChoices.getValue(true);
+        
+        // Cập nhật Choices.js
+        brandChoices.clearStore();
+        brandChoices.setChoices(brandOptions, 'value', 'label', true);
+        
+        // Cố gắng đặt lại giá trị cũ nếu nó vẫn tồn tại trong danh sách mới
+        if (currentValue && availableBrands.includes(currentValue)) {
+            brandChoices.setValue([currentValue]);
+        } else {
+             brandChoices.setValue(['']); // Reset về "Tất cả"
+        }
+    },
+
+    populateCompetitionFilters() {
+        // ... (Giữ nguyên)
+        const groupSelectInstance = appState.choices['competition_group'];
+        if (!groupSelectInstance) return;
+        const uniqueGroups = [...new Set(appState.categoryStructure.map(item => utils.cleanCategoryName(item.nhomHang)).filter(Boolean))].sort();
+        const groupOptions = uniqueGroups.map(group => ({ value: group, label: group }));
+        groupSelectInstance.clearStore();
+        groupSelectInstance.setChoices(groupOptions, 'value', 'label', true);
+    },
+
+    populateCompetitionBrandFilter() {
+        // ... (Giữ nguyên)
+        const brandSelectInstance = appState.choices['competition_brand'];
+        if (!brandSelectInstance) return;
+        const brands = appState.brandList || [];
+        const brandOptions = brands.map(brand => ({ value: brand, label: brand }));
+        brandSelectInstance.clearStore();
+        brandSelectInstance.setChoices(brandOptions, 'value', 'label', true);
+    },
+
+    populateWarehouseSelector() {
+        // ... (Giữ nguyên)
+        const selector = document.getElementById('data-warehouse-selector');
+        if (!selector) {
+            console.error("Không tìm thấy #data-warehouse-selector");
+            return;
+        }
+
+        if (!appState.danhSachNhanVien || appState.danhSachNhanVien.length === 0) {
+            selector.innerHTML = '<option value="">-- Vui lòng tải Danh sách Nhân viên --</option>';
+            selector.disabled = true;
+            console.log("populateWarehouseSelector: DSNV trống.");
+            return;
+        }
+
+        const uniqueWarehouses = [...new Set(appState.danhSachNhanVien.map(nv => String(nv.maKho).trim()).filter(Boolean))].sort();
+        console.log("populateWarehouseSelector: Các kho tìm thấy (dạng chuỗi):", uniqueWarehouses);
+
+        let optionsHTML = '<option value="">-- Chọn Kho --</option>';
+        optionsHTML += uniqueWarehouses.map(kho => `<option value="${kho}">${kho}</option>`).join('');
+        selector.innerHTML = optionsHTML;
+        selector.disabled = false;
+
+        let currentSelected = appState.selectedWarehouse ? String(appState.selectedWarehouse).trim() : null;
+        if (!currentSelected) {
+             const storedValue = localStorage.getItem('selectedWarehouse');
+             currentSelected = storedValue ? String(storedValue).trim() : '';
+        }
+        console.log("populateWarehouseSelector: Kho đang chọn (state/local, dạng chuỗi):", currentSelected);
+        if (currentSelected && uniqueWarehouses.includes(currentSelected)) {
+            selector.value = currentSelected;
+            if (appState.selectedWarehouse !== currentSelected) {
+                 appState.selectedWarehouse = currentSelected;
+                 console.log("populateWarehouseSelector: Đã cập nhật state.selectedWarehouse thành:", currentSelected);
+            }
+            console.log("populateWarehouseSelector: Đã chọn kho:", selector.value);
+        } else {
+             if (currentSelected && !uniqueWarehouses.includes(currentSelected)) {
+                 console.log(`populateWarehouseSelector: Kho đã lưu '${currentSelected}' không hợp lệ (không có trong ${uniqueWarehouses.join(',')}), đang reset.`);
+                 appState.selectedWarehouse = null;
+                 localStorage.removeItem('selectedWarehouse');
+                 selector.value = "";
+                 console.log("populateWarehouseSelector: Reset state về null và selector về '-- Chọn Kho --'.");
+             } else if (!currentSelected) {
+                 console.log("populateWarehouseSelector: Không có kho nào được lưu.");
+                 appState.selectedWarehouse = null;
+                 selector.value = "";
+                 console.log("populateWarehouseSelector: Reset state về null và selector về '-- Chọn Kho --'.");
+             } else {
+                 console.log(`populateWarehouseSelector: Kho '${currentSelected}' hợp lệ hoặc không có gì để reset.`);
+             }
+        }
+    },
+};
 --- END FILE: ./ui-filters.js ---
 
 --- START FILE: ./ui-formatters.js ---
@@ -12120,6 +12123,105 @@ export const formatters = {
     },
 };
 --- END FILE: ./ui-formatters.js ---
+
+--- START FILE: ./ui-home.js ---
+// Version 1.0 - Initial creation from ui-components.js
+// MODULE: UI HOME
+// Chứa các hàm render cho tab Trang chủ.
+
+import { appState } from './state.js';
+import { formatters } from './ui-formatters.js';
+
+/**
+ * Render lịch sử cập nhật lên trang chủ.
+ * (Đã di chuyển từ ui-components.js)
+ */
+const renderUpdateHistory = async () => {
+    const container = document.getElementById('update-history-list');
+    if (!container) return;
+    try {
+        const response = await fetch(`./changelog.json?v=${new Date().getTime()}`);
+        if (!response.ok) throw new Error('Không thể tải lịch sử cập nhật.');
+        const updateHistory = await response.json();
+        container.innerHTML = updateHistory.map(item => `
+            <div class="bg-white rounded-xl shadow-md p-5 border border-gray-200">
+                    <h4 class="font-bold text-blue-600 mb-2">Phiên bản ${item.version} (${item.date})</h4>
+                    <ul class="list-disc list-inside text-gray-700 space-y-1 text-sm">
+                        ${item.notes.map(note => `<li>${note}</li>`).join('')}
+                </ul>
+                </div>`).join('');
+    } catch (error) {
+        console.error("Lỗi khi render lịch sử cập nhật:", error);
+        container.innerHTML = '<p class="text-red-500">Không thể tải lịch sử cập nhật.</p>';
+    }
+};
+
+/**
+ * Render khu vực Feedback (Soạn thảo và Danh sách) lên trang chủ.
+ * (Đã di chuyển từ ui-components.js)
+ */
+const renderFeedbackSection = () => {
+    const composerContainer = document.getElementById('feedback-composer');
+    const listContainer = document.getElementById('feedback-list');
+    if (!composerContainer || !listContainer) return;
+
+    composerContainer.innerHTML = `
+            <h4 class="text-lg font-semibold text-gray-800 mb-3">Gửi góp ý của bạn</h4>
+        <textarea id="feedback-textarea" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-3" rows="4" placeholder="Chúng tôi luôn lắng nghe ý kiến của bạn để cải thiện công cụ tốt hơn..."></textarea>
+            <button id="submit-feedback-btn" class="w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-indigo-700 transition">Gửi góp ý</button>
+    `;
+
+    if (!appState.feedbackList || appState.feedbackList.length === 0) {
+        listContainer.innerHTML = '<p class="text-center text-gray-500 mt-4">Chưa có góp ý nào.</p>';
+        return;
+    }
+
+    listContainer.innerHTML = appState.feedbackList.map(item => {
+        const userNameDisplay = item.user?.email || 'Người dùng ẩn danh';
+        return `
+            <div class="feedback-item bg-white rounded-xl shadow-md p-5 border border-gray-200" data-id="${item.id}">
+                <p class="text-gray-800">${item.content}</p>
+                    <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">
+                        <span class="font-semibold">${userNameDisplay}</span>
+                        <span>${formatters.formatTimeAgo(item.timestamp)}</span> 
+                        ${appState.isAdmin ? `<button class="reply-btn text-blue-600 hover:underline">Trả lời</button>` : ''}
+                </div>
+                <div class="ml-6 mt-4 space-y-3">
+                        ${(item.replies || []).map(reply => `
+                            <div class="bg-gray-100 rounded-lg p-3">
+                            <p class="text-gray-700 text-sm">${reply.content}</p>
+                                <div class="text-xs text-gray-500 mt-2">
+                                    <strong>Admin</strong> - ${formatters.formatTimeAgo(reply.timestamp instanceof Date ? reply.timestamp : reply.timestamp?.toDate())} 
+                                </div>
+                        </div>`).join('')}
+                </div>
+                <div class="reply-form-container hidden ml-6 mt-4">
+                        <textarea class="w-full p-2 border rounded-lg text-sm" rows="2" placeholder="Viết câu trả lời..."></textarea>
+                        <div class="flex justify-end gap-2 mt-2">
+                        <button class="cancel-reply-btn text-sm text-gray-600 px-3 py-1 rounded-md hover:bg-gray-100">Hủy</button>
+                            <button class="submit-reply-btn text-sm bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700">Gửi</button>
+                    </div>
+                </div>
+            </div>`;
+    }).join('');
+};
+
+/**
+ * Hàm render chính cho Trang chủ.
+ * (Đã di chuyển từ ui-components.js)
+ */
+const renderHomePage = () => {
+    renderUpdateHistory();
+    renderFeedbackSection();
+};
+
+// Xuất khẩu đối tượng gộp
+export const uiHome = {
+    renderHomePage,
+    renderUpdateHistory,
+    renderFeedbackSection
+};
+--- END FILE: ./ui-home.js ---
 
 --- START FILE: ./ui-luyke.js ---
 // Version 2.11 - Critical Fix: Restore all missing functions and add renderLuykeEmployeeDetail
@@ -12956,11 +13058,8 @@ export const notifications = {
 };
 --- END FILE: ./ui-notifications.js ---
 
---- START FILE: ./ui-pages.js ---
-
---- END FILE: ./ui-pages.js ---
-
 --- START FILE: ./ui-realtime.js ---
+// Version 4.5 - Refactor: Use ui facade instead of direct uiComponents/uiCompetition import (fixes crash)
 // Version 4.4 - Refactor: Update report function calls from uiComponents to ui
 // Version 4.3 - Fix 'this' context bug for modal popups
 // MODULE: UI REALTIME
@@ -12972,19 +13071,19 @@ import { services } from './services.js';
 import { settingsService } from './modules/settings.service.js';
 import { highlightService } from './modules/highlight.service.js';
 import { dragDroplisteners } from './event-listeners/listeners-dragdrop.js';
-import { uiComponents } from './ui-components.js'; // Import uiComponents thay vì ui
+// <<< ĐÃ XÓA (v4.5) >>> import { uiComponents } from './ui-components.js';
 import { utils } from './utils.js'; // Import utils
-import { uiCompetition } from './ui-competition.js'; // <<< *** ĐÃ THÊM IMPORT ***
+// <<< ĐÃ XÓA (v4.5) >>> import { uiCompetition } from './ui-competition.js';
 
 export const uiRealtime = {
     render() {
         console.log("[CHẨN ĐOÁN] Bắt đầu render() trong 'ui-realtime.js' (đã gộp)."); //
 
         if (appState.danhSachNhanVien.length === 0) {
-            uiComponents.togglePlaceholder('realtime-section', true); // Sử dụng uiComponents
+            ui.togglePlaceholder('realtime-section', true); // <<< SỬA (v4.5)
             return; //
         }
-        uiComponents.togglePlaceholder('realtime-section', false); // Sử dụng uiComponents
+        ui.togglePlaceholder('realtime-section', false); // <<< SỬA (v4.5)
 
         const selectedWarehouse = document.getElementById('realtime-filter-warehouse')?.value || ''; // Thêm ? và || ''
         this.updateRealtimeSupermarketTitle(selectedWarehouse, new Date()); //
@@ -12993,23 +13092,23 @@ export const uiRealtime = {
         const activeSubTabId = activeSubTabBtn ? activeSubTabBtn.dataset.target : 'subtab-realtime-sieu-thi'; //
 
         if (appState.realtimeYCXData.length === 0) {
-             this.renderRealtimeKpiCards({}, { goals: {}, timing: {} }); //
-             const catDetailEl = document.getElementById('realtime-category-details-content');
-             if(catDetailEl) catDetailEl.innerHTML = '<p class="text-gray-500 font-bold">Vui lòng tải file realtime để xem chi tiết.</p>'; //
-             const efficiencyEl = document.getElementById('realtime-efficiency-content');
-             if(efficiencyEl) efficiencyEl.innerHTML = '<p class="text-gray-500 font-bold">Vui lòng tải file realtime để xem chi tiết.</p>'; //
-             const qdcEl = document.getElementById('realtime-qdc-content');
-             if(qdcEl) qdcEl.innerHTML = '<p class="text-gray-500 font-bold">Vui lòng tải file realtime để xem chi tiết.</p>'; //
-             const unexportedEl = document.getElementById('realtime-unexported-revenue-content');
-             if(unexportedEl) unexportedEl.innerHTML = '<p class="text-gray-500 font-bold">Vui lòng tải file realtime để xem chi tiết.</p>'; //
-             const revenueReportEl = document.getElementById('realtime-revenue-report-container');
-             if(revenueReportEl) revenueReportEl.innerHTML = ''; //
-             const employeeDetailEl = document.getElementById('realtime-employee-detail-container');
-             if(employeeDetailEl) employeeDetailEl.innerHTML = ''; //
-             const brandReportEl = document.getElementById('realtime-brand-report-container');
-             if(brandReportEl) brandReportEl.innerHTML = '<p class="text-gray-500">Vui lòng tải file realtime và chọn bộ lọc để xem dữ liệu.</p>'; //
-             const competitionRtEl = document.getElementById('competition-report-container-rt');
-             if(competitionRtEl) competitionRtEl.innerHTML = '<p class="text-gray-500">Vui lòng tải file realtime để xem chi tiết.</p>'; //
+                this.renderRealtimeKpiCards({}, { goals: {}, timing: {} }); //
+                const catDetailEl = document.getElementById('realtime-category-details-content');
+                if(catDetailEl) catDetailEl.innerHTML = '<p class="text-gray-500 font-bold">Vui lòng tải file realtime để xem chi tiết.</p>'; //
+                const efficiencyEl = document.getElementById('realtime-efficiency-content');
+                if(efficiencyEl) efficiencyEl.innerHTML = '<p class="text-gray-500 font-bold">Vui lòng tải file realtime để xem chi tiết.</p>'; //
+                const qdcEl = document.getElementById('realtime-qdc-content');
+                if(qdcEl) qdcEl.innerHTML = '<p class="text-gray-500 font-bold">Vui lòng tải file realtime để xem chi tiết.</p>'; //
+                const unexportedEl = document.getElementById('realtime-unexported-revenue-content');
+                if(unexportedEl) unexportedEl.innerHTML = '<p class="text-gray-500 font-bold">Vui lòng tải file realtime để xem chi tiết.</p>'; //
+                const revenueReportEl = document.getElementById('realtime-revenue-report-container');
+                if(revenueReportEl) revenueReportEl.innerHTML = ''; //
+                const employeeDetailEl = document.getElementById('realtime-employee-detail-container');
+                if(employeeDetailEl) employeeDetailEl.innerHTML = ''; //
+                const brandReportEl = document.getElementById('realtime-brand-report-container');
+                if(brandReportEl) brandReportEl.innerHTML = '<p class="text-gray-500">Vui lòng tải file realtime và chọn bộ lọc để xem dữ liệu.</p>'; //
+                const competitionRtEl = document.getElementById('competition-report-container-rt');
+                if(competitionRtEl) competitionRtEl.innerHTML = '<p class="text-gray-500">Vui lòng tải file realtime để xem chi tiết.</p>'; //
             return; //
         };
 
@@ -13064,8 +13163,8 @@ export const uiRealtime = {
             appState.realtimeYCXData, //
             appState.competitionConfigs //
         );
-        // *** FIX: Call uiCompetition directly ***
-        uiCompetition.renderCompetitionUI('competition-report-container-rt', competitionReportData); // Sử dụng uiCompetition
+        
+        ui.renderCompetitionUI('competition-report-container-rt', competitionReportData); // <<< SỬA (v4.5)
 
         highlightService.populateHighlightFilters('realtime', filteredRealtimeYCX, filteredReport); //
         highlightService.applyHighlights('realtime'); //
@@ -13075,7 +13174,7 @@ export const uiRealtime = {
             if (efficiencyReportContainer) {
                 dragDroplisteners.initializeForContainer('realtime-efficiency-report-container'); //
             }
-         }
+            }
     },
 
     // *** START: HÀM BỊ THIẾU ĐÃ ĐƯỢC THÊM ***
@@ -13119,7 +13218,7 @@ export const uiRealtime = {
         detailContainer.classList.remove('hidden'); //
 
         const employeeInfo = appState.employeeMaNVMap.get(String(employeeId)); //
-        const employeeName = employeeInfo ? uiComponents.getShortEmployeeName(employeeInfo.hoTen, employeeInfo.maNV) : `NV ${employeeId}`; // Sử dụng uiComponents
+        const employeeName = employeeInfo ? ui.getShortEmployeeName(employeeInfo.hoTen, employeeInfo.maNV) : `NV ${employeeId}`; // <<< SỬA (v4.5)
         const detailData = services.generateRealtimeEmployeeDetailReport(employeeId, appState.realtimeYCXData); //
 
         this.renderRealtimeEmployeeDetail(detailData, employeeName); //
@@ -13135,7 +13234,7 @@ export const uiRealtime = {
 
         const selectedCategory = categoryFilter.value; //
 
-        uiComponents.updateBrandFilterOptions(selectedCategory); // Gọi hàm updateBrandFilterOptions từ uiComponents
+        ui.updateBrandFilterOptions(selectedCategory); // <<< SỬA (v4.5) - ĐÂY LÀ HÀM GÂY LỖI
 
         const selectedBrand = brandFilter.value; //
         const reportData = services.generateRealtimeBrandReport(appState.realtimeYCXData, selectedCategory, selectedBrand); //
@@ -13169,7 +13268,7 @@ export const uiRealtime = {
         const searchInput = document.getElementById('selection-modal-search'); //
         if (searchInput) searchInput.value = ''; //
 
-        uiComponents.toggleModal('selection-modal', true); // Sử dụng uiComponents
+        ui.toggleModal('selection-modal', true); // <<< SỬA (v4.5)
     },
 
     _showQdcSettingsModal(supermarketReport) { //
@@ -13194,7 +13293,7 @@ export const uiRealtime = {
         const searchInput = document.getElementById('selection-modal-search'); //
         if (searchInput) searchInput.value = ''; //
 
-        uiComponents.toggleModal('selection-modal', true); // Sử dụng uiComponents
+        ui.toggleModal('selection-modal', true); // <<< SỬA (v4.5)
     },
 
     _showCategorySettingsModal(supermarketReport) { //
@@ -13219,7 +13318,7 @@ export const uiRealtime = {
         const searchInput = document.getElementById('selection-modal-search'); //
         if (searchInput) searchInput.value = ''; //
 
-        uiComponents.toggleModal('selection-modal', true); // Sử dụng uiComponents
+        ui.toggleModal('selection-modal', true); // <<< SỬA (v4.5)
     },
 
     // === SỬA LỖI: Chuyển từ arrow function sang shorthand method ===
@@ -13231,28 +13330,28 @@ export const uiRealtime = {
         const targetDTQD = parseFloat(rtGoals?.doanhThuQD) || 0; //
 
         const dtThucMainEl = document.getElementById('rt-kpi-dt-thuc-main');
-        if(dtThucMainEl) dtThucMainEl.textContent = uiComponents.formatNumber((doanhThu || 0) / 1000000, 1); //
+        if(dtThucMainEl) dtThucMainEl.textContent = ui.formatNumber((doanhThu || 0) / 1000000, 1); // <<< SỬA (v4.5)
         const dtThucSub1El = document.getElementById('rt-kpi-dt-thuc-sub1');
-        if(dtThucSub1El) dtThucSub1El.innerHTML = `% HT: <span class="font-bold">${uiComponents.formatPercentage(targetDTT > 0 ? ((doanhThu || 0) / 1000000) / targetDTT : 0)}</span> / Target ngày: <span class="font-bold">${uiComponents.formatNumber(targetDTT || 0)}</span>`; //
+        if(dtThucSub1El) dtThucSub1El.innerHTML = `% HT: <span class="font-bold">${ui.formatPercentage(targetDTT > 0 ? ((doanhThu || 0) / 1000000) / targetDTT : 0)}</span> / Target ngày: <span class="font-bold">${ui.formatNumber(targetDTT || 0)}</span>`; // <<< SỬA (v4.5)
         const dtThucSub2El = document.getElementById('rt-kpi-dt-thuc-sub2');
-        if(dtThucSub2El) dtThucSub2El.innerHTML = `DT Chưa xuất: <span class="font-bold">${uiComponents.formatNumber((doanhThuChuaXuat || 0) / 1000000, 1)}</span>`; //
+        if(dtThucSub2El) dtThucSub2El.innerHTML = `DT Chưa xuất: <span class="font-bold">${ui.formatNumber((doanhThuChuaXuat || 0) / 1000000, 1)}</span>`; // <<< SỬA (v4.5)
 
         const dtQdMainEl = document.getElementById('rt-kpi-dt-qd-main');
-        if(dtQdMainEl) dtQdMainEl.textContent = uiComponents.formatNumber((doanhThuQuyDoi || 0) / 1000000, 1); //
+        if(dtQdMainEl) dtQdMainEl.textContent = ui.formatNumber((doanhThuQuyDoi || 0) / 1000000, 1); // <<< SỬA (v4.5)
         const dtQdSub1El = document.getElementById('rt-kpi-dt-qd-sub1');
-        if(dtQdSub1El) dtQdSub1El.innerHTML = `% HT: <span class="font-bold">${uiComponents.formatPercentage(targetDTQD > 0 ? ((doanhThuQuyDoi || 0) / 1000000) / targetDTQD : 0)}</span> / Target ngày: <span class="font-bold">${uiComponents.formatNumber(targetDTQD || 0)}</span>`; //
+        if(dtQdSub1El) dtQdSub1El.innerHTML = `% HT: <span class="font-bold">${ui.formatPercentage(targetDTQD > 0 ? ((doanhThuQuyDoi || 0) / 1000000) / targetDTQD : 0)}</span> / Target ngày: <span class="font-bold">${ui.formatNumber(targetDTQD || 0)}</span>`; // <<< SỬA (v4.5)
         const dtQdSub2El = document.getElementById('rt-kpi-dt-qd-sub2');
-        if(dtQdSub2El) dtQdSub2El.innerHTML = `DTQĐ Chưa xuất: <span class="font-bold">${uiComponents.formatNumber((doanhThuQuyDoiChuaXuat || 0) / 1000000, 1)}</span>`; //
+        if(dtQdSub2El) dtQdSub2El.innerHTML = `DTQĐ Chưa xuất: <span class="font-bold">${ui.formatNumber((doanhThuQuyDoiChuaXuat || 0) / 1000000, 1)}</span>`; // <<< SỬA (v4.5)
 
         const tlQdMainEl = document.getElementById('rt-kpi-tl-qd-main');
-        if(tlQdMainEl) tlQdMainEl.textContent = uiComponents.formatPercentage(hieuQuaQuyDoi); //
+        if(tlQdMainEl) tlQdMainEl.textContent = ui.formatPercentage(hieuQuaQuyDoi); // <<< SỬA (v4.5)
         const tlQdSubEl = document.getElementById('rt-kpi-tl-qd-sub');
-        if(tlQdSubEl) tlQdSubEl.innerHTML = `Mục tiêu: <span class="font-bold">${uiComponents.formatNumber(rtGoals?.phanTramQD || 0)}%</span>`; //
+        if(tlQdSubEl) tlQdSubEl.innerHTML = `Mục tiêu: <span class="font-bold">${ui.formatNumber(rtGoals?.phanTramQD || 0)}%</span>`; // <<< SỬA (v4.5)
 
         const dtTcMainEl = document.getElementById('rt-kpi-dt-tc-main');
-        if(dtTcMainEl) dtTcMainEl.textContent = uiComponents.formatNumber((doanhThuTraGop || 0) / 1000000, 1); //
+        if(dtTcMainEl) dtTcMainEl.textContent = ui.formatNumber((doanhThuTraGop || 0) / 1000000, 1); // <<< SỬA (v4.5)
         const dtTcSubEl = document.getElementById('rt-kpi-dt-tc-sub');
-        if(dtTcSubEl) dtTcSubEl.innerHTML = `% thực trả chậm: <span class="font-bold">${uiComponents.formatPercentage(tyLeTraCham)}</span>`; //
+        if(dtTcSubEl) dtTcSubEl.innerHTML = `% thực trả chậm: <span class="font-bold">${ui.formatPercentage(tyLeTraCham)}</span>`; // <<< SỬA (v4.5)
     },
 
     // === SỬA LỖI: Chuyển từ arrow function sang shorthand method ===
@@ -13285,22 +13384,22 @@ export const uiRealtime = {
                 <th class="${headerClass('nganhHang')}" data-sort="nganhHang">Ngành hàng</th>
                 <th class="${headerClass('soLuong')} text-right" data-sort="soLuong">Số lượng</th>
                 <th class="${headerClass('doanhThuThuc')} text-right" data-sort="doanhThuThuc">Doanh thu thực</th>
-                 <th class="${headerClass('doanhThuQuyDoi')} text-right" data-sort="doanhThuQuyDoi">Doanh thu QĐ</th></tr>
+                    <th class="${headerClass('doanhThuQuyDoi')} text-right" data-sort="doanhThuQuyDoi">Doanh thu QĐ</th></tr>
             </thead>
             <tbody>${sortedData.map(item => `
-                 <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-gray-50">
                     <td class="px-4 py-2 font-semibold">${item.nganhHang}</td>
-                    <td class="px-4 py-2 text-right font-bold">${uiComponents.formatNumber(item.soLuong)}</td>
-                     <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.doanhThuThuc)}</td>
-                    <td class="px-4 py-2 text-right font-bold text-blue-600">${uiComponents.formatRevenue(item.doanhThuQuyDoi)}</td>
-                 </tr>`).join('')}
+                    <td class="px-4 py-2 text-right font-bold">${ui.formatNumber(item.soLuong)}</td>
+                        <td class="px-4 py-2 text-right font-bold">${ui.formatRevenue(item.doanhThuThuc)}</td>
+                    <td class="px-4 py-2 text-right font-bold text-blue-600">${ui.formatRevenue(item.doanhThuQuyDoi)}</td>
+                    </tr>`).join('')}
             </tbody>
             <tfoot class="table-footer font-bold"><tr>
                 <td class="px-4 py-2">Tổng</td>
-                 <td class="px-4 py-2 text-right">${uiComponents.formatNumber(totals.soLuong)}</td>
-                <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuThuc)}</td>
-                <td class="px-4 py-2 text-right">${uiComponents.formatRevenue(totals.doanhThuQuyDoi)}</td>
-             </tr></tfoot></table></div>`; //
+                    <td class="px-4 py-2 text-right">${ui.formatNumber(totals.soLuong)}</td>
+                <td class="px-4 py-2 text-right">${ui.formatRevenue(totals.doanhThuThuc)}</td>
+                <td class="px-4 py-2 text-right">${ui.formatRevenue(totals.doanhThuQuyDoi)}</td>
+                </tr></tfoot></table></div>`; // <<< SỬA (v4.5)
     },
 
     // === SỬA LỖI: Chuyển từ arrow function sang shorthand method ===
@@ -13328,8 +13427,8 @@ export const uiRealtime = {
             .sort((a, b) => direction === 'asc' ? a[key] - b[key] : b[key] - a[key]); //
 
         if (!cardHeader.querySelector('.settings-trigger-btn')) {
-             cardHeader.classList.add('flex', 'items-center', 'justify-between'); //
-            cardHeader.innerHTML = `<span>NGÀNH HÀNG CHI TIẾT</span>` + uiComponents.renderSettingsButton('rt-cat'); //
+                cardHeader.classList.add('flex', 'items-center', 'justify-between'); //
+            cardHeader.innerHTML = `<span>NGÀNH HÀNG CHI TIẾT</span>` + ui.renderSettingsButton('rt-cat'); // <<< SỬA (v4.5)
             setTimeout(() => { //
                 const settingsBtn = document.getElementById('settings-btn-rt-cat');
                 if(settingsBtn) settingsBtn.addEventListener('click', () => { //
@@ -13346,22 +13445,22 @@ export const uiRealtime = {
                 <th class="${headerClass('quantity')} text-right header-highlight" data-sort="quantity">SL</th>
                 <th class="${headerClass('revenue')} text-right header-highlight" data-sort="revenue">Doanh thu thực</th>
                 <th class="${headerClass('revenueQuyDoi')} text-right" data-sort="revenueQuyDoi">Doanh thu QĐ</th>
-                 <th class="${headerClass('avgPrice')} text-right" data-sort="avgPrice">Đơn giá TB</th></tr>
+                    <th class="${headerClass('avgPrice')} text-right" data-sort="avgPrice">Đơn giá TB</th></tr>
             </thead>
             <tbody>${sortedData.map(item => `
                 <tr class="hover:bg-gray-50">
                     <td class="px-4 py-2 font-semibold">${item.name}</td>
-                    <td class="px-4 py-2 text-right font-bold">${uiComponents.formatNumber(item.quantity)}</td>
-                     <td class="px-4 py-2 text-right font-bold text-blue-600">${uiComponents.formatRevenue(item.revenue)}</td>
-                    <td class="px-4 py-2 text-right font-bold text-purple-600">${uiComponents.formatRevenue(item.revenueQuyDoi)}</td>
-                     <td class="px-4 py-2 text-right font-bold text-green-600">${uiComponents.formatRevenue(item.donGia)}</td>
+                    <td class="px-4 py-2 text-right font-bold">${ui.formatNumber(item.quantity)}</td>
+                        <td class="px-4 py-2 text-right font-bold text-blue-600">${ui.formatRevenue(item.revenue)}</td>
+                    <td class="px-4 py-2 text-right font-bold text-purple-600">${ui.formatRevenue(item.revenueQuyDoi)}</td>
+                        <td class="px-4 py-2 text-right font-bold text-green-600">${ui.formatRevenue(item.donGia)}</td>
                 </tr>`).join('')}
-            </tbody></table></div>`; //
+            </tbody></table></div>`; // <<< SỬA (v4.5)
     },
 
     // === SỬA LỖI: Chuyển từ arrow function sang shorthand method ===
     renderRealtimeEfficiencyTable(data, goals) {
-         const container = document.getElementById('realtime-efficiency-content'); //
+            const container = document.getElementById('realtime-efficiency-content'); //
         const cardHeader = document.getElementById('realtime-efficiency-title'); //
 
         if (!container || !cardHeader || !data || !goals) { //
@@ -13385,7 +13484,7 @@ export const uiRealtime = {
             .map(config => ({ //
                 ...config, //
                 value: data[config.id], //
-                 target: goals[goalKeyMap[config.id]] //
+                    target: goals[goalKeyMap[config.id]] //
             }));
 
         const createRow = (label, value, target) => { //
@@ -13393,14 +13492,14 @@ export const uiRealtime = {
 
             return `<tr class="border-t">
                 <td class="px-4 py-2 font-semibold text-gray-800">${label}</td>
-                <td class="px-4 py-2 text-right font-bold text-lg ${isBelow ? 'cell-performance is-below' : 'text-green-600'}">${uiComponents.formatPercentage(value || 0)}</td>
+                <td class="px-4 py-2 text-right font-bold text-lg ${isBelow ? 'cell-performance is-below' : 'text-green-600'}">${ui.formatPercentage(value || 0)}</td>
                 <td class="px-4 py-2 text-right text-gray-600">${target || 0}%</td>
-            </tr>`; //
+            </tr>`; // <<< SỬA (v4.5)
         };
 
         if (!cardHeader.querySelector('.settings-trigger-btn')) {
             cardHeader.classList.add('flex', 'items-center', 'justify-between'); //
-            cardHeader.innerHTML = `<span>HIỆU QUẢ KHAI THÁC</span>` + uiComponents.renderSettingsButton('rt-eff'); //
+            cardHeader.innerHTML = `<span>HIỆU QUẢ KHAI THÁC</span>` + ui.renderSettingsButton('rt-eff'); // <<< SỬA (v4.5)
 
             setTimeout(() => { //
                 const settingsBtn = document.getElementById('settings-btn-rt-eff');
@@ -13415,19 +13514,19 @@ export const uiRealtime = {
                 <table class="min-w-full text-sm table-bordered">
                     <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                         <tr>
-                             <th class="px-4 py-3 text-left">Chỉ số</th>
+                                <th class="px-4 py-3 text-left">Chỉ số</th>
                             <th class="px-4 py-3 text-right">Thực hiện</th>
-                             <th class="px-4 py-3 text-right">Mục tiêu</th>
+                                <th class="px-4 py-3 text-right">Mục tiêu</th>
                         </tr>
-                     </thead>
+                        </thead>
                     <tbody>
                         ${allItems
-                             .filter(item => item.visible) // Lọc theo cài đặt hiển thị
+                                .filter(item => item.visible) // Lọc theo cài đặt hiển thị
                             .map(item => createRow(item.label, item.value, item.target)) //
                             .join('')}
                     </tbody>
                 </table>
-             </div>`; //
+                </div>`; //
     },
 
     // === SỬA LỖI: Chuyển từ arrow function sang shorthand method ===
@@ -13447,8 +13546,8 @@ export const uiRealtime = {
             .sort((a,b) => direction === 'asc' ? a[key] - b[key] : b[key] - a[key]); //
 
         if (!cardHeader.querySelector('.settings-trigger-btn')) {
-             cardHeader.classList.add('flex', 'items-center', 'justify-between'); //
-            cardHeader.innerHTML = `<span>NHÓM HÀNG QUY ĐỔI CAO</span>` + uiComponents.renderSettingsButton('rt-qdc'); //
+                cardHeader.classList.add('flex', 'items-center', 'justify-between'); //
+            cardHeader.innerHTML = `<span>NHÓM HÀNG QUY ĐỔI CAO</span>` + ui.renderSettingsButton('rt-qdc'); // <<< SỬA (v4.5)
             setTimeout(() => { //
                 const settingsBtn = document.getElementById('settings-btn-rt-qdc');
                 if(settingsBtn) settingsBtn.addEventListener('click', () => { //
@@ -13465,16 +13564,16 @@ export const uiRealtime = {
                 <th class="${headerClass('sl')} text-right" data-sort="sl">Số lượng</th>
                 <th class="${headerClass('dtqd')} text-right" data-sort="dtqd">DTQĐ (Tr)</th>
                 <th class="${headerClass('donGia')} text-right" data-sort="donGia">Đơn giá (Tr)</th>
-                 </tr>
+                    </tr>
             </thead>
             <tbody>${sortedData.map(item => `
-                 <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-gray-50">
                     <td class="px-4 py-2 font-semibold">${item.name}</td>
-                    <td class="px-4 py-2 text-right font-bold">${uiComponents.formatNumber(item.sl)}</td>
-                    <td class="px-4 py-2 text-right font-bold text-blue-600">${uiComponents.formatRevenue(item.dtqd)}</td>
-                    <td class="px-4 py-2 text-right font-bold text-green-600">${uiComponents.formatRevenue(item.donGia)}</td>
+                    <td class="px-4 py-2 text-right font-bold">${ui.formatNumber(item.sl)}</td>
+                    <td class="px-4 py-2 text-right font-bold text-blue-600">${ui.formatRevenue(item.dtqd)}</td>
+                    <td class="px-4 py-2 text-right font-bold text-green-600">${ui.formatRevenue(item.donGia)}</td>
                 </tr>`).join('')}
-            </tbody></table></div>`; //
+            </tbody></table></div>`; // <<< SỬA (v4.5)
     },
 
     // === SỬA LỖI: Chuyển từ arrow function sang shorthand method ===
@@ -13486,7 +13585,7 @@ export const uiRealtime = {
         const isMainContainer = containerId === 'realtime-employee-detail-container' || containerId.includes('luyke'); //
 
         if (isMainContainer) {
-             headerHtml = `
+                headerHtml = `
                 <div class="mb-4 flex justify-between items-center">
                     <button class="back-to-summary-btn text-blue-600 hover:underline font-semibold">‹ Quay lại bảng tổng hợp</button>
                     <button id="capture-dtnv-rt-detail-btn" class="action-btn action-btn--capture" title="Chụp ảnh chi tiết">
@@ -13494,7 +13593,7 @@ export const uiRealtime = {
                         <span>Chụp ảnh</span>
                     </button>
                 </div>
-             `; //
+                `; //
         }
 
         if (!detailData) {
@@ -13510,24 +13609,24 @@ export const uiRealtime = {
         const renderProductGroupProgress = () => byProductGroup.map(group => { //
             const percentage = totalRevenue > 0 ? (group.realRevenue / totalRevenue) * 100 : 0; //
             return `<div class="rt-progress-bar-item">
-                <div class="rt-progress-bar-label"><span>${group.name}</span><span>${uiComponents.formatRevenue(group.realRevenue, 0)}</span></div>
+                <div class="rt-progress-bar-label"><span>${group.name}</span><span>${ui.formatRevenue(group.realRevenue, 0)}</span></div>
                 <div class="rt-progress-bar-container"><div class="rt-progress-bar" style="width: ${percentage}%;"></div></div>
-            </div>`; //
+            </div>`; // <<< SỬA (v4.5)
         }).join(''); //
 
         const renderCustomerAccordion = () => byCustomer.map((customer, index) => `
             <div class="rt-customer-group">
                 <details>
-                     <summary class="rt-customer-header">
+                        <summary class="rt-customer-header">
                         <span>${index + 1}. ${customer.name} (<span class="product-count">${customer.totalQuantity} sản phẩm</span>)</span><span class="arrow">▼</span>
-                     </summary>
+                        </summary>
                     <div class="rt-customer-details">
                         <table class="w-full">
-                            ${customer.products.map(p => `<tr><td>${p.productName}</td><td class="text-right font-semibold">${uiComponents.formatNumber(p.realRevenue)}</td></tr>`).join('')}
+                            ${customer.products.map(p => `<tr><td>${p.productName}</td><td class="text-right font-semibold">${ui.formatNumber(p.realRevenue)}</td></tr>`).join('')}
                         </table>
                     </div>
                 </details>
-            </div>`).join(''); //
+            </div>`).join(''); // <<< SỬA (v4.5)
 
         const conversionRateTarget = (goals?.phanTramQD || 0) / 100; //
         const conversionRateClass = summary.conversionRate >= conversionRateTarget ? 'is-positive' : 'is-negative'; //
@@ -13536,23 +13635,23 @@ export const uiRealtime = {
             <div id="dtnv-rt-capture-area">
                 <div class="rt-infographic-container" data-capture-group="dtnv-infographic">
                     <div class="rt-infographic-header text-center">
-                         <h3 class="employee-name">${employeeName}</h3>
+                            <h3 class="employee-name">${employeeName}</h3>
                         <p class="employee-title">Chi tiết doanh thu</p>
                     </div>
                     <div class="rt-infographic-summary">
-                        <div class="rt-infographic-summary-card"><div class="label">Tổng DT Thực</div><div class="value">${uiComponents.formatRevenue(summary.totalRealRevenue, 1)}</div></div>
-                         <div class="rt-infographic-summary-card"><div class="label">Tổng DTQĐ</div><div class="value">${uiComponents.formatRevenue(summary.totalConvertedRevenue, 1)}</div></div>
-                         <div class="rt-infographic-summary-card"><div class="label">Tỷ lệ QĐ</div><div class="value ${conversionRateClass}">${uiComponents.formatPercentage(summary.conversionRate)}</div></div>
-                        <div class="rt-infographic-summary-card"><div class="label">DT Chưa Xuất</div><div class="value">${uiComponents.formatRevenue(summary.unexportedRevenue, 1)}</div></div>
+                        <div class="rt-infographic-summary-card"><div class="label">Tổng DT Thực</div><div class="value">${ui.formatRevenue(summary.totalRealRevenue, 1)}</div></div>
+                            <div class="rt-infographic-summary-card"><div class="label">Tổng DTQĐ</div><div class="value">${ui.formatRevenue(summary.totalConvertedRevenue, 1)}</div></div>
+                            <div class="rt-infographic-summary-card"><div class="label">Tỷ lệ QĐ</div><div class="value ${conversionRateClass}">${ui.formatPercentage(summary.conversionRate)}</div></div>
+                        <div class="rt-infographic-summary-card"><div class="label">DT Chưa Xuất</div><div class="value">${ui.formatRevenue(summary.unexportedRevenue, 1)}</div></div>
                         <div class="rt-infographic-summary-card"><div class="label">Tổng Đơn Hàng</div><div class="value">${summary.totalOrders}</div></div>
-                         <div class="rt-infographic-summary-card"><div class="label">SL Đơn Bán Kèm</div><div class="value">${summary.bundledOrderCount}</div></div>
-                     </div>
+                            <div class="rt-infographic-summary-card"><div class="label">SL Đơn Bán Kèm</div><div class="value">${summary.bundledOrderCount}</div></div>
+                        </div>
                     <div class="rt-infographic-grid">
                         <div class="rt-infographic-section"><h4>Nhóm hàng</h4>${renderProductGroupProgress()}</div>
                         <div class="rt-infographic-section"><h4>Chi tiết theo khách hàng</h4><div class="rt-customer-accordion">${renderCustomerAccordion()}</div></div>
-                     </div>
-                 </div>
-            </div>`; //
+                        </div>
+                    </div>
+            </div>`; // <<< SỬA (v4.5)
 
         container.innerHTML = headerHtml + contentHtml; //
     },
@@ -13569,15 +13668,15 @@ export const uiRealtime = {
         }
 
         const renderTable = (title, items, headers, rowRenderer, sortStateKey) => { //
-             const sortState = appState.sortState[sortStateKey] || { key: 'revenue', direction: 'desc' }; //
+                const sortState = appState.sortState[sortStateKey] || { key: 'revenue', direction: 'desc' }; //
             const { key, direction } = sortState; //
             const sortedItems = [...items].sort((a,b) => direction === 'asc' ? (a[key] - b[key]) : (b[key] - a[key])); //
 
             const headerClass = (sortKey) => `px-4 py-2 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`; //
             return `<div class="overflow-x-auto"><h4 class="text-lg font-semibold text-gray-700 mb-2">${title}</h4>
                 <table class="min-w-full text-sm table-bordered table-striped" data-table-type="${sortStateKey}">
-                     <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
-                         <tr>${headers.map(h => `<th class="${headerClass(h.key)}" data-sort="${h.key}">${h.label}<span class="sort-indicator"></span></th>`).join('')}</tr>
+                        <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
+                            <tr>${headers.map(h => `<th class="${headerClass(h.key)}" data-sort="${h.key}">${h.label}<span class="sort-indicator"></span></th>`).join('')}</tr>
                     </thead>
                     <tbody>${sortedItems.map(rowRenderer).join('')}</tbody>
                 </table></div>`; //
@@ -13587,19 +13686,19 @@ export const uiRealtime = {
             [{label: 'Hãng', key: 'name'}, {label: 'Số lượng', key: 'quantity'}, {label: 'Doanh thu', key: 'revenue'}, {label: 'Đơn giá TB', key: 'avgPrice'}], //
             item => `<tr class="border-t">
                 <td class="px-4 py-2 font-medium">${item.name}</td>
-                <td class="px-4 py-2 text-right font-bold">${uiComponents.formatNumber(item.quantity)}</td>
-                <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.revenue)}</td>
-                <td class="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.avgPrice)}</td>
-             </tr>`, 'realtime_brand' //
-         );
+                <td class="px-4 py-2 text-right font-bold">${ui.formatNumber(item.quantity)}</td>
+                <td class="px-4 py-2 text-right font-bold">${ui.formatRevenue(item.revenue)}</td>
+                <td class="px-4 py-2 text-right font-bold">${ui.formatRevenue(item.avgPrice)}</td>
+                </tr>`, 'realtime_brand' // <<< SỬA (v4.5)
+            );
 
         const employeeTable = renderTable('Thống kê theo nhân viên', byEmployee, //
             [{label: 'Nhân viên', key: 'name'}, {label: 'Số lượng', key: 'quantity'}, {label: 'Doanh thu', key: 'revenue'}], //
             item => `<tr class="border-t">
                 <td class="px-4 py-2 font-medium">${item.name}</td>
-                <td class="px-4 py-2 text-right font-bold">${uiComponents.formatNumber(item.quantity)}</td>
-                <td classZ="px-4 py-2 text-right font-bold">${uiComponents.formatRevenue(item.revenue)}</td>
-             </tr>`, 'realtime_brand_employee' //
+                <td class="px-4 py-2 text-right font-bold">${ui.formatNumber(item.quantity)}</td>
+                <td classZ="px-4 py-2 text-right font-bold">${ui.formatRevenue(item.revenue)}</td>
+                </tr>`, 'realtime_brand_employee' // <<< SỬA (v4.5)
         );
 
         const brandTableHtml = `<div id="realtime-brand-table-container" class="${viewType !== 'brand' ? 'hidden' : ''}">${brandTable}</div>`; //
@@ -15025,9 +15124,8 @@ export const uiThiDuaVung = {
 --- END FILE: ./ui-thidua-vung.js ---
 
 --- START FILE: ./ui.js ---
-// Version 3.10 - Refactor: Import and merge uiReports module
-// Version 3.9 - Call renderCompetitionNameMappingTable in renderAdminPage
-// Version 3.8 - Final Merge: Add renderAdminPage
+// Version 3.12 - Refactor: Import and merge ui-home.js
+// Version 3.11 - Refactor: Move admin functions to ui-admin.js, import ui-filters.js
 // MODULE: UI FACADE (Mặt tiền Giao diện)
 
 import { uiComponents } from './ui-components.js';
@@ -15036,9 +15134,10 @@ import { uiSknv } from './ui-sknv.js';
 import { uiRealtime } from './ui-realtime.js';
 import { uiThiDuaVung } from './ui-thidua-vung.js';
 import { uiCompetition } from './ui-competition.js';
-import { uiReports } from './ui-reports.js'; // <<< TÁCH PHILE: ĐÃ THÊM
-import { appState } from './state.js'; // <<< GĐ 4: Đã thêm
-import { firebase } from './firebase.js'; // <<< GĐ 4: Đã thêm
+import { uiReports } from './ui-reports.js';
+import { uiFilters } from './ui-filters.js'; 
+import { uiAdmin } from './ui-admin.js';
+import { uiHome } from './ui-home.js'; // <<< THÊM MỚI (Từ Bước 1 dọn dẹp cuối)
 
 // Gộp tất cả các hàm từ các module con vào một đối tượng 'ui' duy nhất.
 const ui = {
@@ -15048,25 +15147,10 @@ const ui = {
     ...uiRealtime,
     ...uiThiDuaVung,
     ...uiCompetition,
-    ...uiReports, // <<< TÁCH PHILE: ĐÃ THÊM
-
-    // === START: GIAI ĐOẠN 4 (MODIFIED v3.9) ===
-    async renderAdminPage() {
-        if (!appState.isAdmin) return;
-        
-        // Render bảng thống kê người dùng
-        const users = await firebase.getAllUsers();
-        this.renderUserStatsTable(users); // Hàm này nằm trong ui-components
-        
-        // Render các trình chỉnh sửa hướng dẫn (hàm cũ)
-        this.renderAdminHelpEditors(); // Hàm này nằm trong ui-components
-
-        // *** NEW (v3.9) ***
-        // Render bảng ánh xạ tên thi đua
-        this.renderCompetitionNameMappingTable(); // Hàm này nằm trong ui-components
-        // *** END NEW ***
-    }
-    // === END: GIAI ĐOẠN 4 ===
+    ...uiReports,
+    ...uiFilters, 
+    ...uiAdmin,  
+    ...uiHome, // <<< THÊM MỚI
 };
 
 // Xuất khẩu đối tượng 'ui' đã được hợp nhất.
