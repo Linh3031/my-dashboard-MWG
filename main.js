@@ -1,7 +1,4 @@
-// Version 4.51 - Update _formatChangelogForModal to support nested lists
-// Version 4.49 - Refactor: Di dời 3 hàm (TemplateDownload, CompetitionDebug, FileRead) sang data.service.js
-// Version 4.48 - Refactor: Di dời 14+ hàm xử lý data sang data.service.js
-// ... (các phiên bản trước giữ nguyên)
+// Version 4.52 - Refactor: Re-wire calls from firebase object to new services
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -9,7 +6,7 @@ import { config } from './config.js';
 import { appState } from './state.js';
 import { services } from './services.js';
 import { ui } from './ui.js';
-import { firebase } from './firebase.js';
+import { firebase } from './firebase.js'; // Giữ lại cho Core, Listeners
 import { auth } from './auth.js';
 import { luykeTab } from './tab-luyke.js';
 import { sknvTab } from './tab-sknv.js';
@@ -27,13 +24,18 @@ import { modalChart } from './components/modal-chart.js';
 import { modalComposer } from './components/modal-composer.js';
 import { modalPreview } from './components/modal-preview.js';
 import { modalSelection } from './components/modal-selection.js';
-// === START: THÊM IMPORT (TASK 3 & 4) ===
 import { modalCustomerDetail } from './components/modal-customer-detail.js';
 import { modalUnexportedDetail } from './components/modal-unexported-detail.js';
-// === END: THÊM IMPORT ===
 import { settingsService } from './modules/settings.service.js';
 import { highlightService } from './modules/highlight.service.js';
-import { dataService } from './services/data.service.js'; // <<< THÊM MỚI (v4.48)
+import { dataService } from './services/data.service.js';
+
+// === START: TÁI CẤU TRÚC (RE-WIRING) IMPORTS ===
+import { analyticsService } from './services/analytics.service.js';
+import { adminService } from './services/admin.service.js';
+import { storageService } from './services/storage.service.js';
+import { collaborationService } from './services/collaboration.service.js';
+// === END: TÁI CẤU TRÚC (RE-WIRING) IMPORTS ===
 
 const LOCAL_DATA_VERSIONS_KEY = '_localDataVersions';
 const LOCAL_METADATA_PREFIX = '_localMetadata_';
@@ -121,7 +123,9 @@ const app = {
         console.log(`Email identification complete: ${appState.currentUser.email}. Continuing app initialization...`);
 
         // *** >>> SỬA LỖI ĐẾM LƯỢT TRUY CẬP: GỌI HÀM ĐẾM Ở ĐÂY <<< ***
-        firebase.upsertUserRecord(appState.currentUser.email);
+        // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+        analyticsService.upsertUserRecord(appState.currentUser.email);
+        // === END: TÁI CẤU TRÚC (RE-WIRING) ===
         // *** >>> KẾT THÚC SỬA LỖI <<< ***
 
         appState.competitionConfigs = [];
@@ -147,7 +151,9 @@ const app = {
         await this.storage.openDB();
         console.log("Loading category data from Firestore...");
         try {
-            const { categories, brands } = await firebase.loadCategoryDataFromFirestore();
+            // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+            const { categories, brands } = await adminService.loadCategoryDataFromFirestore();
+            // === END: TÁI CẤU TRÚC (RE-WIRING) ===
             appState.categoryStructure = categories;
             appState.brandList = brands;
             console.log(`Successfully populated ${appState.categoryStructure.length} categories and ${appState.brandList.length} brands from Firestore.`);
@@ -164,7 +170,9 @@ const app = {
 
         console.log("Loading calculation declarations from Firestore...");
         try {
-            const declarations = await firebase.loadDeclarationsFromFirestore();
+            // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+            const declarations = await adminService.loadDeclarationsFromFirestore();
+            // === END: TÁI CẤU TRÚC (RE-WIRING) ===
             appState.declarations = declarations;
             const decYcxEl = document.getElementById('declaration-ycx');
             if (decYcxEl) decYcxEl.value = declarations.hinhThucXuat || config.DEFAULT_DATA.HINH_THUC_XUAT_TINH_DOANH_THU.join('\n');
@@ -180,7 +188,9 @@ const app = {
         // *** NEW (v4.41): Load competition name mappings from Firestore ***
         console.log("Loading competition name mappings from Firestore...");
         try {
-            appState.competitionNameMappings = await firebase.loadCompetitionNameMappings();
+            // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+            appState.competitionNameMappings = await adminService.loadCompetitionNameMappings();
+            // === END: TÁI CẤU TRÚC (RE-WIRING) ===
             console.log("Successfully loaded competition name mappings from Firestore.");
         } catch (error) {
                 console.error("Error loading competition name mappings:", error);
@@ -200,6 +210,7 @@ const app = {
             console.log(`Re-attaching listener for saved warehouse: ${savedWarehouse}`);
             
             // <<< CẬP NHẬT (v4.48): Trỏ callback đến dataService >>>
+            // (HÀM NÀY VẪN GỌI firebase. VÌ NÓ LÀ HÀM LÕI)
             this.unsubscribeDataListener = firebase.listenForDataChanges(savedWarehouse, (cloudData) => {
                 dataService.handleCloudDataUpdate(cloudData);
             });
@@ -691,7 +702,9 @@ const app = {
     async loadAndApplyBookmarkLink() {
         // ... (Giữ nguyên)
             try {
-            const bookmarkUrl = await firebase.getBookmarkDownloadURL();
+                // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+                const bookmarkUrl = await storageService.getBookmarkDownloadURL();
+                // === END: TÁI CẤU TRÚC (RE-WIRING) ===
             const linkElement = document.getElementById('download-bookmark-link');
             if (linkElement) linkElement.href = bookmarkUrl;
         } catch (error) {
@@ -911,7 +924,9 @@ const app = {
             ycxGop: ycxGopEl ? ycxGopEl.value : '',
             heSo: heSoEl ? heSoEl.value : ''
         };
-        await firebase.saveDeclarationsToFirestore(declarationsToSave);
+        // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+        await adminService.saveDeclarationsToFirestore(declarationsToSave);
+        // === END: TÁI CẤU TRÚC (RE-WIRING) ===
         appState.declarations.hinhThucXuat = declarationsToSave.ycx;
         appState.declarations.hinhThucXuatGop = declarationsToSave.ycxGop;
         appState.declarations.heSoQuyDoi = declarationsToSave.heSo;
@@ -930,14 +945,18 @@ const app = {
                 sknv: sknvEl ? sknvEl.value : '',
                 realtime: realtimeEl ? realtimeEl.value : ''
         };
-        firebase.saveHelpContent(contents);
+        // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+        adminService.saveHelpContent(contents);
+        // === END: TÁI CẤU TRÚC (RE-WIRING) ===
     },
 
     async handleSubmitFeedback() {
         // ... (Giữ nguyên)
         const textarea = document.getElementById('feedback-textarea');
         if(textarea){
-            const success = await firebase.submitFeedback(textarea.value.trim());
+            // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+            const success = await collaborationService.submitFeedback(textarea.value.trim());
+            // === END: TÁI CẤU TRÚC (RE-WIRING) ===
             if (success) textarea.value = '';
         }
     },
@@ -952,7 +971,9 @@ const app = {
         if (e.target.classList.contains('submit-reply-btn')) {
                 const textarea = replyForm.querySelector('textarea');
                 if(textarea){
-                const success = await firebase.submitReply(docId, textarea.value.trim());
+                    // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+                    const success = await collaborationService.submitReply(docId, textarea.value.trim());
+                    // === END: TÁI CẤU TRÚC (RE-WIRING) ===
                 if (success) { textarea.value = ''; replyForm.classList.add('hidden'); }
                 }
         }
@@ -1085,7 +1106,9 @@ const app = {
     async loadAndDisplayQrCode() {
         // ... (Giữ nguyên)
             try {
-            const qrUrl = await firebase.getQrCodeDownloadURL();
+                // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+                const qrUrl = await storageService.getQrCodeDownloadURL();
+                // === END: TÁI CẤU TRÚC (RE-WIRING) ===
             const imgEl = document.getElementById('header-qr-image');
             if (imgEl) imgEl.src = qrUrl;
         }

@@ -1,5 +1,4 @@
-/* Version 1.5 - Soften customer detail modal fonts (Task 4)
-/* Version 1.0 - Components styles (Refactored from v6.19) */
+/* Version 1.7 - Add data-section themes & fix layout issues */
 /* Chứa các class tái sử dụng cho các "linh kiện" UI: buttons, cards, modals, inputs, etc. */
 
 .nav-link,
@@ -90,7 +89,20 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
 input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #3b82f6; border-radius: 50%; cursor: pointer; border: 2px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.2); }
 
 .content-card { background-color: white; border-radius: 0.75rem; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); padding: 1rem 1.5rem; margin-bottom: 2rem; border: 1px solid #e5e7eb; }
-.content-card__header { display: flex; align-items: center; justify-content: space-between; font-size: 1.125rem; font-weight: 600; color: #374151; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e5e7eb; }
+/* === START: V1.7 (SỬA LỖI CANH LỀ) === */
+.content-card__header { 
+    display: flex; 
+    align-items: center; 
+    justify-content: flex-start; /* Sửa từ space-between thành flex-start */
+    gap: 0.5rem; /* Thêm gap */
+    font-size: 1.125rem; 
+    font-weight: 600; 
+    color: #374151; 
+    margin-bottom: 1rem; 
+    padding-bottom: 0.5rem; 
+    border-bottom: 1px solid #e5e7eb; 
+}
+/* === END: V1.7 === */
 
 #notification { position: fixed; bottom: 20px; right: 20px; padding: 1rem 1.5rem; border-radius: 0.5rem; color: white; z-index: 1200; opacity: 0; transition: opacity 0.5s, transform 0.5s; transform: translateY(100px); }
 #notification.show { opacity: 1; transform: translateY(0); }
@@ -103,18 +115,56 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #
 .data-input-group {
     border: 1px solid #e5e7eb;
     border-radius: 0.5rem;
-    padding: 1rem;
+    padding: 0.75rem; /* === V1.7 (GIẢM PADDING) === */
     background-color: #f9fafb;
     display: flex;
     flex-direction: column;
     border-top: 4px solid #9ca3af;
 }
 
-#data-section > .content-card:nth-of-type(1) .data-input-group { border-top-color: #3b82f6; }
-#data-section > .content-card:nth-of-type(3) .data-input-group { border-top-color: #8b5cf6; }
-.data-input-group__label { font-weight: 600; color: #4b5563; margin-bottom: 0.75rem; }
-.data-input-group__label--link { text-decoration: none; display: inline-block; }
-.data-input-group__label--link:hover { text-decoration: underline; color: #2563eb; }
+/* === START: V1.7 (XÓA BỎ BỘ CHỌN CŨ) === */
+/* Đã xóa: #data-section > .content-card:nth-of-type(1) .data-input-group */
+/* Đã xóa: #data-section > .content-card:nth-of-type(3) .data-input-group */
+/* === END: V1.7 === */
+
+/* === START: V1.7 (THÊM MÀU MỚI) === */
+/* Ghi đè màu nền và viền cho card (Gợi ý B) */
+.data-card--blue { background-color: #f0f9ff; border-color: #bae6fd; }
+.data-card--green { background-color: #f0fdf4; border-color: #bbf7d0; }
+.data-card--yellow { background-color: #fefce8; border-color: #fef08a; }
+
+/* Ghi đè màu header */
+.data-header--blue { color: #0369a1; border-bottom-color: #7dd3fc; }
+.data-header--green { color: #15803d; border-bottom-color: #86efac; }
+.data-header--yellow { color: #854d0e; border-bottom-color: #fde047; }
+
+/* Ghi đè màu cho các group con bên trong (để chúng nổi bật hơn nền card) */
+.input-group--blue { background-color: #ffffff; border-top-color: #3b82f6; border-color: #dbeafe; }
+.input-group--green { background-color: #ffffff; border-top-color: #22c55e; border-color: #dcfce7; }
+.input-group--yellow { background-color: #ffffff; border-top-color: #f59e0b; border-color: #fef3c7; }
+
+/* Ghi đè màu chữ của label để khớp với theme */
+.input-group--blue .data-input-group__label { color: #1d4ed8; }
+.input-group--green .data-input-group__label { color: #166534; }
+.input-group--yellow .data-input-group__label { color: #92400e; }
+/* === END: V1.7 === */
+
+
+.data-input-group__label { 
+    font-weight: 600; 
+    /* color: #4b5563; */ /* <-- Bị ghi đè bởi V1.7 */
+    margin-bottom: 0.75rem; 
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.data-input-group__label .feather {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+}
+.data-input-group__label--link { text-decoration: none; display: inline-flex; } /* Sửa thành inline-flex */
+.data-input-group__label--link:hover { text-decoration: underline; } /* Màu sẽ kế thừa từ .input-group--blue/green... */
 .data-input-group__label--link > .font-normal { font-weight: 400; }
 .data-input-group__content { display: flex; flex-direction: column; gap: 0.5rem; flex-grow: 1; }
 .data-input-group__file-trigger { cursor: pointer; background-color: #e5e7eb; color: #374151; padding: 0.5rem 1rem; border-radius: 0.375rem; font-size: 0.875em; font-weight: 500; white-space: nowrap; }

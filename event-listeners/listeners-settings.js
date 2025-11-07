@@ -1,14 +1,12 @@
-// Version 1.6 - Add click listener for pasted competition column toggles
-// Version 1.5 - Save competition name mapping to Firestore (debounced) & re-process data
-// Version 1.4 - Add auto-save listener for competition name mapping
-// Version 1.3 - Add event listener for efficiency column toggles
+// Version 1.7 - Refactor: Re-wire call to new adminService
 // MODULE: LISTENERS - SETTINGS
 // Chứa logic sự kiện cho các drawers Cài đặt và các Modals.
 
 import { ui } from '../ui.js';
 import { settingsService } from '../modules/settings.service.js';
 import { appState } from '../state.js';
-import { firebase } from '../firebase.js'; // *** NEW (v1.5) ***
+// import { firebase } from '../firebase.js'; // <-- ĐÃ XÓA
+import { adminService } from '../services/admin.service.js'; // <-- ĐÃ THÊM 
 import { services } from '../services.js'; // *** NEW (v1.5) ***
 
 export function initializeSettingsListeners(appController) {
@@ -26,7 +24,9 @@ export function initializeSettingsListeners(appController) {
     // *** NEW (v1.5): Create a debounced save function (e.g., wait 1 second after last keystroke) ***
     const debouncedSaveMappings = debounce((mappings) => {
         // 1. Save to Firestore
-        firebase.saveCompetitionNameMappings(mappings);
+        // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+        adminService.saveCompetitionNameMappings(mappings); // 
+        // === END: TÁI CẤU TRÚC (RE-WIRING) ===
         ui.showNotification('Đã tự động lưu tên rút gọn lên Cloud!', 'success');
         
         // 2. (Bug 1 Fix) Re-process pasted data with new names

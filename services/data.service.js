@@ -1,13 +1,17 @@
-// Version 1.3 - Refactor: Di dời 2 hàm (TemplateDownload, CompetitionDebug) từ main.js
-// Version 1.2 - Fix: Xóa dấu phẩy (trailing comma) ở cuối object
-// Version 1.1 - Fix: Thêm dấu phẩy bị thiếu sau hàm cuối cùng
-// Version 1.0 - Refactor: Tách logic xử lý data từ main.js và ui-listeners.js
+// Version 1.6 - Clean up diagnostic logs
 import { appState } from '../state.js';
 import { ui } from '../ui.js';
 import { services } from '../services.js';
-import { firebase } from '../firebase.js';
+// import { firebase } from '../firebase.js'; // ĐÃ XÓA
 import { settingsService } from '../modules/settings.service.js';
 import { uiRealtime } from '../ui-realtime.js';
+
+// === START: TÁI CẤU TRÚC (RE-WIRING) IMPORTS ===
+import { analyticsService } from './analytics.service.js';
+import { storageService } from './storage.service.js';
+import { datasyncService } from './datasync.service.js';
+import { adminService } from './admin.service.js';
+// === END: TÁI CẤU TRÚC (RE-WIRING) IMPORTS ===
 
 // --- CONSTANTS ---
 const LOCAL_DATA_VERSIONS_KEY = '_localDataVersions';
@@ -121,10 +125,14 @@ export const dataService = {
             }
 
             if (appState.currentUser?.email) {
-                 firebase.incrementCounter('actionsTaken', appState.currentUser.email);
+                 // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+                 analyticsService.incrementCounter('actionsTaken', appState.currentUser.email);
+                 // === END: TÁI CẤU TRÚC (RE-WIRING) ===
                  console.log(`Incremented actionsTaken for ${appState.currentUser.email}`);
             } else {
-                 firebase.incrementCounter('actionsTaken'); // Fallback if email somehow isn't available
+                 // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+                 analyticsService.incrementCounter('actionsTaken'); // Fallback if email somehow isn't available
+                 // === END: TÁI CẤU TRÚC (RE-WIRING) ===
                  console.warn("User email not found in appState, incrementing global actionsTaken.");
             }
 
@@ -140,7 +148,9 @@ export const dataService = {
             const warehouseToSync = appState.selectedWarehouse;
             const currentFirestoreKey = firestoreKey;
 
+            // === START: KHÔI PHỤC LOG GỐC (v1.6) ===
             console.log(`%c[DEBUG PRE-SYNC CHECK] File Type: ${fileType}, Warehouse: ${warehouseToSync}, Firestore Key: ${currentFirestoreKey}`, "color: purple; font-weight: bold;");
+            // === END: KHÔI PHỤC LOG GỐC ===
 
             if (warehouseToSync && currentFirestoreKey) {
                 console.log(`%c[DEBUG SYNC BLOCK START] Entering cloud sync block for ${fileType} (Firestore Key: ${currentFirestoreKey})`, "color: magenta;");
@@ -162,7 +172,9 @@ export const dataService = {
                 };
 
                 try {
-                    const downloadURL = await firebase.uploadFileToStorage(file, storagePath, onProgress);
+                    // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+                    const downloadURL = await storageService.uploadFileToStorage(file, storagePath, onProgress);
+                    // === END: TÁI CẤU TRÚC (RE-WIRING) ===
                     ui.updateFileStatus(fileType, file.name, `Upload xong, đang lưu thông tin...`, 'default');
 
                     const metadata = {
@@ -174,7 +186,9 @@ export const dataService = {
                         fileName: file.name
                     };
 
-                    await firebase.saveMetadataToFirestore(warehouseToSync, currentFirestoreKey, metadata);
+                    // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+                    await datasyncService.saveMetadataToFirestore(warehouseToSync, currentFirestoreKey, metadata);
+                    // === END: TÁI CẤU TRÚC (RE-WIRING) ===
 
                     const metadataKey = `${LOCAL_METADATA_PREFIX}${warehouseToSync}_${currentFirestoreKey}`;
                     const metadataToSaveLocally = { ...metadata, updatedAt: new Date() };
@@ -585,7 +599,9 @@ export const dataService = {
                 updatedBy: appState.currentUser.email
             };
 
-            await firebase.savePastedDataToFirestore(kho, dataType, metadata.content, versionInfo);
+            // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+            await datasyncService.savePastedDataToFirestore(kho, dataType, metadata.content, versionInfo);
+            // === END: TÁI CẤU TRÚC (RE-WIRING) ===
 
             if (!localDataVersions[kho]) localDataVersions[kho] = {};
             localDataVersions[kho][dataType] = versionInfo;
@@ -807,7 +823,9 @@ export const dataService = {
             if(categoryResult.success) {
                 appState.categoryStructure = categoryResult.normalizedData;
                 appState.brandList = brandResult.normalizedData;
-                await firebase.saveCategoryDataToFirestore({ categories: categoryResult.normalizedData, brands: brandResult.normalizedData });
+                // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+                await adminService.saveCategoryDataToFirestore({ categories: categoryResult.normalizedData, brands: brandResult.normalizedData });
+                // === END: TÁI CẤU TRÚC (RE-WIRING) ===
                 ui.updateFileStatus('category-structure', file.name, `✓ Đã xử lý và đồng bộ ${categoryResult.normalizedData.length} nhóm & ${brandResult.normalizedData.length} hãng.`, 'success');
             } else {
                 ui.showNotification(`Lỗi xử lý file khai báo: ${categoryResult.error}`, 'error');
@@ -857,7 +875,9 @@ export const dataService = {
     async handleTemplateDownload() {
         ui.showNotification('Đang chuẩn bị file mẫu...', 'success');
         try {
-            const url = await firebase.getTemplateDownloadURL();
+            // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+            const url = await storageService.getTemplateDownloadURL();
+            // === END: TÁI CẤU TRÚC (RE-WIRING) ===
             const link = document.createElement('a');
             link.href = url;
             link.download = 'Danh_Sach_Nhan_Vien_Mau.xlsx';
