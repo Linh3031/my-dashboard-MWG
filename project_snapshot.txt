@@ -1197,7 +1197,7 @@ export const modalComposer = {
 --- END FILE: ./components/modal-composer.js ---
 
 --- START FILE: ./components/modal-customer-detail.js ---
-// Version 1.0 - Component: Customer Detail Modal
+// Version 1.2 - Add 'customer-accordion-luyke' class to fix font styling
 // Chứa mã HTML cho modal bật lên (popup) hiển thị chi tiết khách hàng.
 
 const modalCustomerDetailHTML = `
@@ -1221,16 +1221,12 @@ const modalCustomerDetailHTML = `
                 </button>
             </div>
             
-            <div id="customer-detail-list-container" class="p-3" style="max-height: calc(90vh - 180px); overflow-y: auto;">
-                <p class="text-gray-500">Đang tải dữ liệu khách hàng...</p>
+            <div id="customer-detail-list-container" class="p-3 customer-accordion-luyke" style="max-height: calc(90vh - 180px); overflow-y: auto;">
+            <p class="text-gray-500">Đang tải dữ liệu khách hàng...</p>
             </div>
         </div>
         
         <div class="modal__footer">
-            <button id="capture-customer-detail-btn" class="action-btn action-btn--capture">
-                <i data-feather="camera"></i>
-                <span>Chụp ảnh Modal</span>
-            </button>
             <button class="action-btn action-btn--copy" data-close-modal>
                 Đóng
             </button>
@@ -1430,7 +1426,7 @@ export const modalSelection = {
 --- END FILE: ./components/modal-selection.js ---
 
 --- START FILE: ./components/modal-unexported-detail.js ---
-// Version 1.0 - Component: Unexported Detail Modal
+// Version 1.1 - Remove capture button from footer
 // Chứa mã HTML cho modal bật lên (popup) hiển thị chi tiết doanh thu chưa xuất.
 
 const modalUnexportedDetailHTML = `
@@ -1450,10 +1446,6 @@ const modalUnexportedDetailHTML = `
         </div>
         
         <div class="modal__footer">
-            <button id="capture-unexported-detail-btn" class="action-btn action-btn--capture">
-                <i data-feather="camera"></i>
-                <span>Chụp ảnh Modal</span>
-            </button>
             <button class="action-btn action-btn--copy" data-close-modal>
                 Đóng
             </button>
@@ -2290,11 +2282,9 @@ export function initializeSortingListeners(appController) {
 --- END FILE: ./event-listeners/listeners-sorting.js ---
 
 --- START FILE: ./event-listeners/ui-listeners.js ---
-// Version 3.38 - Fix capture logic to call captureAndDownload for detail views
+// Version 3.39 - Add custom date range filter for LK detail chart
 // Version 3.34 - Refactor: Hoàn tất di dời 2 listener (Template, Debug) sang data.service.js
-// Version 3.33 - Fix: Gỡ bỏ comment [cite] gây lỗi cú pháp
-// Version 3.32 - Refactor: Di dời logic xử lý file/paste sang data.service.js
-// Version 3.31 - Fix: Thêm dấu phẩy (,) bị thiếu trong object 'singleSelects'
+// ... (các phiên bản trước giữ nguyên)
 // MODULE: EVENT LISTENERS INITIALIZER
 // File này đóng vai trò là điểm khởi đầu, import và khởi chạy tất cả các module listener con.
 
@@ -2583,13 +2573,17 @@ export function initializeEventListeners(mainAppController) {
             return;
         }
 
-        // === START: SỬA LỖI (v3.37) ===
+        // === START: MODIFIED (v3.39) - Nâng cấp bộ lọc ngày ===
         
-        // (Task 1) Listener cho bộ lọc ngày của biểu đồ chi tiết LK
-        const dailyChartFilterBtn = e.target.closest('.lk-daily-filter-btn');
+        // (Task 1) Listener cho các nút lọc ngày (TRỪ nút Tùy chọn)
+        const dailyChartFilterBtn = e.target.closest('.lk-daily-filter-btn:not(#lk-daily-filter-custom)');
         if (dailyChartFilterBtn) {
             e.preventDefault();
-            const days = parseInt(dailyChartFilterBtn.dataset.days, 10);
+            
+            // Xóa trạng thái lọc tùy chỉnh (nếu có)
+            if(appState.currentEmployeeDetailData) appState.currentEmployeeDetailData.customFilteredDailyStats = null;
+
+            const filterValue = dailyChartFilterBtn.dataset.days; // "3", "5", "7", "10", "all"
             
             // Cập nhật UI nút
             document.querySelectorAll('.lk-daily-filter-btn').forEach(btn => {
@@ -2601,11 +2595,73 @@ export function initializeEventListeners(mainAppController) {
 
             const detailData = appState.currentEmployeeDetailData;
             if (detailData && detailData.dailyStats) {
+                let dataForChart;
+                if (filterValue === 'all') {
+                    dataForChart = detailData.dailyStats; // Lấy tất cả
+                } else {
+                    const days = parseInt(filterValue, 10);
+                    dataForChart = detailData.dailyStats.slice(-days); // Lấy X ngày cuối
+                }
+                
                 // Gọi trực tiếp hàm render biểu đồ (nhanh hơn là render lại toàn bộ tab)
-                ui._renderDailyCharts(detailData.dailyStats, days); // Sửa lỗi path
+                ui._renderDailyCharts(detailData.dailyStats, dataForChart); // Pass mảng đã lọc
             } else {
                 console.warn("Không tìm thấy appState.currentEmployeeDetailData.dailyStats, không thể vẽ lại biểu đồ.");
             }
+            return;
+        }
+
+        // (Task 3) Listener cho nút "Tùy chọn..."
+        const customDateFilterBtn = e.target.closest('#lk-daily-filter-custom');
+        if (customDateFilterBtn) {
+            e.preventDefault();
+            
+            const detailData = appState.currentEmployeeDetailData;
+            if (!detailData || !detailData.dailyStats) {
+                ui.showNotification("Lỗi: Không tìm thấy dữ liệu ngày để lọc.", "error");
+                return;
+            }
+
+            // Cập nhật UI nút (làm cho nó active)
+            document.querySelectorAll('.lk-daily-filter-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white');
+                btn.classList.add('bg-gray-200');
+            });
+            customDateFilterBtn.classList.add('bg-blue-600', 'text-white');
+            customDateFilterBtn.classList.remove('bg-gray-200');
+
+            // Mở Flatpickr
+            flatpickr(customDateFilterBtn, {
+                mode: "range",
+                dateFormat: "Y-m-d", // Dùng định dạng chuẩn để lọc
+                maxDate: "today",
+                defaultDate: [],
+                onClose: (selectedDates) => {
+                    if (selectedDates.length === 2) {
+                        const [start, end] = selectedDates;
+                        const startTime = start.getTime();
+                        // Set end time to end of day
+                        const endTime = new Date(end.getFullYear(), end.getMonth(), end.getDate(), 23, 59, 59).getTime();
+
+                        const filteredStats = detailData.dailyStats.filter(stat => {
+                            const statTime = new Date(stat.date).getTime();
+                            return statTime >= startTime && statTime <= endTime;
+                        });
+
+                        // Lưu kết quả lọc tùy chỉnh vào state
+                        appState.currentEmployeeDetailData.customFilteredDailyStats = filteredStats;
+                        
+                        // Vẽ lại biểu đồ với dữ liệu đã lọc
+                        ui._renderDailyCharts(detailData.dailyStats, filteredStats);
+                    } else {
+                        // Nếu không chọn range, reset
+                        if(appState.currentEmployeeDetailData) appState.currentEmployeeDetailData.customFilteredDailyStats = null;
+                        // Kích hoạt nút 7 ngày làm mặc định
+                        const sevenDayBtn = document.querySelector('.lk-daily-filter-btn[data-days="7"]');
+                        if (sevenDayBtn) sevenDayBtn.click();
+                    }
+                }
+            }).open(); // Mở lịch ngay lập tức
             return;
         }
 
@@ -2722,7 +2778,7 @@ export function initializeEventListeners(mainAppController) {
             }
             return;
         }
-        // === END: SỬA LỖI (v3.37) ===
+        // === END: SỬA LỖI (v3.37) / MODIFIED (v3.39) ===
     });
 
     // Specific filter listeners (Giữ nguyên)
@@ -4590,12 +4646,12 @@ id="luyke-efficiency-content"></div></div>
             }
         });
     </script>
-    <script type="module" src="./main.js?v=3.8"></script> </body>
+    <script type="module" src="./main.js?v=3.9"></script> </body>
 </html>
 --- END FILE: ./index.html ---
 
 --- START FILE: ./main.js ---
-// Version 4.50 - Import and render new detail modals (customer, unexported)
+// Version 4.51 - Update _formatChangelogForModal to support nested lists
 // Version 4.49 - Refactor: Di dời 3 hàm (TemplateDownload, CompetitionDebug, FileRead) sang data.service.js
 // Version 4.48 - Refactor: Di dời 14+ hàm xử lý data sang data.service.js
 // ... (các phiên bản trước giữ nguyên)
@@ -4657,7 +4713,7 @@ const app = {
     },
     // === END: FIX LỖI ===
 
-    currentVersion: '3.8', // Giữ nguyên version này, bạn có thể tự cập nhật sau khi tích hợp xong
+    currentVersion: '3.9', // Giữ nguyên version này, bạn có thể tự cập nhật sau khi tích hợp xong
     storage: storage,
     unsubscribeDataListener: null,
     _isInitialized: false,
@@ -4918,18 +4974,44 @@ const app = {
         }
     },
 
+    // === START: MODIFIED FUNCTION (v4.51) ===
     _formatChangelogForModal(changelogData) {
-        // ... (Giữ nguyên)
         if (!changelogData || changelogData.length === 0) return '<p>Không có lịch sử cập nhật.</p>';
-        return changelogData.map(item => `
-            <div class="mb-4 pb-4 border-b last:border-b-0">
-                <h4 class="font-bold text-blue-600 mb-2">Phiên bản ${item.version} (${item.date})</h4>
-                <ul class="list-disc list-inside text-gray-700 space-y-1 text-sm">
-                    ${item.notes.map(note => `<li>${note}</li>`).join('')}
-                </ul>
-            </div>
-        `).join('');
+        
+        return changelogData.map(item => {
+            const notesHtml = item.notes.map(note => {
+                // Yêu cầu mới: Kiểm tra xem 'note' là string hay object
+                if (typeof note === 'object' && note !== null && note.title && Array.isArray(note.items)) {
+                    // Đây là một mục lồng cấp
+                    const subItemsHtml = note.items.map(subItem => 
+                        // Sử dụng style 'list-style-type: "- "'
+                        `<li class="ml-4" style="list-style-type: '- ';">${subItem}</li>`
+                    ).join('');
+                    
+                    return `
+                        <li class="mt-2 font-semibold text-gray-800">${note.title}
+                            <ul class="font-normal text-gray-700 space-y-1 mt-1">
+                                ${subItemsHtml}
+                            </ul>
+                        </li>
+                    `;
+                } else {
+                    // Đây là một string bình thường
+                    return `<li class="text-gray-700">${note}</li>`;
+                }
+            }).join('');
+
+            return `
+                <div class="mb-4 pb-4 border-b last:border-b-0">
+                    <h4 class="font-bold text-blue-600 mb-2">Phiên bản ${item.version} (${item.date})</h4>
+                    <ul class="list-disc list-inside space-y-1 text-sm">
+                        ${notesHtml}
+                    </ul>
+                </div>
+            `;
+        }).join('');
     },
+    // === END: MODIFIED FUNCTION ===
 
     async checkForUpdates() {
         // ... (Giữ nguyên)
@@ -4946,11 +5028,29 @@ const app = {
                 const notesContainer = document.getElementById('update-notes-container');
                 if (titleEl) titleEl.textContent = `📢 Đã có phiên bản mới ${serverConfig.version}!`;
                 if (notesContainer && newVersionDetails && newVersionDetails.notes) {
+                    // Sử dụng cùng logic render của _formatChangelogForModal để hỗ trợ nested lists
+                    const notesHtml = newVersionDetails.notes.map(note => {
+                        if (typeof note === 'object' && note !== null && note.title && Array.isArray(note.items)) {
+                            const subItemsHtml = note.items.map(subItem => 
+                                `<li class="ml-4" style="list-style-type: '- ';">${subItem}</li>`
+                            ).join('');
+                            return `
+                                <li class="mt-2 font-semibold text-gray-800">${note.title}
+                                    <ul class="font-normal text-gray-700 space-y-1 mt-1">
+                                        ${subItemsHtml}
+                                    </ul>
+                                </li>
+                            `;
+                        } else {
+                            return `<li class="text-gray-700">${note}</li>`;
+                        }
+                    }).join('');
+                    
                     notesContainer.innerHTML = `
                         <p class="text-sm font-semibold text-gray-700 mb-2">Nội dung cập nhật:</p>
                         <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
-                                ${newVersionDetails.notes.map(note => `<li>${note}</li>`).join('')}
-                            </ul>
+                            ${notesHtml}
+                        </ul>
                     `;
                 } else if (notesContainer) {
                     notesContainer.innerHTML = '<p class="text-sm text-gray-500">Không thể tải chi tiết cập nhật.</p>';
@@ -4963,7 +5063,7 @@ const app = {
     },
 
     async loadDataFromStorage() {
-        // ... (Giữ nguyên)
+        // ... (Gi̟ữ nguyên)
     
         let dsnvLoadSuccess = false;
         const loadSavedFile = async (saveKey, stateKey, fileType, uiId) => {
@@ -5655,7 +5755,7 @@ app.init();
 --- END FILE: ./main.js ---
 
 --- START FILE: ./modules/capture.service.js ---
-// Version 1.3 - Implement Canvas-to-Image swap (Kế hoạch A) to fix blank charts
+// Version 1.6 - Remove debug logs and debugger statement
 // Version 1.1 - Fix blank charts by disabling Chart.js animations and adding 500ms delay during capture
 // Version 1.0 - Refactored from utils.js
 // MODULE: CAPTURE SERVICE
@@ -5705,7 +5805,7 @@ const _injectCaptureStyles = () => {
             width: 900px !important;
         }
         .preset-mobile-portrait {
-            width: 750px !important;
+            /* width: 750px !important; <-- ĐÃ XÓA (v1.4) */
         }
         .preset-landscape-table {
             width: fit-content !important;
@@ -5824,6 +5924,12 @@ export const captureService = {
         // Thêm một độ trễ ngắn (100ms) để img kịp render, an toàn hơn 500ms
         await new Promise(resolve => setTimeout(resolve, 100));
         // === END: THAY THẾ LOGIC 500ms ===
+
+        // === START: DEBUG LOG (v1.5) - ĐÃ BỊ XÓA ===
+        // console.group(...)
+        // debugger;
+        // console.groupEnd();
+        // === END: DEBUG LOG (v1.5) - ĐÃ BỊ XÓA ===
 
         try {
             const canvas = await html2canvas(captureWrapper, {
@@ -9414,7 +9520,7 @@ html[data-contrast="6"] { --bg-lightness: var(--bg-lightness-6); --header-lightn
 --- END FILE: ./styles/base.css ---
 
 --- START FILE: ./styles/components.css ---
-/* Version 1.2 - Add capture preset override styles for modals and luyke detail
+/* Version 1.5 - Soften customer detail modal fonts (Task 4)
 /* Version 1.0 - Components styles (Refactored from v6.19) */
 /* Chứa các class tái sử dụng cho các "linh kiện" UI: buttons, cards, modals, inputs, etc. */
 
@@ -9908,9 +10014,11 @@ details[open] > summary
     background-color: #f9fafb;
 }
 .customer-accordion-luyke .customer-name-small {
-    font-weight: 600;
+    /* === START: SỬA LỖI FONT (Task 4) === */
+    font-weight: 500; /* Giảm từ 600 xuống 500 */
     font-size: 0.9rem; 
-    color: #1f2937; /* Màu đậm hơn cho Tên KH */
+    color: #2563eb; /* Đổi sang màu xanh dương */
+    /* === END: SỬA LỖI FONT === */
     flex-grow: 1; 
     min-width: 120px;
 }
@@ -9922,9 +10030,10 @@ details[open] > summary
     white-space: nowrap;
 }
 .customer-accordion-luyke .order-metrics strong {
-    /* (Task 3) Các con số (strong) sẽ được làm đậm và có màu riêng */
-    font-weight: 600;
+    /* === START: SỬA LỖI FONT (Task 4) === */
+    font-weight: 500; /* Giảm từ 600 xuống 500 */
     color: #1f2937; /* Màu đen-xám cho số */
+    /* === END: SỬA LỖI FONT === */
 }
 .customer-accordion-luyke .order-metrics .text-gray-900 {
     color: #1f2937 !important; /* Ghi đè class cũ (nếu có) */
@@ -9953,7 +10062,7 @@ details[open] > summary
 
 /* 1. Đảm bảo khu vực chụp chi tiết (từ ui-luyke.js) tuân thủ chiều rộng preset */
 .capture-container.preset-mobile-portrait .preset-mobile-capture-area {
-    width: 750px !important;
+    /* width: 750px !important; <-- ĐÃ XÓA (v1.4) */
     box-sizing: border-box; /* Đảm bảo padding không phá vỡ chiều rộng */
 }
 
@@ -12890,10 +12999,7 @@ export const uiHome = {
 --- END FILE: ./ui-home.js ---
 
 --- START FILE: ./ui-luyke.js ---
-// Version 2.16 - Remove data-capture-groups from detail view to fix capture splitting
-// Version 2.14 - Split daily charts into two separate cards for clarity
-// Version 2.13 - Store detailData in appState and read active chart filter
-// Version 2.12 - Implement 4 new features for LK Employee Detail view (charts, modals)
+// Version 2.17 - Add "All" & "Custom" date filters, and fix chart label overflow
 // Version 2.11 - Critical Fix: Restore all missing functions and add renderLuykeEmployeeDetail
 // MODULE: UI LUY KE
 // Chứa các hàm render giao diện cho tab "Sức khỏe Siêu thị (Lũy kế)".
@@ -12975,16 +13081,26 @@ export const uiLuyke = {
         uiComponents.toggleModal('selection-modal', true);
     },
     
-    // === START: NEW FUNCTION (TASK 1) ===
+    // === START: MODIFIED FUNCTION (TASK 1 & 3) ===
     /**
      * Render 2 biểu đồ thống kê theo ngày.
-     * @param {Array} dailyStats - Dữ liệu đã xử lý từ service.
-     * @param {number} daysToShow - Số ngày cần hiển thị (3, 5, 7, 10).
+     * @param {Array} dailyStats - Dữ liệu gốc.
+     * @param {number | 'all' | Array} filterParam - Số ngày, 'all', hoặc mảng dữ liệu đã lọc.
      */
-    _renderDailyCharts(dailyStats, daysToShow = 7) {
+    _renderDailyCharts(dailyStats, filterParam = 7) {
         if (!dailyStats || dailyStats.length === 0) return;
 
-        const filteredData = dailyStats.slice(-daysToShow);
+        let filteredData;
+        if (typeof filterParam === 'number') {
+            filteredData = dailyStats.slice(-filterParam); // Lọc theo số ngày
+        } else if (filterParam === 'all') {
+            filteredData = dailyStats; // Lấy tất cả
+        } else if (Array.isArray(filterParam)) {
+            filteredData = filterParam; // Sử dụng mảng đã lọc (cho Tùy chọn)
+        } else {
+            filteredData = dailyStats.slice(-7); // Mặc định 7 ngày
+        }
+
         const labels = filteredData.map(d => new Date(d.date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }));
         const dtqdData = filteredData.map(d => d.convertedRevenue / 1000000);
         const tlqdData = filteredData.map(d => (d.revenue > 0 ? (d.convertedRevenue / d.revenue) - 1 : 0));
@@ -13020,7 +13136,10 @@ export const uiLuyke = {
                 }
             },
             scales: {
-                y: { beginAtZero: true }
+                y: { 
+                    beginAtZero: true,
+                    grace: '10%' // (Task 1) Thêm 10% khoảng đệm
+                }
             }
         });
 
@@ -13068,7 +13187,7 @@ export const uiLuyke = {
             });
         }
     },
-    // === END: NEW FUNCTION ===
+    // === END: MODIFIED FUNCTION ===
 
     // === START: NEW FUNCTION (TASK 3) ===
     /**
@@ -13178,7 +13297,7 @@ export const uiLuyke = {
     },
     // === END: NEW FUNCTION ===
 
-    // === START: MODIFIED FUNCTION (v2.16) ===
+    // === START: MODIFIED FUNCTION (v2.17) ===
     renderLuykeEmployeeDetail(detailData, employeeData, detailContainerId) {
         const summaryContainer = document.getElementById('revenue-report-container-lk');
         const detailContainer = document.getElementById(detailContainerId);
@@ -13198,9 +13317,9 @@ export const uiLuyke = {
             return;
         }
 
-        // === START: (Task 3 & 4) Lưu state cho modal ===
-        appState.currentEmployeeDetailData = detailData;
-        // === END: (Task 3 & 4) ===
+        // === START: (Task 3) Thêm customFilteredDailyStats: null ===
+        appState.currentEmployeeDetailData = { ...detailData, customFilteredDailyStats: null };
+        // === END: (Task 3) ===
 
         const { summary, topProductGroups, categoryChartData, byCustomer, dailyStats, unexportedDetails } = detailData;
         const { mucTieu } = employeeData;
@@ -13257,6 +13376,7 @@ export const uiLuyke = {
             }).join('');
         };
         
+        // === START: (Task 3) Cập nhật HTML bộ lọc ngày ===
         const headerHtml = `
             <div class="mb-4 flex justify-between items-center">
                 <button class="back-to-summary-btn text-blue-600 hover:underline font-semibold">‹ Quay lại bảng tổng hợp</button>
@@ -13274,14 +13394,15 @@ export const uiLuyke = {
                     ${renderKpiCards()}
                 </div>
 
-                <div id="lk-daily-chart-filters" class="flex items-center justify-center gap-2 mb-4">
+                <div id="lk-daily-chart-filters" class="flex items-center justify-center flex-wrap gap-2 mb-4">
                     <span class="text-sm font-medium">Xem theo:</span>
+                    <button id="lk-daily-filter-all" class="lk-daily-filter-btn px-3 py-1 text-xs font-medium rounded-full bg-gray-200" data-days="all">Tất cả</button>
                     <button class="lk-daily-filter-btn px-3 py-1 text-xs font-medium rounded-full bg-gray-200" data-days="3">3 ngày</button>
                     <button class="lk-daily-filter-btn px-3 py-1 text-xs font-medium rounded-full bg-gray-200" data-days="5">5 ngày</button>
                     <button class="lk-daily-filter-btn px-3 py-1 text-xs font-medium rounded-full bg-blue-600 text-white" data-days="7">7 ngày</button>
                     <button class="lk-daily-filter-btn px-3 py-1 text-xs font-medium rounded-full bg-gray-200" data-days="10">10 ngày</button>
+                    <button id="lk-daily-filter-custom" class="lk-daily-filter-btn px-3 py-1 text-xs font-medium rounded-full bg-gray-200">Tùy chọn...</button>
                 </div>
-
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                     <div class="bg-white p-4 rounded-lg shadow-md border" style="height: 300px;">
                         <h4 class="text-md font-bold text-gray-700 mb-2 text-center">Doanh thu QĐ theo ngày (Tr)</h4>
@@ -13312,10 +13433,23 @@ export const uiLuyke = {
 
         detailContainer.innerHTML = headerHtml;
 
+        // === START: (Task 3) Cập nhật logic gọi biểu đồ ===
         // (Task 1) Gọi hàm render biểu đồ hàng ngày, đọc từ filter
         const activeFilterBtn = document.querySelector('#lk-daily-chart-filters .lk-daily-filter-btn.bg-blue-600');
-        const daysToShow = activeFilterBtn ? parseInt(activeFilterBtn.dataset.days, 10) : 7;
-        uiLuyke._renderDailyCharts(dailyStats, daysToShow);
+        let filterParam = activeFilterBtn ? activeFilterBtn.dataset.days : '7';
+        
+        // Chuyển đổi 'all' hoặc số
+        if (filterParam === 'all') {
+             filterParam = 'all';
+        } else if (!isNaN(parseInt(filterParam, 10))) {
+            filterParam = parseInt(filterParam, 10);
+        } else {
+            // Trường hợp này là nút "Tùy chọn" đang active, dữ liệu đã được lọc sẵn
+            filterParam = appState.currentEmployeeDetailData.customFilteredDailyStats || dailyStats.slice(-7);
+        }
+        
+        uiLuyke._renderDailyCharts(dailyStats, filterParam);
+        // === END: (Task 3) Cập nhật logic ===
 
         const ctx = document.getElementById('luyke-employee-chart')?.getContext('2d');
         if (ctx && categoryChartData && categoryChartData.length > 0) {
@@ -13357,7 +13491,10 @@ export const uiLuyke = {
                         }
                     },
                     scales: {
-                        y: { beginAtZero: true }
+                        y: { 
+                            beginAtZero: true,
+                            grace: '10%' // (Task 1) Thêm 10% khoảng đệm
+                        }
                      }
                 },
                 plugins: [ChartDataLabels]

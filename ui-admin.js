@@ -1,9 +1,10 @@
-// Version 1.1 - Refactor: Moved renderCompetitionConfigUI from ui-components.js
+// Version 1.2 - Refactor: Re-wire call to new analyticsService
 // MODULE: UI ADMIN
 // Chứa các hàm render cho trang Quản trị (Khai báo).
 
 import { appState } from './state.js';
-import { firebase } from './firebase.js';
+// import { firebase } from './firebase.js'; // <-- ĐÃ XÓA
+import { analyticsService } from '../services/analytics.service.js'; // <-- ĐÃ THÊM
 import { formatters } from './ui-formatters.js';
 
 /**
@@ -151,7 +152,9 @@ const renderAdminPage = async () => {
     if (!appState.isAdmin) return;
     
     // Render bảng thống kê người dùng
-    const users = await firebase.getAllUsers();
+    // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+    const users = await analyticsService.getAllUsers();
+    // === END: TÁI CẤU TRÚC (RE-WIRING) ===
     renderUserStatsTable(users); // Gọi hàm nội bộ
     
     // Render các trình chỉnh sửa hướng dẫn
