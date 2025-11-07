@@ -1,3 +1,4 @@
+// Version 1.6 - Remove debug logs and debugger statement
 // Version 1.1 - Fix blank charts by disabling Chart.js animations and adding 500ms delay during capture
 // Version 1.0 - Refactored from utils.js
 // MODULE: CAPTURE SERVICE
@@ -5,6 +6,7 @@
 
 import { ui } from '../ui.js';
 import { firebase } from '../firebase.js';
+import { appState } from '../state.js'; // <<< THÊM MỚI (Kế hoạch A)
 
 // --- HELPER for Screenshot CSS Injection ---
 const _injectCaptureStyles = () => {
@@ -46,7 +48,7 @@ const _injectCaptureStyles = () => {
             width: 900px !important;
         }
         .preset-mobile-portrait {
-            width: 750px !important;
+            /* width: 750px !important; <-- ĐÃ XÓA (v1.4) */
         }
         .preset-landscape-table {
             width: fit-content !important;
@@ -86,6 +88,44 @@ const _injectCaptureStyles = () => {
     return styleElement;
 };
 
+// === START: HÀM HỖ TRỢ MỚI (Kế hoạch A) ===
+/**
+ * Tìm và thay thế tất cả <canvas> của Chart.js bằng <img> tĩnh.
+ * @param {HTMLElement} element - Vùng DOM (clone) sắp được chụp.
+ */
+const _swapCanvasToImage = (element) => {
+    console.log("[Capture Service] Swapping canvas to image...");
+    const canvasElements = element.querySelectorAll('canvas');
+    let replacedCount = 0;
+    
+    canvasElements.forEach(canvas => {
+        const chartId = canvas.id;
+        if (chartId && appState.charts[chartId]) {
+            try {
+                const chart = appState.charts[chartId];
+                const base64Image = chart.toBase64Image(); // Lấy ảnh tĩnh
+                
+                if (base64Image) {
+                    const img = document.createElement('img');
+                    img.src = base64Image;
+                    // Giữ nguyên kích thước để tránh vỡ layout
+                    img.style.width = canvas.style.width || `${canvas.width}px`;
+                    img.style.height = canvas.style.height || `${canvas.height}px`;
+                    img.style.display = 'block';
+                    
+                    // Thay thế canvas bằng img
+                    canvas.parentNode.replaceChild(img, canvas);
+                    replacedCount++;
+                }
+            } catch (e) {
+                console.error(`[Capture Service] Lỗi khi hoán đổi canvas '${chartId}':`, e);
+            }
+        }
+    });
+    console.log(`[Capture Service] Đã hoán đổi ${replacedCount} biểu đồ.`);
+};
+// === END: HÀM HỖ TRỢ MỚI ===
+
 export const captureService = {
     async captureAndDownload(elementToCapture, title, presetClass = '') {
         const date = new Date();
@@ -96,26 +136,43 @@ export const captureService = {
         const captureWrapper = document.createElement('div');
         captureWrapper.className = 'capture-container';
     
+        // *** SỬA LỖI (Nguyên nhân 3) ***
+        // Áp dụng presetClass cho container cha (captureWrapper)
+        if (presetClass) {
+            captureWrapper.classList.add(presetClass);
+        }
+
         const titleEl = document.createElement('h2');
         titleEl.className = 'capture-title';
         titleEl.textContent = finalTitle;
         captureWrapper.appendChild(titleEl);
         
         const contentClone = elementToCapture.cloneNode(true);
-        if (presetClass) {
-            contentClone.classList.add(presetClass);
-        }
-        captureWrapper.appendChild(contentClone);
+        
+        // *** LỖI CŨ (Đã xóa) ***
+        // if (presetClass) { contentClone.classList.add(presetClass); }
 
+        captureWrapper.appendChild(contentClone);
         document.body.appendChild(captureWrapper);
     
-        // === START: (TASK 2 FIX) Tắt animation và thêm độ trễ ===
+        // === START: THAY THẾ LOGIC 500ms (Kế hoạch A) ===
+        // Tắt animation (vẫn giữ để phòng hờ)
         if (window.Chart) {
             Chart.defaults.animation = false;
         }
-        // Thêm độ trễ 500ms để đảm bảo biểu đồ render xong
-        await new Promise(resolve => setTimeout(resolve, 500));
-        // === END: (TASK 2 FIX) ===
+        
+        // **THAY THẾ CANVAS BẰNG IMG**
+        _swapCanvasToImage(contentClone);
+
+        // Thêm một độ trễ ngắn (100ms) để img kịp render, an toàn hơn 500ms
+        await new Promise(resolve => setTimeout(resolve, 100));
+        // === END: THAY THẾ LOGIC 500ms ===
+
+        // === START: DEBUG LOG (v1.5) - ĐÃ BỊ XÓA ===
+        // console.group(...)
+        // debugger;
+        // console.groupEnd();
+        // === END: DEBUG LOG (v1.5) - ĐÃ BỊ XÓA ===
 
         try {
             const canvas = await html2canvas(captureWrapper, {
@@ -136,11 +193,10 @@ export const captureService = {
             if (document.body.contains(captureWrapper)) {
                 document.body.removeChild(captureWrapper);
             }
-            // === START: (TASK 2 FIX) Bật lại animation sau khi chụp ===
+            // Bật lại animation
             if (window.Chart) {
                 Chart.defaults.animation = {};
             }
-            // === END: (TASK 2 FIX) ===
         }
     },
     
@@ -167,19 +223,22 @@ export const captureService = {
         
         const styleElement = _injectCaptureStyles();
         
-        // === START: (TASK 2 FIX) Tắt animation và thêm độ trễ ===
+        // === START: THAY THẾ LOGIC 500ms (Kế hoạch A) ===
+        // Tắt animation (vẫn giữ để phòng hờ)
         if (window.Chart) {
             Chart.defaults.animation = false;
         }
-        // Thêm độ trễ 500ms để đảm bảo biểu đồ render xong
-        await new Promise(resolve => setTimeout(resolve, 500));
-        // === END: (TASK 2 FIX) ===
+        // Thêm độ trễ ngắn (100ms) thay vì 500ms
+        await new Promise(resolve => setTimeout(resolve, 100));
+        // === END: THAY THẾ LOGIC 500ms ===
         
         try {
             if (captureGroups.size === 0) {
                 if (contentContainer.offsetParent !== null) {
                     const preset = contentContainer.dataset.capturePreset;
                     const presetClass = preset ? `preset-${preset}` : '';
+                    
+                    // **GỌI HÀM ĐÃ SỬA (chứa logic hoán đổi canvas)**
                     await this.captureAndDownload(contentContainer, baseTitle, presetClass);
                 } else {
                      ui.showNotification('Không tìm thấy đối tượng hiển thị để chụp.', 'error');
@@ -212,16 +271,16 @@ export const captureService = {
                     elementToCapture = targetElement;
                 }
     
+                // **GỌI HÀM ĐÃ SỬA (chứa logic hoán đổi canvas)**
                 await this.captureAndDownload(elementToCapture, captureTitle, presetClass);
-                await new Promise(resolve => setTimeout(resolve, 150));
+                await new Promise(resolve => setTimeout(resolve, 150)); // Giữ độ trễ giữa các lần chụp
             }
         } finally {
             styleElement.remove();
-            // === START: (TASK 2 FIX) Bật lại animation sau khi chụp ===
+            // Bật lại animation
             if (window.Chart) {
                 Chart.defaults.animation = {};
             }
-            // === END: (TASK 2 FIX) ===
         }
 
         ui.showNotification(`Đã hoàn tất chụp ảnh báo cáo ${baseTitle}!`, 'success');

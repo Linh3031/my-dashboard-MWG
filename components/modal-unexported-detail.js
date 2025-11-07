@@ -1,4 +1,4 @@
-// Version 1.0 - Component: Unexported Detail Modal
+// Version 1.1 - Remove capture button from footer
 // Chứa mã HTML cho modal bật lên (popup) hiển thị chi tiết doanh thu chưa xuất.
 
 const modalUnexportedDetailHTML = `
@@ -18,10 +18,6 @@ const modalUnexportedDetailHTML = `
         </div>
         
         <div class="modal__footer">
-            <button id="capture-unexported-detail-btn" class="action-btn action-btn--capture">
-                <i data-feather="camera"></i>
-                <span>Chụp ảnh Modal</span>
-            </button>
             <button class="action-btn action-btn--copy" data-close-modal>
                 Đóng
             </button>

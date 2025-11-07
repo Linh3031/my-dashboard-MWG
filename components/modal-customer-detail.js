@@ -1,4 +1,4 @@
-// Version 1.0 - Component: Customer Detail Modal
+// Version 1.2 - Add 'customer-accordion-luyke' class to fix font styling
 // Chứa mã HTML cho modal bật lên (popup) hiển thị chi tiết khách hàng.
 
 const modalCustomerDetailHTML = `
@@ -22,16 +22,12 @@ const modalCustomerDetailHTML = `
                 </button>
             </div>
             
-            <div id="customer-detail-list-container" class="p-3" style="max-height: calc(90vh - 180px); overflow-y: auto;">
-                <p class="text-gray-500">Đang tải dữ liệu khách hàng...</p>
+            <div id="customer-detail-list-container" class="p-3 customer-accordion-luyke" style="max-height: calc(90vh - 180px); overflow-y: auto;">
+            <p class="text-gray-500">Đang tải dữ liệu khách hàng...</p>
             </div>
         </div>
         
         <div class="modal__footer">
-            <button id="capture-customer-detail-btn" class="action-btn action-btn--capture">
-                <i data-feather="camera"></i>
-                <span>Chụp ảnh Modal</span>
-            </button>
             <button class="action-btn action-btn--copy" data-close-modal>
                 Đóng
             </button>

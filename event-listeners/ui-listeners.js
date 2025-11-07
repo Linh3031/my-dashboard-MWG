@@ -1,8 +1,6 @@
-// Version 3.37 - Fix modal capture preset, sort logic, and dynamic titles for LK Detail
+// Version 3.39 - Add custom date range filter for LK detail chart
 // Version 3.34 - Refactor: Hoàn tất di dời 2 listener (Template, Debug) sang data.service.js
-// Version 3.33 - Fix: Gỡ bỏ comment [cite] gây lỗi cú pháp
-// Version 3.32 - Refactor: Di dời logic xử lý file/paste sang data.service.js
-// Version 3.31 - Fix: Thêm dấu phẩy (,) bị thiếu trong object 'singleSelects'
+// ... (các phiên bản trước giữ nguyên)
 // MODULE: EVENT LISTENERS INITIALIZER
 // File này đóng vai trò là điểm khởi đầu, import và khởi chạy tất cả các module listener con.
 
@@ -215,14 +213,31 @@ export function initializeEventListeners(mainAppController) {
             appController.updateAndRenderCurrentTab();
             return;
         }
+        
+        // *** START: SỬA LỖI CHỤP ẢNH (v3.38) ***
+        // Sửa lỗi 1 (chia mảnh) và 2 (biểu đồ trắng)
         const captureDetailBtn = e.target.closest('#capture-sknv-detail-btn, #capture-dtnv-lk-detail-btn, #capture-dtnv-rt-detail-btn');
         if (captureDetailBtn) {
             e.preventDefault();
             const areaToCapture = captureDetailBtn.closest('.sub-tab-content')?.querySelector('[id$="-capture-area"]');
             const title = appState.viewingDetailFor?.employeeId || 'ChiTietNV';
-            if (areaToCapture) captureService.captureDashboardInParts(areaToCapture, title);
+            
+            if (areaToCapture) {
+                // Luôn gọi captureAndDownload (sửa lỗi chia mảnh)
+                // và dùng preset 'preset-mobile-portrait' (sửa lỗi biểu đồ trắng + đồng bộ kích thước)
+                
+                // Áp dụng preset di động cho chi tiết SKNV và chi tiết DTNV LK
+                if (captureDetailBtn.id === 'capture-sknv-detail-btn' || captureDetailBtn.id === 'capture-dtnv-lk-detail-btn') {
+                    captureService.captureAndDownload(areaToCapture, title, 'preset-mobile-portrait');
+                } else {
+                    // Chi tiết DTNV Realtime
+                    captureService.captureAndDownload(areaToCapture, title, 'preset-mobile-portrait');
+                }
+            }
+            // *** END: SỬA LỖI CHỤP ẢNH (v3.38) ***
             return;
         }
+        
         const luykeViewSwitcherBtn = e.target.closest('#luyke-thidua-view-selector .view-switcher__btn');
         if (luykeViewSwitcherBtn) {
             e.preventDefault();
@@ -274,13 +289,17 @@ export function initializeEventListeners(mainAppController) {
             return;
         }
 
-        // === START: SỬA LỖI (v3.37) ===
+        // === START: MODIFIED (v3.39) - Nâng cấp bộ lọc ngày ===
         
-        // (Task 1) Listener cho bộ lọc ngày của biểu đồ chi tiết LK
-        const dailyChartFilterBtn = e.target.closest('.lk-daily-filter-btn');
+        // (Task 1) Listener cho các nút lọc ngày (TRỪ nút Tùy chọn)
+        const dailyChartFilterBtn = e.target.closest('.lk-daily-filter-btn:not(#lk-daily-filter-custom)');
         if (dailyChartFilterBtn) {
             e.preventDefault();
-            const days = parseInt(dailyChartFilterBtn.dataset.days, 10);
+            
+            // Xóa trạng thái lọc tùy chỉnh (nếu có)
+            if(appState.currentEmployeeDetailData) appState.currentEmployeeDetailData.customFilteredDailyStats = null;
+
+            const filterValue = dailyChartFilterBtn.dataset.days; // "3", "5", "7", "10", "all"
             
             // Cập nhật UI nút
             document.querySelectorAll('.lk-daily-filter-btn').forEach(btn => {
@@ -292,11 +311,73 @@ export function initializeEventListeners(mainAppController) {
 
             const detailData = appState.currentEmployeeDetailData;
             if (detailData && detailData.dailyStats) {
+                let dataForChart;
+                if (filterValue === 'all') {
+                    dataForChart = detailData.dailyStats; // Lấy tất cả
+                } else {
+                    const days = parseInt(filterValue, 10);
+                    dataForChart = detailData.dailyStats.slice(-days); // Lấy X ngày cuối
+                }
+                
                 // Gọi trực tiếp hàm render biểu đồ (nhanh hơn là render lại toàn bộ tab)
-                ui._renderDailyCharts(detailData.dailyStats, days); // Sửa lỗi path
+                ui._renderDailyCharts(detailData.dailyStats, dataForChart); // Pass mảng đã lọc
             } else {
                 console.warn("Không tìm thấy appState.currentEmployeeDetailData.dailyStats, không thể vẽ lại biểu đồ.");
             }
+            return;
+        }
+
+        // (Task 3) Listener cho nút "Tùy chọn..."
+        const customDateFilterBtn = e.target.closest('#lk-daily-filter-custom');
+        if (customDateFilterBtn) {
+            e.preventDefault();
+            
+            const detailData = appState.currentEmployeeDetailData;
+            if (!detailData || !detailData.dailyStats) {
+                ui.showNotification("Lỗi: Không tìm thấy dữ liệu ngày để lọc.", "error");
+                return;
+            }
+
+            // Cập nhật UI nút (làm cho nó active)
+            document.querySelectorAll('.lk-daily-filter-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white');
+                btn.classList.add('bg-gray-200');
+            });
+            customDateFilterBtn.classList.add('bg-blue-600', 'text-white');
+            customDateFilterBtn.classList.remove('bg-gray-200');
+
+            // Mở Flatpickr
+            flatpickr(customDateFilterBtn, {
+                mode: "range",
+                dateFormat: "Y-m-d", // Dùng định dạng chuẩn để lọc
+                maxDate: "today",
+                defaultDate: [],
+                onClose: (selectedDates) => {
+                    if (selectedDates.length === 2) {
+                        const [start, end] = selectedDates;
+                        const startTime = start.getTime();
+                        // Set end time to end of day
+                        const endTime = new Date(end.getFullYear(), end.getMonth(), end.getDate(), 23, 59, 59).getTime();
+
+                        const filteredStats = detailData.dailyStats.filter(stat => {
+                            const statTime = new Date(stat.date).getTime();
+                            return statTime >= startTime && statTime <= endTime;
+                        });
+
+                        // Lưu kết quả lọc tùy chỉnh vào state
+                        appState.currentEmployeeDetailData.customFilteredDailyStats = filteredStats;
+                        
+                        // Vẽ lại biểu đồ với dữ liệu đã lọc
+                        ui._renderDailyCharts(detailData.dailyStats, filteredStats);
+                    } else {
+                        // Nếu không chọn range, reset
+                        if(appState.currentEmployeeDetailData) appState.currentEmployeeDetailData.customFilteredDailyStats = null;
+                        // Kích hoạt nút 7 ngày làm mặc định
+                        const sevenDayBtn = document.querySelector('.lk-daily-filter-btn[data-days="7"]');
+                        if (sevenDayBtn) sevenDayBtn.click();
+                    }
+                }
+            }).open(); // Mở lịch ngay lập tức
             return;
         }
 
@@ -413,7 +494,7 @@ export function initializeEventListeners(mainAppController) {
             }
             return;
         }
-        // === END: SỬA LỖI (v3.37) ===
+        // === END: SỬA LỖI (v3.37) / MODIFIED (v3.39) ===
     });
 
     // Specific filter listeners (Giữ nguyên)

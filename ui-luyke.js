@@ -1,7 +1,4 @@
-// Version 2.15 - Fix ReferenceError: dtThucDuKien is not defined in displayHealthKpiTable
-// Version 2.14 - Split daily charts into two separate cards for clarity
-// Version 2.13 - Store detailData in appState and read active chart filter
-// Version 2.12 - Implement 4 new features for LK Employee Detail view (charts, modals)
+// Version 2.17 - Add "All" & "Custom" date filters, and fix chart label overflow
 // Version 2.11 - Critical Fix: Restore all missing functions and add renderLuykeEmployeeDetail
 // MODULE: UI LUY KE
 // Chứa các hàm render giao diện cho tab "Sức khỏe Siêu thị (Lũy kế)".
@@ -83,16 +80,26 @@ export const uiLuyke = {
         uiComponents.toggleModal('selection-modal', true);
     },
     
-    // === START: NEW FUNCTION (TASK 1) ===
+    // === START: MODIFIED FUNCTION (TASK 1 & 3) ===
     /**
      * Render 2 biểu đồ thống kê theo ngày.
-     * @param {Array} dailyStats - Dữ liệu đã xử lý từ service.
-     * @param {number} daysToShow - Số ngày cần hiển thị (3, 5, 7, 10).
+     * @param {Array} dailyStats - Dữ liệu gốc.
+     * @param {number | 'all' | Array} filterParam - Số ngày, 'all', hoặc mảng dữ liệu đã lọc.
      */
-    _renderDailyCharts(dailyStats, daysToShow = 7) {
+    _renderDailyCharts(dailyStats, filterParam = 7) {
         if (!dailyStats || dailyStats.length === 0) return;
 
-        const filteredData = dailyStats.slice(-daysToShow);
+        let filteredData;
+        if (typeof filterParam === 'number') {
+            filteredData = dailyStats.slice(-filterParam); // Lọc theo số ngày
+        } else if (filterParam === 'all') {
+            filteredData = dailyStats; // Lấy tất cả
+        } else if (Array.isArray(filterParam)) {
+            filteredData = filterParam; // Sử dụng mảng đã lọc (cho Tùy chọn)
+        } else {
+            filteredData = dailyStats.slice(-7); // Mặc định 7 ngày
+        }
+
         const labels = filteredData.map(d => new Date(d.date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }));
         const dtqdData = filteredData.map(d => d.convertedRevenue / 1000000);
         const tlqdData = filteredData.map(d => (d.revenue > 0 ? (d.convertedRevenue / d.revenue) - 1 : 0));
@@ -128,7 +135,10 @@ export const uiLuyke = {
                 }
             },
             scales: {
-                y: { beginAtZero: true }
+                y: { 
+                    beginAtZero: true,
+                    grace: '10%' // (Task 1) Thêm 10% khoảng đệm
+                }
             }
         });
 
@@ -176,7 +186,7 @@ export const uiLuyke = {
             });
         }
     },
-    // === END: NEW FUNCTION ===
+    // === END: MODIFIED FUNCTION ===
 
     // === START: NEW FUNCTION (TASK 3) ===
     /**
@@ -286,7 +296,7 @@ export const uiLuyke = {
     },
     // === END: NEW FUNCTION ===
 
-    // === START: MODIFIED FUNCTION (v2.14) ===
+    // === START: MODIFIED FUNCTION (v2.17) ===
     renderLuykeEmployeeDetail(detailData, employeeData, detailContainerId) {
         const summaryContainer = document.getElementById('revenue-report-container-lk');
         const detailContainer = document.getElementById(detailContainerId);
@@ -306,9 +316,9 @@ export const uiLuyke = {
             return;
         }
 
-        // === START: (Task 3 & 4) Lưu state cho modal ===
-        appState.currentEmployeeDetailData = detailData;
-        // === END: (Task 3 & 4) ===
+        // === START: (Task 3) Thêm customFilteredDailyStats: null ===
+        appState.currentEmployeeDetailData = { ...detailData, customFilteredDailyStats: null };
+        // === END: (Task 3) ===
 
         const { summary, topProductGroups, categoryChartData, byCustomer, dailyStats, unexportedDetails } = detailData;
         const { mucTieu } = employeeData;
@@ -365,6 +375,7 @@ export const uiLuyke = {
             }).join('');
         };
         
+        // === START: (Task 3) Cập nhật HTML bộ lọc ngày ===
         const headerHtml = `
             <div class="mb-4 flex justify-between items-center">
                 <button class="back-to-summary-btn text-blue-600 hover:underline font-semibold">‹ Quay lại bảng tổng hợp</button>
@@ -373,58 +384,71 @@ export const uiLuyke = {
                     <span>Chụp ảnh</span>
                 </button>
             </div>
-            <div id="dtnv-lk-capture-area">
-                <div class="p-4 mb-6 bg-white text-gray-800 rounded-lg shadow-lg border luyke-detail-header" data-capture-group="1">
+            <div id="dtnv-lk-capture-area" class="preset-mobile-capture-area">
+                <div class="p-4 mb-6 bg-white text-gray-800 rounded-lg shadow-lg border luyke-detail-header">
                     <h3>${employeeData.hoTen} - ${employeeData.maNV}</h3>
                 </div>
                 
-                <div data-capture-group="1">
+                <div>
                     ${renderKpiCards()}
                 </div>
 
-                <div id="lk-daily-chart-filters" class="flex items-center justify-center gap-2 mb-4" data-capture-group="1">
+                <div id="lk-daily-chart-filters" class="flex items-center justify-center flex-wrap gap-2 mb-4">
                     <span class="text-sm font-medium">Xem theo:</span>
+                    <button id="lk-daily-filter-all" class="lk-daily-filter-btn px-3 py-1 text-xs font-medium rounded-full bg-gray-200" data-days="all">Tất cả</button>
                     <button class="lk-daily-filter-btn px-3 py-1 text-xs font-medium rounded-full bg-gray-200" data-days="3">3 ngày</button>
                     <button class="lk-daily-filter-btn px-3 py-1 text-xs font-medium rounded-full bg-gray-200" data-days="5">5 ngày</button>
                     <button class="lk-daily-filter-btn px-3 py-1 text-xs font-medium rounded-full bg-blue-600 text-white" data-days="7">7 ngày</button>
                     <button class="lk-daily-filter-btn px-3 py-1 text-xs font-medium rounded-full bg-gray-200" data-days="10">10 ngày</button>
+                    <button id="lk-daily-filter-custom" class="lk-daily-filter-btn px-3 py-1 text-xs font-medium rounded-full bg-gray-200">Tùy chọn...</button>
                 </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6" data-capture-layout="grid">
-                    <div class="bg-white p-4 rounded-lg shadow-md border" style="height: 300px;" data-capture-group="2">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white p-4 rounded-lg shadow-md border" style="height: 300px;">
                         <h4 class="text-md font-bold text-gray-700 mb-2 text-center">Doanh thu QĐ theo ngày (Tr)</h4>
                         <div class="relative h-full w-full" style="height: 250px;"><canvas id="lk-daily-dtqd-chart"></canvas></div>
                     </div>
-                    <div class="bg-white p-4 rounded-lg shadow-md border" style="height: 300px;" data-capture-group="2">
+                    <div class="bg-white p-4 rounded-lg shadow-md border" style="height: 300px;">
                         <h4 class="text-md font-bold text-gray-700 mb-2 text-center">Tỷ lệ QĐ theo ngày</h4>
                         <div class="relative h-full w-full" style="height: 250px;"><canvas id="lk-daily-tlqd-chart"></canvas></div>
                     </div>
                 </div>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6" data-capture-layout="grid">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                     
-                     <div class="bg-white p-4 rounded-lg shadow-md border" data-capture-group="3">
+                     <div class="bg-white p-4 rounded-lg shadow-md border">
                         <h4 class="text-md font-bold text-gray-700 border-b pb-2 mb-3">Top 5 Nhóm Hàng Doanh Thu Cao</h4>
                         <div class="space-y-3">
                             ${renderTopGroupsAsProgressBars()}
                          </div>
                     </div>
                     
-                    <div class="bg-white p-4 rounded-lg shadow-md border" data-capture-group="3">
+                    <div class="bg-white p-4 rounded-lg shadow-md border">
                         <h4 class="text-md font-bold text-gray-700 mb-2">Tỷ Trọng Doanh Thu Ngành Hàng</h4>
                          <div class="luyke-detail-chart-container">
                             <canvas id="luyke-employee-chart"></canvas>
                         </div>
                     </div>
                 </div>
-
-                </div>`;
+            </div>`;
 
         detailContainer.innerHTML = headerHtml;
 
+        // === START: (Task 3) Cập nhật logic gọi biểu đồ ===
         // (Task 1) Gọi hàm render biểu đồ hàng ngày, đọc từ filter
         const activeFilterBtn = document.querySelector('#lk-daily-chart-filters .lk-daily-filter-btn.bg-blue-600');
-        const daysToShow = activeFilterBtn ? parseInt(activeFilterBtn.dataset.days, 10) : 7;
-        uiLuyke._renderDailyCharts(dailyStats, daysToShow);
+        let filterParam = activeFilterBtn ? activeFilterBtn.dataset.days : '7';
+        
+        // Chuyển đổi 'all' hoặc số
+        if (filterParam === 'all') {
+             filterParam = 'all';
+        } else if (!isNaN(parseInt(filterParam, 10))) {
+            filterParam = parseInt(filterParam, 10);
+        } else {
+            // Trường hợp này là nút "Tùy chọn" đang active, dữ liệu đã được lọc sẵn
+            filterParam = appState.currentEmployeeDetailData.customFilteredDailyStats || dailyStats.slice(-7);
+        }
+        
+        uiLuyke._renderDailyCharts(dailyStats, filterParam);
+        // === END: (Task 3) Cập nhật logic ===
 
         const ctx = document.getElementById('luyke-employee-chart')?.getContext('2d');
         if (ctx && categoryChartData && categoryChartData.length > 0) {
@@ -466,7 +490,10 @@ export const uiLuyke = {
                         }
                     },
                     scales: {
-                        y: { beginAtZero: true }
+                        y: { 
+                            beginAtZero: true,
+                            grace: '10%' // (Task 1) Thêm 10% khoảng đệm
+                        }
                      }
                 },
                 plugins: [ChartDataLabels]

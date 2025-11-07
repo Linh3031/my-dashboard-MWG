@@ -1,4 +1,4 @@
-/* Version 1.1 - Add hover to KPI cards & Fix modal font weight/color
+/* Version 1.5 - Soften customer detail modal fonts (Task 4)
 /* Version 1.0 - Components styles (Refactored from v6.19) */
 /* Chứa các class tái sử dụng cho các "linh kiện" UI: buttons, cards, modals, inputs, etc. */
 
@@ -492,9 +492,11 @@ details[open] > summary
     background-color: #f9fafb;
 }
 .customer-accordion-luyke .customer-name-small {
-    font-weight: 600;
+    /* === START: SỬA LỖI FONT (Task 4) === */
+    font-weight: 500; /* Giảm từ 600 xuống 500 */
     font-size: 0.9rem; 
-    color: #1f2937; /* Màu đậm hơn cho Tên KH */
+    color: #2563eb; /* Đổi sang màu xanh dương */
+    /* === END: SỬA LỖI FONT === */
     flex-grow: 1; 
     min-width: 120px;
 }
@@ -506,9 +508,10 @@ details[open] > summary
     white-space: nowrap;
 }
 .customer-accordion-luyke .order-metrics strong {
-    /* (Task 3) Các con số (strong) sẽ được làm đậm và có màu riêng */
-    font-weight: 600;
+    /* === START: SỬA LỖI FONT (Task 4) === */
+    font-weight: 500; /* Giảm từ 600 xuống 500 */
     color: #1f2937; /* Màu đen-xám cho số */
+    /* === END: SỬA LỖI FONT === */
 }
 .customer-accordion-luyke .order-metrics .text-gray-900 {
     color: #1f2937 !important; /* Ghi đè class cũ (nếu có) */
@@ -532,3 +535,21 @@ details[open] > summary
 }
 .customer-accordion-luyke .qd-below-target { color: #b91c1c; }
 .customer-accordion-luyke .qd-above-target { color: #1d4ed8; }
+
+/* === START: Capture Preset Fixes (v1.2) === */
+
+/* 1. Đảm bảo khu vực chụp chi tiết (từ ui-luyke.js) tuân thủ chiều rộng preset */
+.capture-container.preset-mobile-portrait .preset-mobile-capture-area {
+    /* width: 750px !important; <-- ĐÃ XÓA (v1.4) */
+    box-sizing: border-box; /* Đảm bảo padding không phá vỡ chiều rộng */
+}
+
+/* 2. Đảm bảo nội dung modal tuân thủ chiều rộng preset */
+.capture-container.preset-mobile-portrait #customer-detail-list-container,
+.capture-container.preset-mobile-portrait #unexported-detail-list-container {
+    width: 100% !important; /* Lấy 100% của 750px */
+    max-width: 100% !important;
+    box-sizing: border-box;
+}
+
+/* === END: Capture Preset Fixes (v1.2) === */
