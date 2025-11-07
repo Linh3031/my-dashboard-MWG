@@ -1,17 +1,11 @@
 --- START FILE: ./Firebase.js ---
-// Version 3.3 - Add cloud functions for competitionNameMappings
-// Version 3.2 - Modify incrementCounter to support user-specific actionsTaken
-// Version 3.1 - Add savePastedDataToFirestore for text content sync
-// Version 3.0 - Implement Cloud Storage upload & save metadata to Firestore
-// Version 2.5 - Add detailed try...catch for setDoc in saveDataByWarehouse
-// Version 2.4 - Fix syntax error in initCore()
-// Version 2.3 - Add version and timestamp fields for data synchronization
-// MODULE: FIREBASE
+// Version 3.4 - Refactor: Extract action functions into separate services
+// MODULE: FIREBASE (CORE)
 // Chịu trách nhiệm kết nối, thiết lập listener với Firebase.
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, arrayUnion, serverTimestamp, query, orderBy, setDoc, increment, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+import { getFirestore, collection, onSnapshot, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getStorage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 import { appState } from './state.js';
 import { ui } from './ui.js';
 
@@ -108,363 +102,6 @@ const firebase = {
         console.log("Firebase listeners setup initiated.");
     },
 
-    // *** MODIFIED FUNCTION (v3.2) ***
-    /**
-     * Tăng giá trị một trường số trong Firestore.
-     * Nếu fieldName là 'actionsTaken' và có email, tăng bộ đếm cho user đó.
-     * Ngược lại, tăng bộ đếm global trong 'analytics/site_stats'.
-     * @param {string} fieldName Tên trường cần tăng (vd: 'pageLoads', 'actionsTaken').
-     * @param {string} [email=null] Email của người dùng (chỉ dùng cho actionsTaken).
-     */
-    async incrementCounter(fieldName, email = null) {
-        if (!appState.db || !fieldName) return;
-
-        let docRef;
-        const dataToUpdate = { [fieldName]: increment(1) };
-
-        // ** Logic mới: Kiểm tra nếu là actionsTaken và có email **
-        if (fieldName === 'actionsTaken' && email) {
-            docRef = doc(appState.db, "users", email);
-            console.log(`Incrementing actionsTaken for user: ${email}`);
-        } else if (fieldName === 'actionsTaken' && !email) {
-            // Nếu là actionsTaken nhưng không có email (dự phòng), vẫn tăng global
-            docRef = doc(appState.db, "analytics", "site_stats");
-            console.log("Incrementing global actionsTaken (email not provided).");
-        } else {
-            // Các trường hợp khác (vd: pageLoads) tăng global
-            docRef = doc(appState.db, "analytics", "site_stats");
-            console.log(`Incrementing global counter: ${fieldName}`);
-        }
-
-        try {
-            await setDoc(docRef, dataToUpdate, { merge: true });
-        } catch (error) {
-            console.error(`Lỗi khi tăng bộ đếm cho '${fieldName}' tại ${docRef.path}:`, error);
-        }
-    },
-    // *** END MODIFIED FUNCTION ***
-
-    async submitFeedback(content) {
-        if (!content || !appState.db || !appState.currentUser) {
-             ui.showNotification("Không thể gửi góp ý: Người dùng chưa được xác thực.", "error");
-            return;
-        }
-        try {
-            await addDoc(collection(appState.db, "feedback"), {
-                user: { email: appState.currentUser.email },
-                content: content, timestamp: serverTimestamp(), replies: []
-            });
-            ui.showNotification("Góp ý của bạn đã được gửi!", "success");
-            return true;
-        } catch (error) {
-            console.error("Error adding feedback: ", error);
-            ui.showNotification("Lỗi khi gửi góp ý.", "error");
-            return false;
-        }
-    },
-
-    async submitReply(docId, content) {
-        if (!docId || !content || !appState.db) return false;
-        try {
-            const feedbackRef = doc(appState.db, "feedback", docId);
-            await updateDoc(feedbackRef, { replies: arrayUnion({ content: content, timestamp: new Date() }) });
-            return true;
-        } catch (error) {
-            console.error("Error submitting reply:", error);
-            ui.showNotification("Lỗi khi gửi trả lời.", "error");
-            return false;
-        }
-    },
-
-    async saveHelpContent(contents) {
-        if (!appState.db || !appState.isAdmin) return;
-        ui.showNotification('Đang lưu nội dung hướng dẫn...', 'success');
-        try {
-            await Promise.all([
-                setDoc(doc(appState.db, "help_content", "data"), { content: contents.data }),
-                setDoc(doc(appState.db, "help_content", "luyke"), { content: contents.luyke }),
-                setDoc(doc(appState.db, "help_content", "sknv"), { content: contents.sknv }),
-                setDoc(doc(appState.db, "help_content", "realtime"), { content: contents.realtime })
-            ]);
-            ui.showNotification('Đã cập nhật nội dung hướng dẫn thành công!', 'success');
-        } catch (error) {
-            console.error("Error saving help content:", error);
-            ui.showNotification('Lỗi khi lưu nội dung.', 'error');
-        }
-    },
-
-    async saveCategoryDataToFirestore(data) {
-        if (!appState.db || !appState.isAdmin) return;
-        ui.showNotification('Đang đồng bộ dữ liệu khai báo lên cloud...', 'success');
-        try {
-            const categoryRef = doc(appState.db, "declarations", "categoryStructure");
-            await setDoc(categoryRef, { data: data.categories || [] });
-            const brandRef = doc(appState.db, "declarations", "brandList");
-            await setDoc(brandRef, { data: data.brands || [] });
-            ui.showNotification('Đồng bộ dữ liệu khai báo thành công!', 'success');
-        } catch (error) {
-            console.error("Lỗi khi lưu dữ liệu khai báo lên Firestore:", error);
-            ui.showNotification('Lỗi khi đồng bộ dữ liệu lên cloud.', 'error');
-        }
-    },
-
-    async loadCategoryDataFromFirestore() {
-        if (!appState.db) {
-             console.warn("loadCategoryDataFromFirestore called before DB initialization.");
-             return { categories: [], brands: [] };
-        }
-        try {
-            const declarationsCollection = collection(appState.db, "declarations");
-            const querySnapshot = await getDocs(declarationsCollection);
-            let categories = []; let brands = [];
-            querySnapshot.forEach((doc) => {
-                if (doc.id === "categoryStructure") categories = doc.data().data || [];
-                else if (doc.id === "brandList") brands = doc.data().data || [];
-            });
-            console.log(`Loaded ${categories.length} categories and ${brands.length} brands from Firestore.`);
-            return { categories, brands };
-        } catch (error) {
-            console.error("Lỗi khi tải dữ liệu khai báo từ Firestore:", error);
-            return { categories: [], brands: [] };
-        }
-    },
-
-    async loadDeclarationsFromFirestore() {
-        if (!appState.db) {
-            console.warn("loadDeclarationsFromFirestore called before DB initialization.");
-            return {};
-        }
-        console.log("Loading calculation declarations from Firestore...");
-        try {
-            const declarationIds = ['hinhThucXuat', 'hinhThucXuatGop', 'heSoQuyDoi'];
-            const declarations = {};
-            await Promise.all(declarationIds.map(async (id) => {
-                const docRef = doc(appState.db, "declarations", id);
-                const docSnap = await getDoc(docRef);
-                declarations[id] = docSnap.exists() ? (docSnap.data().content || '') : '';
-            }));
-            console.log("Successfully loaded calculation declarations.");
-            return declarations;
-        } catch (error) {
-            console.error("Lỗi khi tải dữ liệu khai báo tính toán từ Firestore:", error);
-            return {};
-        }
-    },
-
-    async saveDeclarationsToFirestore(declarations) {
-        if (!appState.db || !appState.isAdmin) return;
-        ui.showNotification('Đang đồng bộ khai báo tính toán lên cloud...', 'success');
-        try {
-            await Promise.all([
-                setDoc(doc(appState.db, "declarations", "hinhThucXuat"), { content: declarations.ycx }),
-                setDoc(doc(appState.db, "declarations", "hinhThucXuatGop"), { content: declarations.ycxGop }),
-                 setDoc(doc(appState.db, "declarations", "heSoQuyDoi"), { content: declarations.heSo })
-            ]);
-            ui.showNotification('Đồng bộ khai báo tính toán thành công!', 'success');
-        } catch (error) {
-            console.error("Lỗi khi lưu dữ liệu khai báo tính toán:", error);
-            ui.showNotification('Lỗi khi đồng bộ khai báo tính toán.', 'error');
-        }
-    },
-
-    // *** START: NEW FUNCTIONS (v3.3) ***
-    async loadCompetitionNameMappings() {
-        if (!appState.db) {
-            console.warn("loadCompetitionNameMappings called before DB initialization.");
-            return {};
-        }
-        console.log("Loading competition name mappings from Firestore...");
-        try {
-            const docRef = doc(appState.db, "declarations", "competitionNameMappings");
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-                console.log("Successfully loaded competition name mappings.");
-                return docSnap.data().mappings || {};
-            } else {
-                console.log("No competition name mappings found in Firestore, returning empty object.");
-                return {};
-            }
-        } catch (error) {
-            console.error("Lỗi khi tải Bảng Ánh Xạ Tên Thi Đua từ Firestore:", error);
-            return {};
-        }
-    },
-
-    async saveCompetitionNameMappings(mappings) {
-        if (!appState.db || !appState.isAdmin) {
-            console.warn("Save competition name mappings skipped: Not admin or DB not initialized.");
-            return;
-        }
-        console.log("Saving competition name mappings to Firestore...");
-        try {
-            const docRef = doc(appState.db, "declarations", "competitionNameMappings");
-            await setDoc(docRef, { mappings: mappings });
-            console.log("Successfully saved competition name mappings.");
-        } catch (error) {
-            console.error("Lỗi khi lưu Bảng Ánh Xạ Tên Thi Đua:", error);
-            ui.showNotification('Lỗi khi lưu tên rút gọn lên cloud.', 'error');
-        }
-    },
-    // *** END: NEW FUNCTIONS (v3.3) ***
-
-    async getTemplateDownloadURL() {
-        if (!appState.storage) throw new Error("Firebase Storage chưa được khởi tạo.");
-        const filePath = 'templates/danh_sach_nhan_vien_mau.xlsx';
-        const storageRef = ref(appState.storage, filePath);
-        try { return await getDownloadURL(storageRef); }
-        catch (error) { console.error("Lỗi khi lấy URL tải file mẫu: ", error); throw error; }
-    },
-
-    async getBookmarkDownloadURL() {
-        if (!appState.storage) throw new Error("Firebase Storage chưa được khởi tạo.");
-        const filePath = 'templates/Share_QLST.zip';
-        const storageRef = ref(appState.storage, filePath);
-        try { return await getDownloadURL(storageRef); }
-        catch (error) { console.error("Lỗi khi lấy URL tải file bookmark: ", error); throw error; }
-    },
-
-    async getQrCodeDownloadURL() {
-        if (!appState.storage) throw new Error("Firebase Storage chưa được khởi tạo.");
-        const filePath = 'qrcodes/main-qr.jpg';
-        const storageRef = ref(appState.storage, filePath);
-        try { return await getDownloadURL(storageRef); }
-        catch (error) {
-            console.error("Lỗi khi lấy URL của mã QR: ", error);
-            if (error.code === 'storage/object-not-found') throw new Error(`Không tìm thấy file mã QR tại đường dẫn '${filePath}'. Vui lòng kiểm tra lại Firebase Storage.`);
-            throw new Error("Không thể tải được mã QR từ server.");
-        }
-    },
-
-    async upsertUserRecord(email) {
-        if (!appState.db || !email) return;
-        if (!appState.auth?.currentUser) { console.warn("Attempted to upsert user record before auth is ready."); return; }
-        const userRef = doc(appState.db, "users", email);
-        try {
-            // Chỉ tăng loginCount, không reset actionsTaken ở đây
-            await setDoc(userRef, {
-                email: email,
-                lastLogin: serverTimestamp(),
-                loginCount: increment(1)
-            }, { merge: true });
-            console.log(`User record for ${email} updated successfully (loginCount incremented).`);
-        } catch (error) { console.error("Error upserting user record:", error); }
-    },
-
-    async uploadFileToStorage(file, storagePath, onProgress) {
-        if (!appState.storage) {
-            throw new Error("Firebase Storage is not initialized.");
-        }
-        if (!file || !storagePath) {
-            throw new Error("File or storage path is missing for upload.");
-        }
-
-        const storageRef = ref(appState.storage, storagePath);
-        const uploadTask = uploadBytesResumable(storageRef, file);
-
-        return new Promise((resolve, reject) => {
-            uploadTask.on('state_changed',
-                (snapshot) => {
-                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                    console.log(`Upload ${storagePath} is ${progress}% done`);
-                    if (onProgress && typeof onProgress === 'function') {
-                        onProgress(progress);
-                    }
-                },
-                (error) => {
-                    console.error(`%c[Firebase.uploadFileToStorage] LỖI KHI UPLOAD file ${storagePath}:`, "color: red; font-weight: bold;", error);
-                    let userMessage = `Lỗi upload file lên cloud (${error.code || 'UNKNOWN'}).`;
-                    switch (error.code) {
-                        case 'storage/unauthorized':
-                            userMessage = "Lỗi upload: Bạn không có quyền tải file lên.";
-                            break;
-                        case 'storage/canceled':
-                            userMessage = "Lỗi upload: Quá trình tải file đã bị hủy.";
-                            break;
-                        case 'storage/unknown':
-                            userMessage = "Lỗi upload: Đã xảy ra lỗi không xác định trên server.";
-                            break;
-                    }
-                    ui.showNotification(userMessage, 'error');
-                    reject(error);
-                },
-                async () => {
-                    console.log(`[Firebase.uploadFileToStorage] File ${storagePath} uploaded successfully.`);
-                    try {
-                        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                        console.log('[Firebase.uploadFileToStorage] File available at', downloadURL);
-                        resolve(downloadURL);
-                    } catch (getUrlError) {
-                        console.error(`%c[Firebase.uploadFileToStorage] LỖI KHI LẤY DOWNLOAD URL cho ${storagePath}:`, "color: red; font-weight: bold;", getUrlError);
-                        ui.showNotification(`Lỗi lấy link file sau khi upload (${getUrlError.code || 'UNKNOWN'}).`, 'error');
-                        reject(getUrlError);
-                    }
-                }
-            );
-        });
-    },
-
-    async saveMetadataToFirestore(kho, dataType, metadata) {
-        if (!appState.db || !kho || !dataType || !metadata) {
-            console.error("[saveMetadataToFirestore] Invalid input parameters.");
-            throw new Error("Invalid parameters for saving metadata.");
-        }
-        if (!appState.currentUser?.email) {
-            throw new Error("Không thể lưu metadata khi chưa định danh email.");
-        }
-
-        const khoRef = doc(appState.db, "warehouseData", kho);
-        const dataToSave = {
-            [dataType]: {
-                ...metadata,
-                updatedAt: serverTimestamp(),
-                updatedBy: appState.currentUser.email
-            }
-        };
-
-        try {
-            console.log(`[Firebase.saveMetadataToFirestore] Attempting to save metadata for ${dataType} (v${metadata.version}, t${metadata.timestamp}) for kho ${kho}.`);
-            await setDoc(khoRef, dataToSave, { merge: true });
-            console.log(`[Firebase.saveMetadataToFirestore] Successfully saved metadata for ${dataType} (v${metadata.version}).`);
-        } catch (error) {
-            console.error(`%c[Firebase.saveMetadataToFirestore] LỖI KHI LƯU METADATA KHO ${kho} (${dataType}, v${metadata.version}):`, "color: red; font-weight: bold;", error);
-            console.error("[Firebase.saveMetadataToFirestore] Error details:", error.code, error.message);
-            let userMessage = `Lỗi nghiêm trọng khi lưu thông tin đồng bộ ${dataType}.`;
-            ui.showNotification(userMessage, 'error');
-            throw error;
-        }
-    },
-
-    async savePastedDataToFirestore(kho, dataType, content, versionInfo) {
-        if (!appState.db || !kho || !dataType || !content || !versionInfo) {
-            console.error("[savePastedDataToFirestore] Invalid input parameters.");
-            throw new Error("Invalid parameters for saving pasted data.");
-        }
-        if (!appState.currentUser?.email) {
-            throw new Error("Không thể lưu dữ liệu dán khi chưa định danh email.");
-        }
-
-        const khoRef = doc(appState.db, "warehouseData", kho);
-        const metadata = {
-            content: content,
-            version: versionInfo.version,
-            timestamp: versionInfo.timestamp,
-            updatedAt: serverTimestamp(),
-            updatedBy: appState.currentUser.email
-        };
-        const dataToSave = { [dataType]: metadata };
-
-        try {
-            console.log(`[Firebase.savePastedDataToFirestore] Attempting to save pasted data for ${dataType} (v${versionInfo.version}, t${versionInfo.timestamp}) for kho ${kho}.`);
-            await setDoc(khoRef, dataToSave, { merge: true });
-            console.log(`[Firebase.savePastedDataToFirestore] Successfully saved pasted data for ${dataType} (v${versionInfo.version}).`);
-        } catch (error) {
-            console.error(`%c[Firebase.savePastedDataToFirestore] LỖI KHI LƯU DỮ LIỆU DÁN KHO ${kho} (${dataType}, v${versionInfo.version}):`, "color: red; font-weight: bold;", error);
-            let userMessage = `Lỗi nghiêm trọng khi lưu dữ liệu dán ${dataType}.`;
-            ui.showNotification(userMessage, 'error');
-            throw error;
-        }
-    },
-
     listenForDataChanges(kho, callback) {
         if (!appState.db || !kho || typeof callback !== 'function') return null;
         if (!appState.auth?.currentUser) {
@@ -491,55 +128,22 @@ const firebase = {
             }
         });
         return unsubscribe;
-    },
-
-    // *** MODIFIED FUNCTION (v3.2) ***
-    /**
-     * Lấy danh sách tất cả người dùng và thông tin của họ từ Firestore.
-     * Bao gồm cả trường 'actionsTaken' mới.
-     * @returns {Promise<Array<Object>>} Mảng các đối tượng người dùng.
-     */
-    async getAllUsers() {
-        if (!appState.db || !appState.isAdmin) {
-            ui.showNotification("Bạn không có quyền truy cập chức năng này.", "error");
-            return [];
-        }
-        try {
-            const usersCollection = collection(appState.db, "users");
-            const querySnapshot = await getDocs(usersCollection);
-            const users = [];
-            querySnapshot.forEach((doc) => {
-                const data = doc.data();
-                users.push({
-                    email: data.email,
-                    loginCount: data.loginCount || 0,
-                    lastLogin: data.lastLogin?.toDate(),
-                    actionsTaken: data.actionsTaken || 0 // Lấy thêm actionsTaken
-                });
-            });
-            console.log(`Loaded ${users.length} users from Firestore.`);
-            return users;
-        } catch (error) {
-            console.error("Lỗi khi lấy danh sách người dùng:", error);
-            ui.showNotification("Không thể tải danh sách người dùng.", "error");
-            return [];
-        }
     }
-    // *** END MODIFIED FUNCTION ***
 };
 
 export { firebase };
 --- END FILE: ./Firebase.js ---
 
 --- START FILE: ./auth.js ---
-// Version 2.4 - Add detailed logging within polling interval
+// Version 2.5 - Refactor: Call analyticsService instead of firebase
 // MODULE: AUTH
 // Chịu trách nhiệm xử lý logic định danh người dùng qua email, yêu cầu sau khi có phiên ẩn danh.
 
 import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { appState } from './state.js';
 import { ui } from './ui.js';
-import { firebase } from './firebase.js';
+// import { firebase } from './firebase.js'; // <-- Đã xóa
+import { analyticsService } from './services/analytics.service.js'; // <-- Đã thêm
 
 export const auth = {
     _authInstance: null,
@@ -548,44 +152,44 @@ export const auth = {
         if (!this._authInstance) {
             this._authInstance = getAuth();
             if (!this._authInstance) {
-                 console.error("Firebase Auth chưa được khởi tạo đúng cách trong firebase.js");
-                 throw new Error("Firebase Auth initialization failed.");
+                 console.error("Firebase Auth chưa được khởi tạo đúng cách trong firebase.js"); 
+                 throw new Error("Firebase Auth initialization failed."); 
             }
         }
         return new Promise((resolve, reject) => {
             onAuthStateChanged(this._authInstance, async (user) => {
                 if (user) {
                     console.log("Anonymous user detected or already signed in:", user.uid);
-                    resolve(user);
+                    resolve(user); 
                 } else {
-                    console.log("No user found, attempting anonymous sign-in...");
+                    console.log("No user found, attempting anonymous sign-in..."); 
                     try {
-                        const userCredential = await signInAnonymously(this._authInstance);
-                        console.log("Anonymous sign-in successful:", userCredential.user.uid);
-                        resolve(userCredential.user);
+                        const userCredential = await signInAnonymously(this._authInstance); 
+                        console.log("Anonymous sign-in successful:", userCredential.user.uid); 
+                        resolve(userCredential.user); 
                     } catch (error) {
-                        console.error("Anonymous sign-in failed:", error);
-                        ui.showNotification("Lỗi xác thực. Không thể kết nối.", "error");
-                        reject(error);
+                        console.error("Anonymous sign-in failed:", error); 
+                        ui.showNotification("Lỗi xác thực. Không thể kết nối.", "error"); 
+                        reject(error); 
                     }
                 }
             }, (error) => {
-                console.error("Error in onAuthStateChanged listener:", error);
-                reject(error);
+                console.error("Error in onAuthStateChanged listener:", error); 
+                reject(error); 
             });
         });
     },
 
     initEmailIdentification(onSuccessCallback) {
-        const savedEmail = localStorage.getItem('userEmail');
-        if (savedEmail && this._isValidEmail(savedEmail)) {
-            appState.currentUser = { email: savedEmail };
-            console.log("Email found in localStorage, proceeding.");
-            onSuccessCallback();
+        const savedEmail = localStorage.getItem('userEmail'); 
+        if (savedEmail && this._isValidEmail(savedEmail)) { 
+            appState.currentUser = { email: savedEmail }; 
+            console.log("Email found in localStorage, proceeding."); 
+            onSuccessCallback(); 
         } else {
-            console.log("No valid email in localStorage, showing login modal.");
-            ui.toggleModal('login-modal', true);
-            this._setupLoginListenerDeferred(onSuccessCallback);
+            console.log("No valid email in localStorage, showing login modal."); 
+            ui.toggleModal('login-modal', true); 
+            this._setupLoginListenerDeferred(onSuccessCallback); 
         }
     },
 
@@ -593,34 +197,34 @@ export const auth = {
      * @private
      * Thiết lập trình nghe sự kiện cho form đăng nhập - Phiên bản mới với polling
      * Chờ cho đến khi các element của modal xuất hiện trong DOM.
-     * @param {Function} onSuccessCallback - Hàm callback để chạy sau khi đăng nhập thành công.
+     * @param {Function} onSuccessCallback - Hàm callback để chạy sau khi đăng nhập thành công. 
      */
     _setupLoginListenerDeferred(onSuccessCallback) {
-        const maxWaitTime = 5000; // Chờ tối đa 5 giây
-        const checkInterval = 100; // Kiểm tra mỗi 100ms
-        let elapsedTime = 0;
+        const maxWaitTime = 5000; // Chờ tối đa 5 giây 
+        const checkInterval = 100; // Kiểm tra mỗi 100ms 
+        let elapsedTime = 0; 
 
-        console.log("[auth.js] Attempting to set up login listener, waiting for elements...");
+        console.log("[auth.js] Attempting to set up login listener, waiting for elements..."); 
 
         const intervalId = setInterval(() => {
-            elapsedTime += checkInterval; // Tăng thời gian đã trôi qua ở đầu mỗi lần lặp
-            const submitBtn = document.getElementById('login-submit-btn');
-            const emailInput = document.getElementById('login-email-input');
+            elapsedTime += checkInterval; // Tăng thời gian đã trôi qua ở đầu mỗi lần lặp 
+            const submitBtn = document.getElementById('login-submit-btn'); 
+            const emailInput = document.getElementById('login-email-input'); 
 
             // *** ADDED: Logging inside interval ***
-            console.log(`[auth.js interval ${elapsedTime}ms] Checking... Button found: ${!!submitBtn}, Input found: ${!!emailInput}`);
+            console.log(`[auth.js interval ${elapsedTime}ms] Checking... Button found: ${!!submitBtn}, Input found: ${!!emailInput}`); 
 
             if (submitBtn && emailInput) {
-                clearInterval(intervalId);
-                console.log("[auth.js] Login elements found. Attaching listeners now.");
-                this._attachLoginHandlers(submitBtn, emailInput, onSuccessCallback);
+                clearInterval(intervalId); 
+                console.log("[auth.js] Login elements found. Attaching listeners now."); 
+                this._attachLoginHandlers(submitBtn, emailInput, onSuccessCallback); 
             } else if (elapsedTime >= maxWaitTime) {
-                clearInterval(intervalId);
-                console.error("[auth.js] CRITICAL TIMEOUT: Login button or email input not found after waiting.");
+                clearInterval(intervalId); 
+                console.error("[auth.js] CRITICAL TIMEOUT: Login button or email input not found after waiting."); 
                 // *** ADDED: Log current modal HTML on timeout ***
-                const modalElement = document.getElementById('login-modal');
-                console.error("[auth.js] Current #login-modal content on timeout:", modalElement?.innerHTML.substring(0, 300) + "...");
-                ui.showNotification("Lỗi giao diện nghiêm trọng: Không thể khởi tạo form đăng nhập.", "error");
+                const modalElement = document.getElementById('login-modal'); 
+                console.error("[auth.js] Current #login-modal content on timeout:", modalElement?.innerHTML.substring(0, 300) + "..."); 
+                ui.showNotification("Lỗi giao diện nghiêm trọng: Không thể khởi tạo form đăng nhập.", "error"); 
             }
             // No 'else' needed here, just continue polling if not found and not timed out
         }, checkInterval);
@@ -631,12 +235,12 @@ export const auth = {
      * Gắn các hàm xử lý sự kiện click và keydown (tách ra để tái sử dụng).
      */
      _attachLoginHandlers(submitBtn, emailInput, onSuccessCallback) {
-         if (submitBtn.dataset.listenerAttached) {
-             console.warn("Login listener already attached. Skipping.");
-             return;
+         if (submitBtn.dataset.listenerAttached) { 
+             console.warn("Login listener already attached. Skipping."); 
+             return; 
          }
-         submitBtn.dataset.listenerAttached = 'true';
-         emailInput.dataset.listenerAttached = 'true';
+         submitBtn.dataset.listenerAttached = 'true'; 
+         emailInput.dataset.listenerAttached = 'true'; 
 
          submitBtn.onclick = async () => {
              const currentEmailInput = document.getElementById('login-email-input');
@@ -648,49 +252,52 @@ export const auth = {
                  return;
              }
 
-             const email = currentEmailInput.value.trim();
-             if (this._isValidEmail(email)) {
-                 currentErrorMsg.classList.add('hidden');
-                 currentSubmitBtn.disabled = true;
-                 currentSubmitBtn.textContent = "Đang xử lý...";
+             const email = currentEmailInput.value.trim(); 
+             if (this._isValidEmail(email)) { 
+                 currentErrorMsg.classList.add('hidden'); 
+                 currentSubmitBtn.disabled = true; 
+                 currentSubmitBtn.textContent = "Đang xử lý..."; 
 
-                 localStorage.setItem('userEmail', email);
-                 appState.currentUser = { email: email };
+                 localStorage.setItem('userEmail', email); 
+                 appState.currentUser = { email: email }; 
 
-                 ui.showNotification(`Chào mừng ${email}!`, 'success');
-                 await firebase.upsertUserRecord(email);
+                 ui.showNotification(`Chào mừng ${email}!`, 'success'); 
+                 
+                 // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+                 await analyticsService.upsertUserRecord(email);
+                 // === END: TÁI CẤU TRÚC (RE-WIRING) ===
 
-                 ui.toggleModal('login-modal', false);
-                 console.log("Email submitted, calling onSuccessCallback.");
-                 onSuccessCallback();
+                 ui.toggleModal('login-modal', false); 
+                 console.log("Email submitted, calling onSuccessCallback."); 
+                 onSuccessCallback(); 
              } else {
-                 currentErrorMsg.classList.remove('hidden');
-                 currentSubmitBtn.disabled = false;
-                 currentSubmitBtn.textContent = "Xác nhận & Tiếp tục";
+                 currentErrorMsg.classList.remove('hidden'); 
+                 currentSubmitBtn.disabled = false; 
+                 currentSubmitBtn.textContent = "Xác nhận & Tiếp tục"; 
              }
          };
 
-         emailInput.onkeydown = (e) => {
-             if (e.key === 'Enter') {
-                 e.preventDefault();
-                 const currentSubmitBtn = document.getElementById('login-submit-btn');
-                 if (currentSubmitBtn && !currentSubmitBtn.disabled) {
-                     currentSubmitBtn.click();
+         emailInput.onkeydown = (e) => { 
+             if (e.key === 'Enter') { 
+                 e.preventDefault(); 
+                 const currentSubmitBtn = document.getElementById('login-submit-btn'); 
+                 if (currentSubmitBtn && !currentSubmitBtn.disabled) { 
+                     currentSubmitBtn.click(); 
                  }
              }
          };
-         console.log("Successfully attached login handlers.");
+         console.log("Successfully attached login handlers."); 
      },
 
     /**
      * @private
      * Kiểm tra định dạng email đơn giản.
      * @param {string} email
-     * @returns {boolean}
+     * @returns {boolean} 
      */
     _isValidEmail(email) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return email && emailRegex.test(email);
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; 
+        return email && emailRegex.test(email); 
     }
 };
 --- END FILE: ./auth.js ---
@@ -2029,17 +1636,15 @@ export function initializeHighlightingListeners(appController) {
 --- END FILE: ./event-listeners/listeners-highlighting.js ---
 
 --- START FILE: ./event-listeners/listeners-settings.js ---
-// Version 1.6 - Add click listener for pasted competition column toggles
-// Version 1.5 - Save competition name mapping to Firestore (debounced) & re-process data
-// Version 1.4 - Add auto-save listener for competition name mapping
-// Version 1.3 - Add event listener for efficiency column toggles
+// Version 1.7 - Refactor: Re-wire call to new adminService
 // MODULE: LISTENERS - SETTINGS
 // Chứa logic sự kiện cho các drawers Cài đặt và các Modals.
 
 import { ui } from '../ui.js';
 import { settingsService } from '../modules/settings.service.js';
 import { appState } from '../state.js';
-import { firebase } from '../firebase.js'; // *** NEW (v1.5) ***
+// import { firebase } from '../firebase.js'; // <-- ĐÃ XÓA
+import { adminService } from '../services/admin.service.js'; // <-- ĐÃ THÊM 
 import { services } from '../services.js'; // *** NEW (v1.5) ***
 
 export function initializeSettingsListeners(appController) {
@@ -2057,7 +1662,9 @@ export function initializeSettingsListeners(appController) {
     // *** NEW (v1.5): Create a debounced save function (e.g., wait 1 second after last keystroke) ***
     const debouncedSaveMappings = debounce((mappings) => {
         // 1. Save to Firestore
-        firebase.saveCompetitionNameMappings(mappings);
+        // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+        adminService.saveCompetitionNameMappings(mappings); // 
+        // === END: TÁI CẤU TRÚC (RE-WIRING) ===
         ui.showNotification('Đã tự động lưu tên rút gọn lên Cloud!', 'success');
         
         // 2. (Bug 1 Fix) Re-process pasted data with new names
@@ -4651,10 +4258,7 @@ id="luyke-efficiency-content"></div></div>
 --- END FILE: ./index.html ---
 
 --- START FILE: ./main.js ---
-// Version 4.51 - Update _formatChangelogForModal to support nested lists
-// Version 4.49 - Refactor: Di dời 3 hàm (TemplateDownload, CompetitionDebug, FileRead) sang data.service.js
-// Version 4.48 - Refactor: Di dời 14+ hàm xử lý data sang data.service.js
-// ... (các phiên bản trước giữ nguyên)
+// Version 4.52 - Refactor: Re-wire calls from firebase object to new services
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -4662,7 +4266,7 @@ import { config } from './config.js';
 import { appState } from './state.js';
 import { services } from './services.js';
 import { ui } from './ui.js';
-import { firebase } from './firebase.js';
+import { firebase } from './firebase.js'; // Giữ lại cho Core, Listeners
 import { auth } from './auth.js';
 import { luykeTab } from './tab-luyke.js';
 import { sknvTab } from './tab-sknv.js';
@@ -4680,13 +4284,18 @@ import { modalChart } from './components/modal-chart.js';
 import { modalComposer } from './components/modal-composer.js';
 import { modalPreview } from './components/modal-preview.js';
 import { modalSelection } from './components/modal-selection.js';
-// === START: THÊM IMPORT (TASK 3 & 4) ===
 import { modalCustomerDetail } from './components/modal-customer-detail.js';
 import { modalUnexportedDetail } from './components/modal-unexported-detail.js';
-// === END: THÊM IMPORT ===
 import { settingsService } from './modules/settings.service.js';
 import { highlightService } from './modules/highlight.service.js';
-import { dataService } from './services/data.service.js'; // <<< THÊM MỚI (v4.48)
+import { dataService } from './services/data.service.js';
+
+// === START: TÁI CẤU TRÚC (RE-WIRING) IMPORTS ===
+import { analyticsService } from './services/analytics.service.js';
+import { adminService } from './services/admin.service.js';
+import { storageService } from './services/storage.service.js';
+import { collaborationService } from './services/collaboration.service.js';
+// === END: TÁI CẤU TRÚC (RE-WIRING) IMPORTS ===
 
 const LOCAL_DATA_VERSIONS_KEY = '_localDataVersions';
 const LOCAL_METADATA_PREFIX = '_localMetadata_';
@@ -4774,7 +4383,9 @@ const app = {
         console.log(`Email identification complete: ${appState.currentUser.email}. Continuing app initialization...`);
 
         // *** >>> SỬA LỖI ĐẾM LƯỢT TRUY CẬP: GỌI HÀM ĐẾM Ở ĐÂY <<< ***
-        firebase.upsertUserRecord(appState.currentUser.email);
+        // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+        analyticsService.upsertUserRecord(appState.currentUser.email);
+        // === END: TÁI CẤU TRÚC (RE-WIRING) ===
         // *** >>> KẾT THÚC SỬA LỖI <<< ***
 
         appState.competitionConfigs = [];
@@ -4800,7 +4411,9 @@ const app = {
         await this.storage.openDB();
         console.log("Loading category data from Firestore...");
         try {
-            const { categories, brands } = await firebase.loadCategoryDataFromFirestore();
+            // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+            const { categories, brands } = await adminService.loadCategoryDataFromFirestore();
+            // === END: TÁI CẤU TRÚC (RE-WIRING) ===
             appState.categoryStructure = categories;
             appState.brandList = brands;
             console.log(`Successfully populated ${appState.categoryStructure.length} categories and ${appState.brandList.length} brands from Firestore.`);
@@ -4817,7 +4430,9 @@ const app = {
 
         console.log("Loading calculation declarations from Firestore...");
         try {
-            const declarations = await firebase.loadDeclarationsFromFirestore();
+            // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+            const declarations = await adminService.loadDeclarationsFromFirestore();
+            // === END: TÁI CẤU TRÚC (RE-WIRING) ===
             appState.declarations = declarations;
             const decYcxEl = document.getElementById('declaration-ycx');
             if (decYcxEl) decYcxEl.value = declarations.hinhThucXuat || config.DEFAULT_DATA.HINH_THUC_XUAT_TINH_DOANH_THU.join('\n');
@@ -4833,7 +4448,9 @@ const app = {
         // *** NEW (v4.41): Load competition name mappings from Firestore ***
         console.log("Loading competition name mappings from Firestore...");
         try {
-            appState.competitionNameMappings = await firebase.loadCompetitionNameMappings();
+            // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+            appState.competitionNameMappings = await adminService.loadCompetitionNameMappings();
+            // === END: TÁI CẤU TRÚC (RE-WIRING) ===
             console.log("Successfully loaded competition name mappings from Firestore.");
         } catch (error) {
                 console.error("Error loading competition name mappings:", error);
@@ -4853,6 +4470,7 @@ const app = {
             console.log(`Re-attaching listener for saved warehouse: ${savedWarehouse}`);
             
             // <<< CẬP NHẬT (v4.48): Trỏ callback đến dataService >>>
+            // (HÀM NÀY VẪN GỌI firebase. VÌ NÓ LÀ HÀM LÕI)
             this.unsubscribeDataListener = firebase.listenForDataChanges(savedWarehouse, (cloudData) => {
                 dataService.handleCloudDataUpdate(cloudData);
             });
@@ -5344,7 +4962,9 @@ const app = {
     async loadAndApplyBookmarkLink() {
         // ... (Giữ nguyên)
             try {
-            const bookmarkUrl = await firebase.getBookmarkDownloadURL();
+                // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+                const bookmarkUrl = await storageService.getBookmarkDownloadURL();
+                // === END: TÁI CẤU TRÚC (RE-WIRING) ===
             const linkElement = document.getElementById('download-bookmark-link');
             if (linkElement) linkElement.href = bookmarkUrl;
         } catch (error) {
@@ -5564,7 +5184,9 @@ const app = {
             ycxGop: ycxGopEl ? ycxGopEl.value : '',
             heSo: heSoEl ? heSoEl.value : ''
         };
-        await firebase.saveDeclarationsToFirestore(declarationsToSave);
+        // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+        await adminService.saveDeclarationsToFirestore(declarationsToSave);
+        // === END: TÁI CẤU TRÚC (RE-WIRING) ===
         appState.declarations.hinhThucXuat = declarationsToSave.ycx;
         appState.declarations.hinhThucXuatGop = declarationsToSave.ycxGop;
         appState.declarations.heSoQuyDoi = declarationsToSave.heSo;
@@ -5583,14 +5205,18 @@ const app = {
                 sknv: sknvEl ? sknvEl.value : '',
                 realtime: realtimeEl ? realtimeEl.value : ''
         };
-        firebase.saveHelpContent(contents);
+        // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+        adminService.saveHelpContent(contents);
+        // === END: TÁI CẤU TRÚC (RE-WIRING) ===
     },
 
     async handleSubmitFeedback() {
         // ... (Giữ nguyên)
         const textarea = document.getElementById('feedback-textarea');
         if(textarea){
-            const success = await firebase.submitFeedback(textarea.value.trim());
+            // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+            const success = await collaborationService.submitFeedback(textarea.value.trim());
+            // === END: TÁI CẤU TRÚC (RE-WIRING) ===
             if (success) textarea.value = '';
         }
     },
@@ -5605,7 +5231,9 @@ const app = {
         if (e.target.classList.contains('submit-reply-btn')) {
                 const textarea = replyForm.querySelector('textarea');
                 if(textarea){
-                const success = await firebase.submitReply(docId, textarea.value.trim());
+                    // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+                    const success = await collaborationService.submitReply(docId, textarea.value.trim());
+                    // === END: TÁI CẤU TRÚC (RE-WIRING) ===
                 if (success) { textarea.value = ''; replyForm.classList.add('hidden'); }
                 }
         }
@@ -5738,7 +5366,9 @@ const app = {
     async loadAndDisplayQrCode() {
         // ... (Giữ nguyên)
             try {
-            const qrUrl = await firebase.getQrCodeDownloadURL();
+                // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+                const qrUrl = await storageService.getQrCodeDownloadURL();
+                // === END: TÁI CẤU TRÚC (RE-WIRING) ===
             const imgEl = document.getElementById('header-qr-image');
             if (imgEl) imgEl.src = qrUrl;
         }
@@ -6679,6 +6309,281 @@ export const storage = {
 };
 --- END FILE: ./modules/storage.js ---
 
+--- START FILE: ./services/admin.service.js ---
+// Version 1.0 - Initial service extraction
+// MODULE: ADMIN SERVICE
+// Chịu trách nhiệm xử lý logic đọc/ghi dữ liệu của Admin (Khai báo, Hướng dẫn).
+import { getFirestore, collection, doc, setDoc, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { appState } from '../state.js';
+import { ui } from '../ui.js';
+
+export const adminService = {
+    async saveHelpContent(contents) {
+        if (!appState.db || !appState.isAdmin) return;
+        ui.showNotification('Đang lưu nội dung hướng dẫn...', 'success');
+        try {
+            await Promise.all([
+                setDoc(doc(appState.db, "help_content", "data"), { content: contents.data }),
+                setDoc(doc(appState.db, "help_content", "luyke"), { content: contents.luyke }),
+                setDoc(doc(appState.db, "help_content", "sknv"), { content: contents.sknv }),
+                setDoc(doc(appState.db, "help_content", "realtime"), { content: contents.realtime })
+            ]);
+            ui.showNotification('Đã cập nhật nội dung hướng dẫn thành công!', 'success');
+        } catch (error) {
+            console.error("Error saving help content:", error);
+            ui.showNotification('Lỗi khi lưu nội dung.', 'error');
+        }
+    },
+
+    async saveCategoryDataToFirestore(data) {
+        if (!appState.db || !appState.isAdmin) return;
+        ui.showNotification('Đang đồng bộ dữ liệu khai báo lên cloud...', 'success');
+        try {
+            const categoryRef = doc(appState.db, "declarations", "categoryStructure");
+            await setDoc(categoryRef, { data: data.categories || [] });
+            const brandRef = doc(appState.db, "declarations", "brandList");
+            await setDoc(brandRef, { data: data.brands || [] });
+            ui.showNotification('Đồng bộ dữ liệu khai báo thành công!', 'success');
+        } catch (error) {
+            console.error("Lỗi khi lưu dữ liệu khai báo lên Firestore:", error);
+            ui.showNotification('Lỗi khi đồng bộ dữ liệu lên cloud.', 'error');
+        }
+    },
+
+    async loadCategoryDataFromFirestore() {
+        if (!appState.db) {
+             console.warn("loadCategoryDataFromFirestore called before DB initialization.");
+             return { categories: [], brands: [] };
+        }
+        try {
+            const declarationsCollection = collection(appState.db, "declarations");
+            const querySnapshot = await getDocs(declarationsCollection);
+            let categories = []; let brands = [];
+            querySnapshot.forEach((doc) => {
+                if (doc.id === "categoryStructure") categories = doc.data().data || [];
+                else if (doc.id === "brandList") brands = doc.data().data || [];
+            });
+            console.log(`Loaded ${categories.length} categories and ${brands.length} brands from Firestore.`);
+            return { categories, brands };
+        } catch (error) {
+            console.error("Lỗi khi tải dữ liệu khai báo từ Firestore:", error);
+            return { categories: [], brands: [] };
+        }
+    },
+
+    async loadDeclarationsFromFirestore() {
+        if (!appState.db) {
+            console.warn("loadDeclarationsFromFirestore called before DB initialization.");
+            return {};
+        }
+        console.log("Loading calculation declarations from Firestore...");
+        try {
+            const declarationIds = ['hinhThucXuat', 'hinhThucXuatGop', 'heSoQuyDoi'];
+            const declarations = {};
+            await Promise.all(declarationIds.map(async (id) => {
+                const docRef = doc(appState.db, "declarations", id);
+                const docSnap = await getDoc(docRef);
+                declarations[id] = docSnap.exists() ? (docSnap.data().content || '') : '';
+            }));
+            console.log("Successfully loaded calculation declarations.");
+            return declarations;
+        } catch (error) {
+            console.error("Lỗi khi tải dữ liệu khai báo tính toán từ Firestore:", error);
+            return {};
+        }
+    },
+
+    async saveDeclarationsToFirestore(declarations) {
+        if (!appState.db || !appState.isAdmin) return;
+        ui.showNotification('Đang đồng bộ khai báo tính toán lên cloud...', 'success');
+        try {
+            await Promise.all([
+                setDoc(doc(appState.db, "declarations", "hinhThucXuat"), { content: declarations.ycx }),
+                setDoc(doc(appState.db, "declarations", "hinhThucXuatGop"), { content: declarations.ycxGop }),
+                 setDoc(doc(appState.db, "declarations", "heSoQuyDoi"), { content: declarations.heSo })
+            ]);
+            ui.showNotification('Đồng bộ khai báo tính toán thành công!', 'success');
+        } catch (error) {
+            console.error("Lỗi khi lưu dữ liệu khai báo tính toán:", error);
+            ui.showNotification('Lỗi khi đồng bộ khai báo tính toán.', 'error');
+        }
+    },
+
+    async loadCompetitionNameMappings() {
+        if (!appState.db) {
+            console.warn("loadCompetitionNameMappings called before DB initialization.");
+            return {};
+        }
+        console.log("Loading competition name mappings from Firestore...");
+        try {
+            const docRef = doc(appState.db, "declarations", "competitionNameMappings");
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                console.log("Successfully loaded competition name mappings.");
+                return docSnap.data().mappings || {};
+            } else {
+                console.log("No competition name mappings found in Firestore, returning empty object.");
+                return {};
+            }
+        } catch (error) {
+            console.error("Lỗi khi tải Bảng Ánh Xạ Tên Thi Đua từ Firestore:", error);
+            return {};
+        }
+    },
+
+    async saveCompetitionNameMappings(mappings) {
+        if (!appState.db || !appState.isAdmin) {
+            console.warn("Save competition name mappings skipped: Not admin or DB not initialized.");
+            return;
+        }
+        console.log("Saving competition name mappings to Firestore...");
+        try {
+            const docRef = doc(appState.db, "declarations", "competitionNameMappings");
+            await setDoc(docRef, { mappings: mappings });
+            console.log("Successfully saved competition name mappings.");
+        } catch (error) {
+            console.error("Lỗi khi lưu Bảng Ánh Xạ Tên Thi Đua:", error);
+            ui.showNotification('Lỗi khi lưu tên rút gọn lên cloud.', 'error');
+        }
+    }
+};
+--- END FILE: ./services/admin.service.js ---
+
+--- START FILE: ./services/analytics.service.js ---
+// Version 1.0 - Initial service extraction
+// MODULE: ANALYTICS SERVICE
+// Chịu trách nhiệm xử lý logic thống kê, người dùng và phân tích.
+import { getFirestore, collection, doc, setDoc, increment, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { appState } from '../state.js';
+import { ui } from '../ui.js';
+
+export const analyticsService = {
+    /**
+     * Tăng giá trị một trường số trong Firestore.
+     * Nếu fieldName là 'actionsTaken' và có email, tăng bộ đếm cho user đó.
+     * Ngược lại, tăng bộ đếm global trong 'analytics/site_stats'.
+     * @param {string} fieldName Tên trường cần tăng (vd: 'pageLoads', 'actionsTaken').
+     * @param {string} [email=null] Email của người dùng (chỉ dùng cho actionsTaken).
+     */
+    async incrementCounter(fieldName, email = null) {
+        if (!appState.db || !fieldName) return;
+
+        let docRef;
+        const dataToUpdate = { [fieldName]: increment(1) };
+
+        // ** Logic: Kiểm tra nếu là actionsTaken và có email **
+        if (fieldName === 'actionsTaken' && email) {
+            docRef = doc(appState.db, "users", email);
+            console.log(`Incrementing actionsTaken for user: ${email}`);
+        } else if (fieldName === 'actionsTaken' && !email) {
+            // Nếu là actionsTaken nhưng không có email (dự phòng), vẫn tăng global
+            docRef = doc(appState.db, "analytics", "site_stats");
+            console.log("Incrementing global actionsTaken (email not provided).");
+        } else {
+            // Các trường hợp khác (vd: pageLoads) tăng global
+            docRef = doc(appState.db, "analytics", "site_stats");
+            console.log(`Incrementing global counter: ${fieldName}`);
+        }
+
+        try {
+            await setDoc(docRef, dataToUpdate, { merge: true });
+        } catch (error) {
+            console.error(`Lỗi khi tăng bộ đếm cho '${fieldName}' tại ${docRef.path}:`, error);
+        }
+    },
+
+    async upsertUserRecord(email) {
+        if (!appState.db || !email) return;
+        if (!appState.auth?.currentUser) { console.warn("Attempted to upsert user record before auth is ready."); return; }
+        const userRef = doc(appState.db, "users", email);
+        try {
+            // Chỉ tăng loginCount, không reset actionsTaken ở đây
+            await setDoc(userRef, {
+                email: email,
+                lastLogin: serverTimestamp(),
+                loginCount: increment(1)
+            }, { merge: true });
+            console.log(`User record for ${email} updated successfully (loginCount incremented).`);
+        } catch (error) { console.error("Error upserting user record:", error); }
+    },
+
+    /**
+     * Lấy danh sách tất cả người dùng và thông tin của họ từ Firestore.
+     * Bao gồm cả trường 'actionsTaken'.
+     * @returns {Promise<Array<Object>>} Mảng các đối tượng người dùng.
+     */
+    async getAllUsers() {
+        if (!appState.db || !appState.isAdmin) {
+            ui.showNotification("Bạn không có quyền truy cập chức năng này.", "error");
+            return [];
+        }
+        try {
+            const usersCollection = collection(appState.db, "users");
+            const querySnapshot = await getDocs(usersCollection);
+            const users = [];
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                users.push({
+                    email: data.email,
+                    loginCount: data.loginCount || 0,
+                    lastLogin: data.lastLogin?.toDate(),
+                    actionsTaken: data.actionsTaken || 0 // Lấy thêm actionsTaken
+                });
+            });
+            console.log(`Loaded ${users.length} users from Firestore.`);
+            return users;
+        } catch (error) {
+            console.error("Lỗi khi lấy danh sách người dùng:", error);
+            ui.showNotification("Không thể tải danh sách người dùng.", "error");
+            return [];
+        }
+    }
+};
+--- END FILE: ./services/analytics.service.js ---
+
+--- START FILE: ./services/collaboration.service.js ---
+// Version 1.0 - Initial service extraction
+// MODULE: COLLABORATION SERVICE
+// Chịu trách nhiệm xử lý logic Góp ý và Phản hồi.
+import { getFirestore, collection, addDoc, doc, updateDoc, arrayUnion, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { appState } from '../state.js';
+import { ui } from '../ui.js';
+
+export const collaborationService = {
+    async submitFeedback(content) {
+        if (!content || !appState.db || !appState.currentUser) {
+             ui.showNotification("Không thể gửi góp ý: Người dùng chưa được xác thực.", "error");
+            return;
+        }
+        try {
+            await addDoc(collection(appState.db, "feedback"), {
+                user: { email: appState.currentUser.email },
+                content: content, timestamp: serverTimestamp(), replies: []
+            });
+            ui.showNotification("Góp ý của bạn đã được gửi!", "success");
+            return true;
+        } catch (error) {
+            console.error("Error adding feedback: ", error);
+            ui.showNotification("Lỗi khi gửi góp ý.", "error");
+            return false;
+        }
+    },
+
+    async submitReply(docId, content) {
+        if (!docId || !content || !appState.db) return false;
+        try {
+            const feedbackRef = doc(appState.db, "feedback", docId);
+            await updateDoc(feedbackRef, { replies: arrayUnion({ content: content, timestamp: new Date() }) });
+            return true;
+        } catch (error) {
+            console.error("Error submitting reply:", error);
+            ui.showNotification("Lỗi khi gửi trả lời.", "error");
+            return false;
+        }
+    },
+};
+--- END FILE: ./services/collaboration.service.js ---
+
 --- START FILE: ./services/data-processing.js ---
 // Version 3.5 - Update processThiDuaVungFile to accept new sheet names
 // Version 3.4 - Fix processThiDuaNhanVienData for 1-column logic & Fix ReferenceError
@@ -7407,16 +7312,20 @@ export const dataProcessing = {
 --- END FILE: ./services/data-processing.js ---
 
 --- START FILE: ./services/data.service.js ---
-// Version 1.3 - Refactor: Di dời 2 hàm (TemplateDownload, CompetitionDebug) từ main.js
-// Version 1.2 - Fix: Xóa dấu phẩy (trailing comma) ở cuối object
-// Version 1.1 - Fix: Thêm dấu phẩy bị thiếu sau hàm cuối cùng
-// Version 1.0 - Refactor: Tách logic xử lý data từ main.js và ui-listeners.js
+// Version 1.4 - Refactor: Re-wire calls to new dedicated services
 import { appState } from '../state.js';
 import { ui } from '../ui.js';
 import { services } from '../services.js';
-import { firebase } from '../firebase.js';
+// import { firebase } from '../firebase.js'; // ĐÃ XÓA
 import { settingsService } from '../modules/settings.service.js';
 import { uiRealtime } from '../ui-realtime.js';
+
+// === START: TÁI CẤU TRÚC (RE-WIRING) IMPORTS ===
+import { analyticsService } from './analytics.service.js';
+import { storageService } from './storage.service.js';
+import { datasyncService } from './datasync.service.js';
+import { adminService } from './admin.service.js';
+// === END: TÁI CẤU TRÚC (RE-WIRING) IMPORTS ===
 
 // --- CONSTANTS ---
 const LOCAL_DATA_VERSIONS_KEY = '_localDataVersions';
@@ -7530,10 +7439,14 @@ export const dataService = {
             }
 
             if (appState.currentUser?.email) {
-                 firebase.incrementCounter('actionsTaken', appState.currentUser.email);
+                 // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+                 analyticsService.incrementCounter('actionsTaken', appState.currentUser.email);
+                 // === END: TÁI CẤU TRÚC (RE-WIRING) ===
                  console.log(`Incremented actionsTaken for ${appState.currentUser.email}`);
             } else {
-                 firebase.incrementCounter('actionsTaken'); // Fallback if email somehow isn't available
+                 // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+                 analyticsService.incrementCounter('actionsTaken'); // Fallback if email somehow isn't available
+                 // === END: TÁI CẤU TRÚC (RE-WIRING) ===
                  console.warn("User email not found in appState, incrementing global actionsTaken.");
             }
 
@@ -7571,7 +7484,9 @@ export const dataService = {
                 };
 
                 try {
-                    const downloadURL = await firebase.uploadFileToStorage(file, storagePath, onProgress);
+                    // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+                    const downloadURL = await storageService.uploadFileToStorage(file, storagePath, onProgress);
+                    // === END: TÁI CẤU TRÚC (RE-WIRING) ===
                     ui.updateFileStatus(fileType, file.name, `Upload xong, đang lưu thông tin...`, 'default');
 
                     const metadata = {
@@ -7583,7 +7498,9 @@ export const dataService = {
                         fileName: file.name
                     };
 
-                    await firebase.saveMetadataToFirestore(warehouseToSync, currentFirestoreKey, metadata);
+                    // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+                    await datasyncService.saveMetadataToFirestore(warehouseToSync, currentFirestoreKey, metadata);
+                    // === END: TÁI CẤU TRÚC (RE-WIRING) ===
 
                     const metadataKey = `${LOCAL_METADATA_PREFIX}${warehouseToSync}_${currentFirestoreKey}`;
                     const metadataToSaveLocally = { ...metadata, updatedAt: new Date() };
@@ -7994,7 +7911,9 @@ export const dataService = {
                 updatedBy: appState.currentUser.email
             };
 
-            await firebase.savePastedDataToFirestore(kho, dataType, metadata.content, versionInfo);
+            // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+            await datasyncService.savePastedDataToFirestore(kho, dataType, metadata.content, versionInfo);
+            // === END: TÁI CẤU TRÚC (RE-WIRING) ===
 
             if (!localDataVersions[kho]) localDataVersions[kho] = {};
             localDataVersions[kho][dataType] = versionInfo;
@@ -8216,7 +8135,9 @@ export const dataService = {
             if(categoryResult.success) {
                 appState.categoryStructure = categoryResult.normalizedData;
                 appState.brandList = brandResult.normalizedData;
-                await firebase.saveCategoryDataToFirestore({ categories: categoryResult.normalizedData, brands: brandResult.normalizedData });
+                // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+                await adminService.saveCategoryDataToFirestore({ categories: categoryResult.normalizedData, brands: brandResult.normalizedData });
+                // === END: TÁI CẤU TRÚC (RE-WIRING) ===
                 ui.updateFileStatus('category-structure', file.name, `✓ Đã xử lý và đồng bộ ${categoryResult.normalizedData.length} nhóm & ${brandResult.normalizedData.length} hãng.`, 'success');
             } else {
                 ui.showNotification(`Lỗi xử lý file khai báo: ${categoryResult.error}`, 'error');
@@ -8266,7 +8187,9 @@ export const dataService = {
     async handleTemplateDownload() {
         ui.showNotification('Đang chuẩn bị file mẫu...', 'success');
         try {
-            const url = await firebase.getTemplateDownloadURL();
+            // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+            const url = await storageService.getTemplateDownloadURL();
+            // === END: TÁI CẤU TRÚC (RE-WIRING) ===
             const link = document.createElement('a');
             link.href = url;
             link.download = 'Danh_Sach_Nhan_Vien_Mau.xlsx';
@@ -8297,7 +8220,173 @@ export const dataService = {
         }
     }
 };
+
 --- END FILE: ./services/data.service.js ---
+
+--- START FILE: ./services/datasync.service.js ---
+// Version 1.0 - Initial service extraction
+// MODULE: DATA SYNC SERVICE
+// Chịu trách nhiệm xử lý logic đồng bộ dữ liệu kho (Metadata và Pasted Content) lên Firestore.
+import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { appState } from '../state.js';
+import { ui } from '../ui.js';
+
+export const datasyncService = {
+    async saveMetadataToFirestore(kho, dataType, metadata) {
+        if (!appState.db || !kho || !dataType || !metadata) {
+            console.error("[DataSyncService.saveMetadataToFirestore] Invalid input parameters.");
+            throw new Error("Invalid parameters for saving metadata.");
+        }
+        if (!appState.currentUser?.email) {
+            throw new Error("Không thể lưu metadata khi chưa định danh email.");
+        }
+
+        const khoRef = doc(appState.db, "warehouseData", kho);
+        const dataToSave = {
+            [dataType]: {
+                ...metadata,
+                updatedAt: serverTimestamp(),
+                updatedBy: appState.currentUser.email
+            }
+        };
+
+        try {
+            console.log(`[DataSyncService.saveMetadataToFirestore] Attempting to save metadata for ${dataType} (v${metadata.version}, t${metadata.timestamp}) for kho ${kho}.`);
+            await setDoc(khoRef, dataToSave, { merge: true });
+            console.log(`[DataSyncService.saveMetadataToFirestore] Successfully saved metadata for ${dataType} (v${metadata.version}).`);
+        } catch (error) {
+            console.error(`%c[DataSyncService.saveMetadataToFirestore] LỖI KHI LƯU METADATA KHO ${kho} (${dataType}, v${metadata.version}):`, "color: red; font-weight: bold;", error);
+            console.error("[DataSyncService.saveMetadataToFirestore] Error details:", error.code, error.message);
+            let userMessage = `Lỗi nghiêm trọng khi lưu thông tin đồng bộ ${dataType}.`;
+            ui.showNotification(userMessage, 'error');
+            throw error;
+        }
+    },
+
+    async savePastedDataToFirestore(kho, dataType, content, versionInfo) {
+        if (!appState.db || !kho || !dataType || !content || !versionInfo) {
+            console.error("[DataSyncService.savePastedDataToFirestore] Invalid input parameters.");
+            throw new Error("Invalid parameters for saving pasted data.");
+        }
+        if (!appState.currentUser?.email) {
+            throw new Error("Không thể lưu dữ liệu dán khi chưa định danh email.");
+        }
+
+        const khoRef = doc(appState.db, "warehouseData", kho);
+        const metadata = {
+            content: content,
+            version: versionInfo.version,
+            timestamp: versionInfo.timestamp,
+            updatedAt: serverTimestamp(),
+            updatedBy: appState.currentUser.email
+        };
+        const dataToSave = { [dataType]: metadata };
+
+        try {
+            console.log(`[DataSyncService.savePastedDataToFirestore] Attempting to save pasted data for ${dataType} (v${versionInfo.version}, t${versionInfo.timestamp}) for kho ${kho}.`);
+            await setDoc(khoRef, dataToSave, { merge: true });
+            console.log(`[DataSyncService.savePastedDataToFirestore] Successfully saved pasted data for ${dataType} (v${versionInfo.version}).`);
+        } catch (error) {
+            console.error(`%c[DataSyncService.savePastedDataToFirestore] LỖI KHI LƯU DỮ LIỆU DÁN KHO ${kho} (${dataType}, v${versionInfo.version}):`, "color: red; font-weight: bold;", error);
+            let userMessage = `Lỗi nghiêm trọng khi lưu dữ liệu dán ${dataType}.`;
+            ui.showNotification(userMessage, 'error');
+            throw error;
+        }
+    },
+};
+--- END FILE: ./services/datasync.service.js ---
+
+--- START FILE: ./services/storage.service.js ---
+// Version 1.0 - Initial service extraction
+// MODULE: STORAGE SERVICE
+// Chịu trách nhiệm xử lý logic giao tiếp với Firebase Storage (Upload/Download).
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+import { appState } from '../state.js';
+import { ui } from '../ui.js';
+
+export const storageService = {
+    async getTemplateDownloadURL() {
+        if (!appState.storage) throw new Error("Firebase Storage chưa được khởi tạo.");
+        const filePath = 'templates/danh_sach_nhan_vien_mau.xlsx';
+        const storageRef = ref(appState.storage, filePath);
+        try { return await getDownloadURL(storageRef); }
+        catch (error) { console.error("Lỗi khi lấy URL tải file mẫu: ", error); throw error; }
+    },
+
+    async getBookmarkDownloadURL() {
+        if (!appState.storage) throw new Error("Firebase Storage chưa được khởi tạo.");
+        const filePath = 'templates/Share_QLST.zip';
+        const storageRef = ref(appState.storage, filePath);
+        try { return await getDownloadURL(storageRef); }
+        catch (error) { console.error("Lỗi khi lấy URL tải file bookmark: ", error); throw error; }
+    },
+
+    async getQrCodeDownloadURL() {
+        if (!appState.storage) throw new Error("Firebase Storage chưa được khởi tạo.");
+        const filePath = 'qrcodes/main-qr.jpg';
+        const storageRef = ref(appState.storage, filePath);
+        try { return await getDownloadURL(storageRef); }
+        catch (error) {
+            console.error("Lỗi khi lấy URL của mã QR: ", error);
+            if (error.code === 'storage/object-not-found') throw new Error(`Không tìm thấy file mã QR tại đường dẫn '${filePath}'. Vui lòng kiểm tra lại Firebase Storage.`);
+            throw new Error("Không thể tải được mã QR từ server.");
+        }
+    },
+
+    async uploadFileToStorage(file, storagePath, onProgress) {
+        if (!appState.storage) {
+            throw new Error("Firebase Storage is not initialized.");
+        }
+        if (!file || !storagePath) {
+            throw new Error("File or storage path is missing for upload.");
+        }
+
+        const storageRef = ref(appState.storage, storagePath);
+        const uploadTask = uploadBytesResumable(storageRef, file);
+
+        return new Promise((resolve, reject) => {
+            uploadTask.on('state_changed',
+                (snapshot) => {
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    console.log(`Upload ${storagePath} is ${progress}% done`);
+                    if (onProgress && typeof onProgress === 'function') {
+                        onProgress(progress);
+                    }
+                },
+                (error) => {
+                    console.error(`%c[StorageService.uploadFileToStorage] LỖI KHI UPLOAD file ${storagePath}:`, "color: red; font-weight: bold;", error);
+                    let userMessage = `Lỗi upload file lên cloud (${error.code || 'UNKNOWN'}).`;
+                    switch (error.code) {
+                        case 'storage/unauthorized':
+                            userMessage = "Lỗi upload: Bạn không có quyền tải file lên.";
+                            break;
+                        case 'storage/canceled':
+                            userMessage = "Lỗi upload: Quá trình tải file đã bị hủy.";
+                            break;
+                        case 'storage/unknown':
+                            userMessage = "Lỗi upload: Đã xảy ra lỗi không xác định trên server.";
+                            break;
+                    }
+                    ui.showNotification(userMessage, 'error');
+                    reject(error);
+                },
+                async () => {
+                    console.log(`[StorageService.uploadFileToStorage] File ${storagePath} uploaded successfully.`);
+                    try {
+                        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                        console.log('[StorageService.uploadFileToStorage] File available at', downloadURL);
+                        resolve(downloadURL);
+                    } catch (getUrlError) {
+                        console.error(`%c[StorageService.uploadFileToStorage] LỖI KHI LẤY DOWNLOAD URL cho ${storagePath}:`, "color: red; font-weight: bold;", getUrlError);
+                        ui.showNotification(`Lỗi lấy link file sau khi upload (${getUrlError.code || 'UNKNOWN'}).`, 'error');
+                        reject(getUrlError);
+                    }
+                }
+            );
+        });
+    },
+};
+--- END FILE: ./services/storage.service.js ---
 
 --- START FILE: ./services.js ---
 // Version 2.8 - Enhance generateLuyKeEmployeeDetailReport to return daily stats and unexported details
@@ -11702,12 +11791,13 @@ filteredReport, filteredYCXData) {
 --- END FILE: ./tab-sknv.js ---
 
 --- START FILE: ./ui-admin.js ---
-// Version 1.1 - Refactor: Moved renderCompetitionConfigUI from ui-components.js
+// Version 1.2 - Refactor: Re-wire call to new analyticsService
 // MODULE: UI ADMIN
 // Chứa các hàm render cho trang Quản trị (Khai báo).
 
 import { appState } from './state.js';
-import { firebase } from './firebase.js';
+// import { firebase } from './firebase.js'; // <-- ĐÃ XÓA
+import { analyticsService } from '../services/analytics.service.js'; // <-- ĐÃ THÊM
 import { formatters } from './ui-formatters.js';
 
 /**
@@ -11855,7 +11945,9 @@ const renderAdminPage = async () => {
     if (!appState.isAdmin) return;
     
     // Render bảng thống kê người dùng
-    const users = await firebase.getAllUsers();
+    // === START: TÁI CẤU TRÚC (RE-WIRING) ===
+    const users = await analyticsService.getAllUsers();
+    // === END: TÁI CẤU TRÚC (RE-WIRING) ===
     renderUserStatsTable(users); // Gọi hàm nội bộ
     
     // Render các trình chỉnh sửa hướng dẫn

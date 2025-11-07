@@ -1,4 +1,4 @@
-// Version 1.4 - Refactor: Re-wire calls to new dedicated services
+// Version 1.6 - Clean up diagnostic logs
 import { appState } from '../state.js';
 import { ui } from '../ui.js';
 import { services } from '../services.js';
@@ -148,7 +148,9 @@ export const dataService = {
             const warehouseToSync = appState.selectedWarehouse;
             const currentFirestoreKey = firestoreKey;
 
+            // === START: KHÔI PHỤC LOG GỐC (v1.6) ===
             console.log(`%c[DEBUG PRE-SYNC CHECK] File Type: ${fileType}, Warehouse: ${warehouseToSync}, Firestore Key: ${currentFirestoreKey}`, "color: purple; font-weight: bold;");
+            // === END: KHÔI PHỤC LOG GỐC ===
 
             if (warehouseToSync && currentFirestoreKey) {
                 console.log(`%c[DEBUG SYNC BLOCK START] Entering cloud sync block for ${fileType} (Firestore Key: ${currentFirestoreKey})`, "color: magenta;");
