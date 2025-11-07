@@ -1,3 +1,4 @@
+/* Version 1.5 - Soften customer detail modal fonts (Task 4)
 /* Version 1.0 - Components styles (Refactored from v6.19) */
 /* Chứa các class tái sử dụng cho các "linh kiện" UI: buttons, cards, modals, inputs, etc. */
 
@@ -9,7 +10,8 @@
 .data-input-group,
 .toggle-filters-btn,
 .page-header__help-btn,
-.column-toggle-btn {
+.column-toggle-btn,
+.rt-infographic-summary-card { /* <-- SỬA ĐỔI: Thêm thẻ KPI */
     transition: all 0.2s ease-in-out;
 }
 
@@ -40,7 +42,7 @@ BẮT ĐẦU: NÂNG CẤP UI CHO SUB-TAB (V5.9) === */
     transition: all 0.2s ease-in-out;
 }
 .sub-tab-btn.active .feather {
-    color: white;
+  color: white;
     background-color: #3b82f6;
     border-radius: 9999px;
     padding: 4px;
@@ -67,7 +69,8 @@ BẮT ĐẦU: NÂNG CẤP UI CHO SUB-TAB (V5.9) === */
 .kpi-card:hover,
 .content-card:hover,
 .data-input-group:hover,
-.toggle-filters-btn:hover {
+.toggle-filters-btn:hover,
+.rt-infographic-summary-card:hover { /* <-- SỬA ĐỔI: Thêm thẻ KPI */
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
@@ -157,8 +160,7 @@ color: #16a34a; }
 
 .kpi-card-title { color: var(--kpi-title-color); opacity: 0.8; font-size: 1em; }
 .kpi-card p[id$="-main"] { color: var(--kpi-main-color); font-size: var(--kpi-main-font-size);
-transition: 
-font-size 0.2s ease-in-out; }
+transition: font-size 0.2s ease-in-out; }
 .kpi-card p[id$="-sub"], .kpi-card p[id$="-sub1"], .kpi-card p[id$="-sub2"] { color: var(--kpi-sub-color); font-size: 1em; }
 
 .kpi-percentage, .kpi-percentage-value { font-weight: 700; }
@@ -178,8 +180,7 @@ font-size 0.2s ease-in-out; }
 .highlight-trigger { background: none; border: none; cursor: pointer; color: #6b7280; }
 .highlight-trigger:hover { color: #1d4ed8; }
 .highlighted-row td { animation: pulse-bg 2s infinite; }
-@keyframes 
-pulse-bg { 0% { background-color: var(--highlight-color, #ffff99); } 50% { background-color: var(--highlight-color-light, #ffffcc); } 100% { background-color: var(--highlight-color, #ffff99); } }
+@keyframes pulse-bg { 0% { background-color: var(--highlight-color, #ffff99); } 50% { background-color: var(--highlight-color-light, #ffffcc); } 100% { background-color: var(--highlight-color, #ffff99); } }
 
 .action-btn {
     display: inline-flex;
@@ -209,8 +210,7 @@ background-color: #ede9fe; color: #5b21b6; border-color: #c4b5fd; }
 .modal { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; }
 .modal.hidden { display: none; }
 .modal__overlay { position: absolute; inset: 0; background-color: rgba(17, 24, 39, 0.6); backdrop-filter: blur(4px); cursor: pointer; }
-.modal__container { 
-position: relative; z-index: 1001; background-color: white; border-radius: 0.75rem; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); width: 90%; max-width: 600px; max-height: 90vh; display: flex; flex-direction: column; }
+.modal__container { position: relative; z-index: 1001; background-color: white; border-radius: 0.75rem; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); width: 90%; max-width: 600px; max-height: 90vh; display: flex; flex-direction: column; }
 
 #force-update-modal .modal__overlay { cursor: not-allowed; }
 
@@ -237,8 +237,7 @@ position: relative; z-index: 1001; background-color: white; border-radius: 0.75r
 .infographic-card__header--completed { background-color: #dcfce7; color: #166534; }
 .infographic-card__header--pending { background-color: #fee2e2; color: #991b1b; }
 .infographic-card__body { padding: 1rem; background-color: #f9fafb; }
-.infographic-card__item { border-bottom: 
-1px dashed #d1d5db; padding: 0.75rem 0; }
+.infographic-card__item { border-bottom: 1px dashed #d1d5db; padding: 0.75rem 0; }
 .infographic-card__item:last-child { border-bottom: none; }
 .infographic-card__title { font-weight: 600; color: #1f2937; margin-bottom: 0.5rem; }
 .infographic-card__metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem 1rem; font-size:
@@ -262,8 +261,7 @@ position: relative; z-index: 1001; background-color: white; border-radius: 0.75r
 (min-width: 1024px) { .rt-infographic-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .rt-infographic-section h4 { font-size: 1.125rem; font-weight: 700; color: #1f2937; margin-bottom: 1rem; }
 .rt-progress-bar-item { margin-bottom: 0.75rem; }
-.rt-progress-bar-label { display: 
-flex; justify-content: space-between; font-size: 0.875em; font-weight: 500; margin-bottom: 0.25rem; }
+.rt-progress-bar-label { display: flex; justify-content: space-between; font-size: 0.875em; font-weight: 500; margin-bottom: 0.25rem; }
 .rt-progress-bar-container { background-color: #e5e7eb; border-radius: 9999px; height: 0.75rem; overflow: hidden; }
 .rt-progress-bar { background-color: #22c55e; height: 100%; border-radius: 9999px; transition: width 0.5s ease-in-out; }
 .rt-customer-accordion { max-height: 400px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 0.5rem; }
@@ -372,8 +370,7 @@ details[open] > summary
 }
 
 .competition-summary-counter strong {
-    font-size: 
-1.15rem !important;
+    font-size: 1.15rem !important;
     font-weight: 800 !important;
     white-space: nowrap;
 }
@@ -434,8 +431,7 @@ details[open] > summary
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 .drag-handle-icon {
-   
- color: #6b7280;
+   color: #6b7280;
     transition: color 0.2s ease-in-out;
 }
 .column-toggle-btn.draggable-tag:hover .drag-handle-icon {
@@ -486,22 +482,42 @@ details[open] > summary
     position: relative; height: 350px; width: 100%;
 }
 .customer-accordion-luyke summary {
-    
-display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; padding: 0.5rem 1rem; cursor: pointer; list-style: none;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; padding: 0.5rem 1rem; cursor: pointer; list-style: none;
+    /* === START: SỬA LỖI FONT (Task 3) === */
+    font-weight: 400; /* Đặt font-weight CƠ BẢN là 400 (thường) */
+    color: #4b5563; /* Đặt màu chữ CƠ BẢN là gray-600 */
+    /* === END: SỬA LỖI FONT === */
 }
 .customer-accordion-luyke summary:hover {
     background-color: #f9fafb;
 }
 .customer-accordion-luyke .customer-name-small {
-    font-weight: 600;
-font-size: 0.9rem; color: #1f2937; flex-grow:
-1; min-width: 120px;
+    /* === START: SỬA LỖI FONT (Task 4) === */
+    font-weight: 500; /* Giảm từ 600 xuống 500 */
+    font-size: 0.9rem; 
+    color: #2563eb; /* Đổi sang màu xanh dương */
+    /* === END: SỬA LỖI FONT === */
+    flex-grow: 1; 
+    min-width: 120px;
 }
 .customer-accordion-luyke .order-metrics {
     display: flex; align-items: center; gap: 1rem; flex-shrink: 0; font-size: 0.75rem;
+    /* (Task 3) Các nhãn (SL, DT Thực) sẽ kế thừa font-weight 400 và color gray-600 từ summary */
 }
 .customer-accordion-luyke .order-metrics span {
     white-space: nowrap;
+}
+.customer-accordion-luyke .order-metrics strong {
+    /* === START: SỬA LỖI FONT (Task 4) === */
+    font-weight: 500; /* Giảm từ 600 xuống 500 */
+    color: #1f2937; /* Màu đen-xám cho số */
+    /* === END: SỬA LỖI FONT === */
+}
+.customer-accordion-luyke .order-metrics .text-gray-900 {
+    color: #1f2937 !important; /* Ghi đè class cũ (nếu có) */
+}
+.customer-accordion-luyke .order-metrics .text-blue-600 {
+    color: #2563eb !important; /* Màu xanh cho DTQĐ */
 }
 .customer-accordion-luyke .accordion-arrow {
     margin-left: auto; color: #9ca3af; transition: transform 0.2s ease-in-out;
@@ -519,3 +535,21 @@ font-size: 0.9rem; color: #1f2937; flex-grow:
 }
 .customer-accordion-luyke .qd-below-target { color: #b91c1c; }
 .customer-accordion-luyke .qd-above-target { color: #1d4ed8; }
+
+/* === START: Capture Preset Fixes (v1.2) === */
+
+/* 1. Đảm bảo khu vực chụp chi tiết (từ ui-luyke.js) tuân thủ chiều rộng preset */
+.capture-container.preset-mobile-portrait .preset-mobile-capture-area {
+    /* width: 750px !important; <-- ĐÃ XÓA (v1.4) */
+    box-sizing: border-box; /* Đảm bảo padding không phá vỡ chiều rộng */
+}
+
+/* 2. Đảm bảo nội dung modal tuân thủ chiều rộng preset */
+.capture-container.preset-mobile-portrait #customer-detail-list-container,
+.capture-container.preset-mobile-portrait #unexported-detail-list-container {
+    width: 100% !important; /* Lấy 100% của 750px */
+    max-width: 100% !important;
+    box-sizing: border-box;
+}
+
+/* === END: Capture Preset Fixes (v1.2) === */

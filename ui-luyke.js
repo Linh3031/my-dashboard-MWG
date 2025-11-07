@@ -1,3 +1,4 @@
+// Version 2.17 - Add "All" & "Custom" date filters, and fix chart label overflow
 // Version 2.11 - Critical Fix: Restore all missing functions and add renderLuykeEmployeeDetail
 // MODULE: UI LUY KE
 // Chứa các hàm render giao diện cho tab "Sức khỏe Siêu thị (Lũy kế)".
@@ -79,7 +80,223 @@ export const uiLuyke = {
         uiComponents.toggleModal('selection-modal', true);
     },
     
-    // === START: RESTORED FUNCTION FOR SKNV DETAIL VIEW ===
+    // === START: MODIFIED FUNCTION (TASK 1 & 3) ===
+    /**
+     * Render 2 biểu đồ thống kê theo ngày.
+     * @param {Array} dailyStats - Dữ liệu gốc.
+     * @param {number | 'all' | Array} filterParam - Số ngày, 'all', hoặc mảng dữ liệu đã lọc.
+     */
+    _renderDailyCharts(dailyStats, filterParam = 7) {
+        if (!dailyStats || dailyStats.length === 0) return;
+
+        let filteredData;
+        if (typeof filterParam === 'number') {
+            filteredData = dailyStats.slice(-filterParam); // Lọc theo số ngày
+        } else if (filterParam === 'all') {
+            filteredData = dailyStats; // Lấy tất cả
+        } else if (Array.isArray(filterParam)) {
+            filteredData = filterParam; // Sử dụng mảng đã lọc (cho Tùy chọn)
+        } else {
+            filteredData = dailyStats.slice(-7); // Mặc định 7 ngày
+        }
+
+        const labels = filteredData.map(d => new Date(d.date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }));
+        const dtqdData = filteredData.map(d => d.convertedRevenue / 1000000);
+        const tlqdData = filteredData.map(d => (d.revenue > 0 ? (d.convertedRevenue / d.revenue) - 1 : 0));
+
+        const chartOptions = (title) => ({
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                title: { display: false }, // Tắt tiêu đề mặc định, vì đã có tiêu đề card
+                tooltip: {
+                    callbacks: {
+                        label: (context) => {
+                            const value = context.raw;
+                            if (title.includes('Tỷ lệ')) {
+                                return `Tỷ lệ: ${uiComponents.formatPercentage(value)}`;
+                            }
+                            return `DTQĐ: ${uiComponents.formatRevenue(value * 1000000)} Tr`;
+                        }
+                    }
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'end',
+                    formatter: (value) => {
+                        if (title.includes('Tỷ lệ')) {
+                            return uiComponents.formatPercentage(value);
+                        }
+                        return uiComponents.formatRevenue(value * 1000000);
+                    },
+                    color: '#4b5563',
+                    font: { weight: 'bold', size: 10 }
+                }
+            },
+            scales: {
+                y: { 
+                    beginAtZero: true,
+                    grace: '10%' // (Task 1) Thêm 10% khoảng đệm
+                }
+            }
+        });
+
+        // Biểu đồ Doanh thu Quy đổi
+        const dtqdCtx = document.getElementById('lk-daily-dtqd-chart')?.getContext('2d');
+        if (dtqdCtx) {
+            if (appState.charts['lk-daily-dtqd-chart']) {
+                appState.charts['lk-daily-dtqd-chart'].destroy();
+            }
+            appState.charts['lk-daily-dtqd-chart'] = new Chart(dtqdCtx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Doanh thu QĐ',
+                        data: dtqdData,
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 4,
+                    }]
+                },
+                options: chartOptions('Doanh thu QĐ theo ngày (Tr)'),
+                plugins: [ChartDataLabels]
+            });
+        }
+
+        // Biểu đồ Tỷ lệ Quy đổi
+        const tlqdCtx = document.getElementById('lk-daily-tlqd-chart')?.getContext('2d');
+        if (tlqdCtx) {
+            if (appState.charts['lk-daily-tlqd-chart']) {
+                appState.charts['lk-daily-tlqd-chart'].destroy();
+            }
+            appState.charts['lk-daily-tlqd-chart'] = new Chart(tlqdCtx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Tỷ lệ QĐ',
+                        data: tlqdData,
+                        backgroundColor: '#16a34a',
+                        borderRadius: 4,
+                    }]
+                },
+                options: chartOptions('Tỷ lệ QĐ theo ngày'),
+                plugins: [ChartDataLabels]
+            });
+        }
+    },
+    // === END: MODIFIED FUNCTION ===
+
+    // === START: NEW FUNCTION (TASK 3) ===
+    /**
+     * Render nội dung cho modal chi tiết khách hàng.
+     * @param {Object} detailData - Dữ liệu chi tiết của nhân viên.
+     */
+    _renderCustomerDetailModalContent(detailData) {
+        const { byCustomer, mucTieu } = detailData;
+        const conversionRateTarget = (mucTieu?.phanTramQD || 0) / 100;
+        const container = document.getElementById('customer-detail-list-container');
+        if (!container) return;
+
+        if (!byCustomer || byCustomer.length === 0) {
+            container.innerHTML = '<p class="text-sm text-gray-500 mt-4 text-center">Không có đơn hàng nào.</p>';
+            return;
+        }
+
+        const renderAccordion = (data) => data.map((customer, index) => {
+            const qdClass = customer.conversionRate >= conversionRateTarget ? 'qd-above-target' : 'qd-below-target';
+        
+            const productListHtml = customer.products.map(p => `
+                <tr class="border-b last:border-b-0">
+                    <td class="py-1 pr-2">${p.productName}</td>
+                    <td class="py-1 px-2 text-right">SL: <strong>${p.quantity}</strong></td>
+                    <td class="py-1 px-2 text-right">DT: <strong>${uiComponents.formatRevenue(p.realRevenue, 1)}</strong></td>
+                    <td class="py-1 pl-2 text-right">DTQĐ: <strong>${uiComponents.formatRevenue(p.convertedRevenue, 1)}</strong></td>
+                </tr>
+            `).join('');
+            
+            const tableContent = `<table class="min-w-full text-xs product-list-table"><tbody>${productListHtml}</tbody></table>`;
+            
+            const detailContent = customer.products.length > 8
+                ? `<div class="product-list-scrollable">${tableContent}</div>`
+                : tableContent;
+
+            return `
+             <details class="bg-white rounded-lg shadow-sm border border-gray-200 mb-2">
+                <summary>
+                    <span class="customer-name-small">${index + 1}. ${customer.name}</span>
+                    <div class="order-metrics">
+                         <span>SL: <strong>${customer.totalQuantity}</strong></span>
+                        <span>DT Thực: <strong class="text-gray-900">${uiComponents.formatRevenue(customer.totalRealRevenue, 1)} Tr</strong></span>
+                        <span>DTQĐ: <strong class="text-blue-600">${uiComponents.formatRevenue(customer.totalConvertedRevenue, 1)} Tr</strong></span>
+                        <span>%QĐ: <strong class="${qdClass}">${uiComponents.formatPercentage(customer.conversionRate)}</strong></span>
+                    </div>
+                    <span class="accordion-arrow">▼</span>
+                </summary>
+                <div class="border-t border-gray-200 p-3 bg-gray-50">
+                    ${detailContent}
+                 </div>
+            </details>
+            `;
+        }).join('');
+
+        container.innerHTML = renderAccordion(byCustomer);
+    },
+    // === END: NEW FUNCTION ===
+
+    // === START: NEW FUNCTION (TASK 4) ===
+    /**
+     * Render nội dung cho modal chi tiết chưa xuất.
+     * @param {Object} detailData - Dữ liệu chi tiết của nhân viên.
+     */
+    _renderUnexportedDetailModalContent(detailData) {
+        const { unexportedDetails } = detailData;
+        const container = document.getElementById('unexported-detail-list-container');
+        if (!container) return;
+
+        if (!unexportedDetails || unexportedDetails.length === 0) {
+            container.innerHTML = '<p class="text-sm text-gray-500 mt-4 text-center">Không có đơn hàng nào chưa xuất.</p>';
+            return;
+        }
+
+        const renderAccordion = (data) => data.map((group, index) => {
+            const productListHtml = group.products.map(p => `
+                <tr class="border-b last:border-b-0">
+                    <td class="py-1 pr-2">${p.name}</td>
+                    <td class="py-1 px-2 text-right">SL: <strong>${p.sl}</strong></td>
+                    <td class="py-1 pl-2 text-right">DTQĐ: <strong>${uiComponents.formatRevenue(p.dtqd, 1)}</strong></td>
+                </tr>
+            `).join('');
+            
+            const tableContent = `<table class="min-w-full text-xs product-list-table"><tbody>${productListHtml}</tbody></table>`;
+            
+            const detailContent = group.products.length > 8
+                ? `<div class="product-list-scrollable">${tableContent}</div>`
+                : tableContent;
+
+            return `
+             <details class="bg-white rounded-lg shadow-sm border border-gray-200 mb-2">
+                <summary>
+                    <span class="customer-name-small">${index + 1}. ${group.name}</span>
+                    <div class="order-metrics">
+                        <span>SL: <strong>${group.totalSL}</strong></span>
+                        <span>DTQĐ: <strong class="text-blue-600">${uiComponents.formatRevenue(group.totalDTQD, 1)} Tr</strong></span>
+                    </div>
+                    <span class="accordion-arrow">▼</span>
+                </summary>
+                <div class="border-t border-gray-200 p-3 bg-gray-50">
+                    ${detailContent}
+                 </div>
+            </details>
+            `;
+        }).join('');
+
+        container.innerHTML = renderAccordion(unexportedDetails);
+    },
+    // === END: NEW FUNCTION ===
+
+    // === START: MODIFIED FUNCTION (v2.17) ===
     renderLuykeEmployeeDetail(detailData, employeeData, detailContainerId) {
         const summaryContainer = document.getElementById('revenue-report-container-lk');
         const detailContainer = document.getElementById(detailContainerId);
@@ -99,19 +316,34 @@ export const uiLuyke = {
             return;
         }
 
-        const { summary, topProductGroups, categoryChartData, byCustomer } = detailData;
+        // === START: (Task 3) Thêm customFilteredDailyStats: null ===
+        appState.currentEmployeeDetailData = { ...detailData, customFilteredDailyStats: null };
+        // === END: (Task 3) ===
+
+        const { summary, topProductGroups, categoryChartData, byCustomer, dailyStats, unexportedDetails } = detailData;
         const { mucTieu } = employeeData;
         const conversionRateTarget = (mucTieu?.phanTramQD || 0) / 100;
 
         const renderKpiCards = () => {
              const conversionRateClass = summary.conversionRate >= conversionRateTarget ? 'is-positive' : 'is-negative';
+            
+             // (Task 3 & 4) Thêm ID và class cursor-pointer
             return `
             <div class="rt-infographic-summary mb-6">
                 <div class="rt-infographic-summary-card"><div class="label">Tổng DT Thực</div><div class="value">${uiComponents.formatRevenue(summary.totalRealRevenue, 1)}</div></div>
                 <div class="rt-infographic-summary-card"><div class="label">Tổng DTQĐ</div><div class="value">${uiComponents.formatRevenue(summary.totalConvertedRevenue, 1)}</div></div>
                 <div class="rt-infographic-summary-card"><div class="label">Tỷ lệ QĐ</div><div class="value ${conversionRateClass}">${uiComponents.formatPercentage(summary.conversionRate)}</div></div>
-                <div class="rt-infographic-summary-card"><div class="label">DT Chưa Xuất</div><div class="value">${uiComponents.formatRevenue(summary.unexportedRevenue, 1)}</div></div>
-                <div class="rt-infographic-summary-card"><div class="label">Tổng Đơn Hàng</div><div class="value">${summary.totalOrders}</div></div>
+                
+                <div id="lk-detail-unexported-trigger" class="rt-infographic-summary-card cursor-pointer hover:shadow-xl hover:bg-blue-50">
+                    <div class="label">DT Chưa Xuất</div>
+                    <div class="value">${uiComponents.formatRevenue(summary.unexportedRevenue, 1)}</div>
+                </div>
+                
+                <div id="lk-detail-customer-trigger" class="rt-infographic-summary-card cursor-pointer hover:shadow-xl hover:bg-blue-50">
+                    <div class="label">Tổng Đơn Hàng</div>
+                    <div class="value">${summary.totalOrders}</div>
+                </div>
+
                 <div class="rt-infographic-summary-card"><div class="label">SL Đơn Bán Kèm</div><div class="value">${summary.bundledOrderCount}</div></div>
             </div>
             `;
@@ -142,48 +374,8 @@ export const uiLuyke = {
                 `;
             }).join('');
         };
-
-        const renderCustomerAccordion = () => {
-            if (!byCustomer || byCustomer.length === 0) return '<p class="text-sm text-gray-500 mt-4">Không có đơn hàng nào.</p>';
-            
-            return byCustomer.map((customer, index) => {
-                const qdClass = customer.conversionRate >= conversionRateTarget ? 'qd-above-target' : 'qd-below-target';
-            
-                const productListHtml = customer.products.map(p => `
-                    <tr class="border-b last:border-b-0">
-                        <td class="py-1 pr-2">${p.productName}</td>
-                        <td class="py-1 px-2 text-right">SL: <strong>${p.quantity}</strong></td>
-                         <td class="py-1 px-2 text-right">DT: <strong>${uiComponents.formatRevenue(p.realRevenue, 1)}</strong></td>
-                        <td class="py-1 pl-2 text-right">DTQĐ: <strong>${uiComponents.formatRevenue(p.convertedRevenue, 1)}</strong></td>
-                    </tr>
-                `).join('');
-                
-                const tableContent = `<table class="min-w-full text-xs product-list-table"><tbody>${productListHtml}</tbody></table>`;
-                
-                const detailContent = customer.products.length > 8
-                    ? `<div class="product-list-scrollable">${tableContent}</div>`
-                    : tableContent;
-
-                return `
-                 <details class="bg-white rounded-lg shadow-sm border border-gray-200 mb-2">
-                    <summary>
-                        <span class="customer-name-small">${index + 1}. ${customer.name}</span>
-                        <div class="order-metrics">
-                             <span>SL: <strong>${customer.totalQuantity}</strong></span>
-                            <span>DT Thực: <strong class="text-gray-900">${uiComponents.formatRevenue(customer.totalRealRevenue, 1)} Tr</strong></span>
-                            <span>DTQĐ: <strong class="text-blue-600">${uiComponents.formatRevenue(customer.totalConvertedRevenue, 1)} Tr</strong></span>
-                            <span>%QĐ: <strong class="${qdClass}">${uiComponents.formatPercentage(customer.conversionRate)}</strong></span>
-                         </div>
-                        <span class="accordion-arrow">▼</span>
-                    </summary>
-                    <div class="border-t border-gray-200 p-3 bg-gray-50">
-                        ${detailContent}
-                     </div>
-                </details>
-                `;
-            }).join('');
-        };
         
+        // === START: (Task 3) Cập nhật HTML bộ lọc ngày ===
         const headerHtml = `
             <div class="mb-4 flex justify-between items-center">
                 <button class="back-to-summary-btn text-blue-600 hover:underline font-semibold">‹ Quay lại bảng tổng hợp</button>
@@ -192,13 +384,34 @@ export const uiLuyke = {
                     <span>Chụp ảnh</span>
                 </button>
             </div>
-            <div id="dtnv-lk-capture-area">
+            <div id="dtnv-lk-capture-area" class="preset-mobile-capture-area">
                 <div class="p-4 mb-6 bg-white text-gray-800 rounded-lg shadow-lg border luyke-detail-header">
                     <h3>${employeeData.hoTen} - ${employeeData.maNV}</h3>
                 </div>
                 
-                ${renderKpiCards()}
+                <div>
+                    ${renderKpiCards()}
+                </div>
 
+                <div id="lk-daily-chart-filters" class="flex items-center justify-center flex-wrap gap-2 mb-4">
+                    <span class="text-sm font-medium">Xem theo:</span>
+                    <button id="lk-daily-filter-all" class="lk-daily-filter-btn px-3 py-1 text-xs font-medium rounded-full bg-gray-200" data-days="all">Tất cả</button>
+                    <button class="lk-daily-filter-btn px-3 py-1 text-xs font-medium rounded-full bg-gray-200" data-days="3">3 ngày</button>
+                    <button class="lk-daily-filter-btn px-3 py-1 text-xs font-medium rounded-full bg-gray-200" data-days="5">5 ngày</button>
+                    <button class="lk-daily-filter-btn px-3 py-1 text-xs font-medium rounded-full bg-blue-600 text-white" data-days="7">7 ngày</button>
+                    <button class="lk-daily-filter-btn px-3 py-1 text-xs font-medium rounded-full bg-gray-200" data-days="10">10 ngày</button>
+                    <button id="lk-daily-filter-custom" class="lk-daily-filter-btn px-3 py-1 text-xs font-medium rounded-full bg-gray-200">Tùy chọn...</button>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white p-4 rounded-lg shadow-md border" style="height: 300px;">
+                        <h4 class="text-md font-bold text-gray-700 mb-2 text-center">Doanh thu QĐ theo ngày (Tr)</h4>
+                        <div class="relative h-full w-full" style="height: 250px;"><canvas id="lk-daily-dtqd-chart"></canvas></div>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-md border" style="height: 300px;">
+                        <h4 class="text-md font-bold text-gray-700 mb-2 text-center">Tỷ lệ QĐ theo ngày</h4>
+                        <div class="relative h-full w-full" style="height: 250px;"><canvas id="lk-daily-tlqd-chart"></canvas></div>
+                    </div>
+                </div>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                     
                      <div class="bg-white p-4 rounded-lg shadow-md border">
@@ -215,13 +428,27 @@ export const uiLuyke = {
                         </div>
                     </div>
                 </div>
-                 <div class="customer-accordion-luyke">
-                    <h4 class="text-lg font-bold text-gray-800 mb-3">Chi Tiết Theo Khách Hàng</h4>
-                    ${renderCustomerAccordion()}
-                </div>
             </div>`;
 
         detailContainer.innerHTML = headerHtml;
+
+        // === START: (Task 3) Cập nhật logic gọi biểu đồ ===
+        // (Task 1) Gọi hàm render biểu đồ hàng ngày, đọc từ filter
+        const activeFilterBtn = document.querySelector('#lk-daily-chart-filters .lk-daily-filter-btn.bg-blue-600');
+        let filterParam = activeFilterBtn ? activeFilterBtn.dataset.days : '7';
+        
+        // Chuyển đổi 'all' hoặc số
+        if (filterParam === 'all') {
+             filterParam = 'all';
+        } else if (!isNaN(parseInt(filterParam, 10))) {
+            filterParam = parseInt(filterParam, 10);
+        } else {
+            // Trường hợp này là nút "Tùy chọn" đang active, dữ liệu đã được lọc sẵn
+            filterParam = appState.currentEmployeeDetailData.customFilteredDailyStats || dailyStats.slice(-7);
+        }
+        
+        uiLuyke._renderDailyCharts(dailyStats, filterParam);
+        // === END: (Task 3) Cập nhật logic ===
 
         const ctx = document.getElementById('luyke-employee-chart')?.getContext('2d');
         if (ctx && categoryChartData && categoryChartData.length > 0) {
@@ -238,7 +465,8 @@ export const uiLuyke = {
                      datasets: [{
                         label: 'Doanh thu',
                         data: topData.map(d => d.revenue / 1000000),
-                        backgroundColor: '#3b82f6',
+                        // (Task 2) Thêm nhiều màu
+                        backgroundColor: topData.map(() => utils.getRandomBrightColor()),
                         borderRadius: 4,
                      }]
                 },
@@ -262,16 +490,22 @@ export const uiLuyke = {
                         }
                     },
                     scales: {
-                        y: { beginAtZero: true }
+                        y: { 
+                            beginAtZero: true,
+                            grace: '10%' // (Task 1) Thêm 10% khoảng đệm
+                        }
                      }
                 },
                 plugins: [ChartDataLabels]
             });
         }
     },
-    // === END: RESTORED FUNCTION ===
+    // === END: MODIFIED FUNCTION ===
 
     renderCompetitionSummaryCounter: (data) => {
+        // === START: Dọn dẹp State (Task 3 & 4) ===
+        appState.currentEmployeeDetailData = null;
+        // === END: Dọn dẹp State ===
         const summary = {
             total: data.length,
             dat: data.filter(d => d.hoanThanhValue >= 100).length,
@@ -292,7 +526,11 @@ export const uiLuyke = {
                 <span class="font-normal text-gray-500">SL:</span> ${slHtml})`;
     },
     
+    // === START: MODIFIED FUNCTION (v2.15) ===
     displayHealthKpiTable: (pastedData, goals) => {
+        // === START: Dọn dẹp State (Task 3 & 4) ===
+        appState.currentEmployeeDetailData = null;
+        // === END: Dọn dẹp State ===
         const { mainKpis, comparisonData, dtDuKien, dtqdDuKien, luotKhachData } = pastedData;
         
         const competitionSummary = { dat: 0, total: 0 };
@@ -309,8 +547,8 @@ export const uiLuyke = {
                 phanTramQd: supermarketReport.doanhThu > 0 ? (supermarketReport.doanhThuQuyDoi / supermarketReport.doanhThu) - 1 : 0,
                 dtGop: supermarketReport.doanhThuTraGop,
                 phanTramGop: supermarketReport.doanhThu > 0 ? supermarketReport.doanhThuTraGop / supermarketReport.doanhThu : 0,
-                dtThucDuKien: 0,
-                dtQdDuKien: 0,
+                dtThucDuKien: 0, // <-- SỬA LỖI (v2.15)
+                dtQdDuKien: 0,   // <-- SỬA LỖI (v2.15)
                 phanTramTargetQd: 0,
                 phanTramTargetThuc: 0,
             };
@@ -340,8 +578,12 @@ export const uiLuyke = {
         
         uiLuyke.renderLuykeKpiCards(luykeCardData, comparisonData, luotKhachData, appState.masterReportData.luyke, goals, competitionSummary);
     },
+    // === END: MODIFIED FUNCTION ===
 
     displayCompetitionResultsFromLuyKe: (text, viewType = 'summary') => {
+        // === START: Dọn dẹp State (Task 3 & 4) ===
+        appState.currentEmployeeDetailData = null;
+        // === END: Dọn dẹp State ===
         const container = document.getElementById('luyke-competition-infographic-container');
         if (!container) return;
 
@@ -450,6 +692,9 @@ export const uiLuyke = {
     },
     
     renderChuaXuatTable: (reportData) => {
+        // === START: Dọn dẹp State (Task 3 & 4) ===
+        appState.currentEmployeeDetailData = null;
+        // === END: Dọn dẹp State ===
         const container = document.getElementById('luyke-unexported-revenue-content');
         if (!container) return;
         if (!reportData || reportData.length === 0) {
@@ -496,7 +741,11 @@ export const uiLuyke = {
             </tr></tfoot></table></div>`;
     },
 
+    // === START: MODIFIED FUNCTION (v2.13) ===
     renderLuykeKpiCards: (luykeData, comparisonData, luotKhachData, masterReportDataLuyke, goals, competitionSummary) => {
+        // === START: Dọn dẹp State (Task 3 & 4) ===
+        appState.currentEmployeeDetailData = null;
+        // === END: Dọn dẹp State ===
         const { dtThucLK, dtQdLK, dtGop, phanTramQd, phanTramGop, phanTramTargetThuc, phanTramTargetQd, dtThucDuKien, dtQdDuKien } = luykeData;
 
         document.getElementById('luyke-kpi-dt-thuc-main').textContent = uiComponents.formatNumber((dtThucLK || 0) / 1000000, 0);
@@ -514,6 +763,13 @@ export const uiLuyke = {
         document.getElementById('luyke-kpi-dt-tc-sub').innerHTML = `% thực trả chậm: <span class="font-bold">${uiComponents.formatPercentage(phanTramGop || 0)}</span>`;
         
         const chuaXuatQuyDoi = masterReportDataLuyke.reduce((sum, item) => sum + (item.doanhThuQuyDoiChuaXuat || 0), 0);
+        
+        // (Task 4) Thêm ID và class vào thẻ DT Chưa Xuất
+        const dtqdChuaXuatCard = document.getElementById('luyke-kpi-dtqd-chua-xuat-main')?.closest('.kpi-card');
+        if (dtqdChuaXuatCard) {
+            dtqdChuaXuatCard.id = 'lk-summary-unexported-trigger';
+            dtqdChuaXuatCard.classList.add('cursor-pointer', 'hover:shadow-xl');
+        }
         document.getElementById('luyke-kpi-dtqd-chua-xuat-main').textContent = uiComponents.formatNumber(chuaXuatQuyDoi / 1000000, 0);
         
         const tyLeThiDuaDat = competitionSummary.total > 0 ? competitionSummary.dat / competitionSummary.total : 0;
@@ -533,8 +789,12 @@ export const uiLuyke = {
         document.getElementById('luyke-kpi-dtck-sub').innerHTML = `Doanh thu: <span class="font-bold">${uiComponents.formatNumber(comparisonData.value || 0)} | ${formattedDtPercentage}</span>`;
         document.getElementById('luyke-kpi-lkck-sub').innerHTML = `Lượt khách: <span class="font-bold">${uiComponents.formatNumber(luotKhachData.value || 0)} | ${formattedLkPercentage}</span>`;
     },
+    // === END: MODIFIED FUNCTION ===
 
     renderLuykeCategoryDetailsTable: (data, numDays) => {
+        // === START: Dọn dẹp State (Task 3 & 4) ===
+        appState.currentEmployeeDetailData = null;
+        // === END: Dọn dẹp State ===
         const container = document.getElementById('luyke-category-details-content');
         const cardHeader = container.previousElementSibling;
         if (!container || !cardHeader || !data || !data.nganhHangChiTiet) { container.innerHTML = '<p class="text-gray-500 font-bold">Không có dữ liệu.</p>'; return; }
@@ -596,6 +856,9 @@ export const uiLuyke = {
     },
 
     renderLuykeQdcTable: (data, numDays) => {
+        // === START: Dọn dẹp State (Task 3 & 4) ===
+        appState.currentEmployeeDetailData = null;
+        // === END: Dọn dẹp State ===
         const container = document.getElementById('luyke-qdc-content');
         const cardHeader = container.previousElementSibling;
         if (!container || !cardHeader || !data || !data.qdc) { container.innerHTML = `<p class="text-gray-500 font-bold">Không có dữ liệu.</p>`; return; }
@@ -640,6 +903,9 @@ export const uiLuyke = {
     },
     
     renderLuykeEfficiencyTable: (data, goals) => {
+        // === START: Dọn dẹp State (Task 3 & 4) ===
+        appState.currentEmployeeDetailData = null;
+        // === END: Dọn dẹp State ===
         const container = document.getElementById('luyke-efficiency-content');
         const cardHeader = container.previousElementSibling;
 
@@ -709,6 +975,9 @@ export const uiLuyke = {
     },
 
     updateLuykeSupermarketTitle: (warehouse, date) => {
+        // === START: Dọn dẹp State (Task 3 & 4) ===
+        appState.currentEmployeeDetailData = null;
+        // === END: Dọn dẹp State ===
         const titleEl = document.getElementById('luyke-supermarket-title');
         if (titleEl) titleEl.textContent = `Báo cáo lũy kế ${warehouse ? 'kho ' + warehouse : 'toàn bộ'} - Tính đến ${date.toLocaleDateString('vi-VN')}`;
     },
