@@ -1,3 +1,4 @@
+// Version 3.37 - Fix modal capture preset, sort logic, and dynamic titles for LK Detail
 // Version 3.34 - Refactor: Hoàn tất di dời 2 listener (Template, Debug) sang data.service.js
 // Version 3.33 - Fix: Gỡ bỏ comment [cite] gây lỗi cú pháp
 // Version 3.32 - Refactor: Di dời logic xử lý file/paste sang data.service.js
@@ -145,7 +146,7 @@ export function initializeEventListeners(mainAppController) {
     document.getElementById('file-thidua-vung')?.addEventListener('change', (e) => dataService.handleThiDuaVungFileInput(e));
     
     // <<< CẬP NHẬT (v3.34) >>>
-    document.getElementById('download-danhsachnv-template-btn')?.addEventListener('click', () => dataService.handleTemplateDownload()); 
+    document.getElementById('download-danhsachnv-template-btn')?.addEventListener('click', () => dataService.handleTemplateDownload());
     document.getElementById('thidua-vung-filter-supermarket')?.addEventListener('change', () => appController.handleThiDuaVungFilterChange()); // (Giữ nguyên)
     document.getElementById('debug-competition-file-input')?.addEventListener('change', (e) => dataService.handleCompetitionDebugFile(e)); 
     // --- KẾT THÚC TÁI CẤU TRÚC ---
@@ -272,6 +273,147 @@ export function initializeEventListeners(mainAppController) {
             }
             return;
         }
+
+        // === START: SỬA LỖI (v3.37) ===
+        
+        // (Task 1) Listener cho bộ lọc ngày của biểu đồ chi tiết LK
+        const dailyChartFilterBtn = e.target.closest('.lk-daily-filter-btn');
+        if (dailyChartFilterBtn) {
+            e.preventDefault();
+            const days = parseInt(dailyChartFilterBtn.dataset.days, 10);
+            
+            // Cập nhật UI nút
+            document.querySelectorAll('.lk-daily-filter-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white');
+                btn.classList.add('bg-gray-200');
+            });
+            dailyChartFilterBtn.classList.add('bg-blue-600', 'text-white');
+            dailyChartFilterBtn.classList.remove('bg-gray-200');
+
+            const detailData = appState.currentEmployeeDetailData;
+            if (detailData && detailData.dailyStats) {
+                // Gọi trực tiếp hàm render biểu đồ (nhanh hơn là render lại toàn bộ tab)
+                ui._renderDailyCharts(detailData.dailyStats, days); // Sửa lỗi path
+            } else {
+                console.warn("Không tìm thấy appState.currentEmployeeDetailData.dailyStats, không thể vẽ lại biểu đồ.");
+            }
+            return;
+        }
+
+        // (Task 3) Listener cho thẻ KPI "Tổng đơn hàng" (Chi tiết LK)
+        const customerTrigger = e.target.closest('#lk-detail-customer-trigger');
+        if (customerTrigger) {
+            e.preventDefault();
+            const detailData = appState.currentEmployeeDetailData;
+            const employeeData = appState.masterReportData.sknv.find(nv => String(nv.maNV) === String(appState.viewingDetailFor?.employeeId));
+            
+            if (detailData && employeeData) {
+                // Sửa lỗi (Task 1): Thêm tên NV vào tiêu đề
+                const modalTitle = document.getElementById('customer-detail-modal-title');
+                if (modalTitle) modalTitle.textContent = `Chi tiết Khách hàng - ${employeeData.hoTen}`;
+                
+                // Đổ dữ liệu vào modal
+                ui._renderCustomerDetailModalContent({ // Sửa lỗi path
+                    byCustomer: detailData.byCustomer, 
+                    mucTieu: employeeData.mucTieu 
+                });
+                // Mở modal
+                ui.toggleModal('customer-detail-modal', true);
+            }
+            return;
+        }
+
+        // (Task 4) Listener cho thẻ KPI "DT Chưa Xuất" (Chi tiết LK hoặc Tóm tắt)
+        const unexportedTrigger = e.target.closest('#lk-detail-unexported-trigger, #lk-summary-unexported-trigger');
+        if (unexportedTrigger) {
+            e.preventDefault();
+            const detailData = appState.currentEmployeeDetailData; // Dữ liệu chi tiết (nếu có)
+            const employeeData = appState.masterReportData.sknv.find(nv => String(nv.maNV) === String(appState.viewingDetailFor?.employeeId));
+            const modalTitle = document.getElementById('unexported-detail-modal-title');
+
+            if (detailData && employeeData) {
+                // Case 1: Đang xem chi tiết nhân viên
+                if (modalTitle) modalTitle.textContent = `Chi tiết Chưa xuất - ${employeeData.hoTen}`;
+                ui._renderUnexportedDetailModalContent({ // Sửa lỗi path
+                    unexportedDetails: detailData.unexportedDetails
+                });
+                ui.toggleModal('unexported-detail-modal', true);
+            } else if (unexportedTrigger.id === 'lk-summary-unexported-trigger') {
+                // Case 2: Đang xem tóm tắt siêu thị
+                // (Chức năng này chưa được yêu cầu, nhưng có thể mở rộng ở đây)
+                ui.showNotification('Chi tiết chưa xuất toàn siêu thị đang được phát triển.', 'success');
+            }
+            return;
+        }
+
+        // (Task 3) Listener cho các nút điều khiển bên trong Modal Khách hàng
+        const customerModalControls = e.target.closest('#customer-detail-controls button[data-sort]');
+        if (customerModalControls) {
+            e.preventDefault();
+            
+            // Sửa lỗi (Task 3): Logic sắp xếp
+            const sortKey = customerModalControls.dataset.sort;
+            let direction = customerModalControls.dataset.direction || 'desc';
+            
+            // Chuyển hướng
+            direction = direction === 'desc' ? 'asc' : 'desc';
+            customerModalControls.dataset.direction = direction;
+            
+            // Cập nhật UI nút
+            document.querySelectorAll('#customer-detail-controls button[data-sort]').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white');
+                btn.classList.add('bg-gray-200');
+                if (btn !== customerModalControls) btn.dataset.direction = 'desc'; // Reset nút khác
+            });
+            customerModalControls.classList.add('bg-blue-600', 'text-white');
+            customerModalControls.classList.remove('bg-gray-200');
+            // Cập nhật text nút
+            const sortText = sortKey === 'totalRealRevenue' ? 'Doanh thu' : '% Quy đổi';
+            const dirText = direction === 'desc' ? 'Cao > Thấp' : 'Thấp > Cao';
+            customerModalControls.textContent = `${sortText} (${dirText})`;
+
+            // Sắp xếp lại dữ liệu và render
+            const detailData = appState.currentEmployeeDetailData;
+            const employeeData = appState.masterReportData.sknv.find(nv => String(nv.maNV) === String(appState.viewingDetailFor?.employeeId));
+            
+            if (detailData && employeeData) {
+                detailData.byCustomer.sort((a, b) => {
+                    const valA = a[sortKey] || 0;
+                    const valB = b[sortKey] || 0;
+                    return direction === 'desc' ? valB - valA : valA - valB;
+                });
+                
+                ui._renderCustomerDetailModalContent({ 
+                    byCustomer: detailData.byCustomer, 
+                    mucTieu: employeeData.mucTieu 
+                });
+            }
+            return;
+        }
+        
+        const captureCustomerBtn = e.target.closest('#capture-customer-detail-btn');
+        if (captureCustomerBtn) {
+            e.preventDefault();
+            // Sửa lỗi (Task 2): Chụp nội dung và dùng preset
+            const modalContent = document.getElementById('customer-detail-list-container');
+            if (modalContent) {
+                captureService.captureAndDownload(modalContent, 'ChiTietKhachHang', 'preset-mobile-portrait');
+            }
+            return;
+        }
+        
+        // (Task 4) Listener cho nút chụp ảnh Modal Chưa Xuất
+        const captureUnexportedBtn = e.target.closest('#capture-unexported-detail-btn');
+        if (captureUnexportedBtn) {
+            e.preventDefault();
+            // Sửa lỗi (Task 2): Chụp nội dung và dùng preset
+            const modalContent = document.getElementById('unexported-detail-list-container');
+            if (modalContent) {
+                captureService.captureAndDownload(modalContent, 'ChiTietChuaXuat', 'preset-mobile-portrait');
+            }
+            return;
+        }
+        // === END: SỬA LỖI (v3.37) ===
     });
 
     // Specific filter listeners (Giữ nguyên)

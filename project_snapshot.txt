@@ -4045,7 +4045,7 @@ id="luyke-efficiency-content"></div></div>
             }
         });
     </script>
-    <script type="module" src="./main.js?v=3.7"></script> </body>
+    <script type="module" src="./main.js?v=3.8"></script> </body>
 </html>
 
 --- END FILE: ./index.html ---
@@ -4109,7 +4109,7 @@ const app = {
     },
     // === END: FIX LỖI ===
 
-    currentVersion: '3.7', // Giữ nguyên version này, bạn có thể tự cập nhật sau khi tích hợp xong
+    currentVersion: '3.8', // Giữ nguyên version này, bạn có thể tự cập nhật sau khi tích hợp xong
     storage: storage,
     unsubscribeDataListener: null,
     _isInitialized: false,
@@ -5941,6 +5941,7 @@ export const storage = {
 --- END FILE: ./modules/storage.js ---
 
 --- START FILE: ./services/data-processing.js ---
+// Version 3.5 - Update processThiDuaVungFile to accept new sheet names
 // Version 3.4 - Fix processThiDuaNhanVienData for 1-column logic & Fix ReferenceError
 // Version 3.2 - Fix ReferenceError in parsePastedThiDuaTableData
 // Version 3.1 - Fix parsePastedThiDuaTableData to filter out "Tổng" and "BP" rows
@@ -6637,12 +6638,26 @@ export const dataProcessing = {
 
     processThiDuaVungFile(workbook) {
         const sheetNames = workbook.SheetNames;
-        const chiTietSheet = workbook.Sheets[sheetNames.find(name => name.toUpperCase().includes('CHITIET'))];
-        const tongSheet = workbook.Sheets[sheetNames.find(name => name.toUpperCase().includes('TONG'))];
+        // *** START: YÊU CẦU MỚI (v3.5) ***
+        // Tìm sheet chi tiết (CHITIET hoặc CHI TIẾT)
+        const chiTietSheetName = sheetNames.find(name => {
+            const upperName = name.toUpperCase();
+            return upperName.includes('CHITIET') || upperName.includes('CHI TIẾT');
+        });
+        
+        // Tìm sheet tổng (TONG hoặc SIEU THI)
+        const tongSheetName = sheetNames.find(name => {
+            const upperName = name.toUpperCase();
+            return upperName.includes('TONG') || upperName.includes('SIEU THI');
+        });
+
+        const chiTietSheet = chiTietSheetName ? workbook.Sheets[chiTietSheetName] : null;
+        const tongSheet = tongSheetName ? workbook.Sheets[tongSheetName] : null;
 
         if (!chiTietSheet || !tongSheet) {
-            throw new Error('File Excel phải chứa sheet có tên chứa "CHITIET" và "TONG".');
+            throw new Error('File Excel phải chứa sheet (CHITIET/CHI TIẾT) và (TONG/SIEU THI).');
         }
+        // *** END: YÊU CẦU MỚI (v3.5) ***
 
         const chiTietData = this._findHeaderAndProcess(chiTietSheet, ['siêu thị', 'ngành hàng', 'kênh']);
         const tongData = this._findHeaderAndProcess(tongSheet, ['siêu thị', 'tổng thưởng']);
@@ -9499,7 +9514,7 @@ font-size: 0.9rem; color: #1f2937; flex-grow:
 --- END FILE: ./styles/specific-realtime.css ---
 
 --- START FILE: ./styles/specific-sknv.css ---
-/* Version 1.0 - Specific: SKNV (Refactored from v6.19) */
+/* Version 1.1 - Add sticky column styles for pasted competition table */
 /* Chứa các style CHỈ dành riêng cho tab Sức Khỏe Nhân Viên (SKNV) */
 
 #sknv-details-container .sknv-subtable-header th { 
@@ -10023,6 +10038,50 @@ filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3)); /* Add a nice shadow */
     outline: none;
 }
 /* === END: LOGIN MODAL STYLES === */
+
+/* === START: Sticky Columns for Pasted Competition Table (v1.1) === */
+
+/* 1. Container: Phải bật 'overflow-x-auto' (đã có) và 'position: relative' (quan trọng) */
+.sknv-pasted-competition-scroller {
+    position: relative; /* Bắt buộc để z-index của sticky hoạt động */
+}
+
+/* 2. Các ô tiêu đề (th) cần "đóng băng" */
+#pasted-competition-report-container table th.sticky-col {
+    position: -webkit-sticky; /* cho Safari */
+    position: sticky;
+    z-index: 2; /* Phải cao hơn z-index của các ô (td) */
+    background-color: #e5e7eb; /* gray-200 (màu nền thead) - Rất quan trọng */
+}
+
+/* 3. Các ô dữ liệu (td) cần "đóng băng" */
+#pasted-competition-report-container table td.sticky-col {
+    position: -webkit-sticky; /* cho Safari */
+    position: sticky;
+    z-index: 1; /* Phải cao hơn các ô td khác, nhưng thấp hơn th */
+    background-color: #ffffff; /* Màu nền của dòng (trắng) */
+}
+
+/* 4. Đảm bảo dòng chẵn/lẻ cũng được ghi đè màu nền */
+#pasted-competition-report-container table tr:nth-child(even) td.sticky-col {
+    background-color: #f9fafb; /* gray-50 (màu dòng chẵn) */
+}
+
+/* 5. Định vị cho từng cột */
+.sticky-col.sticky-col-1 {
+    left: 0; /* Cột đầu tiên */
+}
+
+.sticky-col.sticky-col-2 {
+    left: 150px; /* Cột thứ 2 - Phải bằng độ rộng của cột 1 (min-width: 150px từ CSS cũ) */
+}
+
+/* 6. (An toàn) Đảm bảo footer cũng được "đóng băng" */
+#pasted-competition-report-container table tfoot td.sticky-col {
+    background-color: hsl(210, 20%, var(--header-lightness)); /* Màu footer */
+    z-index: 3; /* Nằm trên cả tiêu đề và nội dung */
+}
+/* === END: Sticky Columns (v1.1) === */
 --- END FILE: ./styles/specific-sknv.css ---
 
 --- START FILE: ./styles/specific-tdv.css ---
@@ -14037,6 +14096,7 @@ export const uiReports = {
 --- END FILE: ./ui-reports.js ---
 
 --- START FILE: ./ui-sknv.js ---
+// Version 6.32 - Add 'Tổng Đạt' column and sticky columns to pasted competition table
 // Version 6.31 - Fix capture logic to support vertical stitching
 // Version 6.30 - YC: Logic cho CSS v6.19 (Vòng tròn xám 4+, Huy chương Top 3)
 // Version 6.28 - YC: Bỏ icon cờ (summary) & Thêm w-full (bảng thu nhập)
@@ -14713,6 +14773,30 @@ export const uiSknv = {
         const departmentOrder = utils.getSortedDepartmentList(reportData);
         const sortStateKey = 'sknv_thidua_pasted';
         
+        // *** START: YÊU CẦU MỚI (TÍNH TOÁN TRƯỚC) ***
+        // Tính toán trước điểm chuẩn (TB bộ phận) cho tất cả các cột
+        const deptAverages = {}; // { "BP Tư Vấn": { "tenGoc1": 10.5, "tenGoc2": 5.2 }, ... }
+        departmentOrder.forEach(deptName => {
+            const deptData = groupedByDept[deptName];
+            const deptAvg = {};
+            
+            columnSettings.forEach(col => {
+                let total = 0;
+                let count = 0;
+                deptData.forEach(emp => {
+                    const compData = emp.competitions.find(c => c.tenGoc === col.tenGoc);
+                    const giaTri = compData?.giaTri || 0;
+                    if (giaTri > 0) { // Chỉ tính trung bình cho các NV có bán
+                        total += giaTri;
+                        count++;
+                    }
+                });
+                deptAvg[col.tenGoc] = count > 0 ? total / count : 0;
+            });
+            deptAverages[deptName] = deptAvg;
+        });
+        // *** END: YÊU CẦU MỚI (TÍNH TOÁN TRƯỚC) ***
+        
         departmentOrder.forEach(deptName => {
             if (groupedByDept[deptName]) {
                 const deptData = groupedByDept[deptName];
@@ -14731,6 +14815,30 @@ export const uiSknv = {
                         valA = a.competitions.find(c => c.tenGoc === sortCol.tenGoc)?.giaTri || 0;
                         valB = b.competitions.find(c => c.tenGoc === sortCol.tenGoc)?.giaTri || 0;
                         return direction === 'asc' ? valA - valB : valB - valA;
+                        
+                    } else if (key === 'totalScore') {
+                        // *** START: YÊU CẦU MỚI (SẮP XẾP TỔNG ĐẠT) ***
+                        // Phải tính toán lại điểm ở đây để sắp xếp
+                        const avgScores = deptAverages[deptName];
+                        
+                        let scoreA = 0;
+                        a.competitions.forEach(comp => {
+                            if (avgScores[comp.tenGoc] > 0 && comp.giaTri >= avgScores[comp.tenGoc]) {
+                                scoreA++;
+                            }
+                        });
+                        
+                        let scoreB = 0;
+                        b.competitions.forEach(comp => {
+                            if (avgScores[comp.tenGoc] > 0 && comp.giaTri >= avgScores[comp.tenGoc]) {
+                                scoreB++;
+                            }
+                        });
+                        
+                        valA = scoreA;
+                        valB = scoreB;
+                        return direction === 'asc' ? valA - valB : valB - valA;
+                        // *** END: YÊU CẦU MỚI (SẮP XẾP TỔNG ĐẠT) ***
                         
                     } else { // Sắp xếp theo 'hoTen'
                         valA = a[key] || ''; 
@@ -14753,11 +14861,11 @@ export const uiSknv = {
                     <h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${deptName}</h4>
                     <div class="overflow-x-auto sknv-pasted-competition-scroller"> 
                     
-                    <table class="text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="${1 + visibleColumns.length}">
+                    <table class="text-sm text-left text-gray-600 table-bordered table-striped" data-table-type="${sortStateKey}" data-capture-columns="${2 + visibleColumns.length}">
                          <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                             <tr>
-                                <th class="${headerClass('hoTen')}" data-sort="hoTen" style="min-width: 150px; white-space: nowrap;">Nhân viên <span class="sort-indicator"></span></th>
-                            
+                                <th class="${headerClass('hoTen')} sticky-col sticky-col-1" data-sort="hoTen" style="min-width: 150px; white-space: nowrap;">Nhân viên <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('totalScore')} sticky-col sticky-col-2 text-center" data-sort="totalScore" style="min-width: 80px;">Tổng đạt <span class="sort-indicator"></span></th>
                                 ${visibleColumns.map((header, index) => `
                                      <th class="${headerClass(header.id)} text-center header-group-${index % 12 + 1}" 
                                          data-sort="${header.id}" 
@@ -14780,9 +14888,22 @@ export const uiSknv = {
 
                 // Render dòng nhân viên
                 sortedData.forEach(item => {
+                    // *** START: YÊU CẦU MỚI (TÍNH ĐIỂM) ***
+                    let totalScore = 0;
+                    const deptAvg = deptAverages[item.boPhan] || {};
+                    item.competitions.forEach(comp => {
+                        const avg = deptAvg[comp.tenGoc];
+                        // Chỉ cộng điểm nếu TB > 0 (có người bán) và NV >= TB
+                        if (avg > 0 && comp.giaTri >= avg) {
+                            totalScore++;
+                        }
+                    });
+                    // *** END: YÊU CẦU MỚI (TÍNH ĐIỂM) ***
+                
                     finalHTML += `<tr class="hover:bg-gray-50">
-                        <td class="px-4 py-2 font-semibold whitespace-nowrap">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</td>
+                        <td class="px-4 py-2 font-semibold whitespace-nowrap sticky-col sticky-col-1">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</td>
                         
+                        <td class="px-2 py-2 text-center font-bold text-green-600 sticky-col sticky-col-2">${totalScore}</td>
                         ${visibleColumns.map(col => {
                              const compData = item.competitions.find(c => c.tenGoc === col.tenGoc);
                              const giaTri = compData?.giaTri || 0;
@@ -14805,16 +14926,16 @@ export const uiSknv = {
                 finalHTML += `</tbody>
                      <tfoot class="table-footer font-bold">
                         <tr class="bg-gray-100">
-                            <td class="px-4 py-2 text-left">Tổng</td>
-                            ${visibleColumns.map(col => {
+                            <td class="px-4 py-2 text-left sticky-col sticky-col-1">Tổng</td>
+                            <td class="px-2 py-2 sticky-col sticky-col-2"></td> ${visibleColumns.map(col => {
                                 const total = deptTotals.get(col.tenGoc) || 0;
                                 const formattedTotal = total === 0 ? '-' : uiComponents.formatNumber(total, 0);
                                 return `<td class="px-2 py-2 text-right">${formattedTotal}</td>`;
                             }).join('')}
                         </tr>
                          <tr class="bg-gray-100">
-                            <td class="px-4 py-2 text-left">Trung Bình</td>
-                            ${visibleColumns.map(col => {
+                            <td class="px-4 py-2 text-left sticky-col sticky-col-1">Trung Bình</td>
+                            <td class="px-2 py-2 sticky-col sticky-col-2"></td> ${visibleColumns.map(col => {
                                 const total = deptTotals.get(col.tenGoc) || 0;
                                 const count = validEmployeeCount.get(col.tenGoc) || 0;
                                 const avg = count > 0 ? total / count : 0;
@@ -14866,7 +14987,6 @@ export const uiSknv = {
     }
     // *** END: MODIFIED FUNCTION (v6.25) ***
 };
-
 --- END FILE: ./ui-sknv.js ---
 
 --- START FILE: ./ui-thidua-vung.js ---

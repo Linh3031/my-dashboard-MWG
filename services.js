@@ -1,8 +1,8 @@
-// Version 2.7 - Remove debug logs after fixing revenue calculation
+// Version 2.8 - Enhance generateLuyKeEmployeeDetailReport to return daily stats and unexported details
 // MODULE: SERVICES FACADE
 // File này đóng vai trò điều phối, nhập khẩu các module logic con và export chúng ra ngoài.
 
-import { config } from '../config.js';
+import { config } from './config.js';
 import { appState } from './state.js';
 import { ui } from './ui.js';
 import { utils } from './utils.js';
@@ -472,7 +472,7 @@ const reportGeneration = {
         };
     },
 
-    // === START: REFACTORED FUNCTION FOR LUY KE EMPLOYEE DETAIL (v38.0) ===
+    // === START: MODIFIED FUNCTION (v2.8) ===
     generateLuyKeEmployeeDetailReport(employeeMaNV, luykeYCXData) {
         if (!employeeMaNV || !luykeYCXData || luykeYCXData.length === 0) {
             return null;
@@ -499,6 +499,11 @@ const reportGeneration = {
         const byCustomer = {};
         const categoryChartDataMap = {};
 
+        // === START: NEW DATA FOR CHARTS/MODALS ===
+        const dailyStats = {}; // For Task 1
+        const unexportedDetails = {}; // For Task 4
+        // === END: NEW DATA ===
+
         const employeeMasterData = appState.masterReportData.sknv.find(e => String(e.maNV) === String(employeeMaNV));
         if (employeeMasterData) {
             summary.unexportedRevenue = employeeMasterData.doanhThuChuaXuat || 0;
@@ -508,9 +513,9 @@ const reportGeneration = {
             const isDoanhThuHTX = hinhThucXuatTinhDoanhThu.has(row.hinhThucXuat);
             const isBaseValid = (row.trangThaiThuTien || "").trim() === 'Đã thu' &&
                                 (row.trangThaiHuy || "").trim() === 'Chưa hủy' &&
-                                (row.tinhTrangTra || "").trim() === 'Chưa trả' &&
-                                (row.trangThaiXuat || "").trim() === 'Đã xuất';
+                                (row.tinhTrangTra || "").trim() === 'Chưa trả';
 
+            // === START: MODIFIED LOGIC (Tách 'Đã xuất' và 'Chưa xuất') ===
             if (isDoanhThuHTX && isBaseValid) {
                 const realRevenue = parseFloat(String(row.thanhTien || "0").replace(/,/g, '')) || 0;
                 const quantity = parseInt(String(row.soLuong || "0"), 10) || 0;
@@ -521,39 +526,67 @@ const reportGeneration = {
                 const groupName = utils.cleanCategoryName(row.nhomHang || 'Khác');
                 const customerName = row.tenKhachHang || 'Khách Lẻ';
                 const categoryName = utils.cleanCategoryName(row.nganhHang || 'Khác');
+                const productName = row.tenSanPham || 'Không rõ'; // (Task 4)
+                
+                if ((row.trangThaiXuat || "").trim() === 'Đã xuất') {
+                    // === START: EXISTING LOGIC (Đã xuất) ===
+                    summary.totalRealRevenue += realRevenue;
+                    summary.totalConvertedRevenue += convertedRevenue;
 
-                // For Summary KPIs
-                summary.totalRealRevenue += realRevenue;
-                summary.totalConvertedRevenue += convertedRevenue;
+                    if (!byProductGroup[groupName]) {
+                        byProductGroup[groupName] = { name: groupName, quantity: 0, realRevenue: 0, convertedRevenue: 0 };
+                    }
+                    byProductGroup[groupName].quantity += quantity;
+                    byProductGroup[groupName].realRevenue += realRevenue;
+                    byProductGroup[groupName].convertedRevenue += convertedRevenue;
 
-                // For Top 8 Product Groups
-                if (!byProductGroup[groupName]) {
-                    byProductGroup[groupName] = { name: groupName, quantity: 0, realRevenue: 0, convertedRevenue: 0 };
+                    if (!categoryChartDataMap[categoryName]) {
+                        categoryChartDataMap[categoryName] = { name: categoryName, revenue: 0 };
+                    }
+                    categoryChartDataMap[categoryName].revenue += realRevenue;
+
+                    if (!byCustomer[customerName]) {
+                        byCustomer[customerName] = { name: customerName, products: [], totalQuantity: 0, totalRealRevenue: 0, totalConvertedRevenue: 0 };
+                    }
+                    byCustomer[customerName].products.push({
+                        productName: row.tenSanPham,
+                        quantity: quantity,
+                        realRevenue: realRevenue,
+                        convertedRevenue: convertedRevenue,
+                    });
+                    byCustomer[customerName].totalQuantity += quantity;
+                    byCustomer[customerName].totalRealRevenue += realRevenue;
+                    byCustomer[customerName].totalConvertedRevenue += convertedRevenue;
+                    // === END: EXISTING LOGIC ===
+
+                    // === START: NEW LOGIC (Task 1 - Daily Stats) ===
+                    const ngayTao = row.ngayTao;
+                    if (ngayTao instanceof Date) {
+                        const dateString = ngayTao.toISOString().split('T')[0]; // 'YYYY-MM-DD'
+                        if (!dailyStats[dateString]) {
+                            dailyStats[dateString] = { date: ngayTao, revenue: 0, convertedRevenue: 0 };
+                        }
+                        dailyStats[dateString].revenue += realRevenue;
+                        dailyStats[dateString].convertedRevenue += convertedRevenue;
+                    }
+                    // === END: NEW LOGIC (Task 1) ===
+
+                } else if ((row.trangThaiXuat || "").trim() === 'Chưa xuất') {
+                    // === START: NEW LOGIC (Task 4 - Unexported Details) ===
+                    if (!unexportedDetails[groupName]) {
+                        unexportedDetails[groupName] = { name: groupName, totalSL: 0, totalDTQD: 0, products: {} };
+                    }
+                    if (!unexportedDetails[groupName].products[productName]) {
+                        unexportedDetails[groupName].products[productName] = { name: productName, sl: 0, dtqd: 0 };
+                    }
+                    unexportedDetails[groupName].products[productName].sl += quantity;
+                    unexportedDetails[groupName].products[productName].dtqd += convertedRevenue;
+                    unexportedDetails[groupName].totalSL += quantity;
+                    unexportedDetails[groupName].totalDTQD += convertedRevenue;
+                    // === END: NEW LOGIC (Task 4) ===
                 }
-                byProductGroup[groupName].quantity += quantity;
-                byProductGroup[groupName].realRevenue += realRevenue;
-                byProductGroup[groupName].convertedRevenue += convertedRevenue;
-
-                // For Chart Data
-                if (!categoryChartDataMap[categoryName]) {
-                    categoryChartDataMap[categoryName] = { name: categoryName, revenue: 0 };
-                }
-                categoryChartDataMap[categoryName].revenue += realRevenue;
-
-                // For Customer Accordion
-                if (!byCustomer[customerName]) {
-                    byCustomer[customerName] = { name: customerName, products: [], totalQuantity: 0, totalRealRevenue: 0, totalConvertedRevenue: 0 };
-                }
-                byCustomer[customerName].products.push({
-                    productName: row.tenSanPham,
-                    quantity: quantity,
-                    realRevenue: realRevenue,
-                    convertedRevenue: convertedRevenue,
-                });
-                byCustomer[customerName].totalQuantity += quantity;
-                byCustomer[customerName].totalRealRevenue += realRevenue;
-                byCustomer[customerName].totalConvertedRevenue += convertedRevenue;
             }
+            // === END: MODIFIED LOGIC ===
         });
 
         // Final calculations for summary
@@ -571,6 +604,15 @@ const reportGeneration = {
             group.conversionRate = group.realRevenue > 0 ? (group.convertedRevenue / group.realRevenue) - 1 : 0;
         }
 
+        // Convert maps to arrays for returning
+        const finalDailyStats = Object.values(dailyStats).sort((a, b) => a.date - b.date);
+        const finalUnexportedDetails = Object.values(unexportedDetails)
+            .map(group => ({
+                ...group,
+                products: Object.values(group.products).sort((a, b) => b.dtqd - a.dtqd)
+            }))
+            .sort((a, b) => b.totalDTQD - a.totalDTQD);
+
         return {
             summary,
             topProductGroups: Object.values(byProductGroup)
@@ -578,10 +620,14 @@ const reportGeneration = {
                 .slice(0, 8),
             categoryChartData: Object.values(categoryChartDataMap),
             byCustomer: Object.values(byCustomer)
-                .sort((a,b) => b.totalRealRevenue - a.totalRealRevenue)
+                .sort((a,b) => b.totalRealRevenue - a.totalRealRevenue),
+            // === START: NEW RETURN VALUES ===
+            dailyStats: finalDailyStats, // For Task 1
+            unexportedDetails: finalUnexportedDetails // For Task 4
+            // === END: NEW RETURN VALUES ===
         };
     },
-    // === END: REFACTORED FUNCTION ===
+    // === END: MODIFIED FUNCTION ===
 
     generateRealtimeBrandReport(realtimeYCXData, selectedCategory, selectedBrand) {
         if (!realtimeYCXData || realtimeYCXData.length === 0) return { byBrand: [], byEmployee: [] };

@@ -1,6 +1,6 @@
+// Version 4.50 - Import and render new detail modals (customer, unexported)
 // Version 4.49 - Refactor: Di dời 3 hàm (TemplateDownload, CompetitionDebug, FileRead) sang data.service.js
 // Version 4.48 - Refactor: Di dời 14+ hàm xử lý data sang data.service.js
-// Version 4.47 - Refactor: Remove direct dependency on ui-components.js, use ui.js facade instead.
 // ... (các phiên bản trước giữ nguyên)
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
@@ -27,6 +27,10 @@ import { modalChart } from './components/modal-chart.js';
 import { modalComposer } from './components/modal-composer.js';
 import { modalPreview } from './components/modal-preview.js';
 import { modalSelection } from './components/modal-selection.js';
+// === START: THÊM IMPORT (TASK 3 & 4) ===
+import { modalCustomerDetail } from './components/modal-customer-detail.js';
+import { modalUnexportedDetail } from './components/modal-unexported-detail.js';
+// === END: THÊM IMPORT ===
 import { settingsService } from './modules/settings.service.js';
 import { highlightService } from './modules/highlight.service.js';
 import { dataService } from './services/data.service.js'; // <<< THÊM MỚI (v4.48)
@@ -78,6 +82,10 @@ const app = {
             modalComposer.render('#modal-composer-container');
             modalPreview.render('#modal-preview-container');
             modalSelection.render('#modal-selection-container');
+            // === START: RENDER MODALS MỚI (TASK 3 & 4) ===
+            modalCustomerDetail.render('#modal-customer-detail-container');
+            modalUnexportedDetail.render('#modal-unexported-detail-container');
+            // === END: RENDER MODALS MỚI ===
             feather.replace();
             console.log("Static UI components rendered.");
 

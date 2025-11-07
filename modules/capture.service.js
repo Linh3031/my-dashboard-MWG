@@ -1,3 +1,4 @@
+// Version 1.1 - Fix blank charts by disabling Chart.js animations and adding 500ms delay during capture
 // Version 1.0 - Refactored from utils.js
 // MODULE: CAPTURE SERVICE
 // Chứa toàn bộ logic liên quan đến việc chụp ảnh màn hình các thành phần UI.
@@ -108,6 +109,14 @@ export const captureService = {
 
         document.body.appendChild(captureWrapper);
     
+        // === START: (TASK 2 FIX) Tắt animation và thêm độ trễ ===
+        if (window.Chart) {
+            Chart.defaults.animation = false;
+        }
+        // Thêm độ trễ 500ms để đảm bảo biểu đồ render xong
+        await new Promise(resolve => setTimeout(resolve, 500));
+        // === END: (TASK 2 FIX) ===
+
         try {
             const canvas = await html2canvas(captureWrapper, {
                 scale: 2,
@@ -127,6 +136,11 @@ export const captureService = {
             if (document.body.contains(captureWrapper)) {
                 document.body.removeChild(captureWrapper);
             }
+            // === START: (TASK 2 FIX) Bật lại animation sau khi chụp ===
+            if (window.Chart) {
+                Chart.defaults.animation = {};
+            }
+            // === END: (TASK 2 FIX) ===
         }
     },
     
@@ -152,6 +166,15 @@ export const captureService = {
         });
         
         const styleElement = _injectCaptureStyles();
+        
+        // === START: (TASK 2 FIX) Tắt animation và thêm độ trễ ===
+        if (window.Chart) {
+            Chart.defaults.animation = false;
+        }
+        // Thêm độ trễ 500ms để đảm bảo biểu đồ render xong
+        await new Promise(resolve => setTimeout(resolve, 500));
+        // === END: (TASK 2 FIX) ===
+        
         try {
             if (captureGroups.size === 0) {
                 if (contentContainer.offsetParent !== null) {
@@ -194,6 +217,11 @@ export const captureService = {
             }
         } finally {
             styleElement.remove();
+            // === START: (TASK 2 FIX) Bật lại animation sau khi chụp ===
+            if (window.Chart) {
+                Chart.defaults.animation = {};
+            }
+            // === END: (TASK 2 FIX) ===
         }
 
         ui.showNotification(`Đã hoàn tất chụp ảnh báo cáo ${baseTitle}!`, 'success');
