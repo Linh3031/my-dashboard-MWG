@@ -1,4 +1,18 @@
 [
+  {
+    "version": "3.9",
+    "date": "07/11/2025",
+    "notes": [
+      {
+        "title": "Nâng cấp Tab Doanh thu NV LK : Bấm vào tên nhân viên để xem được chi tiết",
+        "items": [
+          "Làm gọn lại bảng nội dung, thêm 2 biểu đồ doanh thu QĐ và Tỷ lệ QĐ theo ngày",
+          "Dùng bộ lọc ngày để lọc khoảng thời gian muốn xem, giúp theo dõi sự tiến bộ của nhân viên theo ngày.",
+          "Bấm vào thẻ DT chưa xuất và Tổng đơn hàng để xem chi tiết"
+        ]
+      }
+    ]
+  },
      {
     "version": "3.8",
     "date": "06/11/2025",

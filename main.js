@@ -1,4 +1,4 @@
-// Version 4.50 - Import and render new detail modals (customer, unexported)
+// Version 4.51 - Update _formatChangelogForModal to support nested lists
 // Version 4.49 - Refactor: Di dời 3 hàm (TemplateDownload, CompetitionDebug, FileRead) sang data.service.js
 // Version 4.48 - Refactor: Di dời 14+ hàm xử lý data sang data.service.js
 // ... (các phiên bản trước giữ nguyên)
@@ -60,7 +60,7 @@ const app = {
     },
     // === END: FIX LỖI ===
 
-    currentVersion: '3.8', // Giữ nguyên version này, bạn có thể tự cập nhật sau khi tích hợp xong
+    currentVersion: '3.9', // Giữ nguyên version này, bạn có thể tự cập nhật sau khi tích hợp xong
     storage: storage,
     unsubscribeDataListener: null,
     _isInitialized: false,
@@ -321,18 +321,44 @@ const app = {
         }
     },
 
+    // === START: MODIFIED FUNCTION (v4.51) ===
     _formatChangelogForModal(changelogData) {
-        // ... (Giữ nguyên)
         if (!changelogData || changelogData.length === 0) return '<p>Không có lịch sử cập nhật.</p>';
-        return changelogData.map(item => `
-            <div class="mb-4 pb-4 border-b last:border-b-0">
-                <h4 class="font-bold text-blue-600 mb-2">Phiên bản ${item.version} (${item.date})</h4>
-                <ul class="list-disc list-inside text-gray-700 space-y-1 text-sm">
-                    ${item.notes.map(note => `<li>${note}</li>`).join('')}
-                </ul>
-            </div>
-        `).join('');
+        
+        return changelogData.map(item => {
+            const notesHtml = item.notes.map(note => {
+                // Yêu cầu mới: Kiểm tra xem 'note' là string hay object
+                if (typeof note === 'object' && note !== null && note.title && Array.isArray(note.items)) {
+                    // Đây là một mục lồng cấp
+                    const subItemsHtml = note.items.map(subItem => 
+                        // Sử dụng style 'list-style-type: "- "'
+                        `<li class="ml-4" style="list-style-type: '- ';">${subItem}</li>`
+                    ).join('');
+                    
+                    return `
+                        <li class="mt-2 font-semibold text-gray-800">${note.title}
+                            <ul class="font-normal text-gray-700 space-y-1 mt-1">
+                                ${subItemsHtml}
+                            </ul>
+                        </li>
+                    `;
+                } else {
+                    // Đây là một string bình thường
+                    return `<li class="text-gray-700">${note}</li>`;
+                }
+            }).join('');
+
+            return `
+                <div class="mb-4 pb-4 border-b last:border-b-0">
+                    <h4 class="font-bold text-blue-600 mb-2">Phiên bản ${item.version} (${item.date})</h4>
+                    <ul class="list-disc list-inside space-y-1 text-sm">
+                        ${notesHtml}
+                    </ul>
+                </div>
+            `;
+        }).join('');
     },
+    // === END: MODIFIED FUNCTION ===
 
     async checkForUpdates() {
         // ... (Giữ nguyên)
@@ -349,11 +375,29 @@ const app = {
                 const notesContainer = document.getElementById('update-notes-container');
                 if (titleEl) titleEl.textContent = `📢 Đã có phiên bản mới ${serverConfig.version}!`;
                 if (notesContainer && newVersionDetails && newVersionDetails.notes) {
+                    // Sử dụng cùng logic render của _formatChangelogForModal để hỗ trợ nested lists
+                    const notesHtml = newVersionDetails.notes.map(note => {
+                        if (typeof note === 'object' && note !== null && note.title && Array.isArray(note.items)) {
+                            const subItemsHtml = note.items.map(subItem => 
+                                `<li class="ml-4" style="list-style-type: '- ';">${subItem}</li>`
+                            ).join('');
+                            return `
+                                <li class="mt-2 font-semibold text-gray-800">${note.title}
+                                    <ul class="font-normal text-gray-700 space-y-1 mt-1">
+                                        ${subItemsHtml}
+                                    </ul>
+                                </li>
+                            `;
+                        } else {
+                            return `<li class="text-gray-700">${note}</li>`;
+                        }
+                    }).join('');
+                    
                     notesContainer.innerHTML = `
                         <p class="text-sm font-semibold text-gray-700 mb-2">Nội dung cập nhật:</p>
                         <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
-                                ${newVersionDetails.notes.map(note => `<li>${note}</li>`).join('')}
-                            </ul>
+                            ${notesHtml}
+                        </ul>
                     `;
                 } else if (notesContainer) {
                     notesContainer.innerHTML = '<p class="text-sm text-gray-500">Không thể tải chi tiết cập nhật.</p>';
@@ -366,7 +410,7 @@ const app = {
     },
 
     async loadDataFromStorage() {
-        // ... (Giữ nguyên)
+        // ... (Gi̟ữ nguyên)
     
         let dsnvLoadSuccess = false;
         const loadSavedFile = async (saveKey, stateKey, fileType, uiId) => {
