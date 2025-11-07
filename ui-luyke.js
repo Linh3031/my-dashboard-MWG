@@ -1,3 +1,4 @@
+// Version 2.15 - Fix ReferenceError: dtThucDuKien is not defined in displayHealthKpiTable
 // Version 2.14 - Split daily charts into two separate cards for clarity
 // Version 2.13 - Store detailData in appState and read active chart filter
 // Version 2.12 - Implement 4 new features for LK Employee Detail view (charts, modals)
@@ -373,13 +374,15 @@ export const uiLuyke = {
                 </button>
             </div>
             <div id="dtnv-lk-capture-area">
-                <div class="p-4 mb-6 bg-white text-gray-800 rounded-lg shadow-lg border luyke-detail-header">
+                <div class="p-4 mb-6 bg-white text-gray-800 rounded-lg shadow-lg border luyke-detail-header" data-capture-group="1">
                     <h3>${employeeData.hoTen} - ${employeeData.maNV}</h3>
                 </div>
                 
-                ${renderKpiCards()}
+                <div data-capture-group="1">
+                    ${renderKpiCards()}
+                </div>
 
-                <div id="lk-daily-chart-filters" class="flex items-center justify-center gap-2 mb-4">
+                <div id="lk-daily-chart-filters" class="flex items-center justify-center gap-2 mb-4" data-capture-group="1">
                     <span class="text-sm font-medium">Xem theo:</span>
                     <button class="lk-daily-filter-btn px-3 py-1 text-xs font-medium rounded-full bg-gray-200" data-days="3">3 ngày</button>
                     <button class="lk-daily-filter-btn px-3 py-1 text-xs font-medium rounded-full bg-gray-200" data-days="5">5 ngày</button>
@@ -387,26 +390,26 @@ export const uiLuyke = {
                     <button class="lk-daily-filter-btn px-3 py-1 text-xs font-medium rounded-full bg-gray-200" data-days="10">10 ngày</button>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                    <div class="bg-white p-4 rounded-lg shadow-md border" style="height: 300px;">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6" data-capture-layout="grid">
+                    <div class="bg-white p-4 rounded-lg shadow-md border" style="height: 300px;" data-capture-group="2">
                         <h4 class="text-md font-bold text-gray-700 mb-2 text-center">Doanh thu QĐ theo ngày (Tr)</h4>
                         <div class="relative h-full w-full" style="height: 250px;"><canvas id="lk-daily-dtqd-chart"></canvas></div>
                     </div>
-                    <div class="bg-white p-4 rounded-lg shadow-md border" style="height: 300px;">
+                    <div class="bg-white p-4 rounded-lg shadow-md border" style="height: 300px;" data-capture-group="2">
                         <h4 class="text-md font-bold text-gray-700 mb-2 text-center">Tỷ lệ QĐ theo ngày</h4>
                         <div class="relative h-full w-full" style="height: 250px;"><canvas id="lk-daily-tlqd-chart"></canvas></div>
                     </div>
                 </div>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6" data-capture-layout="grid">
                     
-                     <div class="bg-white p-4 rounded-lg shadow-md border">
+                     <div class="bg-white p-4 rounded-lg shadow-md border" data-capture-group="3">
                         <h4 class="text-md font-bold text-gray-700 border-b pb-2 mb-3">Top 5 Nhóm Hàng Doanh Thu Cao</h4>
                         <div class="space-y-3">
                             ${renderTopGroupsAsProgressBars()}
                          </div>
                     </div>
                     
-                    <div class="bg-white p-4 rounded-lg shadow-md border">
+                    <div class="bg-white p-4 rounded-lg shadow-md border" data-capture-group="3">
                         <h4 class="text-md font-bold text-gray-700 mb-2">Tỷ Trọng Doanh Thu Ngành Hàng</h4>
                          <div class="luyke-detail-chart-container">
                             <canvas id="luyke-employee-chart"></canvas>
@@ -496,6 +499,7 @@ export const uiLuyke = {
                 <span class="font-normal text-gray-500">SL:</span> ${slHtml})`;
     },
     
+    // === START: MODIFIED FUNCTION (v2.15) ===
     displayHealthKpiTable: (pastedData, goals) => {
         // === START: Dọn dẹp State (Task 3 & 4) ===
         appState.currentEmployeeDetailData = null;
@@ -516,8 +520,8 @@ export const uiLuyke = {
                 phanTramQd: supermarketReport.doanhThu > 0 ? (supermarketReport.doanhThuQuyDoi / supermarketReport.doanhThu) - 1 : 0,
                 dtGop: supermarketReport.doanhThuTraGop,
                 phanTramGop: supermarketReport.doanhThu > 0 ? supermarketReport.doanhThuTraGop / supermarketReport.doanhThu : 0,
-                dtThucDuKien: 0,
-                dtQdDuKien: 0,
+                dtThucDuKien: 0, // <-- SỬA LỖI (v2.15)
+                dtQdDuKien: 0,   // <-- SỬA LỖI (v2.15)
                 phanTramTargetQd: 0,
                 phanTramTargetThuc: 0,
             };
@@ -535,18 +539,19 @@ export const uiLuyke = {
         const phanTramGop = dtThucLK > 0 ? dtGop / dtThucLK : 0;
         
         const targetThuc = (parseFloat(goals.doanhThuThuc) || 0) * 1000000;
-        const phanTramTargetThuc = targetThuc > 0 ? (dtThucDuKien * 1000000) / targetThuc : 0;
+        const phanTramTargetThuc = targetThuc > 0 ? (dtDuKien * 1000000) / targetThuc : 0;
         const phanTramTargetQd = (cleanValue(mainKpis['% HT Target Dự Kiến (QĐ)']) || 0) / 100;
 
         const luykeCardData = { 
             dtThucLK, dtQdLK, dtGop, phanTramQd, phanTramGop, 
             phanTramTargetThuc, phanTramTargetQd,
-            dtThucDuKien: dtThucDuKien * 1000000,
+            dtThucDuKien: dtDuKien * 1000000,
              dtQdDuKien: dtqdDuKien * 1000000,
         };
         
         uiLuyke.renderLuykeKpiCards(luykeCardData, comparisonData, luotKhachData, appState.masterReportData.luyke, goals, competitionSummary);
     },
+    // === END: MODIFIED FUNCTION ===
 
     displayCompetitionResultsFromLuyKe: (text, viewType = 'summary') => {
         // === START: Dọn dẹp State (Task 3 & 4) ===
