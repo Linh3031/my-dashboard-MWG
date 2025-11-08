@@ -1,5 +1,27 @@
 [
   {
+    "version": "4.0 / 4.1",
+    "date": "08/11/2025",
+    "notes": [
+      {
+        "title": "Nâng cấp Tab Cập nhật dữ liệu, Phân loại theo nhu cầu sử dụng :",
+        "items": [
+          "SỬ DỤNG NHANH MỖI NGÀY : chỉ cần cập nhật 3 dữ liệu sẽ xem được tổng quan sức khỏe nhân viên, sức khỏe siêu thị",
+          "CHI TIẾT SỨC KHỎE NHÂN VIÊN : Sử dụng khi muốn đo lường năng suất : doanh thu theo giờ công, thu nhập theo giờ công, xếp hạng thu nhập để thúc đẩy nhân viên đua với nhau",
+          "DỮ LIỆU CẬP NHẬT 1 THÁNG 1 LẦN : Dùng để so sánh doanh thu cùng kỳ tăng giảm, thu nhập tăng giảm nhân viên so tháng trước"
+        ]
+      },
+      {
+        "title": "Sửa lỗi chụp ảnh do tái cấu trúc file",
+        "items": []
+      },
+      {
+        "title": "Thêm nút sort ở các bảng dữ liệu còn thiếu",
+        "items": []
+      }
+    ]
+  },
+  {
     "version": "3.9",
     "date": "07/11/2025",
     "notes": [
@@ -13,142 +35,260 @@
       }
     ]
   },
-     {
+  {
     "version": "3.8",
     "date": "06/11/2025",
     "notes": [
-      "Thêm cột tính tổng đạt cho thi đua NV LK : Mỗi ngành hàng sẽ so sánh số bán nhân viên với TB bộ phận, nếu trên TB thì +1, dưới TB =0, nhân viên có số tổng đạt cao là đang chạy ngành hàng tốt",
-      "Thêm tính năng cố định cột tên nhân viên và tổng đạt khi kéo cuộn ngang xem dễ dàng hơn",
-      "Sửa lỗi chụp ảnh tab thu nhập",
-      "Sửa lỗi tab thi đua vùng TNB do file gốc bị thay đổi tên sheet"
+      {
+        "title": "Thêm cột tính tổng đạt cho thi đua NV LK : Mỗi ngành hàng sẽ so sánh số bán nhân viên với TB bộ phận, nếu trên TB thì +1, dưới TB =0, nhân viên có số tổng đạt cao là đang chạy ngành hàng tốt",
+        "items": []
+      },
+      {
+        "title": "Thêm tính năng cố định cột tên nhân viên và tổng đạt khi kéo cuộn ngang xem dễ dàng hơn",
+        "items": []
+      },
+      {
+        "title": "Sửa lỗi chụp ảnh tab thu nhập",
+        "items": []
+      },
+      {
+        "title": "Sửa lỗi tab thi đua vùng TNB do file gốc bị thay đổi tên sheet",
+        "items": []
+      }
     ]
-  },  
-    {
+  },
+  {
     "version": "3.7",
     "date": "01/11/2025",
     "notes": [
-      "Thêm tính năng xem chi tiết thi đua nhân viên trong tab Thi đua NV LK",
-      "Dữ liệu được dán trực tiếp từ BI",
-      "Có thể bật tắt các thẻ để hiển thị các ngành hàng cần theo dõi ( mặc định hiển thị tất cả)",
-      "Có thể kéo thả các thẻ để sắp xếp lại các cột, ưu tiên đưa ngành hàng quan trọng lên đầu ( tương tự tab Hiệu quả NV LK)" 
+      {
+        "title": "Thêm tính năng xem chi tiết thi đua nhân viên trong tab Thi đua NV LK",
+        "items": []
+      },
+      {
+        "title": "Dữ liệu được dán trực tiếp từ BI",
+        "items": []
+      },
+      {
+        "title": "Có thể bật tắt các thẻ để hiển thị các ngành hàng cần theo dõi ( mặc định hiển thị tất cả)",
+        "items": []
+      },
+      {
+        "title": "Có thể kéo thả các thẻ để sắp xếp lại các cột, ưu tiên đưa ngành hàng quan trọng lên đầu ( tương tự tab Hiệu quả NV LK)",
+        "items": []
+      }
     ]
-  },  
-     {
+  },
+  {
     "version": "3.6",
     "date": "27/10/2025",
     "notes": [
-      "Nâng cấp tính nâng đồng bộ cloud theo mã kho:",
-      "- Cần cập nhập E-mail(không cần đăng nhập) và chọn mã kho trước khi up file dữ liệu lên, hệ thống sẽ tự đồng bộ lên cloud",
-      "- QL/TC cùng siêu thị sẽ thấy được dữ liệu dùng chung như YCX lũy kế,giờ công,thưởng nóng...",
-      "- Dữ liệu cũng sẽ được đồng bộ khi xem giữa điện thoại, laptop",
-      "Sửa lỗi không tính bảo hiểm vào tỷ lệ quy đổi",
-      "Khôi phục tính năng xử lý file thi đua vùng TNB"
+      {
+        "title": "Nâng cấp tính nâng đồng bộ cloud theo mã kho:",
+        "items": [
+          "- Cần cập nhập E-mail(không cần đăng nhập) và chọn mã kho trước khi up file dữ liệu lên, hệ thống sẽ tự đồng bộ lên cloud",
+          "- QL/TC cùng siêu thị sẽ thấy được dữ liệu dùng chung như YCX lũy kế,giờ công,thưởng nóng...",
+          "- Dữ liệu cũng sẽ được đồng bộ khi xem giữa điện thoại, laptop"
+        ]
+      },
+      {
+        "title": "Sửa lỗi không tính bảo hiểm vào tỷ lệ quy đổi",
+        "items": []
+      },
+      {
+        "title": "Khôi phục tính năng xử lý file thi đua vùng TNB",
+        "items": []
+      }
     ]
-  },  
-   {
+  },
+  {
     "version": "3.5",
     "date": "23/10/2025",
     "notes": [
-      "Nâng cấp giao diện tab SKNV cho đẹp hơn"
+      {
+        "title": "Nâng cấp giao diện tab SKNV cho đẹp hơn",
+        "items": []
+      }
     ]
-  },  
-   {
+  },
+  {
     "version": "3.4",
     "date": "17/10/2025",
     "notes": [
-      "Có thể bấm trực tiếp tên nhân viên để xem chi tiết",
-      "Thêm icon vào menu cho sinh động"
+      {
+        "title": "Có thể bấm trực tiếp tên nhân viên để xem chi tiết",
+        "items": []
+      },
+      {
+        "title": "Thêm icon vào menu cho sinh động",
+        "items": []
+      }
     ]
-  },  
+  },
   {
     "version": "3.3",
     "date": "13/10/2025",
     "notes": [
-      "Thêm chức năng tùy chỉnh cột cho tab Hiệu quả khai thác nhân viên : có thể chọn ẩn hoặc hiện cột dữ liệu không liên quan đến TGDD",
-      "Cho phép kéo thả để sắp xếp các cột trong bảng kết quả hiệu quả khai thác nhân viên"
+      {
+        "title": "Thêm chức năng tùy chỉnh cột cho tab Hiệu quả khai thác nhân viên : có thể chọn ẩn hoặc hiện cột dữ liệu không liên quan đến TGDD",
+        "items": []
+      },
+      {
+        "title": "Cho phép kéo thả để sắp xếp các cột trong bảng kết quả hiệu quả khai thác nhân viên",
+        "items": []
+      }
     ]
-  },  
-   {
+  },
+  {
     "version": "3.2",
     "date": "10/10/2025",
     "notes": [
-      "Thêm bộ lọc ( hình răng cưa ) vào 3 bảng Hiệu quả khai thác, Nhóm hàng quy đổi cao, Ngành hàng chi tiết trong Siêu thị lũy kế và realtime",
-      "Sửa lại giao diện khu vực cập nhật dữ liệu cho gọn hơn"
+      {
+        "title": "Thêm bộ lọc ( hình răng cưa ) vào 3 bảng Hiệu quả khai thác, Nhóm hàng quy đổi cao, Ngành hàng chi tiết trong Siêu thị lũy kế và realtime",
+        "items": []
+      },
+      {
+        "title": "Sửa lại giao diện khu vực cập nhật dữ liệu cho gọn hơn",
+        "items": []
+      }
     ]
-  },  
+  },
   {
     "version": "3.1",
     "date": "09/10/2025",
     "notes": [
-      "Thêm 2 thẻ KPI mới cho tab siêu thị lũy kế",
-      "Thêm chức năng cài đặt màu chữ thẻ KPI trong cài đặt giao diện"
+      {
+        "title": "Thêm 2 thẻ KPI mới cho tab siêu thị lũy kế",
+        "items": []
+      },
+      {
+        "title": "Thêm chức năng cài đặt màu chữ thẻ KPI trong cài đặt giao diện",
+        "items": []
+      }
     ]
-  },  
-   {
+  },
+  {
     "version": "3.0",
     "date": "06/10/2025",
     "notes": [
-      "Nâng cấp tính năng tạo chương trình thi đua và theo dõi hiệu quả thi đua : Có thể theo dõi cùng lúc nhiều hãng trong cùng 1 nhóm hàng.",
-      "Nâng cấp tính năng nhận xét:cho phép tạo nhận xét cho nhiều tab phụ.",
-      "Nâng cấp tính năng nhận xét: Thêm bộ lọc tất cả nhân viên dưới mục tiêu khai báo"
+      {
+        "title": "Nâng cấp tính năng tạo chương trình thi đua và theo dõi hiệu quả thi đua : Có thể theo dõi cùng lúc nhiều hãng trong cùng 1 nhóm hàng.",
+        "items": []
+      },
+      {
+        "title": "Nâng cấp tính năng nhận xét:cho phép tạo nhận xét cho nhiều tab phụ.",
+        "items": []
+      },
+      {
+        "title": "Nâng cấp tính năng nhận xét: Thêm bộ lọc tất cả nhân viên dưới mục tiêu khai báo",
+        "items": []
+      }
     ]
-  },  
+  },
   {
     "version": "2.8",
     "date": "01/10/2025",
     "notes": [
-      "Thêm tính năng tạo chương trình thi đua và theo dõi hiệu quả thi đua."
+      {
+        "title": "Thêm tính năng tạo chương trình thi đua và theo dõi hiệu quả thi đua.",
+        "items": []
+      }
     ]
   },
-    {
+  {
     "version": "2.7",
     "date": "26/09/2025",
     "notes": [
-      "Thêm tính năng thông báo có phiên bản mới.",
-      "Thêm tính năng video hướng dẫn ngoài trang chủ.",
-      "Thêm bộ đếm lượt truy cập và sử dụng."
+      {
+        "title": "Thêm tính năng thông báo có phiên bản mới.",
+        "items": []
+      },
+      {
+        "title": "Thêm tính năng video hướng dẫn ngoài trang chủ.",
+        "items": []
+      },
+      {
+        "title": "Thêm bộ đếm lượt truy cập và sử dụng.",
+        "items": []
+      }
     ]
   },
-{
+  {
     "version": "2.6",
     "date": "25/09/2025",
     "notes": [
-      "Sửa lỗi tính năng sắp xếp trên tất cả các bảng.",
-      "Phục hồi báo cáo 'Thi đua NV' và 'Hiệu quả khai thác LK'.",
-      "Sửa lỗi 'Thiết lập mục tiêu' cập nhật không tức thời.",
-      "Sửa lỗi bộ lọc nâng cao không hiển thị dữ liệu."
+      {
+        "title": "Sửa lỗi tính năng sắp xếp trên tất cả các bảng.",
+        "items": []
+      },
+      {
+        "title": "Phục hồi báo cáo 'Thi đua NV' và 'Hiệu quả khai thác LK'.",
+        "items": []
+      },
+      {
+        "title": "Sửa lỗi 'Thiết lập mục tiêu' cập nhật không tức thời.",
+        "items": []
+      },
+      {
+        "title": "Sửa lỗi bộ lọc nâng cao không hiển thị dữ liệu.",
+        "items": []
+      }
     ]
   },
   {
     "version": "2.5",
     "date": "24/09/2025",
     "notes": [
-      "Thêm tính năng xử lý file thi đua theo vùng trong 'Sức khỏe siêu thị.",
-      "Nâng cấp tính năng 'Nhận xét' : thêm icon, thêm các thẻ tùy chọn"
+      {
+        "title": "Thêm tính năng xử lý file thi đua theo vùng trong 'Sức khỏe siêu thị.",
+        "items": []
+      },
+      {
+        "title": "Nâng cấp tính năng 'Nhận xét' : thêm icon, thêm các thẻ tùy chọn",
+        "items": []
+      }
     ]
   },
-    {
+  {
     "version": "2.2",
     "date": "23/09/2025",
     "notes": [
-      "Sửa lỗi nghiêm trọng: Tính toán sai giá trị doanh thu sau khi cập nhật bộ lọc.",
-      "Cấu trúc lại hệ thống quản lý phiên bản và lịch sử cập nhật."
+      {
+        "title": "Sửa lỗi nghiêm trọng: Tính toán sai giá trị doanh thu sau khi cập nhật bộ lọc.",
+        "items": []
+      },
+      {
+        "title": "Cấu trúc lại hệ thống quản lý phiên bản và lịch sử cập nhật.",
+        "items": []
+      }
     ]
   },
   {
     "version": "2.1",
     "date": "23/09/2025",
     "notes": [
-      "Sửa lỗi bộ lọc nâng cao không có dữ liệu để chọn.",
-      "Sửa lỗi tô màu tiêu đề bảng không hoạt động do sai CSS Selector."
+      {
+        "title": "Sửa lỗi bộ lọc nâng cao không có dữ liệu để chọn.",
+        "items": []
+      },
+      {
+        "title": "Sửa lỗi tô màu tiêu đề bảng không hoạt động do sai CSS Selector.",
+        "items": []
+      }
     ]
   },
   {
     "version": "2.0",
     "date": "16/09/2025",
     "notes": [
-      "Phiên bản phát hành đầu tiên.",
-      "Bao gồm các chức năng cốt lõi: SKNV, SKST Lũy kế, Doanh thu Realtime."
+      {
+        "title": "Phiên bản phát hành đầu tiên.",
+        "items": []
+      },
+      {
+        "title": "Bao gồm các chức năng cốt lõi: SKNV, SKST Lũy kế, Doanh thu Realtime.",
+        "items": []
+      }
     ]
   }
 ]
