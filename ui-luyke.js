@@ -1,3 +1,4 @@
+// Version 2.19 - Add sorting to Luy Ke Efficiency table
 // Version 2.18 - Remove dedicated capture button from employee detail view
 // Version 2.11 - Critical Fix: Restore all missing functions and add renderLuykeEmployeeDetail
 // MODULE: UI LUY KE
@@ -932,6 +933,36 @@ supermarketReport.doanhThuTraGop / supermarketReport.doanhThu : 0,
                 target: goals[goalKeyMap[config.id]] 
             }));
         
+        // === START: THAY ĐỔI ===
+        // 1. Thêm data-table-type
+        // 2. Thêm logic sortState
+        // 3. Thêm hàm headerClass
+        // 4. Thêm class/data-sort vào <th>
+        // 5. Sắp xếp allItems
+        
+        const sortStateKey = 'luyke_efficiency';
+        const sortState = appState.sortState[sortStateKey] || { key: 'label', direction: 'asc' };
+        const { key, direction } = sortState;
+        
+        // Sắp xếp dữ liệu
+        const sortedItems = [...allItems].sort((a, b) => {
+            let valA, valB;
+            
+            if (key === 'label') {
+                valA = a.label || '';
+                valB = b.label || '';
+                return direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            } else if (key === 'value') {
+                valA = a.value || 0;
+                valB = b.value || 0;
+            } else { // key === 'target'
+                valA = (a.target || 0) / 100;
+                valB = (b.target || 0) / 100;
+            }
+            
+            return direction === 'asc' ? valA - valB : valB - valA;
+        });
+        
         const createRow = (label, value, target) => {
             const isBelow = value < ((target || 0) / 100); 
             
@@ -953,24 +984,27 @@ supermarketReport.doanhThuTraGop / supermarketReport.doanhThu : 0,
             }, 0);
         }
         
+        const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`; 
+        
         container.innerHTML = `
             <div class="overflow-x-auto">
-                <table class="min-w-full text-sm table-bordered">
+                <table class="min-w-full text-sm table-bordered" data-table-type="${sortStateKey}">
                     <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold"> 
                         <tr>
-                             <th class="px-4 py-3 text-left">Chỉ số</th>
-                            <th class="px-4 py-3 text-right">Thực hiện</th>
-                             <th class="px-4 py-3 text-right">Mục tiêu</th> 
+                             <th class="${headerClass('label')} text-left" data-sort="label">Chỉ số <span class="sort-indicator"></span></th>
+                            <th class="${headerClass('value')} text-right" data-sort="value">Thực hiện <span class="sort-indicator"></span></th>
+                             <th class="${headerClass('target')} text-right" data-sort="target">Mục tiêu <span class="sort-indicator"></span></th> 
                         </tr>
                      </thead>
                     <tbody>
-                        ${allItems
+                        ${sortedItems // Dùng sortedItems
                              .filter(item => item.visible) // Lọc theo cài đặt hiển thị 
                             .map(item => createRow(item.label, item.value, item.target)) 
                             .join('')}
                     </tbody>
                 </table>
              </div>`; 
+        // === END: THAY ĐỔI ===
     },
 
     updateLuykeSupermarketTitle: (warehouse, date) => {

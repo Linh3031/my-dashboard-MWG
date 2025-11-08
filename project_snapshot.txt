@@ -5162,14 +5162,14 @@ app.init();
 --- END FILE: ./main.js ---
 
 --- START FILE: ./modules/capture.service.js ---
-// Version 1.6 - Remove debug logs and debugger statement
+// Version 1.8 - Fix: Apply presetClass to contentClone instead of wrapper
 // Version 1.1 - Fix blank charts by disabling Chart.js animations and adding 500ms delay during capture
 // Version 1.0 - Refactored from utils.js
 // MODULE: CAPTURE SERVICE
 // Chứa toàn bộ logic liên quan đến việc chụp ảnh màn hình các thành phần UI.
 
 import { ui } from '../ui.js';
-import { firebase } from '../firebase.js';
+import { analyticsService } from '../services/analytics.service.js';
 import { appState } from '../state.js'; // <<< THÊM MỚI (Kế hoạch A)
 
 // --- HELPER for Screenshot CSS Injection ---
@@ -5300,11 +5300,8 @@ export const captureService = {
         const captureWrapper = document.createElement('div');
         captureWrapper.className = 'capture-container';
     
-        // *** SỬA LỖI (Nguyên nhân 3) ***
-        // Áp dụng presetClass cho container cha (captureWrapper)
-        if (presetClass) {
-            captureWrapper.classList.add(presetClass);
-        }
+        // *** SỬA LỖI (v1.8) ***
+        // Xóa: if (presetClass) { captureWrapper.classList.add(presetClass); }
 
         const titleEl = document.createElement('h2');
         titleEl.className = 'capture-title';
@@ -5313,8 +5310,9 @@ export const captureService = {
         
         const contentClone = elementToCapture.cloneNode(true);
         
-        // *** LỖI CŨ (Đã xóa) ***
-        // if (presetClass) { contentClone.classList.add(presetClass); }
+        // *** SỬA LỖI (v1.8) ***
+        // Bỏ chú thích và gán class cho contentClone
+        if (presetClass) { contentClone.classList.add(presetClass); }
 
         captureWrapper.appendChild(contentClone);
         document.body.appendChild(captureWrapper);
@@ -5370,7 +5368,10 @@ export const captureService = {
             return;
         }
 
-        firebase.incrementCounter('actionsTaken');
+        // === START: SỬA LỖI (v1.7) ===
+        // Thay thế firebase.incrementCounter bằng analyticsService.incrementCounter
+        analyticsService.incrementCounter('actionsTaken', appState.currentUser?.email);
+        // === END: SỬA LỖI (v1.7) ===
         
         ui.showNotification(`Bắt đầu chụp báo cáo ${baseTitle}...`, 'success');
     
@@ -12919,6 +12920,7 @@ export const uiHome = {
 --- END FILE: ./ui-home.js ---
 
 --- START FILE: ./ui-luyke.js ---
+// Version 2.19 - Add sorting to Luy Ke Efficiency table
 // Version 2.18 - Remove dedicated capture button from employee detail view
 // Version 2.11 - Critical Fix: Restore all missing functions and add renderLuykeEmployeeDetail
 // MODULE: UI LUY KE
@@ -13853,6 +13855,36 @@ supermarketReport.doanhThuTraGop / supermarketReport.doanhThu : 0,
                 target: goals[goalKeyMap[config.id]] 
             }));
         
+        // === START: THAY ĐỔI ===
+        // 1. Thêm data-table-type
+        // 2. Thêm logic sortState
+        // 3. Thêm hàm headerClass
+        // 4. Thêm class/data-sort vào <th>
+        // 5. Sắp xếp allItems
+        
+        const sortStateKey = 'luyke_efficiency';
+        const sortState = appState.sortState[sortStateKey] || { key: 'label', direction: 'asc' };
+        const { key, direction } = sortState;
+        
+        // Sắp xếp dữ liệu
+        const sortedItems = [...allItems].sort((a, b) => {
+            let valA, valB;
+            
+            if (key === 'label') {
+                valA = a.label || '';
+                valB = b.label || '';
+                return direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            } else if (key === 'value') {
+                valA = a.value || 0;
+                valB = b.value || 0;
+            } else { // key === 'target'
+                valA = (a.target || 0) / 100;
+                valB = (b.target || 0) / 100;
+            }
+            
+            return direction === 'asc' ? valA - valB : valB - valA;
+        });
+        
         const createRow = (label, value, target) => {
             const isBelow = value < ((target || 0) / 100); 
             
@@ -13874,24 +13906,27 @@ supermarketReport.doanhThuTraGop / supermarketReport.doanhThu : 0,
             }, 0);
         }
         
+        const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`; 
+        
         container.innerHTML = `
             <div class="overflow-x-auto">
-                <table class="min-w-full text-sm table-bordered">
+                <table class="min-w-full text-sm table-bordered" data-table-type="${sortStateKey}">
                     <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold"> 
                         <tr>
-                             <th class="px-4 py-3 text-left">Chỉ số</th>
-                            <th class="px-4 py-3 text-right">Thực hiện</th>
-                             <th class="px-4 py-3 text-right">Mục tiêu</th> 
+                             <th class="${headerClass('label')} text-left" data-sort="label">Chỉ số <span class="sort-indicator"></span></th>
+                            <th class="${headerClass('value')} text-right" data-sort="value">Thực hiện <span class="sort-indicator"></span></th>
+                             <th class="${headerClass('target')} text-right" data-sort="target">Mục tiêu <span class="sort-indicator"></span></th> 
                         </tr>
                      </thead>
                     <tbody>
-                        ${allItems
+                        ${sortedItems // Dùng sortedItems
                              .filter(item => item.visible) // Lọc theo cài đặt hiển thị 
                             .map(item => createRow(item.label, item.value, item.target)) 
                             .join('')}
                     </tbody>
                 </table>
              </div>`; 
+        // === END: THAY ĐỔI ===
     },
 
     updateLuykeSupermarketTitle: (warehouse, date) => {
@@ -14022,6 +14057,7 @@ export const notifications = {
 --- END FILE: ./ui-notifications.js ---
 
 --- START FILE: ./ui-realtime.js ---
+// Version 4.6 - Add sorting to Efficiency and Category tables
 // Version 4.5 - Refactor: Use ui facade instead of direct uiComponents/uiCompetition import (fixes crash)
 // Version 4.4 - Refactor: Update report function calls from uiComponents to ui
 // Version 4.3 - Fix 'this' context bug for modal popups
@@ -14382,12 +14418,27 @@ export const uiRealtime = {
         const sortState = appState.sortState.realtime_nganhhang || { key: 'revenue', direction: 'desc' }; //
         const { key, direction } = sortState; //
 
+        // === START: THAY ĐỔI (Thêm data-sort cho avgQuantity, avgPrice) ===
         const sortedData = Object.entries(nganhHangChiTiet) //
             .map(([name, values]) => ({ name, ...values })) //
             .filter(item => visibleItems.includes(item.name)) // Lọc theo cài đặt
             .sort((a, b) => b.revenue - a.revenue) //
             .slice(0, 15) //
-            .sort((a, b) => direction === 'asc' ? a[key] - b[key] : b[key] - a[key]); //
+            .sort((a, b) => {
+                let valA, valB;
+                if (key === 'avgPrice') {
+                    valA = a.quantity > 0 ? a.revenue / a.quantity : 0;
+                    valB = b.quantity > 0 ? b.revenue / b.quantity : 0;
+                } else if (key === 'name') {
+                    valA = a.name;
+                    valB = b.name;
+                    return direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                } else {
+                    valA = a[key] || 0;
+                    valB = b[key] || 0;
+                }
+                return direction === 'asc' ? valA - valB : valB - valA;
+            }); //
 
         if (!cardHeader.querySelector('.settings-trigger-btn')) {
                 cardHeader.classList.add('flex', 'items-center', 'justify-between'); //
@@ -14404,11 +14455,11 @@ export const uiRealtime = {
 
         container.innerHTML = `<div class="overflow-x-auto"><table class="min-w-full text-sm table-bordered table-striped" data-table-type="realtime_nganhhang">
             <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold"><tr>
-                <th class="${headerClass('name')}" data-sort="name">Ngành hàng</th>
-                <th class="${headerClass('quantity')} text-right header-highlight" data-sort="quantity">SL</th>
-                <th class="${headerClass('revenue')} text-right header-highlight" data-sort="revenue">Doanh thu thực</th>
-                <th class="${headerClass('revenueQuyDoi')} text-right" data-sort="revenueQuyDoi">Doanh thu QĐ</th>
-                    <th class="${headerClass('avgPrice')} text-right" data-sort="avgPrice">Đơn giá TB</th></tr>
+                <th class="${headerClass('name')}" data-sort="name">Ngành hàng <span class="sort-indicator"></span></th>
+                <th class="${headerClass('quantity')} text-right header-highlight" data-sort="quantity">SL <span class="sort-indicator"></span></th>
+                <th class="${headerClass('revenue')} text-right header-highlight" data-sort="revenue">Doanh thu thực <span class="sort-indicator"></span></th>
+                <th class="${headerClass('revenueQuyDoi')} text-right" data-sort="revenueQuyDoi">Doanh thu QĐ <span class="sort-indicator"></span></th>
+                <th class="${headerClass('avgPrice')} text-right" data-sort="avgPrice">Đơn giá TB <span class="sort-indicator"></span></th></tr>
             </thead>
             <tbody>${sortedData.map(item => `
                 <tr class="hover:bg-gray-50">
@@ -14419,6 +14470,7 @@ export const uiRealtime = {
                         <td class="px-4 py-2 text-right font-bold text-green-600">${ui.formatRevenue(item.donGia)}</td>
                 </tr>`).join('')}
             </tbody></table></div>`; // <<< SỬA (v4.5)
+        // === END: THAY ĐỔI ===
     },
 
     // === SỬA LỖI: Chuyển từ arrow function sang shorthand method ===
@@ -14450,6 +14502,27 @@ export const uiRealtime = {
                     target: goals[goalKeyMap[config.id]] //
             }));
 
+        // === START: THAY ĐỔI (Thêm logic Sắp xếp) ===
+        const sortStateKey = 'realtime_efficiency';
+        const sortState = appState.sortState[sortStateKey] || { key: 'label', direction: 'asc' };
+        const { key, direction } = sortState;
+
+        const sortedItems = [...allItems].sort((a, b) => {
+            let valA, valB;
+            if (key === 'label') {
+                valA = a.label || '';
+                valB = b.label || '';
+                return direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            } else if (key === 'value') {
+                valA = a.value || 0;
+                valB = b.value || 0;
+            } else { // key === 'target'
+                valA = (a.target || 0) / 100;
+                valB = (b.target || 0) / 100;
+            }
+            return direction === 'asc' ? valA - valB : valB - valA;
+        });
+
         const createRow = (label, value, target) => { //
             const isBelow = value < ((target || 0) / 100); //
 
@@ -14471,25 +14544,28 @@ export const uiRealtime = {
                 });
             }, 0);
         }
+        
+        const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`; 
 
         container.innerHTML = `
             <div class="overflow-x-auto">
-                <table class="min-w-full text-sm table-bordered">
+                <table class="min-w-full text-sm table-bordered" data-table-type="${sortStateKey}">
                     <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                         <tr>
-                                <th class="px-4 py-3 text-left">Chỉ số</th>
-                            <th class="px-4 py-3 text-right">Thực hiện</th>
-                                <th class="px-4 py-3 text-right">Mục tiêu</th>
+                                <th class="${headerClass('label')} text-left" data-sort="label">Chỉ số <span class="sort-indicator"></span></th>
+                            <th class="${headerClass('value')} text-right" data-sort="value">Thực hiện <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('target')} text-right" data-sort="target">Mục tiêu <span class="sort-indicator"></span></th>
                         </tr>
                         </thead>
                     <tbody>
-                        ${allItems
+                        ${sortedItems // Dùng sortedItems
                                 .filter(item => item.visible) // Lọc theo cài đặt hiển thị
                             .map(item => createRow(item.label, item.value, item.target)) //
                             .join('')}
                     </tbody>
                 </table>
                 </div>`; //
+        // === END: THAY ĐỔI ===
     },
 
     // === SỬA LỖI: Chuyển từ arrow function sang shorthand method ===
@@ -14673,6 +14749,7 @@ export const uiRealtime = {
 --- END FILE: ./ui-realtime.js ---
 
 --- START FILE: ./ui-reports.js ---
+// Version 1.3 - Fix layout bug (remove extra header row) and add sorting to sub-columns
 // Version 1.2 - Remove stray comments from HTML template literals
 // Version 1.1 - Fix capture logic to support vertical stitching
 // Version 1.0 - Refactored from ui-components.js
@@ -14996,9 +15073,26 @@ export const uiReports = {
         const { key, direction } = sortState;
 
         const sortedData = [...reportData].sort((a, b) => {
-            const valA = a[key] || 0;
-            const valB = b[key] || 0;
-             return direction === 'asc' ? valA - valB : valB - valA;
+            // === START: THAY ĐỔI ===
+            // Thêm logic sắp xếp cho các cột con (subQuantityKeys)
+            let valA, valB;
+            if (key === 'hoTen') {
+                valA = a.hoTen || '';
+                valB = b.hoTen || '';
+                return direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            }
+            // Kiểm tra xem key có phải là một trong các subQuantityKeys không
+            const subKeyIndex = subQuantityKeys.indexOf(key);
+            if (subKeyIndex > -1) {
+                valA = a[key] || 0;
+                valB = b[key] || 0;
+            } else {
+                // Sắp xếp theo các cột chính (mainRevenueKey, mainQuantityKey)
+                valA = a[key] || 0;
+                valB = b[key] || 0;
+            }
+            return direction === 'asc' ? valA - valB : valB - valA;
+            // === END: THAY ĐỔI ===
         });
 
         const totals = reportData.reduce((acc, item) => {
@@ -15019,7 +15113,12 @@ export const uiReports = {
              'BẢO HIỂM': 'category-header-baohiem',
         }[title] || 'bg-gray-200';
 
-        const subHeaders = subQuantityLabels.map((label) => `<th class="px-2 py-2 text-right">${label}</th>`).join('');
+        // === START: THAY ĐỔI (Thêm data-sort và loại bỏ <tr> thừa) ===
+        const subHeaders = subQuantityLabels.map((label, index) => {
+            const subKey = subQuantityKeys[index];
+            return `<th class="${headerClass(subKey)} text-right" data-sort="${subKey}">${label} <span class="sort-indicator"></span></th>`;
+        }).join('');
+        // === END: THAY ĐỔI ===
 
         const tableRows = [];
         sortedData.forEach(item => {
@@ -15051,10 +15150,10 @@ export const uiReports = {
                      <table class="min-w-full text-sm table-bordered table-striped" data-table-type="${sortStateKey}">
                          <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                              <tr>
-                                <th rowspan="2" class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên</th>
-                                 <th rowspan="2" class="${headerClass(mainRevenueKey)} text-right" data-sort="${mainRevenueKey}">DT</th>
-                                <th rowspan="2" class="${headerClass(mainQuantityKey)} text-right" data-sort="${mainQuantityKey}">Tổng SL</th>
-                                 <th colspan="${subQuantityKeys.length}" class="px-2 py-2 text-center">Chi tiết SL</th>
+                                <th rowspan="2" class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên <span class="sort-indicator"></span></th>
+                                 <th rowspan="2" class="${headerClass(mainRevenueKey)} text-right" data-sort="${mainRevenueKey}">DT <span class="sort-indicator"></span></th>
+                                <th rowspan="2" class="${headerClass(mainQuantityKey)} text-right" data-sort="${mainQuantityKey}">Tổng SL <span class="sort-indicator"></span></th>
+                                <th colspan="${subQuantityKeys.length}" class="px-2 py-2 text-center">Chi tiết SL</th>
                             </tr>
                             <tr>${subHeaders}</tr>
                          </thead>
@@ -15103,6 +15202,7 @@ export const uiReports = {
 --- END FILE: ./ui-reports.js ---
 
 --- START FILE: ./ui-sknv.js ---
+// Version 6.33 - Add sorting to Employee Detail tables (QDC, Category)
 // Version 6.32 - Add 'Tổng Đạt' column and sticky columns to pasted competition table
 // Version 6.31 - Fix capture logic to support vertical stitching
 // Version 6.30 - YC: Logic cho CSS v6.19 (Vòng tròn xám 4+, Huy chương Top 3)
@@ -15276,18 +15376,58 @@ export const uiSknv = {
     },
     
     _createDetailMetricGrid(title, colorClass, icon, data) {
-        let itemsHtml = data.map(row => {
+        // === START: THAY ĐỔI ===
+        const sortStateKey = `sknv_detail_${title.toLowerCase().replace(/[^a-z]/g, '')}`;
+        const sortState = appState.sortState[sortStateKey] || { key: 'label', direction: 'asc' };
+        const { key, direction } = sortState;
+
+        const sortedData = [...data].sort((a, b) => {
+            let valA, valB;
+            if (key === 'label') {
+                valA = a.label || '';
+                valB = b.label || '';
+                return direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            } else if (key === 'value') {
+                valA = a.rawValue;
+                valB = b.rawValue;
+            } else { // key === 'average'
+                valA = a.rawAverage;
+                valB = b.rawAverage;
+            }
+            return direction === 'asc' ? (valA || 0) - (valB || 0) : (valB || 0) - (valA || 0);
+        });
+
+        const headerClass = (sortKey) => `px-2 py-1 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
+
+        let itemsHtml = `
+            <table class="w-full text-sm sknv-detail-metric-table" data-table-type="${sortStateKey}">
+                <thead>
+                    <tr class="border-b border-gray-300">
+                        <th class="${headerClass('label')} text-left" data-sort="label">Chỉ số <span class="sort-indicator"></span></th>
+                        <th class="${headerClass('value')} text-right" data-sort="value">Thực hiện <span class="sort-indicator"></span></th>
+                        <th class="${headerClass('average')} text-right" data-sort="average">Trung bình <span class="sort-indicator"></span></th>
+                        <th class="px-2 py-1 text-right">Đánh giá</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        sortedData.forEach(row => {
             const evaluation = uiSknv.getSknvEvaluation(row.rawValue, row.rawAverage, row.higherIsBetter);
-            
-            return `
-                <div class="sknv-detail-metric-card">
-                    <span class="label">${row.label}</span>
-                    <span class="value ${row.valueClass || ''}">${row.value}</span>
-                    <span class="average">(TB: ${row.average})</span>
-                    <div class="evaluation-badge ${evaluation.class}">${evaluation.text}</div>
-                </div>
+            itemsHtml += `
+                <tr classclass="border-t border-gray-100">
+                    <td class="px-2 py-2 font-semibold text-gray-700 text-left">${row.label}</td>
+                    <td class="px-2 py-2 font-bold text-gray-900 text-right ${row.valueClass || ''}">${row.value}</td>
+                    <td class="px-2 py-2 text-gray-600 text-right">${row.average}</td>
+                    <td class="px-2 py-2 text-right">
+                        <span class="evaluation-badge ${evaluation.class}">${evaluation.text}</span>
+                    </td>
+                </tr>
             `;
-        }).join('');
+        });
+
+        itemsHtml += `</tbody></table>`;
+        // === END: THAY ĐỔI ===
     
         return `
             <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
@@ -15295,13 +15435,14 @@ export const uiSknv = {
                     <i data-feather="${icon}" class="header-icon"></i>
                     <h4 class="text-lg font-bold">${title}</h4>
                 </div>
-                <div class="sknv-detail-grid-body">
+                <div class="overflow-x-auto">
                     ${itemsHtml}
                 </div>
             </div>
         `;
     },
 
+    
     renderSknvDetailForEmployee(employeeData, filteredReport) {
         console.log("[ui-sknv.js renderSknvDetailForEmployee] === Starting render ==="); // Log mới
         const detailsContainer = document.getElementById('sknv-details-container');
@@ -15994,6 +16135,7 @@ export const uiSknv = {
     }
     // *** END: MODIFIED FUNCTION (v6.25) ***
 };
+
 --- END FILE: ./ui-sknv.js ---
 
 --- START FILE: ./ui-thidua-vung.js ---

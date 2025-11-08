@@ -1,3 +1,5 @@
+// Version 1.4 - Flatten category table header (removes "CHI TIẾT SL" row)
+// Version 1.3 - Fix layout bug (remove extra header row) and add sorting to sub-columns
 // Version 1.2 - Remove stray comments from HTML template literals
 // Version 1.1 - Fix capture logic to support vertical stitching
 // Version 1.0 - Refactored from ui-components.js
@@ -321,9 +323,26 @@ export const uiReports = {
         const { key, direction } = sortState;
 
         const sortedData = [...reportData].sort((a, b) => {
-            const valA = a[key] || 0;
-            const valB = b[key] || 0;
-             return direction === 'asc' ? valA - valB : valB - valA;
+            // === START: THAY ĐỔI ===
+            // Thêm logic sắp xếp cho các cột con (subQuantityKeys)
+            let valA, valB;
+            if (key === 'hoTen') {
+                valA = a.hoTen || '';
+                valB = b.hoTen || '';
+                return direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            }
+            // Kiểm tra xem key có phải là một trong các subQuantityKeys không
+            const subKeyIndex = subQuantityKeys.indexOf(key);
+            if (subKeyIndex > -1) {
+                valA = a[key] || 0;
+                valB = b[key] || 0;
+            } else {
+                // Sắp xếp theo các cột chính (mainRevenueKey, mainQuantityKey)
+                valA = a[key] || 0;
+                valB = b[key] || 0;
+            }
+            return direction === 'asc' ? valA - valB : valB - valA;
+            // === END: THAY ĐỔI ===
         });
 
         const totals = reportData.reduce((acc, item) => {
@@ -344,7 +363,12 @@ export const uiReports = {
              'BẢO HIỂM': 'category-header-baohiem',
         }[title] || 'bg-gray-200';
 
-        const subHeaders = subQuantityLabels.map((label) => `<th class="px-2 py-2 text-right">${label}</th>`).join('');
+        // === START: THAY ĐỔI (Thêm data-sort và loại bỏ <tr> thừa) ===
+        const subHeaders = subQuantityLabels.map((label, index) => {
+            const subKey = subQuantityKeys[index];
+            return `<th class="${headerClass(subKey)} text-right" data-sort="${subKey}">${label} <span class="sort-indicator"></span></th>`;
+        }).join('');
+        // === END: THAY ĐỔI ===
 
         const tableRows = [];
         sortedData.forEach(item => {
@@ -368,7 +392,8 @@ export const uiReports = {
                          <p class="p-4 text-gray-500">Không có dữ liệu cho ngành hàng này.</p>
                      </div>`;
         }
-
+        
+        // === START: CHỈNH SỬA (v1.4) - Loại bỏ rowspan và hàng 2 ===
         const html = `
             <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
                 <h4 class="text-lg font-bold p-3 border-b ${titleClass}">${title}</h4>
@@ -376,12 +401,11 @@ export const uiReports = {
                      <table class="min-w-full text-sm table-bordered table-striped" data-table-type="${sortStateKey}">
                          <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                              <tr>
-                                <th rowspan="2" class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên</th>
-                                 <th rowspan="2" class="${headerClass(mainRevenueKey)} text-right" data-sort="${mainRevenueKey}">DT</th>
-                                <th rowspan="2" class="${headerClass(mainQuantityKey)} text-right" data-sort="${mainQuantityKey}">Tổng SL</th>
-                                 <th colspan="${subQuantityKeys.length}" class="px-2 py-2 text-center">Chi tiết SL</th>
+                                <th class="px-2 py-3 sortable" data-sort="hoTen">Nhân viên <span class="sort-indicator"></span></th>
+                                 <th class="${headerClass(mainRevenueKey)} text-right" data-sort="${mainRevenueKey}">DT <span class="sort-indicator"></span></th>
+                                <th class="${headerClass(mainQuantityKey)} text-right" data-sort="${mainQuantityKey}">Tổng SL <span class="sort-indicator"></span></th>
+                                ${subHeaders}
                             </tr>
-                            <tr>${subHeaders}</tr>
                          </thead>
                           <tbody>
                              ${tableRows.join('')}
@@ -397,6 +421,7 @@ export const uiReports = {
                      </table>
                 </div>
             </div>`;
+        // === END: CHỈNH SỬA (v1.4) ===
         return html;
     },
 

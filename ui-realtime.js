@@ -1,3 +1,4 @@
+// Version 4.6 - Add sorting to Efficiency and Category tables
 // Version 4.5 - Refactor: Use ui facade instead of direct uiComponents/uiCompetition import (fixes crash)
 // Version 4.4 - Refactor: Update report function calls from uiComponents to ui
 // Version 4.3 - Fix 'this' context bug for modal popups
@@ -358,12 +359,27 @@ export const uiRealtime = {
         const sortState = appState.sortState.realtime_nganhhang || { key: 'revenue', direction: 'desc' }; //
         const { key, direction } = sortState; //
 
+        // === START: THAY ĐỔI (Thêm data-sort cho avgQuantity, avgPrice) ===
         const sortedData = Object.entries(nganhHangChiTiet) //
             .map(([name, values]) => ({ name, ...values })) //
             .filter(item => visibleItems.includes(item.name)) // Lọc theo cài đặt
             .sort((a, b) => b.revenue - a.revenue) //
             .slice(0, 15) //
-            .sort((a, b) => direction === 'asc' ? a[key] - b[key] : b[key] - a[key]); //
+            .sort((a, b) => {
+                let valA, valB;
+                if (key === 'avgPrice') {
+                    valA = a.quantity > 0 ? a.revenue / a.quantity : 0;
+                    valB = b.quantity > 0 ? b.revenue / b.quantity : 0;
+                } else if (key === 'name') {
+                    valA = a.name;
+                    valB = b.name;
+                    return direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                } else {
+                    valA = a[key] || 0;
+                    valB = b[key] || 0;
+                }
+                return direction === 'asc' ? valA - valB : valB - valA;
+            }); //
 
         if (!cardHeader.querySelector('.settings-trigger-btn')) {
                 cardHeader.classList.add('flex', 'items-center', 'justify-between'); //
@@ -380,11 +396,11 @@ export const uiRealtime = {
 
         container.innerHTML = `<div class="overflow-x-auto"><table class="min-w-full text-sm table-bordered table-striped" data-table-type="realtime_nganhhang">
             <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold"><tr>
-                <th class="${headerClass('name')}" data-sort="name">Ngành hàng</th>
-                <th class="${headerClass('quantity')} text-right header-highlight" data-sort="quantity">SL</th>
-                <th class="${headerClass('revenue')} text-right header-highlight" data-sort="revenue">Doanh thu thực</th>
-                <th class="${headerClass('revenueQuyDoi')} text-right" data-sort="revenueQuyDoi">Doanh thu QĐ</th>
-                    <th class="${headerClass('avgPrice')} text-right" data-sort="avgPrice">Đơn giá TB</th></tr>
+                <th class="${headerClass('name')}" data-sort="name">Ngành hàng <span class="sort-indicator"></span></th>
+                <th class="${headerClass('quantity')} text-right header-highlight" data-sort="quantity">SL <span class="sort-indicator"></span></th>
+                <th class="${headerClass('revenue')} text-right header-highlight" data-sort="revenue">Doanh thu thực <span class="sort-indicator"></span></th>
+                <th class="${headerClass('revenueQuyDoi')} text-right" data-sort="revenueQuyDoi">Doanh thu QĐ <span class="sort-indicator"></span></th>
+                <th class="${headerClass('avgPrice')} text-right" data-sort="avgPrice">Đơn giá TB <span class="sort-indicator"></span></th></tr>
             </thead>
             <tbody>${sortedData.map(item => `
                 <tr class="hover:bg-gray-50">
@@ -395,6 +411,7 @@ export const uiRealtime = {
                         <td class="px-4 py-2 text-right font-bold text-green-600">${ui.formatRevenue(item.donGia)}</td>
                 </tr>`).join('')}
             </tbody></table></div>`; // <<< SỬA (v4.5)
+        // === END: THAY ĐỔI ===
     },
 
     // === SỬA LỖI: Chuyển từ arrow function sang shorthand method ===
@@ -426,6 +443,27 @@ export const uiRealtime = {
                     target: goals[goalKeyMap[config.id]] //
             }));
 
+        // === START: THAY ĐỔI (Thêm logic Sắp xếp) ===
+        const sortStateKey = 'realtime_efficiency';
+        const sortState = appState.sortState[sortStateKey] || { key: 'label', direction: 'asc' };
+        const { key, direction } = sortState;
+
+        const sortedItems = [...allItems].sort((a, b) => {
+            let valA, valB;
+            if (key === 'label') {
+                valA = a.label || '';
+                valB = b.label || '';
+                return direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            } else if (key === 'value') {
+                valA = a.value || 0;
+                valB = b.value || 0;
+            } else { // key === 'target'
+                valA = (a.target || 0) / 100;
+                valB = (b.target || 0) / 100;
+            }
+            return direction === 'asc' ? valA - valB : valB - valA;
+        });
+
         const createRow = (label, value, target) => { //
             const isBelow = value < ((target || 0) / 100); //
 
@@ -447,25 +485,28 @@ export const uiRealtime = {
                 });
             }, 0);
         }
+        
+        const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`; 
 
         container.innerHTML = `
             <div class="overflow-x-auto">
-                <table class="min-w-full text-sm table-bordered">
+                <table class="min-w-full text-sm table-bordered" data-table-type="${sortStateKey}">
                     <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                         <tr>
-                                <th class="px-4 py-3 text-left">Chỉ số</th>
-                            <th class="px-4 py-3 text-right">Thực hiện</th>
-                                <th class="px-4 py-3 text-right">Mục tiêu</th>
+                                <th class="${headerClass('label')} text-left" data-sort="label">Chỉ số <span class="sort-indicator"></span></th>
+                            <th class="${headerClass('value')} text-right" data-sort="value">Thực hiện <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('target')} text-right" data-sort="target">Mục tiêu <span class="sort-indicator"></span></th>
                         </tr>
                         </thead>
                     <tbody>
-                        ${allItems
+                        ${sortedItems // Dùng sortedItems
                                 .filter(item => item.visible) // Lọc theo cài đặt hiển thị
                             .map(item => createRow(item.label, item.value, item.target)) //
                             .join('')}
                     </tbody>
                 </table>
                 </div>`; //
+        // === END: THAY ĐỔI ===
     },
 
     // === SỬA LỖI: Chuyển từ arrow function sang shorthand method ===

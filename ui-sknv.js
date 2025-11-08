@@ -1,3 +1,4 @@
+// Version 6.33 - Add sorting to Employee Detail tables (QDC, Category)
 // Version 6.32 - Add 'Tổng Đạt' column and sticky columns to pasted competition table
 // Version 6.31 - Fix capture logic to support vertical stitching
 // Version 6.30 - YC: Logic cho CSS v6.19 (Vòng tròn xám 4+, Huy chương Top 3)
@@ -171,18 +172,58 @@ export const uiSknv = {
     },
     
     _createDetailMetricGrid(title, colorClass, icon, data) {
-        let itemsHtml = data.map(row => {
+        // === START: THAY ĐỔI ===
+        const sortStateKey = `sknv_detail_${title.toLowerCase().replace(/[^a-z]/g, '')}`;
+        const sortState = appState.sortState[sortStateKey] || { key: 'label', direction: 'asc' };
+        const { key, direction } = sortState;
+
+        const sortedData = [...data].sort((a, b) => {
+            let valA, valB;
+            if (key === 'label') {
+                valA = a.label || '';
+                valB = b.label || '';
+                return direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            } else if (key === 'value') {
+                valA = a.rawValue;
+                valB = b.rawValue;
+            } else { // key === 'average'
+                valA = a.rawAverage;
+                valB = b.rawAverage;
+            }
+            return direction === 'asc' ? (valA || 0) - (valB || 0) : (valB || 0) - (valA || 0);
+        });
+
+        const headerClass = (sortKey) => `px-2 py-1 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
+
+        let itemsHtml = `
+            <table class="w-full text-sm sknv-detail-metric-table" data-table-type="${sortStateKey}">
+                <thead>
+                    <tr class="border-b border-gray-300">
+                        <th class="${headerClass('label')} text-left" data-sort="label">Chỉ số <span class="sort-indicator"></span></th>
+                        <th class="${headerClass('value')} text-right" data-sort="value">Thực hiện <span class="sort-indicator"></span></th>
+                        <th class="${headerClass('average')} text-right" data-sort="average">Trung bình <span class="sort-indicator"></span></th>
+                        <th class="px-2 py-1 text-right">Đánh giá</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        sortedData.forEach(row => {
             const evaluation = uiSknv.getSknvEvaluation(row.rawValue, row.rawAverage, row.higherIsBetter);
-            
-            return `
-                <div class="sknv-detail-metric-card">
-                    <span class="label">${row.label}</span>
-                    <span class="value ${row.valueClass || ''}">${row.value}</span>
-                    <span class="average">(TB: ${row.average})</span>
-                    <div class="evaluation-badge ${evaluation.class}">${evaluation.text}</div>
-                </div>
+            itemsHtml += `
+                <tr classclass="border-t border-gray-100">
+                    <td class="px-2 py-2 font-semibold text-gray-700 text-left">${row.label}</td>
+                    <td class="px-2 py-2 font-bold text-gray-900 text-right ${row.valueClass || ''}">${row.value}</td>
+                    <td class="px-2 py-2 text-gray-600 text-right">${row.average}</td>
+                    <td class="px-2 py-2 text-right">
+                        <span class="evaluation-badge ${evaluation.class}">${evaluation.text}</span>
+                    </td>
+                </tr>
             `;
-        }).join('');
+        });
+
+        itemsHtml += `</tbody></table>`;
+        // === END: THAY ĐỔI ===
     
         return `
             <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
@@ -190,13 +231,14 @@ export const uiSknv = {
                     <i data-feather="${icon}" class="header-icon"></i>
                     <h4 class="text-lg font-bold">${title}</h4>
                 </div>
-                <div class="sknv-detail-grid-body">
+                <div class="overflow-x-auto">
                     ${itemsHtml}
                 </div>
             </div>
         `;
     },
 
+    
     renderSknvDetailForEmployee(employeeData, filteredReport) {
         console.log("[ui-sknv.js renderSknvDetailForEmployee] === Starting render ==="); // Log mới
         const detailsContainer = document.getElementById('sknv-details-container');
