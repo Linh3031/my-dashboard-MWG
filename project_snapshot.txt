@@ -1253,6 +1253,7 @@ export { config };
 --- END FILE: ./config.js ---
 
 --- START FILE: ./event-listeners/listeners-actions.js ---
+// Version 1.3 - Add capture support for pasted competition detail view
 // Version 1.2 - Make capture button context-aware (detail vs. summary)
 // Version 1.0 - Refactored from ui-listeners.js
 // MODULE: LISTENERS - ACTIONS
@@ -1294,6 +1295,12 @@ export function initializeActionListeners() {
                         elementToCapture = document.getElementById('dtnv-lk-capture-area');
                         title = `DTLK_ChiTiet_${employeeId}`;
                     }
+                    // === START: YÊU CẦU 1 (v1.3) - Thêm logic chụp chi tiết thi đua ===
+                    else if (sourceTab === 'sknv-thidua-pasted' && activeTabTarget === 'subtab-hieu-qua-thi-dua-lk') {
+                        elementToCapture = document.getElementById('sknv-thidua-detail-capture-area');
+                        title = `ThiDuaLK_ChiTiet_${employeeId}`;
+                    }
+                    // === END: YÊU CẦU 1 (v1.3) ===
                     // (Bạn có thể thêm logic cho 'dtnv-rt' ở đây nếu muốn)
                     // else if (sourceTab === 'dtnv-rt' && activeTabTarget === 'subtab-realtime-nhan-vien') {
                     //     elementToCapture = document.getElementById('dtnv-rt-capture-area');
@@ -1489,6 +1496,7 @@ export function initializeCompetitionListeners(appController) {
 --- END FILE: ./event-listeners/listeners-competition.js ---
 
 --- START FILE: ./event-listeners/listeners-dragdrop.js ---
+// Version 2.3 - Fix selector for pasted competition toggles (div instead of button)
 // Version 2.2 - Add dragdrop support for pasted competition column toggles
 // Version 2.1 - Add logging to diagnose re-render issue on drop
 // MODULE: LISTENERS - DRAG & DROP
@@ -1560,8 +1568,10 @@ function activateSortableOnPastedCompToggles(container) {
         filter: '.non-draggable',
         handle: '.drag-handle-icon',
         onEnd: (evt) => {
-            // Target các nút bấm mới
-            const newButtonOrder = Array.from(evt.target.querySelectorAll('button.pasted-comp-toggle-btn'));
+            // === START: SỬA LỖI (v2.3) ===
+            // Target các thẻ div (thay vì button)
+            const newButtonOrder = Array.from(evt.target.querySelectorAll('div.pasted-comp-toggle-btn'));
+            // === END: SỬA LỖI (v2.3) ===
             
             // Dùng 'tenGoc' làm ID duy nhất
             const newColumnNameOrder = newButtonOrder.map(btn => btn.dataset.columnTenGoc).filter(Boolean);
@@ -2444,7 +2454,7 @@ export function initializeEventListeners(mainAppController) {
   
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css"/>
     <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 
@@ -3410,9 +3420,9 @@ id="luyke-efficiency-content"></div></div>
                 <div class="flex justify-start items-center"> 
                     <div id="sknv-thidua-view-selector" class="view-switcher"> 
       
-                   <button data-view="program" class="view-switcher__btn active">Theo Chương Trình</button> 
-                        <button data-view="employee" class="view-switcher__btn">Theo Nhân Viên</button> 
-                     </div>
+                   <button data-view="program" class="view-switcher__btn">Theo Chương Trình</button> 
+                   <button data-view="employee" class="view-switcher__btn active">Theo Nhân Viên</button> 
+                   </div>
                 </div>
 
                 <div id="competition-report-container-lk" class="mt-4 view-content-program"> 
@@ -3424,6 +3434,9 @@ id="luyke-efficiency-content"></div></div>
                      <p class="text-gray-500">Vui lòng dán dữ liệu "Thi đua nhân viên" ở tab "Cập nhật 
  dữ liệu" để xem báo cáo.</p> 
                 </div>
+                
+                <div id="pasted-competition-detail-container" class="mt-4 hidden"> 
+                    </div>
                 </div>
               </div>
                         </div>
@@ -4030,7 +4043,7 @@ id="luyke-efficiency-content"></div></div>
             }
         });
     </script>
-    <script type="module" src="./main.js?v=4.0"></script> </body>
+    <script type="module" src="./main.js?v=4.1"></script> </body>
 </html>
 --- END FILE: ./index.html ---
 
@@ -4099,7 +4112,7 @@ const app = {
     },
     // === END: FIX LỖI ===
 
-    currentVersion: '4.0', // Giữ nguyên version này, bạn có thể tự cập nhật sau khi tích hợp xong
+    currentVersion: '4.1', // Giữ nguyên version này, bạn có thể tự cập nhật sau khi tích hợp xong
     storage: storage,
     unsubscribeDataListener: null,
     _isInitialized: false,
@@ -6363,6 +6376,7 @@ export const collaborationService = {
 --- END FILE: ./services/collaboration.service.js ---
 
 --- START FILE: ./services/data-processing.js ---
+// Version 3.6 - Fix: Gộp nhiều dòng cho tiêu đề chính (main headers) trong parsePastedThiDuaTableData
 // Version 3.5 - Update processThiDuaVungFile to accept new sheet names
 // Version 3.4 - Fix processThiDuaNhanVienData for 1-column logic & Fix ReferenceError
 // Version 3.2 - Fix ReferenceError in parsePastedThiDuaTableData
@@ -6912,7 +6926,11 @@ export const dataProcessing = {
         }
         
         // Bước 1: Trích xuất Tiêu Đề Chính (Main Headers)
-        const mainHeaders = lines.slice(mainHeaderStartIndex + 1, subHeaderStartIndex);
+        // === START: SỬA LỖI (v3.6) - Gộp nhiều dòng cho tiêu đề chính ===
+        const mainHeaderLines = lines.slice(mainHeaderStartIndex + 1, subHeaderStartIndex);
+        const mainHeaderString = mainHeaderLines.join('\t'); // Nối bằng Tab (giống sub-header)
+        const mainHeaders = mainHeaderString.split(splitRegex).filter(Boolean); // Tách bằng regex (giống sub-header)
+        // === END: SỬA LỖI (v3.6) ===
         debugInfo.found.push({ name: 'Tiêu đề chính (Ngành hàng)', value: `${mainHeaders.length} mục`, status: mainHeaders.length > 0 });
 
         // Bước 2: Trích xuất Tiêu Đề Phụ (Sub Headers)
@@ -9204,6 +9222,7 @@ export { services };
 --- END FILE: ./services.js ---
 
 --- START FILE: ./state.js ---
+// Version 3.1 - Add sort state for pasted competition detail table
 // Version 3.0 - Add competitionNameMappings and pastedThiDuaReportData
 // Version 2.8 - Merged features: Add warehouse state, user stats sort, and listener
 // MODULE 2: TỦ TRẠNG THÁI (APPSTATE)
@@ -9311,6 +9330,9 @@ const appState = {
         sknv_thidua_employee: { key: 'percentExpected', direction: 'desc'},
         // *** NEW (v3.0) ***
         sknv_thidua_pasted: { key: 'hoTen', direction: 'asc' }, // Sắp xếp cho bảng thi đua dán vào
+        // === START: YÊU CẦU 2 (v3.1) ===
+        sknv_thidua_pasted_detail: { key: 'name', direction: 'asc' }, // Sắp xếp cho bảng chi tiết thi đua
+        // === END: YÊU CẦU 2 (v3.1) ===
         // *** END NEW ***
         luyke_competition_doanhthu: { key: 'hoanThanh', direction: 'desc' },
         luyke_competition_soluong: { key: 'hoanThanh', direction: 'desc' },
@@ -10251,6 +10273,8 @@ details[open] > summary
 --- END FILE: ./styles/specific-realtime.css ---
 
 --- START FILE: ./styles/specific-sknv.css ---
+/* Version 1.3 - Add 3-column infographic styles and fix capture scroll
+/* Version 1.2 - Fix drag-drop cursor for pasted competition toggles
 /* Version 1.1 - Add sticky column styles for pasted competition table */
 /* Chứa các style CHỈ dành riêng cho tab Sức Khỏe Nhân Viên (SKNV) */
 
@@ -10819,6 +10843,158 @@ filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3)); /* Add a nice shadow */
     z-index: 3; /* Nằm trên cả tiêu đề và nội dung */
 }
 /* === END: Sticky Columns (v1.1) === */
+
+/* === START: YÊU CẦU 2 (v1.2) - Sửa lỗi con trỏ kéo thả === */
+.column-toggle-btn {
+    /* Mặc định là pointer để người dùng biết có thể click bật/tắt */
+    cursor: pointer;
+}
+
+.column-toggle-btn .drag-handle-icon {
+    /* Chỉ riêng icon kéo mới có cursor grab */
+    cursor: grab;
+}
+
+.column-toggle-btn .drag-handle-icon:active {
+    /* Khi đang kéo icon */
+    cursor: grabbing;
+}
+/* === END: YÊU CẦU 2 (v1.2) === */
+
+/* === START: NEW STYLES (v1.3) - 3-COLUMN INFOGRAPHIC === */
+.sknv-thidua-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr); /* 1 cột trên mobile */
+    gap: 1.5rem; /* 24px */
+}
+
+@media (min-width: 1024px) { /* lg: 3 cột trên desktop */
+    .sknv-thidua-detail-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.sknv-thidua-column {
+    background-color: #f9fafb; /* gray-50 */
+    border: 1px solid #e5e7eb; /* gray-200 */
+    border-radius: 0.75rem; /* rounded-xl */
+    display: flex;
+    flex-direction: column;
+}
+
+.sknv-thidua-column-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem; /* gap-2 */
+    padding: 0.75rem 1rem; /* p-3 */
+    border-bottom: 1px solid #e5e7eb; /* border-b */
+    color: white;
+}
+.sknv-thidua-column-header .feather {
+    width: 1.25rem; /* h-5 w-5 */
+    height: 1.25rem;
+    stroke-width: 2.5;
+}
+.sknv-thidua-column-header h4 {
+    font-size: 1.125rem; /* text-lg */
+    font-weight: 700; /* font-bold */
+}
+
+.sknv-thidua-column-header.header-blue {
+    background-color: #2563eb; /* blue-600 */
+    border-color: #1d4ed8; /* blue-800 */
+}
+.sknv-thidua-column-header.header-yellow {
+    background-color: #f59e0b; /* amber-500 */
+    border-color: #d97706; /* amber-600 */
+}
+.sknv-thidua-column-header.header-red {
+    background-color: #dc2626; /* red-600 */
+    border-color: #b91c1c; /* red-800 */
+}
+
+.sknv-thidua-column-content {
+    padding: 0.75rem; /* p-3 */
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem; /* space-y-3 */
+    overflow-y: auto;
+    /* max-height: 600px; */ /* ĐÃ XÓA (v1.3) - Fix lỗi chụp ảnh cuộn */
+}
+.sknv-thidua-column-content .empty-col-msg {
+    font-size: 0.875rem; /* text-sm */
+    color: #6b7280; /* gray-500 */
+    text-align: center;
+    padding: 1rem 0;
+    font-style: italic;
+}
+
+.sknv-thidua-item-card {
+    background-color: #ffffff; /* bg-white */
+    border-radius: 0.5rem; /* rounded-lg */
+    border: 1px solid #e5e7eb; /* border */
+    padding: 0.75rem; /* p-3 */
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+    transition: all 0.2s ease-in-out;
+}
+.sknv-thidua-item-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1); /* shadow-md */
+}
+
+.item-card-title {
+    font-weight: 600; /* font-semibold */
+    color: #1f2937; /* gray-800 */
+    margin-bottom: 0.5rem; /* mb-2 */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.item-card-progress-bar-container {
+    width: 100%;
+    background-color: #e5e7eb; /* gray-200 */
+    border-radius: 9999px; /* rounded-full */
+    height: 0.75rem; /* h-3 */
+    overflow: hidden;
+    margin-bottom: 0.5rem; /* mb-2 */
+}
+.item-card-progress-bar {
+    height: 100%;
+    border-radius: 9999px;
+    transition: width 0.5s ease-in-out;
+}
+.item-card-metrics {
+    font-size: 0.75rem; /* text-xs */
+    color: #4b5563; /* gray-600 */
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.5rem; /* gap-x-2 gap-y-1 */
+}
+.item-card-metrics strong {
+    font-weight: 600;
+    color: #111827; /* gray-900 */
+}
+.item-card-metrics .text-green-600 { color: #16a34a; }
+.item-card-metrics .text-red-600 { color: #dc2626; }
+
+/* === START: SỬA LỖI (v1.3) - Căn chỉnh icon cho thẻ KPI === */
+.rt-infographic-summary-card .label {
+    font-size: 0.875em;
+    color: #4b5563;
+    font-weight: 500;
+    /* Thêm các thuộc tính flex để căn chỉnh icon */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem; /* 4px */
+}
+.rt-infographic-summary-card .label .feather {
+    width: 1em;
+    height: 1em;
+}
+/* === END: SỬA LỖI (v1.3) === */
+/* === END: NEW STYLES (v1.3) === */
 --- END FILE: ./styles/specific-sknv.css ---
 
 --- START FILE: ./styles/specific-tdv.css ---
@@ -11416,6 +11592,8 @@ export { luykeTab };
 --- END FILE: ./tab-luyke.js ---
 
 --- START FILE: ./tab-sknv.js ---
+// Version 4.1 - Fix drag-drop initialization logic to target the correct active container
+// Version 4.0 - Add drill-down logic for pasted competition
 // Version 3.9 - Update drag-drop listener to target the whole subtab container
 // Version 3.8 - Add view-switcher logic for sknv-thidua tab
 // Version 3.7 - Fix duplicate 'activeSubTabId' identifier declaration & Add logging
@@ -11495,22 +11673,44 @@ export const sknvTab = {
         console.log(`[tab-sknv.js render] Active subtab ID (re-check): ${activeSubTabId}`); 
 
         const detailInfo = appState.viewingDetailFor; 
-        const isViewingDetail = detailInfo && (detailInfo.sourceTab === 'sknv' || detailInfo.sourceTab === 'dtnv-lk'); 
+        // === START: YÊU CẦU 4 (Thêm check sknv-thidua-pasted) ===
+        const isViewingDetail = detailInfo && (detailInfo.sourceTab === 'sknv' || detailInfo.sourceTab === 'dtnv-lk' || detailInfo.sourceTab === 'sknv-thidua-pasted'); 
+        // === END: YÊU CẦU 4 ===
         console.log(`[tab-sknv.js render] Is viewing detail? ${isViewingDetail}. Detail Info:`, detailInfo); 
 
         try { 
             if (isViewingDetail) { 
                 console.log(`[tab-sknv.js render] Rendering detail view for employee: ${detailInfo.employeeId}`); 
-                const employeeData = appState.masterReportData.sknv.find(nv => String(nv.maNV) === String(detailInfo.employeeId)); 
+                
                 if (activeSubTabId === 'subtab-sknv' && detailInfo.sourceTab === 'sknv') { 
-                   
-  console.log("[tab-sknv.js render] Calling ui.displaySknvReport (detail mode)."); 
-                     ui.displaySknvReport(filteredReport, true); 
+                    const employeeData = appState.masterReportData.sknv.find(nv => String(nv.maNV) === String(detailInfo.employeeId)); 
+                    console.log("[tab-sknv.js render] Calling ui.displaySknvReport (detail mode)."); 
+                    ui.displaySknvReport(filteredReport, true); 
+
                 } else if (activeSubTabId === 'subtab-doanhthu-lk' && detailInfo.sourceTab === 'dtnv-lk') { 
+                    const employeeData = appState.masterReportData.sknv.find(nv => String(nv.maNV) === String(detailInfo.employeeId)); 
                     console.log("[tab-sknv.js render] Calling services.generateLuyKeEmployeeDetailReport..."); 
                     const luykeDetailData = services.generateLuyKeEmployeeDetailReport(detailInfo.employeeId, filteredYCXData); 
                     console.log("[tab-sknv.js render] Calling ui.renderLuykeEmployeeDetail..."); 
                     ui.renderLuykeEmployeeDetail(luykeDetailData, employeeData, 'dtnv-lk-details-container'); 
+
+                // === START: YÊU CẦU 4 (Render chi tiết) ===
+                } else if (activeSubTabId === 'subtab-hieu-qua-thi-dua-lk' && detailInfo.sourceTab === 'sknv-thidua-pasted') {
+                    console.log("[tab-sknv.js render] Calling uiSknv.renderPastedCompetitionDetail...");
+                    // Tìm data NV từ appState.pastedThiDuaReportData
+                    const employeePastedData = appState.pastedThiDuaReportData.find(nv => String(nv.maNV) === String(detailInfo.employeeId));
+                    // Lấy TBT bộ phận đã lưu
+                    const deptAverages = uiSknv._lastPastedAverages || {};
+                    
+                    // Gọi hàm render chi tiết
+                    uiSknv.renderPastedCompetitionDetail(employeePastedData, deptAverages);
+                    
+                    // Ẩn các container tóm tắt
+                    document.getElementById('competition-report-container-lk')?.classList.add('hidden');
+                    document.getElementById('pasted-competition-report-container')?.classList.add('hidden');
+                    document.getElementById('pasted-competition-detail-container')?.classList.remove('hidden');
+
+                // === END: YÊU CẦU 4 ===
                 } else {
                     console.log(`[tab-sknv.js render] Viewing detail but not on the correct subtab (${activeSubTabId}), rendering summary instead.`); 
                     this.renderSummaryViews(activeSubTabId, filteredReport, filteredYCXData); 
@@ -11535,13 +11735,29 @@ export const sknvTab = {
          highlightService.populateHighlightFilters('sknv', filteredYCXData, filteredReport); 
         highlightService.applyHighlights('sknv'); 
 
-        // *** START: MODIFIED (v3.9) ***
-        // Target container cha để kích hoạt listener cho CẢ HAI bảng
-        if (!isViewingDetail) { 
-            console.log("[tab-sknv.js render] Initializing drag-drop for 'employee-subtabs-content'."); 
-            dragDroplisteners.initializeForContainer('employee-subtabs-content'); 
+        // === START: MODIFIED (v4.1) - Sửa lỗi kéo thả ===
+        // Chỉ khởi tạo kéo thả khi ở view tóm tắt (không phải chi tiết)
+        if (!isViewingDetail) {
+            // Và chỉ khởi tạo cho container của tab con đang hoạt động
+            
+            if (activeSubTabId === 'subtab-hieu-qua-khai-thac-luy-ke') {
+                // Kích hoạt kéo thả cho bảng "Hiệu quả NV LK"
+                console.log("[tab-sknv.js render] Initializing drag-drop for 'efficiency-report-container'."); 
+                dragDroplisteners.initializeForContainer('efficiency-report-container');
+            
+            } else if (activeSubTabId === 'subtab-hieu-qua-thi-dua-lk') {
+                // Kích hoạt kéo thả cho tab "Thi đua NV LK"
+                const activeViewBtn = document.querySelector('#sknv-thidua-view-selector .view-switcher__btn.active');
+                const viewType = activeViewBtn ? activeViewBtn.dataset.view : 'employee';
+                
+                // Chỉ kích hoạt cho view "Theo Nhân Viên" (nơi có các thẻ kéo thả)
+                if (viewType === 'employee') {
+                    console.log("[tab-sknv.js render] Initializing drag-drop for 'pasted-competition-report-container'."); 
+                    dragDroplisteners.initializeForContainer('pasted-competition-report-container'); 
+                }
+            }
         }
-        // *** END: MODIFIED (v3.9) ***
+        // === END: MODIFIED (v4.1) ===
         
         console.log("[tab-sknv.js render] === Render complete ==="); 
     },
@@ -11550,27 +11766,32 @@ export const sknvTab = {
 filteredReport, filteredYCXData) {
         console.log(`[tab-sknv.js renderSummaryViews] Rendering summary for subtab: ${activeSubTabId}`); 
         
-        // *** START: MODIFIED (v3.8) ***
+        // *** START: MODIFIED (v3.8 & v4.0) ***
         if (activeSubTabId === 'subtab-hieu-qua-thi-dua-lk') { 
             console.log("[tab-sknv.js renderSummaryViews] Rendering 'Thi đua NV LK' subtab.");
             
             const activeViewBtn = document.querySelector('#sknv-thidua-view-selector .view-switcher__btn.active');
-            const viewType = activeViewBtn ? activeViewBtn.dataset.view : 'program';
+            const viewType = activeViewBtn ? activeViewBtn.dataset.view : 'employee'; // <<< YÊU CẦU 1: Đổi mặc định sang 'employee'
             console.log(`[tab-sknv.js renderSummaryViews] View type selected: ${viewType}`);
 
             const programContainer = document.getElementById('competition-report-container-lk');
             const employeeContainer = document.getElementById('pasted-competition-report-container');
+            // === START: YÊU CẦU 4 (Thêm container chi tiết) ===
+            const detailContainer = document.getElementById('pasted-competition-detail-container');
+            // === END: YÊU CẦU 4 ===
 
-            if (!programContainer || !employeeContainer) {
+            if (!programContainer || !employeeContainer || !detailContainer) { // <<< YÊU CẦU 4
                 console.error("[tab-sknv.js renderSummaryViews] Missing competition containers!");
                 return;
             }
 
+            // === START: YÊU CẦU 4 (Ẩn/hiện 3 container) ===
+            detailContainer.classList.add('hidden'); // Luôn ẩn chi tiết khi render tóm tắt
+
             if (viewType === 'program') {
                 console.log("[tab-sknv.js renderSummaryViews] Calculating 'program' report..."); 
                 const competitionReportData = services.calculateCompetitionFocusReport( 
-         
-           filteredYCXData, 
+                    filteredYCXData, 
                     appState.competitionConfigs 
                 );
                 console.log("[tab-sknv.js renderSummaryViews] Calling uiCompetition.renderCompetitionUI..."); 
@@ -11586,15 +11807,14 @@ filteredReport, filteredYCXData) {
                 const visibleEmployeeMaNVs = new Set(filteredReport.map(nv => nv.maNV));
                 const filteredPastedData = (appState.pastedThiDuaReportData || []).filter(item => 
                     visibleEmployeeMaNVs.has(item.maNV)
-        
-        );
+                );
                 
                 uiSknv.renderPastedCompetitionReport(filteredPastedData); 
                 
                 programContainer.classList.add('hidden');
                 employeeContainer.classList.remove('hidden');
             }
-        // *** END: MODIFIED (v3.8) ***
+            // === END: YÊU CẦU 4 ===
         
         } else if (activeSubTabId === 'subtab-sknv') { 
              console.log("[tab-sknv.js renderSummaryViews] Calling ui.displaySknvReport (summary mode)..."); 
@@ -11620,6 +11840,7 @@ filteredReport, filteredYCXData) {
 --- END FILE: ./tab-sknv.js ---
 
 --- START FILE: ./ui-admin.js ---
+// Version 1.3 - Add STT column to competition name mapping table
 // Version 1.2 - Refactor: Re-wire call to new analyticsService
 // MODULE: UI ADMIN
 // Chứa các hàm render cho trang Quản trị (Khai báo).
@@ -11715,20 +11936,23 @@ const renderCompetitionNameMappingTable = () => {
         return;
     }
 
+    // === START: THAY ĐỔI (v1.3) ===
     let tableHTML = `
         <table class="min-w-full text-sm table-bordered bg-white">
             <thead class="text-xs text-slate-800 uppercase bg-slate-100 font-bold">
                 <tr>
+                    <th class="px-2 py-2 text-center w-12">STT</th>
                     <th class="px-4 py-2 text-left w-1/2">Tên Gốc (Từ dữ liệu dán)</th>
-                        <th class="px-4 py-2 text-left w-1/2">Tên Rút Gọn (Nhập để thay thế)</th>
+                    <th class="px-4 py-2 text-left w-1/2">Tên Rút Gọn (Nhập để thay thế)</th>
                 </tr>
             </thead>
             <tbody>
     `;
 
-    mappingEntries.forEach(([originalName, shortName]) => {
+    mappingEntries.forEach(([originalName, shortName], index) => { // Thêm 'index'
         tableHTML += `
             <tr class="border-t hover:bg-gray-50">
+                <td class="px-2 py-2 text-center font-medium text-gray-700 align-top">${index + 1}</td>
                 <td class="px-4 py-2 text-gray-600 align-top text-xs">
                         ${originalName}
                 </td>
@@ -11744,6 +11968,7 @@ const renderCompetitionNameMappingTable = () => {
             </tr>
         `;
     });
+    // === END: THAY ĐỔI (v1.3) ===
 
     tableHTML += `</tbody></table>`;
     container.innerHTML = tableHTML;
@@ -14749,6 +14974,7 @@ export const uiRealtime = {
 --- END FILE: ./ui-realtime.js ---
 
 --- START FILE: ./ui-reports.js ---
+// Version 1.4 - Flatten category table header (removes "CHI TIẾT SL" row)
 // Version 1.3 - Fix layout bug (remove extra header row) and add sorting to sub-columns
 // Version 1.2 - Remove stray comments from HTML template literals
 // Version 1.1 - Fix capture logic to support vertical stitching
@@ -15142,7 +15368,8 @@ export const uiReports = {
                          <p class="p-4 text-gray-500">Không có dữ liệu cho ngành hàng này.</p>
                      </div>`;
         }
-
+        
+        // === START: CHỈNH SỬA (v1.4) - Loại bỏ rowspan và hàng 2 ===
         const html = `
             <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
                 <h4 class="text-lg font-bold p-3 border-b ${titleClass}">${title}</h4>
@@ -15150,12 +15377,11 @@ export const uiReports = {
                      <table class="min-w-full text-sm table-bordered table-striped" data-table-type="${sortStateKey}">
                          <thead class="text-xs text-slate-800 uppercase bg-slate-200 font-bold">
                              <tr>
-                                <th rowspan="2" class="${headerClass('hoTen')}" data-sort="hoTen">Nhân viên <span class="sort-indicator"></span></th>
-                                 <th rowspan="2" class="${headerClass(mainRevenueKey)} text-right" data-sort="${mainRevenueKey}">DT <span class="sort-indicator"></span></th>
-                                <th rowspan="2" class="${headerClass(mainQuantityKey)} text-right" data-sort="${mainQuantityKey}">Tổng SL <span class="sort-indicator"></span></th>
-                                <th colspan="${subQuantityKeys.length}" class="px-2 py-2 text-center">Chi tiết SL</th>
+                                <th class="px-2 py-3 sortable" data-sort="hoTen">Nhân viên <span class="sort-indicator"></span></th>
+                                 <th class="${headerClass(mainRevenueKey)} text-right" data-sort="${mainRevenueKey}">DT <span class="sort-indicator"></span></th>
+                                <th class="${headerClass(mainQuantityKey)} text-right" data-sort="${mainQuantityKey}">Tổng SL <span class="sort-indicator"></span></th>
+                                ${subHeaders}
                             </tr>
-                            <tr>${subHeaders}</tr>
                          </thead>
                           <tbody>
                              ${tableRows.join('')}
@@ -15171,6 +15397,7 @@ export const uiReports = {
                      </table>
                 </div>
             </div>`;
+        // === END: CHỈNH SỬA (v1.4) ===
         return html;
     },
 
@@ -15202,13 +15429,9 @@ export const uiReports = {
 --- END FILE: ./ui-reports.js ---
 
 --- START FILE: ./ui-sknv.js ---
-// Version 6.33 - Add sorting to Employee Detail tables (QDC, Category)
-// Version 6.32 - Add 'Tổng Đạt' column and sticky columns to pasted competition table
-// Version 6.31 - Fix capture logic to support vertical stitching
-// Version 6.30 - YC: Logic cho CSS v6.19 (Vòng tròn xám 4+, Huy chương Top 3)
-// Version 6.28 - YC: Bỏ icon cờ (summary) & Thêm w-full (bảng thu nhập)
-// Version 6.27 - Fix CRITICAL syntax error 'ax' from v6.26
-// Version 6.26 - Cập nhật theo 5 yêu cầu UI của sếp (Icon, Bỏ QĐC, Layout, STT)
+// Version 6.37 - Redesign pasted competition detail view to 3-column infographic
+// Version 6.36 - Add sorting and fix z-index for pasted competition detail table
+// Version 6.35 - Redesign pasted competition detail view; Add cell coloring; Fix drag-drop tag
 // MODULE: UI SKNV
 // Chứa các hàm render giao diện cho tab "Sức khỏe nhân viên"
 
@@ -15219,6 +15442,10 @@ import { utils } from './utils.js';
 import { settingsService } from './modules/settings.service.js'; // *** NEW (v6.23) ***
 
 export const uiSknv = {
+    // === START: YÊU CẦU 4 (Lưu trữ TBT) ===
+    _lastPastedAverages: {}, // Biến tạm để lưu TBT bộ phận cho view chi tiết
+    // === END: YÊU CẦU 4 ===
+
     displayEmployeeIncomeReport: (reportData) => {
         console.log("[ui-sknv.js displayEmployeeIncomeReport] === Starting render ==="); // Log mới
         const container = document.getElementById('income-report-container');
@@ -15852,9 +16079,9 @@ export const uiSknv = {
             </tbody></table></div></div>`;
     },
 
-    // *** START: MODIFIED FUNCTION (v6.25) - Fix Icon Display ***
+    // *** START: MODIFIED FUNCTION (v6.36) ***
     renderPastedCompetitionReport(reportData) {
-        console.log(`%c[DEBUG renderPastedCompetitionReport] === Bắt đầu render (v6.25) ===`, "color: blue; font-weight: bold;");
+        console.log(`%c[DEBUG renderPastedCompetitionReport] === Bắt đầu render (v6.36) ===`, "color: blue; font-weight: bold;");
         
         const container = document.getElementById('pasted-competition-report-container');
         if (!container) {
@@ -15862,23 +16089,19 @@ export const uiSknv = {
             return;
         }
 
-        // 1. TẢI CÀI ĐẶT CỘT (REQ 3)
         const columnSettings = settingsService.loadPastedCompetitionViewSettings();
-        
-        // *** START: SVG Icon (v6.25) - Copy từ ui-components.js ***
         const dragIconSVG = `<svg class="drag-handle-icon mr-2 cursor-grab" width="12" height="12" viewBox="0 0 10 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M4 2a1 1 0 10-2 0 1 1 0 002 0zM2 9a1 1 0 110-2 1 1 0 010 2zm0 5a1 1 0 110-2 1 1 0 010 2zm5-12a1 1 0 10-2 0 1 1 0 002 0zM7 9a1 1 0 110-2 1 1 0 010 2zm0 5a1 1 0 110-2 1 1 0 010 2z" fill="currentColor"></path></svg>`;
-        // *** END: SVG Icon (v6.25) ***
 
         if (!reportData || reportData.length === 0) {
-            // Vẫn render thanh toggle dù không có data
             const placeholderToggles = columnSettings.length > 0 
                 ? columnSettings.map(col => `
-                    <button 
+                    <div 
                         class="column-toggle-btn draggable-tag pasted-comp-toggle-btn ${col.visible ? 'active' : ''}" 
                         data-column-ten-goc="${col.tenGoc}" 
                         title="${col.tenGoc} (${col.loaiSoLieu})">
                         ${dragIconSVG} <span>${col.label}</span>
-                    </button>`).join('')
+                    </div>
+                    `).join('')
                 : '<span class="text-sm text-gray-500">Dán dữ liệu để thấy các cột...</span>';
                 
             container.innerHTML = `
@@ -15889,28 +16112,25 @@ export const uiSknv = {
                 <div data-capture-group="pasted-competition">
                     <p class="text-gray-500 p-4">Không có dữ liệu thi đua nhân viên. Vui lòng dán dữ liệu ở tab "Cập nhật dữ liệu" và đảm bảo bộ lọc không quá hẹp.</p>
                 </div>`;
-            // GỌI FEATHER CHO CÁC ICON KHÁC (nếu có) - nhưng ở đây không cần
             return;
         }
         
         const visibleColumns = columnSettings.filter(col => col.visible);
         
-        // 2. RENDER CÁC NÚT TÙY CHỈNH CỘT (REQ 3)
         let togglesHTML = `<div id="pasted-competition-column-toggles">
             <span class="non-draggable">HIỂN THỊ CỘT:</span>
             ${columnSettings.map(col => `
-                <button 
+                <div 
                     class="column-toggle-btn draggable-tag pasted-comp-toggle-btn ${col.visible ? 'active' : ''}" 
                     data-column-ten-goc="${col.tenGoc}" 
                     title="${col.tenGoc} (${col.loaiSoLieu})">
                     ${dragIconSVG} <span>${col.label}</span>
-                </button>
+                </div>
             `).join('')}
         </div>`;
         
-        let finalHTML = ``; // HTML cho bảng sẽ được xây dựng bên dưới
+        let finalHTML = ``; 
 
-        // 3. NHÓM VÀ SẮP XẾP DỮ LIỆU (REQ 1)
         const groupedByDept = {};
         reportData.forEach(item => {
             const dept = item.boPhan || 'Chưa phân loại';
@@ -15921,20 +16141,17 @@ export const uiSknv = {
         const departmentOrder = utils.getSortedDepartmentList(reportData);
         const sortStateKey = 'sknv_thidua_pasted';
         
-        // *** START: YÊU CẦU MỚI (TÍNH TOÁN TRƯỚC) ***
-        // Tính toán trước điểm chuẩn (TB bộ phận) cho tất cả các cột
-        const deptAverages = {}; // { "BP Tư Vấn": { "tenGoc1": 10.5, "tenGoc2": 5.2 }, ... }
+        const deptAverages = {}; 
         departmentOrder.forEach(deptName => {
             const deptData = groupedByDept[deptName];
             const deptAvg = {};
-            
             columnSettings.forEach(col => {
                 let total = 0;
                 let count = 0;
                 deptData.forEach(emp => {
                     const compData = emp.competitions.find(c => c.tenGoc === col.tenGoc);
                     const giaTri = compData?.giaTri || 0;
-                    if (giaTri > 0) { // Chỉ tính trung bình cho các NV có bán
+                    if (giaTri > 0) { 
                         total += giaTri;
                         count++;
                     }
@@ -15943,50 +16160,42 @@ export const uiSknv = {
             });
             deptAverages[deptName] = deptAvg;
         });
-        // *** END: YÊU CẦU MỚI (TÍNH TOÁN TRƯỚC) ***
+        
+        uiSknv._lastPastedAverages = deptAverages;
         
         departmentOrder.forEach(deptName => {
             if (groupedByDept[deptName]) {
                 const deptData = groupedByDept[deptName];
                 
-                // Sắp xếp nhân viên trong bộ phận (REQ 1)
                 const sortState = appState.sortState[sortStateKey] || { key: 'hoTen', direction: 'asc' };
                 const { key, direction } = sortState;
                 
                 const sortedData = [...deptData].sort((a, b) => {
                     let valA, valB;
                     if (key.startsWith('comp_')) {
-                        // Sắp xếp theo cột thi đua động
                         const sortCol = columnSettings.find(c => c.id === key);
-                        if (!sortCol) return 0; // Không tìm thấy cột
-                        
+                        if (!sortCol) return 0; 
                         valA = a.competitions.find(c => c.tenGoc === sortCol.tenGoc)?.giaTri || 0;
                         valB = b.competitions.find(c => c.tenGoc === sortCol.tenGoc)?.giaTri || 0;
                         return direction === 'asc' ? valA - valB : valB - valA;
                         
                     } else if (key === 'totalScore') {
-                        // *** START: YÊU CẦU MỚI (SẮP XẾP TỔNG ĐẠT) ***
-                        // Phải tính toán lại điểm ở đây để sắp xếp
                         const avgScores = deptAverages[deptName];
-                        
                         let scoreA = 0;
                         a.competitions.forEach(comp => {
                             if (avgScores[comp.tenGoc] > 0 && comp.giaTri >= avgScores[comp.tenGoc]) {
                                 scoreA++;
                             }
                         });
-                        
                         let scoreB = 0;
                         b.competitions.forEach(comp => {
                             if (avgScores[comp.tenGoc] > 0 && comp.giaTri >= avgScores[comp.tenGoc]) {
                                 scoreB++;
                             }
                         });
-                        
                         valA = scoreA;
                         valB = scoreB;
                         return direction === 'asc' ? valA - valB : valB - valA;
-                        // *** END: YÊU CẦU MỚI (SẮP XẾP TỔNG ĐẠT) ***
                         
                     } else { // Sắp xếp theo 'hoTen'
                         valA = a[key] || ''; 
@@ -16004,7 +16213,6 @@ export const uiSknv = {
 
                 const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
 
-                // 4. RENDER BẢNG
                 finalHTML += `<div class="department-block">
                     <h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${deptName}</h4>
                     <div class="overflow-x-auto sknv-pasted-competition-scroller"> 
@@ -16026,7 +16234,6 @@ export const uiSknv = {
                             </thead>
                         <tbody>`;
 
-                // Tính toán Tổng/TB (Dùng Map để tôn trọng thứ tự cột)
                 const deptTotals = new Map();
                 const validEmployeeCount = new Map();
                 visibleColumns.forEach(col => {
@@ -16034,23 +16241,20 @@ export const uiSknv = {
                     validEmployeeCount.set(col.tenGoc, 0);
                 });
 
-                // Render dòng nhân viên
                 sortedData.forEach(item => {
-                    // *** START: YÊU CẦU MỚI (TÍNH ĐIỂM) ***
                     let totalScore = 0;
                     const deptAvg = deptAverages[item.boPhan] || {};
                     item.competitions.forEach(comp => {
                         const avg = deptAvg[comp.tenGoc];
-                        // Chỉ cộng điểm nếu TB > 0 (có người bán) và NV >= TB
                         if (avg > 0 && comp.giaTri >= avg) {
                             totalScore++;
                         }
                     });
-                    // *** END: YÊU CẦU MỚI (TÍNH ĐIỂM) ***
                 
-                    finalHTML += `<tr class="hover:bg-gray-50">
-                        <td class="px-4 py-2 font-semibold whitespace-nowrap sticky-col sticky-col-1">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</td>
-                        
+                    finalHTML += `<tr class="interactive-row hover:bg-gray-50" data-employee-id="${item.maNV}" data-source-tab="sknv-thidua-pasted">
+                        <td class="px-4 py-2 font-semibold whitespace-nowrap sticky-col sticky-col-1 employee-name-cell">
+                            <a href="#">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</a>
+                        </td>
                         <td class="px-2 py-2 text-center font-bold text-green-600 sticky-col sticky-col-2">${totalScore}</td>
                         ${visibleColumns.map(col => {
                              const compData = item.competitions.find(c => c.tenGoc === col.tenGoc);
@@ -16059,18 +16263,20 @@ export const uiSknv = {
                             
                             if (giaTri !== 0) {
                                 formattedValue = uiComponents.formatNumber(giaTri, 0);
-                                // Cập nhật tổng
                                 deptTotals.set(col.tenGoc, deptTotals.get(col.tenGoc) + giaTri);
                                 validEmployeeCount.set(col.tenGoc, validEmployeeCount.get(col.tenGoc) + 1);
                             }
                  
-                            const cellClass = (col.loaiSoLieu === 'SLLK') ? 'text-right font-bold' : 'text-right font-bold text-blue-600';
+                            const avg = deptAverages[item.boPhan]?.[col.tenGoc] || 0;
+                            let cellClass = (col.loaiSoLieu === 'SLLK') ? 'text-right font-bold' : 'text-right font-bold text-blue-600';
+                            if (avg > 0 && giaTri < avg) {
+                                cellClass += ' cell-performance is-below';
+                            }
                             return `<td class="${cellClass} px-2 py-2">${formattedValue}</td>`;
                         }).join('')}
                     </tr>`;
                 });
 
-                // Render TFOOT
                 finalHTML += `</tbody>
                      <tfoot class="table-footer font-bold">
                         <tr class="bg-gray-100">
@@ -16092,19 +16298,16 @@ export const uiSknv = {
                             }).join('')}
                         </tr>
                     </tfoot>
-                </table></div></div>`; // Đóng overflow-x-auto và department-block
+                </table></div></div>`; 
             }
         });
 
-        // 5. GỘP HTML
-        // (REQ 3) Đặt 'togglesHTML' BÊN NGOÀI 'data-capture-group'
         container.innerHTML = `
             ${togglesHTML} 
             <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden" data-capture-group="pasted-competition">
                 ${finalHTML}
             </div>`;
         
-        // Log chẩn đoán vẫn giữ nguyên
         setTimeout(() => {
             const tableEl = container.querySelector('table');
             const tableContainer = container.querySelector('.sknv-pasted-competition-scroller');
@@ -16132,10 +16335,211 @@ export const uiSknv = {
                 console.error("[DEBUG] Không tìm thấy một trong các phần tử chẩn đoán.");
             }
         }, 0);
-    }
-    // *** END: MODIFIED FUNCTION (v6.25) ***
-};
+    },
+    // *** END: MODIFIED FUNCTION (v6.36) ***
 
+    // === START: PHIÊN BẢN MỚI v6.37 (Thay thế hàm cũ) ===
+    /**
+     * Render giao diện chi tiết (infographic) cho một nhân viên trong tab "Thi đua NV LK".
+     * @param {Object} employeeData - Đối tượng dữ liệu của nhân viên từ appState.pastedThiDuaReportData.
+     * @param {Object} allDeptAverages - Đối tượng chứa TBT của tất cả bộ phận (uiSknv._lastPastedAverages).
+     */
+    renderPastedCompetitionDetail(employeeData, allDeptAverages) {
+        const container = document.getElementById('pasted-competition-detail-container');
+        if (!container) {
+            console.error("[ui-sknv.js] Container '#pasted-competition-detail-container' not found.");
+            return;
+        }
+
+        if (!employeeData || !allDeptAverages) {
+            container.innerHTML = `
+                <div class="mb-4">
+                    <button class="back-to-summary-btn text-blue-600 hover:underline font-semibold">‹ Quay lại bảng tổng hợp</button>
+                </div>
+                <p class="text-red-500">Không tìm thấy dữ liệu chi tiết cho nhân viên hoặc dữ liệu TBT bộ phận.</p>`;
+            return;
+        }
+
+        const employeeInfo = appState.employeeMaNVMap.get(String(employeeData.maNV));
+        const hoTen = employeeInfo?.hoTen || employeeData.hoTen;
+        const boPhan = employeeInfo?.boPhan || employeeData.boPhan;
+        const deptAvg = allDeptAverages[boPhan] || {};
+
+        const nhomDat = [];
+        const nhomGanDat = [];
+        const nhomCanCoGang = [];
+        let totalCriteria = 0; // Chỉ đếm các ngành hàng có TBT > 0
+
+        employeeData.competitions.forEach(comp => {
+            const avg = deptAvg[comp.tenGoc] || 0;
+            const giaTri = comp.giaTri || 0;
+            const chenhLech = giaTri - avg;
+            const percentOfAvg = (avg > 0) ? (giaTri / avg) : (giaTri > 0 ? Infinity : 0);
+
+            const cardData = {
+                name: comp.tenNganhHang,
+                originalName: comp.tenGoc,
+                value: giaTri,
+                average: avg,
+                diff: chenhLech,
+                // Tính % thanh tiến độ: nếu đạt thì 100%, nếu chưa đạt thì (giaTri / avg * 100)
+                progressPercent: (avg > 0) ? Math.min((giaTri / avg) * 100, 100) : (giaTri > 0 ? 100 : 0)
+            };
+
+            if (avg > 0) {
+                totalCriteria++; // Chỉ đếm nếu có mục tiêu (TB > 0)
+                if (percentOfAvg >= 1.0) {
+                    nhomDat.push(cardData);
+                } else if (percentOfAvg >= 0.7) {
+                    nhomGanDat.push(cardData);
+                } else {
+                    nhomCanCoGang.push(cardData);
+                }
+            } else if (giaTri > 0) {
+                // Không có TBT, nhưng có bán -> coi như "Đạt" (Ghi nhận)
+                cardData.progressPercent = 100; // Thanh đầy
+                nhomDat.push(cardData);
+            } else {
+                // Không TBT, không bán -> Nhóm "Cần cố gắng"
+                nhomCanCoGang.push(cardData);
+            }
+        });
+
+        // Sắp xếp nội bộ các nhóm theo chênh lệch (cao -> thấp)
+        const sortInternal = (a, b) => b.diff - a.diff;
+        nhomDat.sort(sortInternal);
+        nhomGanDat.sort(sortInternal);
+        nhomCanCoGang.sort(sortInternal);
+
+        const totalDat = nhomDat.length;
+        const totalGanDat = nhomGanDat.length;
+        const totalCanCoGang = nhomCanCoGang.length;
+        
+        // Tỷ lệ đạt chỉ tính trên các ngành có TBT > 0
+        const tyLeDat = totalCriteria > 0 ? (nhomDat.filter(item => item.average > 0).length / totalCriteria) : 0;
+        const tyLeDatClass = tyLeDat >= 0.5 ? 'text-blue-600' : 'text-red-600'; // Theo yêu cầu
+
+        // Render các thẻ KPI tóm tắt
+        const kpiHtml = `
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6" data-capture-group="1">
+                <div class="rt-infographic-summary-card text-center">
+                    <div class="label">Ngành hàng Đạt</div>
+                    <div class="value text-green-600">
+                        ${totalDat} <span class="text-2xl text-gray-400">/ ${employeeData.competitions.length}</span>
+                    </div>
+                </div>
+                <div class="rt-infographic-summary-card text-center">
+                    <div class="label">Ngành hàng Gần Đạt (>=70%)</div>
+                    <div class="value text-yellow-600">${totalGanDat}</div>
+                </div>
+                <div class="rt-infographic-summary-card text-center">
+                    <div class="label">Tỷ lệ đạt (trên nhóm có TB)</div>
+                    <div class="value ${tyLeDatClass}">
+                        ${uiComponents.formatPercentage(tyLeDat)}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Render 3 cột
+        const columnsHtml = `
+            <div class="mt-6 sknv-thidua-detail-grid" data-capture-group="2">
+                <div class="sknv-thidua-column">
+                    <div class="sknv-thidua-column-header header-blue">
+                        <i data-feather="check-circle"></i>
+                        <h4>Nhóm Đạt (${totalDat})</h4>
+                    </div>
+                    <div class="sknv-thidua-column-content">
+                        ${nhomDat.length > 0 ? nhomDat.map(item => this._renderThiduaItemCard(item, 'bg-blue-500')).join('') : '<p class="empty-col-msg">Không có ngành hàng nào.</p>'}
+                    </div>
+                </div>
+                <div class="sknv-thidua-column">
+                    <div class="sknv-thidua-column-header header-yellow">
+                        <i data-feather="alert-triangle"></i>
+                        <h4>Nhóm Gần Đạt (${totalGanDat})</h4>
+                    </div>
+                    <div class="sknv-thidua-column-content">
+                        ${nhomGanDat.length > 0 ? nhomGanDat.map(item => this._renderThiduaItemCard(item, 'bg-yellow-500')).join('') : '<p class="empty-col-msg">Không có ngành hàng nào.</p>'}
+                    </div>
+                </div>
+                <div class="sknv-thidua-column">
+                    <div class="sknv-thidua-column-header header-red">
+                        <i data-feather="x-circle"></i>
+                        <h4>Nhóm Cần Cố Gắng (${totalCanCoGang})</h4>
+                    </div>
+                    <div class="sknv-thidua-column-content">
+                        ${nhomCanCoGang.length > 0 ? nhomCanCoGang.map(item => this._renderThiduaItemCard(item, 'bg-red-500')).join('') : '<p class="empty-col-msg">Không có ngành hàng nào.</p>'}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Render toàn bộ
+        container.innerHTML = `
+            <div class="mb-4 flex justify-between items-center">
+                <button class="back-to-summary-btn text-blue-600 hover:underline font-semibold">‹ Quay lại bảng tổng hợp</button>
+            </div>
+            
+            <div id="sknv-thidua-detail-capture-area" class="max-w-7xl mx-auto"> 
+                
+                <div class="sknv-detail-header-card bg-purple-50 border-purple-200 border-t-purple-500" data-capture-group="1">
+                    <div class="sknv-card__avatar sknv-detail-avatar bg-purple-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="text-purple-800"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    </div>
+                    <div class="sknv-detail-info">
+                         <p class="name text-purple-800">${hoTen} - ${employeeData.maNV}</p>
+                        <p class="department text-gray-700">${boPhan}</p>
+                    </div>
+                </div>
+
+                ${kpiHtml}
+
+                ${columnsHtml}
+                
+            </div>
+        `;
+        
+        feather.replace();
+    },
+    // === END: PHIÊN BẢN MỚI v6.37 ===
+
+    // === START: HÀM HELPER MỚI (v6.37) ===
+    /**
+     * @private
+     * Render một thẻ ngành hàng cho giao diện infographic chi tiết.
+     * @param {Object} item - Dữ liệu của một ngành hàng.
+     * @param {string} colorClass - Class màu cho thanh tiến độ (ví dụ: 'bg-blue-500').
+     */
+    _renderThiduaItemCard(item, colorClass) {
+        const diffClass = item.diff > 0 ? 'text-green-600' : (item.diff < 0 ? 'text-red-600' : 'text-gray-500');
+        const diffSign = item.diff > 0 ? '+' : '';
+        
+        // Chỉ hiển thị chênh lệch nếu có TB
+        let diffText = (item.average > 0) 
+            ? `${diffSign}${uiComponents.formatNumberOrDash(item.diff, 1)}` 
+            : '-';
+        
+        // Trường hợp đặc biệt: Ghi nhận (Có bán nhưng không có TB)
+        if (item.average === 0 && item.value > 0) {
+            diffText = 'Ghi nhận';
+        }
+
+        return `
+        <div class="sknv-thidua-item-card">
+            <p class="item-card-title" title="${item.originalName}">${item.name}</p>
+            <div class="item-card-progress-bar-container">
+                <div class="item-card-progress-bar ${colorClass}" style="width: ${item.progressPercent}%;"></div>
+            </div>
+            <div class="item-card-metrics">
+                <span>Thực hiện: <strong>${uiComponents.formatNumberOrDash(item.value, 1)}</strong></span>
+                <span>TB Bộ phận: <strong>${uiComponents.formatNumberOrDash(item.average, 1)}</strong></span>
+                <span class="${diffClass}">Chênh lệch: <strong>${diffText}</strong></span>
+            </div>
+        </div>
+        `;
+    }
+    // === END: HÀM HELPER MỚI (v6.37) ===
+};
 --- END FILE: ./ui-sknv.js ---
 
 --- START FILE: ./ui-thidua-vung.js ---

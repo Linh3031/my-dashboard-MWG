@@ -1,3 +1,4 @@
+// Version 3.6 - Fix: Gộp nhiều dòng cho tiêu đề chính (main headers) trong parsePastedThiDuaTableData
 // Version 3.5 - Update processThiDuaVungFile to accept new sheet names
 // Version 3.4 - Fix processThiDuaNhanVienData for 1-column logic & Fix ReferenceError
 // Version 3.2 - Fix ReferenceError in parsePastedThiDuaTableData
@@ -547,7 +548,11 @@ export const dataProcessing = {
         }
         
         // Bước 1: Trích xuất Tiêu Đề Chính (Main Headers)
-        const mainHeaders = lines.slice(mainHeaderStartIndex + 1, subHeaderStartIndex);
+        // === START: SỬA LỖI (v3.6) - Gộp nhiều dòng cho tiêu đề chính ===
+        const mainHeaderLines = lines.slice(mainHeaderStartIndex + 1, subHeaderStartIndex);
+        const mainHeaderString = mainHeaderLines.join('\t'); // Nối bằng Tab (giống sub-header)
+        const mainHeaders = mainHeaderString.split(splitRegex).filter(Boolean); // Tách bằng regex (giống sub-header)
+        // === END: SỬA LỖI (v3.6) ===
         debugInfo.found.push({ name: 'Tiêu đề chính (Ngành hàng)', value: `${mainHeaders.length} mục`, status: mainHeaders.length > 0 });
 
         // Bước 2: Trích xuất Tiêu Đề Phụ (Sub Headers)

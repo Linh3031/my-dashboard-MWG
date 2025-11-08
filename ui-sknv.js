@@ -1,13 +1,6 @@
+// Version 6.37 - Redesign pasted competition detail view to 3-column infographic
 // Version 6.36 - Add sorting and fix z-index for pasted competition detail table
 // Version 6.35 - Redesign pasted competition detail view; Add cell coloring; Fix drag-drop tag
-// Version 6.34 - Add detail drill-down for pasted competition; Fix drag-drop; Add cell coloring
-// Version 6.33 - Add sorting to Employee Detail tables (QDC, Category)
-// Version 6.32 - Add 'Tổng Đạt' column and sticky columns to pasted competition table
-// Version 6.31 - Fix capture logic to support vertical stitching
-// Version 6.30 - YC: Logic cho CSS v6.19 (Vòng tròn xám 4+, Huy chương Top 3)
-// Version 6.28 - YC: Bỏ icon cờ (summary) & Thêm w-full (bảng thu nhập)
-// Version 6.27 - Fix CRITICAL syntax error 'ax' from v6.26
-// Version 6.26 - Cập nhật theo 5 yêu cầu UI của sếp (Icon, Bỏ QĐC, Layout, STT)
 // MODULE: UI SKNV
 // Chứa các hàm render giao diện cho tab "Sức khỏe nhân viên"
 
@@ -914,7 +907,7 @@ export const uiSknv = {
     },
     // *** END: MODIFIED FUNCTION (v6.36) ***
 
-    // === START: YÊU CẦU 4 (Hàm render chi tiết - v6.36) ===
+    // === START: PHIÊN BẢN MỚI v6.37 (Thay thế hàm cũ) ===
     /**
      * Render giao diện chi tiết (infographic) cho một nhân viên trong tab "Thi đua NV LK".
      * @param {Object} employeeData - Đối tượng dữ liệu của nhân viên từ appState.pastedThiDuaReportData.
@@ -941,103 +934,122 @@ export const uiSknv = {
         const boPhan = employeeInfo?.boPhan || employeeData.boPhan;
         const deptAvg = allDeptAverages[boPhan] || {};
 
-        let totalScore = 0;
+        const nhomDat = [];
+        const nhomGanDat = [];
+        const nhomCanCoGang = [];
         let totalCriteria = 0; // Chỉ đếm các ngành hàng có TBT > 0
-        
-        // === START: YÊU CẦU 2 (Sắp xếp) ===
-        const sortStateKey = 'sknv_thidua_pasted_detail';
-        const sortState = appState.sortState[sortStateKey] || { key: 'name', direction: 'asc' };
-        const { key, direction } = sortState;
 
-        const detailRows = employeeData.competitions.map(comp => {
+        employeeData.competitions.forEach(comp => {
             const avg = deptAvg[comp.tenGoc] || 0;
             const giaTri = comp.giaTri || 0;
-            let evaluation = { text: '-', class: 'text-gray-500' };
-            
-            if (avg > 0) { 
-                totalCriteria++;
-                if (giaTri >= avg) {
-                    totalScore++;
-                    evaluation = { text: 'Đạt', class: 'text-green-600 font-bold' };
-                } else {
-                    evaluation = { text: 'Chưa đạt', class: 'text-red-600 font-bold' };
-                }
-            } else if (giaTri > 0) { 
-                evaluation = { text: 'Ghi nhận', class: 'text-blue-600 font-bold' };
-            }
+            const chenhLech = giaTri - avg;
+            const percentOfAvg = (avg > 0) ? (giaTri / avg) : (giaTri > 0 ? Infinity : 0);
 
-            return {
-                name: comp.tenNganhHang, // Tên rút gọn (label)
+            const cardData = {
+                name: comp.tenNganhHang,
                 originalName: comp.tenGoc,
                 value: giaTri,
                 average: avg,
-                evaluation: evaluation
+                diff: chenhLech,
+                // Tính % thanh tiến độ: nếu đạt thì 100%, nếu chưa đạt thì (giaTri / avg * 100)
+                progressPercent: (avg > 0) ? Math.min((giaTri / avg) * 100, 100) : (giaTri > 0 ? 100 : 0)
             };
-        });
 
-        // Sắp xếp dữ liệu
-        detailRows.sort((a, b) => {
-            let valA, valB;
-            if (key === 'name') {
-                valA = a.name; valB = b.name;
-                return direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
-            } else if (key === 'value') {
-                valA = a.value; valB = b.value;
-            } else if (key === 'average') {
-                valA = a.average; valB = b.average;
-            } else { // Sắp xếp theo "Đánh giá"
-                valA = a.evaluation.text; valB = b.evaluation.text;
-                return direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            if (avg > 0) {
+                totalCriteria++; // Chỉ đếm nếu có mục tiêu (TB > 0)
+                if (percentOfAvg >= 1.0) {
+                    nhomDat.push(cardData);
+                } else if (percentOfAvg >= 0.7) {
+                    nhomGanDat.push(cardData);
+                } else {
+                    nhomCanCoGang.push(cardData);
+                }
+            } else if (giaTri > 0) {
+                // Không có TBT, nhưng có bán -> coi như "Đạt" (Ghi nhận)
+                cardData.progressPercent = 100; // Thanh đầy
+                nhomDat.push(cardData);
+            } else {
+                // Không TBT, không bán -> Nhóm "Cần cố gắng"
+                nhomCanCoGang.push(cardData);
             }
-            return direction === 'asc' ? (valA || 0) - (valB || 0) : (valB || 0) - (valA || 0);
         });
-        // === END: YÊU CẦU 2 (Sắp xếp) ===
 
-        const completionRate = totalCriteria > 0 ? (totalScore / totalCriteria) : 0;
-        const completionClass = completionRate >= 0.7 ? 'text-green-600' : (completionRate >= 0.4 ? 'text-yellow-600' : 'text-red-600');
+        // Sắp xếp nội bộ các nhóm theo chênh lệch (cao -> thấp)
+        const sortInternal = (a, b) => b.diff - a.diff;
+        nhomDat.sort(sortInternal);
+        nhomGanDat.sort(sortInternal);
+        nhomCanCoGang.sort(sortInternal);
 
-        // === START: YÊU CẦU 2 (Thêm class sortable, data-sort, v.v.) ===
-        const headerClass = (sortKey) => `px-4 py-2 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
+        const totalDat = nhomDat.length;
+        const totalGanDat = nhomGanDat.length;
+        const totalCanCoGang = nhomCanCoGang.length;
+        
+        // Tỷ lệ đạt chỉ tính trên các ngành có TBT > 0
+        const tyLeDat = totalCriteria > 0 ? (nhomDat.filter(item => item.average > 0).length / totalCriteria) : 0;
+        const tyLeDatClass = tyLeDat >= 0.5 ? 'text-blue-600' : 'text-red-600'; // Theo yêu cầu
 
-        const tableHtml = `
-            <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden" data-capture-group="2">
-                <div class="sknv-detail-card-header sknv-header-purple">
-                    <i data-feather="list" class="header-icon"></i>
-                    <h4 class="text-lg font-bold">Chi tiết Ngành hàng</h4>
+        // Render các thẻ KPI tóm tắt
+        const kpiHtml = `
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6" data-capture-group="1">
+                <div class="rt-infographic-summary-card text-center">
+                    <div class="label">Ngành hàng Đạt</div>
+                    <div class="value text-green-600">
+                        ${totalDat} <span class="text-2xl text-gray-400">/ ${employeeData.competitions.length}</span>
+                    </div>
                 </div>
-                <div class="overflow-x-auto" style="max-height: 500px;">
-                    <table class="w-full text-sm table-bordered table-striped" data-table-type="${sortStateKey}">
-                        <thead class="sknv-subtable-header sticky top-0 z-10 bg-gray-100"> 
-                        <tr>
-                                <th class="${headerClass('name')} text-left" data-sort="name">Ngành hàng (Tên rút gọn) <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('value')} text-right" data-sort="value">Thực hiện <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('average')} text-right" data-sort="average">TB Bộ phận <span class="sort-indicator"></span></th>
-                                <th class="${headerClass('evaluation')} text-center" data-sort="evaluation">Đánh giá <span class="sort-indicator"></span></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${detailRows.map(row => `
-                                <tr class="border-t">
-                                    <td class="px-4 py-2 font-medium" title="${row.originalName}">${row.name}</td>
-                                    <td class="px-4 py-2 text-right font-bold">${uiComponents.formatNumberOrDash(row.value)}</td>
-                                    <td class="px-4 py-2 text-right text-gray-600">${uiComponents.formatNumberOrDash(row.average, 0)}</td>
-                                    <td class="px-4 py-2 text-center ${row.evaluation.class}">${row.evaluation.text}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
+                <div class="rt-infographic-summary-card text-center">
+                    <div class="label">Ngành hàng Gần Đạt (>=70%)</div>
+                    <div class="value text-yellow-600">${totalGanDat}</div>
+                </div>
+                <div class="rt-infographic-summary-card text-center">
+                    <div class="label">Tỷ lệ đạt (trên nhóm có TB)</div>
+                    <div class="value ${tyLeDatClass}">
+                        ${uiComponents.formatPercentage(tyLeDat)}
+                    </div>
                 </div>
             </div>
         `;
-        // === END: YÊU CẦU 2 ===
 
-        // === BỐ CỤC GỌN (THEO YÊU CẦU) ===
+        // Render 3 cột
+        const columnsHtml = `
+            <div class="mt-6 sknv-thidua-detail-grid" data-capture-group="2">
+                <div class="sknv-thidua-column">
+                    <div class="sknv-thidua-column-header header-blue">
+                        <i data-feather="check-circle"></i>
+                        <h4>Nhóm Đạt (${totalDat})</h4>
+                    </div>
+                    <div class="sknv-thidua-column-content">
+                        ${nhomDat.length > 0 ? nhomDat.map(item => this._renderThiduaItemCard(item, 'bg-blue-500')).join('') : '<p class="empty-col-msg">Không có ngành hàng nào.</p>'}
+                    </div>
+                </div>
+                <div class="sknv-thidua-column">
+                    <div class="sknv-thidua-column-header header-yellow">
+                        <i data-feather="alert-triangle"></i>
+                        <h4>Nhóm Gần Đạt (${totalGanDat})</h4>
+                    </div>
+                    <div class="sknv-thidua-column-content">
+                        ${nhomGanDat.length > 0 ? nhomGanDat.map(item => this._renderThiduaItemCard(item, 'bg-yellow-500')).join('') : '<p class="empty-col-msg">Không có ngành hàng nào.</p>'}
+                    </div>
+                </div>
+                <div class="sknv-thidua-column">
+                    <div class="sknv-thidua-column-header header-red">
+                        <i data-feather="x-circle"></i>
+                        <h4>Nhóm Cần Cố Gắng (${totalCanCoGang})</h4>
+                    </div>
+                    <div class="sknv-thidua-column-content">
+                        ${nhomCanCoGang.length > 0 ? nhomCanCoGang.map(item => this._renderThiduaItemCard(item, 'bg-red-500')).join('') : '<p class="empty-col-msg">Không có ngành hàng nào.</p>'}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Render toàn bộ
         container.innerHTML = `
             <div class="mb-4 flex justify-between items-center">
                 <button class="back-to-summary-btn text-blue-600 hover:underline font-semibold">‹ Quay lại bảng tổng hợp</button>
             </div>
             
-            <div id="sknv-thidua-detail-capture-area" class="max-w-5xl mx-auto"> 
+            <div id="sknv-thidua-detail-capture-area" class="max-w-7xl mx-auto"> 
                 
                 <div class="sknv-detail-header-card bg-purple-50 border-purple-200 border-t-purple-500" data-capture-group="1">
                     <div class="sknv-card__avatar sknv-detail-avatar bg-purple-200">
@@ -1049,28 +1061,51 @@ export const uiSknv = {
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6" data-capture-group="1">
-                    <div class="rt-infographic-summary-card text-center">
-                        <div class="label">Ngành hàng trên TB</div>
-                        <div class="value ${totalScore > 0 ? 'text-green-600' : 'text-red-600'}">
-                            ${totalScore} <span class="text-2xl text-gray-400">/ ${totalCriteria}</span>
-                        </div>
-                    </div>
-                    <div class="rt-infographic-summary-card text-center">
-                        <div class="label">Tỷ lệ đạt</div>
-                        <div class="value ${completionClass}">
-                            ${uiComponents.formatPercentage(completionRate)}
-                        </div>
-                    </div>
-                </div>
+                ${kpiHtml}
 
-                <div class="mt-6">
-                    ${tableHtml}
-                </div>
+                ${columnsHtml}
+                
             </div>
         `;
         
         feather.replace();
+    },
+    // === END: PHIÊN BẢN MỚI v6.37 ===
+
+    // === START: HÀM HELPER MỚI (v6.37) ===
+    /**
+     * @private
+     * Render một thẻ ngành hàng cho giao diện infographic chi tiết.
+     * @param {Object} item - Dữ liệu của một ngành hàng.
+     * @param {string} colorClass - Class màu cho thanh tiến độ (ví dụ: 'bg-blue-500').
+     */
+    _renderThiduaItemCard(item, colorClass) {
+        const diffClass = item.diff > 0 ? 'text-green-600' : (item.diff < 0 ? 'text-red-600' : 'text-gray-500');
+        const diffSign = item.diff > 0 ? '+' : '';
+        
+        // Chỉ hiển thị chênh lệch nếu có TB
+        let diffText = (item.average > 0) 
+            ? `${diffSign}${uiComponents.formatNumberOrDash(item.diff, 1)}` 
+            : '-';
+        
+        // Trường hợp đặc biệt: Ghi nhận (Có bán nhưng không có TB)
+        if (item.average === 0 && item.value > 0) {
+            diffText = 'Ghi nhận';
+        }
+
+        return `
+        <div class="sknv-thidua-item-card">
+            <p class="item-card-title" title="${item.originalName}">${item.name}</p>
+            <div class="item-card-progress-bar-container">
+                <div class="item-card-progress-bar ${colorClass}" style="width: ${item.progressPercent}%;"></div>
+            </div>
+            <div class="item-card-metrics">
+                <span>Thực hiện: <strong>${uiComponents.formatNumberOrDash(item.value, 1)}</strong></span>
+                <span>TB Bộ phận: <strong>${uiComponents.formatNumberOrDash(item.average, 1)}</strong></span>
+                <span class="${diffClass}">Chênh lệch: <strong>${diffText}</strong></span>
+            </div>
+        </div>
+        `;
     }
-    // === END: YÊU CẦU 4 ===
+    // === END: HÀM HELPER MỚI (v6.37) ===
 };

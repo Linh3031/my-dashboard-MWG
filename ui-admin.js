@@ -1,3 +1,4 @@
+// Version 1.3 - Add STT column to competition name mapping table
 // Version 1.2 - Refactor: Re-wire call to new analyticsService
 // MODULE: UI ADMIN
 // Chứa các hàm render cho trang Quản trị (Khai báo).
@@ -93,20 +94,23 @@ const renderCompetitionNameMappingTable = () => {
         return;
     }
 
+    // === START: THAY ĐỔI (v1.3) ===
     let tableHTML = `
         <table class="min-w-full text-sm table-bordered bg-white">
             <thead class="text-xs text-slate-800 uppercase bg-slate-100 font-bold">
                 <tr>
+                    <th class="px-2 py-2 text-center w-12">STT</th>
                     <th class="px-4 py-2 text-left w-1/2">Tên Gốc (Từ dữ liệu dán)</th>
-                        <th class="px-4 py-2 text-left w-1/2">Tên Rút Gọn (Nhập để thay thế)</th>
+                    <th class="px-4 py-2 text-left w-1/2">Tên Rút Gọn (Nhập để thay thế)</th>
                 </tr>
             </thead>
             <tbody>
     `;
 
-    mappingEntries.forEach(([originalName, shortName]) => {
+    mappingEntries.forEach(([originalName, shortName], index) => { // Thêm 'index'
         tableHTML += `
             <tr class="border-t hover:bg-gray-50">
+                <td class="px-2 py-2 text-center font-medium text-gray-700 align-top">${index + 1}</td>
                 <td class="px-4 py-2 text-gray-600 align-top text-xs">
                         ${originalName}
                 </td>
@@ -122,6 +126,7 @@ const renderCompetitionNameMappingTable = () => {
             </tr>
         `;
     });
+    // === END: THAY ĐỔI (v1.3) ===
 
     tableHTML += `</tbody></table>`;
     container.innerHTML = tableHTML;
