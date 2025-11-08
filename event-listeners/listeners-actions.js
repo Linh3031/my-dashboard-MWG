@@ -1,4 +1,4 @@
-// Version 1.1 - Fix capture/export logic for sknv-thidua view switcher
+// Version 1.2 - Make capture button context-aware (detail vs. summary)
 // Version 1.0 - Refactored from ui-listeners.js
 // MODULE: LISTENERS - ACTIONS
 // Chứa logic đăng ký sự kiện cho các nút hành động chung (Chụp ảnh, Xuất Excel).
@@ -6,6 +6,7 @@
 import { ui } from '../ui.js';
 import { utils } from '../utils.js';
 import { captureService } from '../modules/capture.service.js';
+import { appState } from '../state.js'; // <-- ĐÃ THÊM
 
 export function initializeActionListeners() {
     ['luyke', 'sknv', 'realtime'].forEach(prefix => {
@@ -21,6 +22,42 @@ export function initializeActionListeners() {
                     return;
                 }
                 
+                // *** START: NEW LOGIC FOR DETAIL VIEW (v1.2) ***
+                // Kiểm tra xem có đang xem chi tiết nhân viên không
+                if (prefix === 'sknv' && appState.viewingDetailFor) {
+                    const { employeeId, sourceTab } = appState.viewingDetailFor;
+                    const activeTabTarget = activeTabButton.dataset.target;
+
+                    let elementToCapture = null;
+                    let title = '';
+                    const preset = 'preset-mobile-portrait';
+
+                    if (sourceTab === 'sknv' && activeTabTarget === 'subtab-sknv') {
+                        elementToCapture = document.getElementById('sknv-detail-capture-area');
+                        title = `SKNV_ChiTiet_${employeeId}`;
+                    } else if (sourceTab === 'dtnv-lk' && activeTabTarget === 'subtab-doanhthu-lk') {
+                        elementToCapture = document.getElementById('dtnv-lk-capture-area');
+                        title = `DTLK_ChiTiet_${employeeId}`;
+                    }
+                    // (Bạn có thể thêm logic cho 'dtnv-rt' ở đây nếu muốn)
+                    // else if (sourceTab === 'dtnv-rt' && activeTabTarget === 'subtab-realtime-nhan-vien') {
+                    //     elementToCapture = document.getElementById('dtnv-rt-capture-area');
+                    //     title = `DTRT_ChiTiet_${employeeId}`;
+                    // }
+
+                    if (elementToCapture) {
+                        if (!elementToCapture || elementToCapture.children.length === 0) {
+                            ui.showNotification('Không có nội dung chi tiết để chụp.', 'error');
+                            return;
+                        }
+                        // Gọi hàm captureAndDownload (giống logic của nút cũ đã bị xóa)
+                        captureService.captureAndDownload(elementToCapture, title, preset);
+                        return; // Dừng lại, đã xử lý xong phần chụp chi tiết
+                    }
+                }
+                // *** END: NEW LOGIC FOR DETAIL VIEW (v1.2) ***
+                
+                // Logic chụp tóm tắt (như cũ) chỉ chạy khi không ở chế độ xem chi tiết
                 const title = activeTabButton.dataset.title || 'BaoCao';
                 let elementToCapture;
 

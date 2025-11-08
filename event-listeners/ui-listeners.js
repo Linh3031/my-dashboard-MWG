@@ -1,4 +1,4 @@
-// Version 3.39 - Add custom date range filter for LK detail chart
+// Version 3.40 - Remove dedicated listener for lk-detail capture button
 // Version 3.34 - Refactor: Hoàn tất di dời 2 listener (Template, Debug) sang data.service.js
 // ... (các phiên bản trước giữ nguyên)
 // MODULE: EVENT LISTENERS INITIALIZER
@@ -214,9 +214,9 @@ export function initializeEventListeners(mainAppController) {
             return;
         }
         
-        // *** START: SỬA LỖI CHỤP ẢNH (v3.38) ***
+        // *** START: SỬA LỖI (Loại bỏ nút chi tiết LK) ***
         // Sửa lỗi 1 (chia mảnh) và 2 (biểu đồ trắng)
-        const captureDetailBtn = e.target.closest('#capture-sknv-detail-btn, #capture-dtnv-lk-detail-btn, #capture-dtnv-rt-detail-btn');
+        const captureDetailBtn = e.target.closest('#capture-sknv-detail-btn, #capture-dtnv-rt-detail-btn');
         if (captureDetailBtn) {
             e.preventDefault();
             const areaToCapture = captureDetailBtn.closest('.sub-tab-content')?.querySelector('[id$="-capture-area"]');
@@ -226,15 +226,15 @@ export function initializeEventListeners(mainAppController) {
                 // Luôn gọi captureAndDownload (sửa lỗi chia mảnh)
                 // và dùng preset 'preset-mobile-portrait' (sửa lỗi biểu đồ trắng + đồng bộ kích thước)
                 
-                // Áp dụng preset di động cho chi tiết SKNV và chi tiết DTNV LK
-                if (captureDetailBtn.id === 'capture-sknv-detail-btn' || captureDetailBtn.id === 'capture-dtnv-lk-detail-btn') {
+                // Áp dụng preset di động cho chi tiết SKNV
+                if (captureDetailBtn.id === 'capture-sknv-detail-btn') {
                     captureService.captureAndDownload(areaToCapture, title, 'preset-mobile-portrait');
                 } else {
                     // Chi tiết DTNV Realtime
                     captureService.captureAndDownload(areaToCapture, title, 'preset-mobile-portrait');
                 }
             }
-            // *** END: SỬA LỖI CHỤP ẢNH (v3.38) ***
+            // *** END: SỬA LỖI (Loại bỏ nút chi tiết LK) ***
             return;
         }
         

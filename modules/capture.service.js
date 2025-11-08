@@ -1,11 +1,11 @@
-// Version 1.6 - Remove debug logs and debugger statement
+// Version 1.8 - Fix: Apply presetClass to contentClone instead of wrapper
 // Version 1.1 - Fix blank charts by disabling Chart.js animations and adding 500ms delay during capture
 // Version 1.0 - Refactored from utils.js
 // MODULE: CAPTURE SERVICE
 // Chứa toàn bộ logic liên quan đến việc chụp ảnh màn hình các thành phần UI.
 
 import { ui } from '../ui.js';
-import { firebase } from '../firebase.js';
+import { analyticsService } from '../services/analytics.service.js';
 import { appState } from '../state.js'; // <<< THÊM MỚI (Kế hoạch A)
 
 // --- HELPER for Screenshot CSS Injection ---
@@ -136,11 +136,8 @@ export const captureService = {
         const captureWrapper = document.createElement('div');
         captureWrapper.className = 'capture-container';
     
-        // *** SỬA LỖI (Nguyên nhân 3) ***
-        // Áp dụng presetClass cho container cha (captureWrapper)
-        if (presetClass) {
-            captureWrapper.classList.add(presetClass);
-        }
+        // *** SỬA LỖI (v1.8) ***
+        // Xóa: if (presetClass) { captureWrapper.classList.add(presetClass); }
 
         const titleEl = document.createElement('h2');
         titleEl.className = 'capture-title';
@@ -149,8 +146,9 @@ export const captureService = {
         
         const contentClone = elementToCapture.cloneNode(true);
         
-        // *** LỖI CŨ (Đã xóa) ***
-        // if (presetClass) { contentClone.classList.add(presetClass); }
+        // *** SỬA LỖI (v1.8) ***
+        // Bỏ chú thích và gán class cho contentClone
+        if (presetClass) { contentClone.classList.add(presetClass); }
 
         captureWrapper.appendChild(contentClone);
         document.body.appendChild(captureWrapper);
@@ -206,7 +204,10 @@ export const captureService = {
             return;
         }
 
-        firebase.incrementCounter('actionsTaken');
+        // === START: SỬA LỖI (v1.7) ===
+        // Thay thế firebase.incrementCounter bằng analyticsService.incrementCounter
+        analyticsService.incrementCounter('actionsTaken', appState.currentUser?.email);
+        // === END: SỬA LỖI (v1.7) ===
         
         ui.showNotification(`Bắt đầu chụp báo cáo ${baseTitle}...`, 'success');
     
