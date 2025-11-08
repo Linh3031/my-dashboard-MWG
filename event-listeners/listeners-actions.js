@@ -1,3 +1,4 @@
+// Version 1.3 - Add capture support for pasted competition detail view
 // Version 1.2 - Make capture button context-aware (detail vs. summary)
 // Version 1.0 - Refactored from ui-listeners.js
 // MODULE: LISTENERS - ACTIONS
@@ -39,6 +40,12 @@ export function initializeActionListeners() {
                         elementToCapture = document.getElementById('dtnv-lk-capture-area');
                         title = `DTLK_ChiTiet_${employeeId}`;
                     }
+                    // === START: YÊU CẦU 1 (v1.3) - Thêm logic chụp chi tiết thi đua ===
+                    else if (sourceTab === 'sknv-thidua-pasted' && activeTabTarget === 'subtab-hieu-qua-thi-dua-lk') {
+                        elementToCapture = document.getElementById('sknv-thidua-detail-capture-area');
+                        title = `ThiDuaLK_ChiTiet_${employeeId}`;
+                    }
+                    // === END: YÊU CẦU 1 (v1.3) ===
                     // (Bạn có thể thêm logic cho 'dtnv-rt' ở đây nếu muốn)
                     // else if (sourceTab === 'dtnv-rt' && activeTabTarget === 'subtab-realtime-nhan-vien') {
                     //     elementToCapture = document.getElementById('dtnv-rt-capture-area');

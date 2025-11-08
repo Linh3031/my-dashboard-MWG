@@ -1,3 +1,4 @@
+/* Version 1.2 - Fix drag-drop cursor for pasted competition toggles
 /* Version 1.1 - Add sticky column styles for pasted competition table */
 /* Chứa các style CHỈ dành riêng cho tab Sức Khỏe Nhân Viên (SKNV) */
 
@@ -566,3 +567,20 @@ filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3)); /* Add a nice shadow */
     z-index: 3; /* Nằm trên cả tiêu đề và nội dung */
 }
 /* === END: Sticky Columns (v1.1) === */
+
+/* === START: YÊU CẦU 2 (v1.2) - Sửa lỗi con trỏ kéo thả === */
+.column-toggle-btn {
+    /* Mặc định là pointer để người dùng biết có thể click bật/tắt */
+    cursor: pointer;
+}
+
+.column-toggle-btn .drag-handle-icon {
+    /* Chỉ riêng icon kéo mới có cursor grab */
+    cursor: grab;
+}
+
+.column-toggle-btn .drag-handle-icon:active {
+    /* Khi đang kéo icon */
+    cursor: grabbing;
+}
+/* === END: YÊU CẦU 2 (v1.2) === */

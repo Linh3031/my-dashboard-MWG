@@ -1,3 +1,6 @@
+// Version 6.36 - Add sorting and fix z-index for pasted competition detail table
+// Version 6.35 - Redesign pasted competition detail view; Add cell coloring; Fix drag-drop tag
+// Version 6.34 - Add detail drill-down for pasted competition; Fix drag-drop; Add cell coloring
 // Version 6.33 - Add sorting to Employee Detail tables (QDC, Category)
 // Version 6.32 - Add 'Tổng Đạt' column and sticky columns to pasted competition table
 // Version 6.31 - Fix capture logic to support vertical stitching
@@ -15,6 +18,10 @@ import { utils } from './utils.js';
 import { settingsService } from './modules/settings.service.js'; // *** NEW (v6.23) ***
 
 export const uiSknv = {
+    // === START: YÊU CẦU 4 (Lưu trữ TBT) ===
+    _lastPastedAverages: {}, // Biến tạm để lưu TBT bộ phận cho view chi tiết
+    // === END: YÊU CẦU 4 ===
+
     displayEmployeeIncomeReport: (reportData) => {
         console.log("[ui-sknv.js displayEmployeeIncomeReport] === Starting render ==="); // Log mới
         const container = document.getElementById('income-report-container');
@@ -648,9 +655,9 @@ export const uiSknv = {
             </tbody></table></div></div>`;
     },
 
-    // *** START: MODIFIED FUNCTION (v6.25) - Fix Icon Display ***
+    // *** START: MODIFIED FUNCTION (v6.36) ***
     renderPastedCompetitionReport(reportData) {
-        console.log(`%c[DEBUG renderPastedCompetitionReport] === Bắt đầu render (v6.25) ===`, "color: blue; font-weight: bold;");
+        console.log(`%c[DEBUG renderPastedCompetitionReport] === Bắt đầu render (v6.36) ===`, "color: blue; font-weight: bold;");
         
         const container = document.getElementById('pasted-competition-report-container');
         if (!container) {
@@ -658,23 +665,19 @@ export const uiSknv = {
             return;
         }
 
-        // 1. TẢI CÀI ĐẶT CỘT (REQ 3)
         const columnSettings = settingsService.loadPastedCompetitionViewSettings();
-        
-        // *** START: SVG Icon (v6.25) - Copy từ ui-components.js ***
         const dragIconSVG = `<svg class="drag-handle-icon mr-2 cursor-grab" width="12" height="12" viewBox="0 0 10 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M4 2a1 1 0 10-2 0 1 1 0 002 0zM2 9a1 1 0 110-2 1 1 0 010 2zm0 5a1 1 0 110-2 1 1 0 010 2zm5-12a1 1 0 10-2 0 1 1 0 002 0zM7 9a1 1 0 110-2 1 1 0 010 2zm0 5a1 1 0 110-2 1 1 0 010 2z" fill="currentColor"></path></svg>`;
-        // *** END: SVG Icon (v6.25) ***
 
         if (!reportData || reportData.length === 0) {
-            // Vẫn render thanh toggle dù không có data
             const placeholderToggles = columnSettings.length > 0 
                 ? columnSettings.map(col => `
-                    <button 
+                    <div 
                         class="column-toggle-btn draggable-tag pasted-comp-toggle-btn ${col.visible ? 'active' : ''}" 
                         data-column-ten-goc="${col.tenGoc}" 
                         title="${col.tenGoc} (${col.loaiSoLieu})">
                         ${dragIconSVG} <span>${col.label}</span>
-                    </button>`).join('')
+                    </div>
+                    `).join('')
                 : '<span class="text-sm text-gray-500">Dán dữ liệu để thấy các cột...</span>';
                 
             container.innerHTML = `
@@ -685,28 +688,25 @@ export const uiSknv = {
                 <div data-capture-group="pasted-competition">
                     <p class="text-gray-500 p-4">Không có dữ liệu thi đua nhân viên. Vui lòng dán dữ liệu ở tab "Cập nhật dữ liệu" và đảm bảo bộ lọc không quá hẹp.</p>
                 </div>`;
-            // GỌI FEATHER CHO CÁC ICON KHÁC (nếu có) - nhưng ở đây không cần
             return;
         }
         
         const visibleColumns = columnSettings.filter(col => col.visible);
         
-        // 2. RENDER CÁC NÚT TÙY CHỈNH CỘT (REQ 3)
         let togglesHTML = `<div id="pasted-competition-column-toggles">
             <span class="non-draggable">HIỂN THỊ CỘT:</span>
             ${columnSettings.map(col => `
-                <button 
+                <div 
                     class="column-toggle-btn draggable-tag pasted-comp-toggle-btn ${col.visible ? 'active' : ''}" 
                     data-column-ten-goc="${col.tenGoc}" 
                     title="${col.tenGoc} (${col.loaiSoLieu})">
                     ${dragIconSVG} <span>${col.label}</span>
-                </button>
+                </div>
             `).join('')}
         </div>`;
         
-        let finalHTML = ``; // HTML cho bảng sẽ được xây dựng bên dưới
+        let finalHTML = ``; 
 
-        // 3. NHÓM VÀ SẮP XẾP DỮ LIỆU (REQ 1)
         const groupedByDept = {};
         reportData.forEach(item => {
             const dept = item.boPhan || 'Chưa phân loại';
@@ -717,20 +717,17 @@ export const uiSknv = {
         const departmentOrder = utils.getSortedDepartmentList(reportData);
         const sortStateKey = 'sknv_thidua_pasted';
         
-        // *** START: YÊU CẦU MỚI (TÍNH TOÁN TRƯỚC) ***
-        // Tính toán trước điểm chuẩn (TB bộ phận) cho tất cả các cột
-        const deptAverages = {}; // { "BP Tư Vấn": { "tenGoc1": 10.5, "tenGoc2": 5.2 }, ... }
+        const deptAverages = {}; 
         departmentOrder.forEach(deptName => {
             const deptData = groupedByDept[deptName];
             const deptAvg = {};
-            
             columnSettings.forEach(col => {
                 let total = 0;
                 let count = 0;
                 deptData.forEach(emp => {
                     const compData = emp.competitions.find(c => c.tenGoc === col.tenGoc);
                     const giaTri = compData?.giaTri || 0;
-                    if (giaTri > 0) { // Chỉ tính trung bình cho các NV có bán
+                    if (giaTri > 0) { 
                         total += giaTri;
                         count++;
                     }
@@ -739,50 +736,42 @@ export const uiSknv = {
             });
             deptAverages[deptName] = deptAvg;
         });
-        // *** END: YÊU CẦU MỚI (TÍNH TOÁN TRƯỚC) ***
+        
+        uiSknv._lastPastedAverages = deptAverages;
         
         departmentOrder.forEach(deptName => {
             if (groupedByDept[deptName]) {
                 const deptData = groupedByDept[deptName];
                 
-                // Sắp xếp nhân viên trong bộ phận (REQ 1)
                 const sortState = appState.sortState[sortStateKey] || { key: 'hoTen', direction: 'asc' };
                 const { key, direction } = sortState;
                 
                 const sortedData = [...deptData].sort((a, b) => {
                     let valA, valB;
                     if (key.startsWith('comp_')) {
-                        // Sắp xếp theo cột thi đua động
                         const sortCol = columnSettings.find(c => c.id === key);
-                        if (!sortCol) return 0; // Không tìm thấy cột
-                        
+                        if (!sortCol) return 0; 
                         valA = a.competitions.find(c => c.tenGoc === sortCol.tenGoc)?.giaTri || 0;
                         valB = b.competitions.find(c => c.tenGoc === sortCol.tenGoc)?.giaTri || 0;
                         return direction === 'asc' ? valA - valB : valB - valA;
                         
                     } else if (key === 'totalScore') {
-                        // *** START: YÊU CẦU MỚI (SẮP XẾP TỔNG ĐẠT) ***
-                        // Phải tính toán lại điểm ở đây để sắp xếp
                         const avgScores = deptAverages[deptName];
-                        
                         let scoreA = 0;
                         a.competitions.forEach(comp => {
                             if (avgScores[comp.tenGoc] > 0 && comp.giaTri >= avgScores[comp.tenGoc]) {
                                 scoreA++;
                             }
                         });
-                        
                         let scoreB = 0;
                         b.competitions.forEach(comp => {
                             if (avgScores[comp.tenGoc] > 0 && comp.giaTri >= avgScores[comp.tenGoc]) {
                                 scoreB++;
                             }
                         });
-                        
                         valA = scoreA;
                         valB = scoreB;
                         return direction === 'asc' ? valA - valB : valB - valA;
-                        // *** END: YÊU CẦU MỚI (SẮP XẾP TỔNG ĐẠT) ***
                         
                     } else { // Sắp xếp theo 'hoTen'
                         valA = a[key] || ''; 
@@ -800,7 +789,6 @@ export const uiSknv = {
 
                 const headerClass = (sortKey) => `px-4 py-3 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
 
-                // 4. RENDER BẢNG
                 finalHTML += `<div class="department-block">
                     <h4 class="text-lg font-bold p-4 border-b border-gray-200 ${titleClass}">${deptName}</h4>
                     <div class="overflow-x-auto sknv-pasted-competition-scroller"> 
@@ -822,7 +810,6 @@ export const uiSknv = {
                             </thead>
                         <tbody>`;
 
-                // Tính toán Tổng/TB (Dùng Map để tôn trọng thứ tự cột)
                 const deptTotals = new Map();
                 const validEmployeeCount = new Map();
                 visibleColumns.forEach(col => {
@@ -830,23 +817,20 @@ export const uiSknv = {
                     validEmployeeCount.set(col.tenGoc, 0);
                 });
 
-                // Render dòng nhân viên
                 sortedData.forEach(item => {
-                    // *** START: YÊU CẦU MỚI (TÍNH ĐIỂM) ***
                     let totalScore = 0;
                     const deptAvg = deptAverages[item.boPhan] || {};
                     item.competitions.forEach(comp => {
                         const avg = deptAvg[comp.tenGoc];
-                        // Chỉ cộng điểm nếu TB > 0 (có người bán) và NV >= TB
                         if (avg > 0 && comp.giaTri >= avg) {
                             totalScore++;
                         }
                     });
-                    // *** END: YÊU CẦU MỚI (TÍNH ĐIỂM) ***
                 
-                    finalHTML += `<tr class="hover:bg-gray-50">
-                        <td class="px-4 py-2 font-semibold whitespace-nowrap sticky-col sticky-col-1">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</td>
-                        
+                    finalHTML += `<tr class="interactive-row hover:bg-gray-50" data-employee-id="${item.maNV}" data-source-tab="sknv-thidua-pasted">
+                        <td class="px-4 py-2 font-semibold whitespace-nowrap sticky-col sticky-col-1 employee-name-cell">
+                            <a href="#">${uiComponents.getShortEmployeeName(item.hoTen, item.maNV)}</a>
+                        </td>
                         <td class="px-2 py-2 text-center font-bold text-green-600 sticky-col sticky-col-2">${totalScore}</td>
                         ${visibleColumns.map(col => {
                              const compData = item.competitions.find(c => c.tenGoc === col.tenGoc);
@@ -855,18 +839,20 @@ export const uiSknv = {
                             
                             if (giaTri !== 0) {
                                 formattedValue = uiComponents.formatNumber(giaTri, 0);
-                                // Cập nhật tổng
                                 deptTotals.set(col.tenGoc, deptTotals.get(col.tenGoc) + giaTri);
                                 validEmployeeCount.set(col.tenGoc, validEmployeeCount.get(col.tenGoc) + 1);
                             }
                  
-                            const cellClass = (col.loaiSoLieu === 'SLLK') ? 'text-right font-bold' : 'text-right font-bold text-blue-600';
+                            const avg = deptAverages[item.boPhan]?.[col.tenGoc] || 0;
+                            let cellClass = (col.loaiSoLieu === 'SLLK') ? 'text-right font-bold' : 'text-right font-bold text-blue-600';
+                            if (avg > 0 && giaTri < avg) {
+                                cellClass += ' cell-performance is-below';
+                            }
                             return `<td class="${cellClass} px-2 py-2">${formattedValue}</td>`;
                         }).join('')}
                     </tr>`;
                 });
 
-                // Render TFOOT
                 finalHTML += `</tbody>
                      <tfoot class="table-footer font-bold">
                         <tr class="bg-gray-100">
@@ -888,19 +874,16 @@ export const uiSknv = {
                             }).join('')}
                         </tr>
                     </tfoot>
-                </table></div></div>`; // Đóng overflow-x-auto và department-block
+                </table></div></div>`; 
             }
         });
 
-        // 5. GỘP HTML
-        // (REQ 3) Đặt 'togglesHTML' BÊN NGOÀI 'data-capture-group'
         container.innerHTML = `
             ${togglesHTML} 
             <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden" data-capture-group="pasted-competition">
                 ${finalHTML}
             </div>`;
         
-        // Log chẩn đoán vẫn giữ nguyên
         setTimeout(() => {
             const tableEl = container.querySelector('table');
             const tableContainer = container.querySelector('.sknv-pasted-competition-scroller');
@@ -928,6 +911,166 @@ export const uiSknv = {
                 console.error("[DEBUG] Không tìm thấy một trong các phần tử chẩn đoán.");
             }
         }, 0);
+    },
+    // *** END: MODIFIED FUNCTION (v6.36) ***
+
+    // === START: YÊU CẦU 4 (Hàm render chi tiết - v6.36) ===
+    /**
+     * Render giao diện chi tiết (infographic) cho một nhân viên trong tab "Thi đua NV LK".
+     * @param {Object} employeeData - Đối tượng dữ liệu của nhân viên từ appState.pastedThiDuaReportData.
+     * @param {Object} allDeptAverages - Đối tượng chứa TBT của tất cả bộ phận (uiSknv._lastPastedAverages).
+     */
+    renderPastedCompetitionDetail(employeeData, allDeptAverages) {
+        const container = document.getElementById('pasted-competition-detail-container');
+        if (!container) {
+            console.error("[ui-sknv.js] Container '#pasted-competition-detail-container' not found.");
+            return;
+        }
+
+        if (!employeeData || !allDeptAverages) {
+            container.innerHTML = `
+                <div class="mb-4">
+                    <button class="back-to-summary-btn text-blue-600 hover:underline font-semibold">‹ Quay lại bảng tổng hợp</button>
+                </div>
+                <p class="text-red-500">Không tìm thấy dữ liệu chi tiết cho nhân viên hoặc dữ liệu TBT bộ phận.</p>`;
+            return;
+        }
+
+        const employeeInfo = appState.employeeMaNVMap.get(String(employeeData.maNV));
+        const hoTen = employeeInfo?.hoTen || employeeData.hoTen;
+        const boPhan = employeeInfo?.boPhan || employeeData.boPhan;
+        const deptAvg = allDeptAverages[boPhan] || {};
+
+        let totalScore = 0;
+        let totalCriteria = 0; // Chỉ đếm các ngành hàng có TBT > 0
+        
+        // === START: YÊU CẦU 2 (Sắp xếp) ===
+        const sortStateKey = 'sknv_thidua_pasted_detail';
+        const sortState = appState.sortState[sortStateKey] || { key: 'name', direction: 'asc' };
+        const { key, direction } = sortState;
+
+        const detailRows = employeeData.competitions.map(comp => {
+            const avg = deptAvg[comp.tenGoc] || 0;
+            const giaTri = comp.giaTri || 0;
+            let evaluation = { text: '-', class: 'text-gray-500' };
+            
+            if (avg > 0) { 
+                totalCriteria++;
+                if (giaTri >= avg) {
+                    totalScore++;
+                    evaluation = { text: 'Đạt', class: 'text-green-600 font-bold' };
+                } else {
+                    evaluation = { text: 'Chưa đạt', class: 'text-red-600 font-bold' };
+                }
+            } else if (giaTri > 0) { 
+                evaluation = { text: 'Ghi nhận', class: 'text-blue-600 font-bold' };
+            }
+
+            return {
+                name: comp.tenNganhHang, // Tên rút gọn (label)
+                originalName: comp.tenGoc,
+                value: giaTri,
+                average: avg,
+                evaluation: evaluation
+            };
+        });
+
+        // Sắp xếp dữ liệu
+        detailRows.sort((a, b) => {
+            let valA, valB;
+            if (key === 'name') {
+                valA = a.name; valB = b.name;
+                return direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            } else if (key === 'value') {
+                valA = a.value; valB = b.value;
+            } else if (key === 'average') {
+                valA = a.average; valB = b.average;
+            } else { // Sắp xếp theo "Đánh giá"
+                valA = a.evaluation.text; valB = b.evaluation.text;
+                return direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            }
+            return direction === 'asc' ? (valA || 0) - (valB || 0) : (valB || 0) - (valA || 0);
+        });
+        // === END: YÊU CẦU 2 (Sắp xếp) ===
+
+        const completionRate = totalCriteria > 0 ? (totalScore / totalCriteria) : 0;
+        const completionClass = completionRate >= 0.7 ? 'text-green-600' : (completionRate >= 0.4 ? 'text-yellow-600' : 'text-red-600');
+
+        // === START: YÊU CẦU 2 (Thêm class sortable, data-sort, v.v.) ===
+        const headerClass = (sortKey) => `px-4 py-2 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
+
+        const tableHtml = `
+            <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden" data-capture-group="2">
+                <div class="sknv-detail-card-header sknv-header-purple">
+                    <i data-feather="list" class="header-icon"></i>
+                    <h4 class="text-lg font-bold">Chi tiết Ngành hàng</h4>
+                </div>
+                <div class="overflow-x-auto" style="max-height: 500px;">
+                    <table class="w-full text-sm table-bordered table-striped" data-table-type="${sortStateKey}">
+                        <thead class="sknv-subtable-header sticky top-0 z-10 bg-gray-100"> 
+                        <tr>
+                                <th class="${headerClass('name')} text-left" data-sort="name">Ngành hàng (Tên rút gọn) <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('value')} text-right" data-sort="value">Thực hiện <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('average')} text-right" data-sort="average">TB Bộ phận <span class="sort-indicator"></span></th>
+                                <th class="${headerClass('evaluation')} text-center" data-sort="evaluation">Đánh giá <span class="sort-indicator"></span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${detailRows.map(row => `
+                                <tr class="border-t">
+                                    <td class="px-4 py-2 font-medium" title="${row.originalName}">${row.name}</td>
+                                    <td class="px-4 py-2 text-right font-bold">${uiComponents.formatNumberOrDash(row.value)}</td>
+                                    <td class="px-4 py-2 text-right text-gray-600">${uiComponents.formatNumberOrDash(row.average, 0)}</td>
+                                    <td class="px-4 py-2 text-center ${row.evaluation.class}">${row.evaluation.text}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+        // === END: YÊU CẦU 2 ===
+
+        // === BỐ CỤC GỌN (THEO YÊU CẦU) ===
+        container.innerHTML = `
+            <div class="mb-4 flex justify-between items-center">
+                <button class="back-to-summary-btn text-blue-600 hover:underline font-semibold">‹ Quay lại bảng tổng hợp</button>
+            </div>
+            
+            <div id="sknv-thidua-detail-capture-area" class="max-w-5xl mx-auto"> 
+                
+                <div class="sknv-detail-header-card bg-purple-50 border-purple-200 border-t-purple-500" data-capture-group="1">
+                    <div class="sknv-card__avatar sknv-detail-avatar bg-purple-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="text-purple-800"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    </div>
+                    <div class="sknv-detail-info">
+                         <p class="name text-purple-800">${hoTen} - ${employeeData.maNV}</p>
+                        <p class="department text-gray-700">${boPhan}</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6" data-capture-group="1">
+                    <div class="rt-infographic-summary-card text-center">
+                        <div class="label">Ngành hàng trên TB</div>
+                        <div class="value ${totalScore > 0 ? 'text-green-600' : 'text-red-600'}">
+                            ${totalScore} <span class="text-2xl text-gray-400">/ ${totalCriteria}</span>
+                        </div>
+                    </div>
+                    <div class="rt-infographic-summary-card text-center">
+                        <div class="label">Tỷ lệ đạt</div>
+                        <div class="value ${completionClass}">
+                            ${uiComponents.formatPercentage(completionRate)}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    ${tableHtml}
+                </div>
+            </div>
+        `;
+        
+        feather.replace();
     }
-    // *** END: MODIFIED FUNCTION (v6.25) ***
+    // === END: YÊU CẦU 4 ===
 };
