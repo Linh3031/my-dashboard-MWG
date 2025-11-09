@@ -1,3 +1,5 @@
+// Version 6.39 - Fix KPI color logic (use is-positive/is-negative classes)
+// Version 6.38 - Redesign pasted detail view to "Multi-lane" layout & Fix KPI color logic
 // Version 6.37 - Redesign pasted competition detail view to 3-column infographic
 // Version 6.36 - Add sorting and fix z-index for pasted competition detail table
 // Version 6.35 - Redesign pasted competition detail view; Add cell coloring; Fix drag-drop tag
@@ -907,7 +909,7 @@ export const uiSknv = {
     },
     // *** END: MODIFIED FUNCTION (v6.36) ***
 
-    // === START: PHIÊN BẢN MỚI v6.37 (Thay thế hàm cũ) ===
+    // === START: PHIÊN BẢN MỚI v6.39 (Thay thế v6.38) ===
     /**
      * Render giao diện chi tiết (infographic) cho một nhân viên trong tab "Thi đua NV LK".
      * @param {Object} employeeData - Đối tượng dữ liệu của nhân viên từ appState.pastedThiDuaReportData.
@@ -986,7 +988,12 @@ export const uiSknv = {
         
         // Tỷ lệ đạt chỉ tính trên các ngành có TBT > 0
         const tyLeDat = totalCriteria > 0 ? (nhomDat.filter(item => item.average > 0).length / totalCriteria) : 0;
-        const tyLeDatClass = tyLeDat >= 0.5 ? 'text-blue-600' : 'text-red-600'; // Theo yêu cầu
+        
+        // === START: THAY ĐỔI (v6.39) - Yêu cầu 2 ===
+        // Sửa logic gán class màu. Dùng is-positive/is-negative thay vì tailwind class
+        // và sửa logic thành > 0.5 (trên 50%)
+        const tyLeDatClass = tyLeDat > 0.5 ? 'is-positive' : 'is-negative';
+        // === END: THAY ĐỔI (v6.39) ===
 
         // Render các thẻ KPI tóm tắt
         const kpiHtml = `
@@ -1010,38 +1017,44 @@ export const uiSknv = {
             </div>
         `;
 
-        // Render 3 cột
+        // === START: THAY ĐỔI (v6.38) - Yêu cầu 3 ===
+        // Render 3 "Làn đường" (hàng) riêng biệt
         const columnsHtml = `
-            <div class="mt-6 sknv-thidua-detail-grid" data-capture-group="2">
-                <div class="sknv-thidua-column">
+            <div class="mt-6 space-y-6" data-capture-group="2">
+                
+                <div class="sknv-thidua-lane bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
                     <div class="sknv-thidua-column-header header-blue">
                         <i data-feather="check-circle"></i>
                         <h4>Nhóm Đạt (${totalDat})</h4>
                     </div>
-                    <div class="sknv-thidua-column-content">
+                    <div class="sknv-thidua-horizontal-content">
                         ${nhomDat.length > 0 ? nhomDat.map(item => this._renderThiduaItemCard(item, 'bg-blue-500')).join('') : '<p class="empty-col-msg">Không có ngành hàng nào.</p>'}
                     </div>
                 </div>
-                <div class="sknv-thidua-column">
+
+                <div class="sknv-thidua-lane bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
                     <div class="sknv-thidua-column-header header-yellow">
                         <i data-feather="alert-triangle"></i>
                         <h4>Nhóm Gần Đạt (${totalGanDat})</h4>
                     </div>
-                    <div class="sknv-thidua-column-content">
+                    <div class="sknv-thidua-horizontal-content">
                         ${nhomGanDat.length > 0 ? nhomGanDat.map(item => this._renderThiduaItemCard(item, 'bg-yellow-500')).join('') : '<p class="empty-col-msg">Không có ngành hàng nào.</p>'}
                     </div>
                 </div>
-                <div class="sknv-thidua-column">
+
+                <div class="sknv-thidua-lane bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
                     <div class="sknv-thidua-column-header header-red">
                         <i data-feather="x-circle"></i>
                         <h4>Nhóm Cần Cố Gắng (${totalCanCoGang})</h4>
                     </div>
-                    <div class="sknv-thidua-column-content">
+                    <div class="sknv-thidua-horizontal-content">
                         ${nhomCanCoGang.length > 0 ? nhomCanCoGang.map(item => this._renderThiduaItemCard(item, 'bg-red-500')).join('') : '<p class="empty-col-msg">Không có ngành hàng nào.</p>'}
                     </div>
                 </div>
+
             </div>
         `;
+        // === END: THAY ĐỔI (v6.38) ===
 
         // Render toàn bộ
         container.innerHTML = `
@@ -1070,7 +1083,7 @@ export const uiSknv = {
         
         feather.replace();
     },
-    // === END: PHIÊN BẢN MỚI v6.37 ===
+    // === END: PHIÊN BẢN MỚI v6.39 ===
 
     // === START: HÀM HELPER MỚI (v6.37) ===
     /**
