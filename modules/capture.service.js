@@ -1,3 +1,4 @@
+// Version 1.9 - Add fixed width to preset-mobile-portrait for better mobile viewing
 // Version 1.8 - Fix: Apply presetClass to contentClone instead of wrapper
 // Version 1.1 - Fix blank charts by disabling Chart.js animations and adding 500ms delay during capture
 // Version 1.0 - Refactored from utils.js
@@ -49,6 +50,7 @@ const _injectCaptureStyles = () => {
         }
         .preset-mobile-portrait {
             /* width: 750px !important; <-- ĐÃ XÓA (v1.4) */
+            width: 550px !important; /* (Req 3) Co chiều ngang cho ảnh chụp mobile */
         }
         .preset-landscape-table {
             width: fit-content !important;

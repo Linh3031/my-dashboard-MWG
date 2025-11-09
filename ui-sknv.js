@@ -1,9 +1,10 @@
+// Version 6.45 - (YC 3 Fix 2) Set capture preset on the PARENT container (#pasted-competition-detail-container)
+// Version 6.44 - (YC 3 Fix) Remove data-capture-group from competition detail to allow preset to apply
+// Version 6.43 - (YC 3) Add data-capture-preset="mobile-portrait" for competition detail
+// Version 6.42 - Add 4th KPI card (Needs Effort) to competition detail, set 4-col layout, and update KPI color classes
+// Version 6.41 - Re-order KPI cards, add "Needs Effort" card, and restyle detail header
+// Version 6.40 - Refactor detail view header and add "Needs Effort" KPI card
 // Version 6.39 - Fix KPI color logic (use is-positive/is-negative classes)
-// Version 6.38 - Redesign pasted detail view to "Multi-lane" layout & Fix KPI color logic
-// Version 6.37 - Redesign pasted competition detail view to 3-column infographic
-// Version 6.36 - Add sorting and fix z-index for pasted competition detail table
-// Version 6.35 - Redesign pasted competition detail view; Add cell coloring; Fix drag-drop tag
-// MODULE: UI SKNV
 // Chứa các hàm render giao diện cho tab "Sức khỏe nhân viên"
 
 import { appState } from './state.js';
@@ -11,6 +12,7 @@ import { services } from './services.js';
 import { uiComponents } from './ui-components.js';
 import { utils } from './utils.js';
 import { settingsService } from './modules/settings.service.js'; // *** NEW (v6.23) ***
+console.log("GEMINI CHECK: ĐANG CHẠY UI-SKNV.JS PHIÊN BẢN 6.45");
 
 export const uiSknv = {
     // === START: YÊU CẦU 4 (Lưu trữ TBT) ===
@@ -273,7 +275,7 @@ export const uiSknv = {
 
         const countEvaluation = (group, value, avgValue, higherIsBetter = true) => {
             // *** YÊU CẦU 3 (v6.26): Ngăn QĐC đếm điểm ***
-            if (group === 'qdc') return; 
+            if (group === 'qdc') return;
             
             if (!isFinite(value) || avgValue === undefined || !isFinite(avgValue)) return;
             let isAbove = higherIsBetter ? (value >= avgValue) : (value <= avgValue);
@@ -398,7 +400,7 @@ export const uiSknv = {
             };
             const check = (group, value, avg, higherIsBetter = true) => {
                 // *** YÊU CẦU 3 (v6.26): Ngăn QĐC đếm điểm ***
-                if (group === 'qdc') return; 
+                if (group === 'qdc') return;
 
                 if (!isFinite(value) || avg === undefined || !isFinite(avg)) return;
                 if (higherIsBetter ? (value >= avg) : (value <= avg)) counts[group].above++;
@@ -459,7 +461,7 @@ export const uiSknv = {
         summarizedData.forEach(item => { 
             const dept = item.boPhan; 
             if (!groupedByDept[dept]) groupedByDept[dept] = []; 
-            groupedByDept[dept].push(item); 
+            groupedByDept[dept].push(item);
         });
 
         const departmentOrder = utils.getSortedDepartmentList(reportData); 
@@ -476,12 +478,12 @@ export const uiSknv = {
                 const sortedDeptEmployees = [...groupedByDept[deptName]].sort((a, b) => (b.totalAbove || 0) - (a.totalAbove || 0)); 
 
                 // *** START: SỬA LỖI (v6.31) - Thêm data-capture-group="report-part" ***
-                finalCardsHtml += `<div class="sknv-department-group" data-capture-group="report-part">`; 
+                finalCardsHtml += `<div class="sknv-department-group" data-capture-group="report-part">`;
                 // *** END: SỬA LỖI (v6.31) ***
                 
                 // *** YÊU CẦU 1 (v6.28): Bỏ icon cờ ***
-                finalCardsHtml += `<h4 class="sknv-department-header ${deptName.includes('Tư Vấn - ĐM') ? 'sknv-department-header--priority' : ''}">${deptName}</h4>`; 
-                finalCardsHtml += `<div class="sknv-summary-grid">`; 
+                finalCardsHtml += `<h4 class="sknv-department-header ${deptName.includes('Tư Vấn - ĐM') ? 'sknv-department-header--priority' : ''}">${deptName}</h4>`;
+                finalCardsHtml += `<div class="sknv-summary-grid">`;
 
                 sortedDeptEmployees.forEach((item, index) => { 
                     const performancePercentage = item.totalCriteria > 0 ? (item.totalAbove / item.totalCriteria) : 0; 
@@ -505,10 +507,10 @@ export const uiSknv = {
                     // *** Hết Logic v6.30 ***
 
                     const subKpisHtml = subKpiGroups.map(group => { 
-                        if (!item.summary || !item.summary[group.key] || item.summary[group.key].total === 0) return ''; 
-                        const subKpiPerf = item.summary[group.key].total > 0 ? item.summary[group.key].above / item.summary[group.key].total : 0; 
-                        const subKpiColorClass = subKpiPerf >= 0.7 ? 'strong' : subKpiPerf >= 0.4 ? 'medium' : 'weak'; 
-                        const valueColorClass = subKpiPerf >= 0.5 ? 'text-blue-600' : 'text-red-600'; 
+                        if (!item.summary || !item.summary[group.key] || item.summary[group.key].total === 0) return '';
+                        const subKpiPerf = item.summary[group.key].total > 0 ? item.summary[group.key].above / item.summary[group.key].total : 0;
+                        const subKpiColorClass = subKpiPerf >= 0.7 ? 'strong' : subKpiPerf >= 0.4 ? 'medium' : 'weak';
+                        const valueColorClass = subKpiPerf >= 0.5 ? 'text-blue-600' : 'text-red-600';
 
                         return `
                             <div class="sknv-card__sub-kpi-item ${subKpiColorClass}">
@@ -518,7 +520,7 @@ export const uiSknv = {
                                 </div>
                                 <span class="value ${valueColorClass}">${item.summary[group.key].above}/${item.summary[group.key].total}</span>
                              </div>
-                        `; 
+                        `;
                     }).join(''); 
                     
 
@@ -552,8 +554,8 @@ export const uiSknv = {
         container.innerHTML = finalCardsHtml;
         // *** END: SỬA LỖI (v6.31) ***
 
-        if (typeof feather !== 'undefined') { 
-            feather.replace(); 
+        if (typeof feather !== 'undefined') {
+            feather.replace();
         }
         console.log("[ui-sknv.js displaySknvSummaryReport] === Render complete ==="); 
     },
@@ -576,7 +578,7 @@ export const uiSknv = {
         
         const dataArray = Object.entries(doanhThuTheoNganhHang || {}) 
              .map(([name, values]) => ({ name, ...values }))
-            .filter(item => (item.revenue || 0) > 0); 
+            .filter(item => (item.revenue || 0) > 0);
         console.log(`[ui-sknv.js renderSknvNganhHangTable] Data array length: ${dataArray.length}`); 
 
         if (dataArray.length === 0) return '<div class="bg-white rounded-xl shadow-md border border-gray-200 p-4"><div class="sknv-detail-card-header sknv-header-purple"><i data-feather="list" class="header-icon"></i><h4 class="text-lg font-bold">Doanh thu theo Ngành hàng</h4></div><p class="p-4 text-gray-500">Không có dữ liệu.</p></div>';
@@ -618,7 +620,7 @@ export const uiSknv = {
         const sortedData = Object.entries(qdcData)
             .map(([id, values]) => ({ id, ...values }))
              .filter(item => (item.sl || 0) > 0) 
-            .sort((a,b) => direction === 'asc' ? (a[key] || 0) - (b[key] || 0) : (b[key] || 0) - (a[key] || 0)); 
+            .sort((a,b) => direction === 'asc' ? (a[key] || 0) - (b[key] || 0) : (b[key] || 0) - (a[key] || 0));
         console.log(`[ui-sknv.js renderSknvQdcTable] Sorted QDC data length: ${sortedData.length}`); 
 
         if (sortedData.length === 0) {
@@ -626,7 +628,7 @@ export const uiSknv = {
             return '<div class="bg-white rounded-xl shadow-md border border-gray-200 p-4"><div class="sknv-detail-card-header sknv-header-indigo"><i data-feather="star" class="header-icon"></i><h4 class="text-lg font-bold">Nhóm hàng Quy đổi cao</h4></div><p class="p-4 text-gray-500">Không có dữ liệu.</p></div>';
         }
 
-        // evaluationCounts.qdc.total = sortedData.length; // Đã vô hiệu hóa ở hàm gọi
+        // evaluationCounts.qdc.total = 0; // Đã vô hiệu hóa ở hàm gọi
 
         const headerClass = (sortKey) => `px-4 py-2 sortable ${key === sortKey ? (direction === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''}`;
 
@@ -660,6 +662,15 @@ export const uiSknv = {
             return;
         }
 
+        // === START: THAY ĐỔI (v6.45) ===
+        // Xóa preset của view chi tiết (nếu có) để đảm bảo an toàn khi quay lại
+        const detailContainer = document.getElementById('pasted-competition-detail-container');
+        if (detailContainer) {
+            delete detailContainer.dataset.capturePreset;
+            console.log("[ui-sknv.js renderPastedCompetitionReport] Đã xóa capture preset khỏi view chi tiết.");
+        }
+        // === END: THAY ĐỔI (v6.45) ===
+
         const columnSettings = settingsService.loadPastedCompetitionViewSettings();
         const dragIconSVG = `<svg class="drag-handle-icon mr-2 cursor-grab" width="12" height="12" viewBox="0 0 10 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M4 2a1 1 0 10-2 0 1 1 0 002 0zM2 9a1 1 0 110-2 1 1 0 010 2zm0 5a1 1 0 110-2 1 1 0 010 2zm5-12a1 1 0 10-2 0 1 1 0 002 0zM7 9a1 1 0 110-2 1 1 0 010 2zm0 5a1 1 0 110-2 1 1 0 010 2z" fill="currentColor"></path></svg>`;
 
@@ -668,7 +679,7 @@ export const uiSknv = {
                 ? columnSettings.map(col => `
                     <div 
                         class="column-toggle-btn draggable-tag pasted-comp-toggle-btn ${col.visible ? 'active' : ''}" 
-                        data-column-ten-goc="${col.tenGoc}" 
+                        data-column-ten-goc="${col.tenGoc}"
                         title="${col.tenGoc} (${col.loaiSoLieu})">
                         ${dragIconSVG} <span>${col.label}</span>
                     </div>
@@ -692,7 +703,7 @@ export const uiSknv = {
             <span class="non-draggable">HIỂN THỊ CỘT:</span>
             ${columnSettings.map(col => `
                 <div 
-                    class="column-toggle-btn draggable-tag pasted-comp-toggle-btn ${col.visible ? 'active' : ''}" 
+                    class="column-toggle-btn draggable-tag pasted-comp-toggle-btn ${col.visible ? 'active' : ''}"
                     data-column-ten-goc="${col.tenGoc}" 
                     title="${col.tenGoc} (${col.loaiSoLieu})">
                     ${dragIconSVG} <span>${col.label}</span>
@@ -772,7 +783,7 @@ export const uiSknv = {
                         valA = a[key] || ''; 
                         valB = b[key] || '';
                         return direction === 'asc' 
-                            ? valA.localeCompare(valB) 
+                            ? valA.localeCompare(valB)
                             : valB.localeCompare(valA);
                     }
                 });
@@ -795,7 +806,7 @@ export const uiSknv = {
                                 <th class="${headerClass('totalScore')} sticky-col sticky-col-2 text-center" data-sort="totalScore" style="min-width: 80px;">Tổng đạt <span class="sort-indicator"></span></th>
                                 ${visibleColumns.map((header, index) => `
                                      <th class="${headerClass(header.id)} text-center header-group-${index % 12 + 1}" 
-                                         data-sort="${header.id}" 
+                                         data-sort="${header.id}"
                                          title="${header.tenGoc} (${header.loaiSoLieu})">
                                         ${header.label}
                                         <span class="sort-indicator"></span>
@@ -922,6 +933,12 @@ export const uiSknv = {
             return;
         }
 
+        // === START: THAY ĐỔI (v6.45) ===
+        // Gán preset vào container cha, để capture service có thể đọc được
+        container.dataset.capturePreset = 'mobile-portrait';
+        console.log("[ui-sknv.js renderPastedCompetitionDetail] Đã gán 'mobile-portrait' preset vào container cha.");
+        // === END: THAY ĐỔI (v6.45) ===
+
         if (!employeeData || !allDeptAverages) {
             container.innerHTML = `
                 <div class="mb-4">
@@ -968,7 +985,7 @@ export const uiSknv = {
                 }
             } else if (giaTri > 0) {
                 // Không có TBT, nhưng có bán -> coi như "Đạt" (Ghi nhận)
-                cardData.progressPercent = 100; // Thanh đầy
+                cardData.progressPercent = 100; // Thanh đầy 
                 nhomDat.push(cardData);
             } else {
                 // Không TBT, không bán -> Nhóm "Cần cố gắng"
@@ -995,18 +1012,18 @@ export const uiSknv = {
         const tyLeDatClass = tyLeDat > 0.5 ? 'is-positive' : 'is-negative';
         // === END: THAY ĐỔI (v6.39) ===
 
+        // === START: THAY ĐỔI (v6.42) - Yêu cầu 2 & 4 ===
         // Render các thẻ KPI tóm tắt
+        // Đổi md:grid-cols-3 -> md:grid-cols-4
+        // Sắp xếp lại: Đạt, Tỷ lệ, Gần Đạt, Cần Cố Gắng
+        // Thêm class màu động: is-dat, is-gan-dat, is-can-co-gang
         const kpiHtml = `
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6" data-capture-group="1">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
                 <div class="rt-infographic-summary-card text-center">
                     <div class="label">Ngành hàng Đạt</div>
-                    <div class="value text-green-600">
+                    <div class="value is-dat">
                         ${totalDat} <span class="text-2xl text-gray-400">/ ${employeeData.competitions.length}</span>
                     </div>
-                </div>
-                <div class="rt-infographic-summary-card text-center">
-                    <div class="label">Ngành hàng Gần Đạt (>=70%)</div>
-                    <div class="value text-yellow-600">${totalGanDat}</div>
                 </div>
                 <div class="rt-infographic-summary-card text-center">
                     <div class="label">Tỷ lệ đạt (trên nhóm có TB)</div>
@@ -1014,13 +1031,22 @@ export const uiSknv = {
                         ${uiComponents.formatPercentage(tyLeDat)}
                     </div>
                 </div>
+                <div class="rt-infographic-summary-card text-center">
+                    <div class="label">Ngành hàng Gần Đạt (>=70%)</div>
+                    <div class="value is-gan-dat">${totalGanDat}</div>
+                </div>
+                <div class="rt-infographic-summary-card text-center">
+                    <div class="label">Ngành hàng Cần Cố Gắng</div>
+                    <div class="value is-can-co-gang">${totalCanCoGang}</div>
+                </div>
             </div>
         `;
+        // === END: THAY ĐỔI (v6.42) ===
 
         // === START: THAY ĐỔI (v6.38) - Yêu cầu 3 ===
         // Render 3 "Làn đường" (hàng) riêng biệt
         const columnsHtml = `
-            <div class="mt-6 space-y-6" data-capture-group="2">
+            <div class="mt-6 space-y-6">
                 
                 <div class="sknv-thidua-lane bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
                     <div class="sknv-thidua-column-header header-blue">
@@ -1041,7 +1067,6 @@ export const uiSknv = {
                         ${nhomGanDat.length > 0 ? nhomGanDat.map(item => this._renderThiduaItemCard(item, 'bg-yellow-500')).join('') : '<p class="empty-col-msg">Không có ngành hàng nào.</p>'}
                     </div>
                 </div>
-
                 <div class="sknv-thidua-lane bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
                     <div class="sknv-thidua-column-header header-red">
                         <i data-feather="x-circle"></i>
@@ -1063,8 +1088,7 @@ export const uiSknv = {
             </div>
             
             <div id="sknv-thidua-detail-capture-area" class="max-w-7xl mx-auto"> 
-                
-                <div class="sknv-detail-header-card bg-purple-50 border-purple-200 border-t-purple-500" data-capture-group="1">
+            <div class="sknv-detail-header-card bg-purple-50 border-purple-200 border-t-purple-500">
                     <div class="sknv-card__avatar sknv-detail-avatar bg-purple-200">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="text-purple-800"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                     </div>
