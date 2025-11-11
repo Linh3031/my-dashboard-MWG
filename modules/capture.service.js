@@ -1,3 +1,4 @@
+// Version 1.10 - Fix messy file names by searching for h3/h4 title inside element
 // Version 1.9 - Add fixed width to preset-mobile-portrait for better mobile viewing
 // Version 1.8 - Fix: Apply presetClass to contentClone instead of wrapper
 // Version 1.1 - Fix blank charts by disabling Chart.js animations and adding 500ms delay during capture
@@ -132,7 +133,10 @@ export const captureService = {
     async captureAndDownload(elementToCapture, title, presetClass = '') {
         const date = new Date();
         const timeString = date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+        // === SỬA LỖI (Vấn đề 1 - Ngày tháng) ===
+        // Giữ nguyên dd-mm theo yêu cầu
         const dateString = date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+        // === END SỬA LỖI ===
         const finalTitle = `${title.replace(/_/g, ' ')} - ${timeString} ${dateString}`;
     
         const captureWrapper = document.createElement('div');
@@ -182,7 +186,9 @@ export const captureService = {
             });
     
             const link = document.createElement('a');
+            // === SỬA LỖI (Vấn đề 1 - Ngày tháng) ===
             link.download = `${title}_${dateString.replace(/\//g, '-')}.png`;
+            // === END SỬA LỖI ===
             link.href = canvas.toDataURL('image/png');
             link.click();
             ui.showNotification('Đã chụp và tải xuống hình ảnh!', 'success');
@@ -250,9 +256,24 @@ export const captureService = {
             }
 
             for (const [group, elements] of captureGroups.entries()) {
-                const captureTitle = captureGroups.size > 1 ? `${baseTitle}_Nhom_${group}` : baseTitle;
                 
-                const targetElement = elements[0];
+                const targetElement = elements[0]; // Lấy phần tử đầu tiên của nhóm
+                
+                // === START: SỬA LỖI (Vấn đề 1 - Tiêu đề) v1.10 ===
+                let foundTitle = '';
+                
+                // Tìm trong phần tử đầu tiên của nhóm
+                if (targetElement) {
+                    // Cố gắng tìm h3 hoặc h4 bên trong
+                    foundTitle = targetElement.querySelector('h3, h4')?.textContent?.trim() || '';
+                }
+                
+                // Dọn dẹp tên file
+                const captureTitle = (foundTitle || baseTitle) // Dùng tiêu đề tìm được, hoặc tên tab làm dự phòng
+                                        .replace(/[^a-zA-Z0-9\sÁ-ỹ]/g, '') // Bỏ ký tự đặc biệt (giữ lại tiếng Việt)
+                                        .replace(/\s+/g, '_'); // Thay khoảng trắng bằng gạch dưới
+                // === END: SỬA LỖI (Vấn đề 1 - Tiêu đề) v1.10 ===
+                
                 const preset = targetElement.dataset.capturePreset;
                 const isKpiGroup = group === 'kpi';
                 
