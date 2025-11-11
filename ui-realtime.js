@@ -1,3 +1,4 @@
+// Version 4.9 - Refactor: Gỡ bỏ grid wrapper lồng nhau, gộp 2 báo cáo vào 1 grid
 // Version 4.6 - Add sorting to Efficiency and Category tables
 // Version 4.5 - Refactor: Use ui facade instead of direct uiComponents/uiCompetition import (fixes crash)
 // Version 4.4 - Refactor: Update report function calls from uiComponents to ui
@@ -99,12 +100,49 @@ export const uiRealtime = {
         
         this.handleBrandFilterChange(); //
 
-        const competitionReportData = services.calculateCompetitionFocusReport( //
-            appState.realtimeYCXData, //
-            appState.competitionConfigs //
-        );
-        
-        ui.renderCompetitionUI('competition-report-container-rt', competitionReportData); // <<< SỬA (v4.5)
+        // === START: THAY ĐỔI V4.8 (Gỡ bỏ wrapper, gộp HTML) ===
+        if (activeSubTabId === 'subtab-hieu-qua-thi-dua-realtime') {
+            console.log("[ui-realtime.js render] Rendering 'Thi đua NV Realtime' subtab...");
+            const mainContainer = document.getElementById('competition-report-container-rt');
+            if (!mainContainer) {
+                console.error("[ui-realtime.js render] Lỗi: Không tìm thấy #competition-report-container-rt");
+                return;
+            }
+
+            // 1. Tính toán Báo cáo SPĐQ
+            console.log("[ui-realtime.js render] Calculating 'Special Product' report...");
+            const specialReportData = services.calculateSpecialProductReport(
+                appState.realtimeYCXData, // Sử dụng full data realtime
+                appState.globalSpecialPrograms
+            );
+            // Render SPĐQ (Hàm này trả về chuỗi HTML)
+            const specialReportHtml = ui.renderSpecialProgramReport(null, specialReportData); //
+            if (specialReportData.length > 0) {
+                console.log("Dữ liệu SPĐQ (Realtime) đã tính toán:", specialReportData);
+            }
+
+            // 2. Tính toán Báo cáo Thi đua Tùy chỉnh
+            const allConfigs = [ ...appState.globalCompetitionConfigs, ...appState.localCompetitionConfigs ];
+            const competitionReportData = services.calculateCompetitionFocusReport( 
+                appState.realtimeYCXData,
+                allConfigs // Truyền danh sách đã gộp
+            );
+            // Render Thi đua Tùy chỉnh (Hàm này render vào DOM, nhưng chúng ta sẽ sửa nó)
+            // Tạm thời, chúng ta tạo 1 container ảo để lấy HTML
+            const tempCompetitionDiv = document.createElement('div');
+            ui.renderCompetitionUI(tempCompetitionDiv, competitionReportData); //
+            const competitionReportHtml = tempCompetitionDiv.innerHTML;
+
+            // 3. Gộp HTML và chèn vào DOM
+            // Bọc cả hai chuỗi HTML trong một grid 2 cột duy nhất
+            mainContainer.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    ${specialReportHtml}
+                    ${competitionReportHtml}
+                </div>
+            `;
+        }
+        // === END: THAY ĐỔI V4.8 ===
 
         highlightService.populateHighlightFilters('realtime', filteredRealtimeYCX, filteredReport); //
         highlightService.applyHighlights('realtime'); //
@@ -114,7 +152,7 @@ export const uiRealtime = {
             if (efficiencyReportContainer) {
                 dragDroplisteners.initializeForContainer('realtime-efficiency-report-container'); //
             }
-            }
+        }
     },
 
     // *** START: HÀM BỊ THIẾU ĐÃ ĐƯỢC THÊM ***
@@ -678,7 +716,7 @@ export const uiRealtime = {
                 <td class="px-4 py-2 font-medium">${item.name}</td>
                 <td class="px-4 py-2 text-right font-bold">${ui.formatNumber(item.quantity)}</td>
                 <td classZ="px-4 py-2 text-right font-bold">${ui.formatRevenue(item.revenue)}</td>
-                </tr>`, 'realtime_brand_employee' // <<< SỬA (v4.5)
+            </tr>`, 'realtime_brand_employee' // <<< SỬA (v4.5)
         );
 
         const brandTableHtml = `<div id="realtime-brand-table-container" class="${viewType !== 'brand' ? 'hidden' : ''}">${brandTable}</div>`; //

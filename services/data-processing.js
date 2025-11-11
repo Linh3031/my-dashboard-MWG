@@ -74,6 +74,45 @@ export const dataProcessing = {
         return { success: true, normalizedData };
     },
 
+    // ========== START: HÀM MỚI CHO SPĐQ ==========
+    /**
+     * Chuẩn hóa dữ liệu từ file Sản Phẩm Đặc Quyền.
+     * Yêu cầu các cột: "Mã sản phẩm", "Nhóm hàng", "Tên sản phẩm".
+     * @param {Array<Object>} rawData - Dữ liệu thô từ file Excel.
+     * @returns {Object} - { success, normalizedData, error? }
+     */
+    normalizeSpecialProductData(rawData) {
+        if (!rawData || rawData.length === 0) {
+            return { success: false, error: 'File rỗng.', normalizedData: [] };
+        }
+        const header = Object.keys(rawData[0] || {});
+
+        const maSpCol = this.findColumnName(header, ['mã sản phẩm', 'masanpham', 'mã sp', 'product code']);
+        const nhomHangCol = this.findColumnName(header, ['nhóm hàng', 'nhom hang']);
+        const tenSpCol = this.findColumnName(header, ['tên sản phẩm', 'tensanpham', 'tên sp']);
+
+        const missingColumns = [];
+        if (!maSpCol) missingColumns.push('Mã sản phẩm');
+        if (!nhomHangCol) missingColumns.push('Nhóm hàng');
+        if (!tenSpCol) missingColumns.push('Tên sản phẩm');
+
+        if (missingColumns.length > 0) {
+            return { success: false, error: `File thiếu các cột bắt buộc: ${missingColumns.join(', ')}.`, normalizedData: [] };
+        }
+
+        const normalizedData = rawData
+            .map(row => ({
+                // Đảm bảo Mã sản phẩm luôn là string để tránh lỗi định dạng khoa học (VD: 1.23E+10)
+                maSanPham: String(row[maSpCol] || '').trim(),
+                nhomHang: String(row[nhomHangCol] || '').trim(),
+                tenSanPham: String(row[tenSpCol] || '').trim(),
+            }))
+            .filter(item => item.maSanPham && item.nhomHang && item.tenSanPham); // Lọc bỏ các dòng trống
+
+        return { success: true, normalizedData };
+    },
+    // ========== END: HÀM MỚI ==========
+
     normalizeBrandData(rawData) {
         if (!rawData || rawData.length === 0) {
             return { success: false, error: 'Sheet "Hãng" rỗng.', normalizedData: [] };
@@ -186,6 +225,11 @@ export const dataProcessing = {
                 if (foundMapping[key]) {
                     if (key === 'maNV' || key === 'hoTen') {
                         newRow[key] = String(row[foundMapping[key]] || '').trim();
+                    // ========== START: ĐIỀU CHỈNH LOGIC ĐỌC MÃ SP ==========
+                    // Đảm bảo maSanPham luôn là string
+                    } else if (key === 'maSanPham') {
+                        newRow[key] = String(row[foundMapping[key]] || '').trim();
+                    // ========== END: ĐIỀU CHỈNH LOGIC ĐỌC MÃ SP ==========
                     } else if ((key === 'ngayTao' || key === 'ngayHenGiao') && row[foundMapping[key]]) {
                         const dateValue = row[foundMapping[key]];
                         if (dateValue instanceof Date) {
@@ -209,7 +253,7 @@ export const dataProcessing = {
             appState.rawGioCongData = rawData.map(row => {
                 const newRow = {};
                 for (const key in foundMapping) {
-                     if (foundMapping[key]) newRow[key] = row[foundMapping[key]];
+                    if (foundMapping[key]) newRow[key] = row[foundMapping[key]];
                 }
                 return newRow;
             });

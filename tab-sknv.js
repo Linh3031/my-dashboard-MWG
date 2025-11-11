@@ -1,8 +1,5 @@
-// Version 4.1 - Fix drag-drop initialization logic to target the correct active container
-// Version 4.0 - Add drill-down logic for pasted competition
-// Version 3.9 - Update drag-drop listener to target the whole subtab container
-// Version 3.8 - Add view-switcher logic for sknv-thidua tab
-// Version 3.7 - Fix duplicate 'activeSubTabId' identifier declaration & Add logging
+// Version 4.8 - Refactor: Gỡ bỏ logic wrapper lồng nhau (sknv-program-grid-wrapper)
+// Version 4.3 - Refactor: Use globalCompetitionConfigs for report calculation
 // MODULE: TAB SKNV
 // Chịu trách nhiệm render và xử lý logic cho tab "Sức khỏe nhân viên"
 
@@ -176,37 +173,74 @@ filteredReport, filteredYCXData) {
         if (activeSubTabId === 'subtab-hieu-qua-thi-dua-lk') { 
             console.log("[tab-sknv.js renderSummaryViews] Rendering 'Thi đua NV LK' subtab.");
             
+            // ========== START: LOGIC DI CHUYỂN (SP ĐẶC QUYỀN) ==========
             const activeViewBtn = document.querySelector('#sknv-thidua-view-selector .view-switcher__btn.active');
             const viewType = activeViewBtn ? activeViewBtn.dataset.view : 'employee'; // <<< YÊU CẦU 1: Đổi mặc định sang 'employee'
             console.log(`[tab-sknv.js renderSummaryViews] View type selected: ${viewType}`);
 
             const programContainer = document.getElementById('competition-report-container-lk');
             const employeeContainer = document.getElementById('pasted-competition-report-container');
-            // === START: YÊU CẦU 4 (Thêm container chi tiết) ===
             const detailContainer = document.getElementById('pasted-competition-detail-container');
-            // === END: YÊU CẦU 4 ===
 
-            if (!programContainer || !employeeContainer || !detailContainer) { // <<< YÊU CẦU 4
+            if (!programContainer || !employeeContainer || !detailContainer) { 
                 console.error("[tab-sknv.js renderSummaryViews] Missing competition containers!");
                 return;
             }
 
-            // === START: YÊU CẦU 4 (Ẩn/hiện 3 container) ===
             detailContainer.classList.add('hidden'); // Luôn ẩn chi tiết khi render tóm tắt
 
+            // === START: THAY ĐỔI V4.8 (Gỡ bỏ wrapper, gộp HTML) ===
+            // Gỡ bỏ logic tạo 'programGridWrapper' và 'spContainer'
+            
             if (viewType === 'program') {
+                
+                // 1. Tính toán Báo cáo SPĐQ
+                console.log("[tab-sknv.js renderSummaryViews] Calculating 'Special Product' report...");
+                const specialReportData = services.calculateSpecialProductReport(
+                    filteredYCXData, // Dữ liệu YCX đã được lọc (ngày, kho, v.v.)
+                    appState.globalSpecialPrograms
+                );
+                // Render SPĐQ (Hàm này trả về chuỗi HTML)
+                const specialReportHtml = uiSknv.renderSpecialProgramReport(null, specialReportData);
+                if (specialReportData.length > 0) {
+                    console.log("Dữ liệu SPĐQ (LK) đã tính toán:", specialReportData);
+                }
+
+                // 2. Tính toán Báo cáo Thi đua Tùy chỉnh
                 console.log("[tab-sknv.js renderSummaryViews] Calculating 'program' report..."); 
+                const allConfigs = [ ...appState.globalCompetitionConfigs, ...appState.localCompetitionConfigs ];
                 const competitionReportData = services.calculateCompetitionFocusReport( 
                     filteredYCXData, 
-                    appState.competitionConfigs 
+                    allConfigs // Truyền danh sách đã gộp
                 );
-                console.log("[tab-sknv.js renderSummaryViews] Calling uiCompetition.renderCompetitionUI..."); 
-                uiCompetition.renderCompetitionUI('competition-report-container-lk', competitionReportData); 
+                // Render Thi đua Tùy chỉnh (Hàm này render vào DOM, nhưng chúng ta sẽ sửa nó)
+                // Tạm thời, chúng ta tạo 1 container ảo để lấy HTML
+                const tempCompetitionDiv = document.createElement('div');
+                uiCompetition.renderCompetitionUI(tempCompetitionDiv, competitionReportData); 
+                const competitionReportHtml = tempCompetitionDiv.innerHTML;
                 
+                // 3. Gộp HTML và chèn vào DOM
+                // Bọc cả hai chuỗi HTML trong một grid 2 cột duy nhất
+                programContainer.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        ${specialReportHtml}
+                        ${competitionReportHtml}
+                    </div>
+                `;
+                
+                // 4. Hiển thị/Ẩn container
                 programContainer.classList.remove('hidden');
                 employeeContainer.classList.add('hidden');
+                // === END: THAY ĐỔI V4.8 ===
 
             } else { // viewType === 'employee'
+                
+                // === START: THAY ĐỔI V4.8 ===
+                // Ẩn container 'program', hiển thị container 'employee'
+                programContainer.classList.add('hidden');
+                employeeContainer.classList.remove('hidden');
+                // === END: THAY ĐỔI V4.8 ===
+                
                 console.log("[tab-sknv.js renderSummaryViews] Calling uiSknv.renderPastedCompetitionReport..."); 
                 
                 // Lọc dữ liệu thi đua đã dán dựa trên bộ lọc chung (kho, bộ phận, tên)
@@ -216,9 +250,6 @@ filteredReport, filteredYCXData) {
                 );
                 
                 uiSknv.renderPastedCompetitionReport(filteredPastedData); 
-                
-                programContainer.classList.add('hidden');
-                employeeContainer.classList.remove('hidden');
             }
             // === END: YÊU CẦU 4 ===
         

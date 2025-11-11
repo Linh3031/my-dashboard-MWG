@@ -45,7 +45,6 @@
             cursor: pointer; 
             font-size: 1.125rem; /* text-lg */ 
             font-weight: 700; /* font-bold */ 
-     
             color: #374151; /* gray-700 */ 
             list-style: none; /* Hide default marker */
        }
@@ -78,8 +77,7 @@
 
     <div id="update-notification" class="hidden fixed bottom-5 right-5 bg-blue-600 text-white py-3 px-5 rounded-lg shadow-lg z-[1001] flex items-center gap-4">
         <p class="font-semibold">Đã có phiên bản mới! Xem chi tiết nội dung cập nhật ở tab "Hướng Dẫn & Góp Ý"</p> 
-     
-   <button onclick="window.location.reload()" class="bg-white text-blue-600 font-bold py-1 px-3 rounded-md hover:bg-blue-100 transition">Tải lại trang</button> 
+        <button onclick="window.location.reload()" class="bg-white text-blue-600 font-bold py-1 px-3 rounded-md hover:bg-blue-100 transition">Tải lại trang</button> 
     </div>
 
     <div id="interface-drawer-container"></div>
@@ -89,105 +87,63 @@
     <div class="flex min-h-screen">
         
  <div id="sidebar-container"></div> 
-         <main id="main-content" class="flex-1 p-6"> 
+        <main id="main-content" class="flex-1 p-6"> 
 
             <div class="max-w-full mx-auto">
 
                 <section id="home-section" class="page-section hidden">
                     <div class="page-header">
-                        
- <h2 class="page-header__title">Hướng Dẫn & Góp Ý</h2> 
-          
-       
-                        <div id="usage-counter-display" class="text-sm font-semibold"> 
+                         <h2 class="page-header__title">Hướng Dẫn & Góp Ý</h2> 
+                         <div id="usage-counter-display" class="text-sm font-semibold"> 
                             <span class="text-blue-600">Người dùng:</span> 
                             <span id="user-count" class="text-red-600 font-bold">-</span> 
-             
-                 <span class="text-blue-600 ml-4">Lượt truy cập:</span> 
-                 
-           <span id="visitor-count" class="text-red-600 font-bold">-</span> 
-                  
+                            <span class="text-blue-600 ml-4">Lượt truy cập:</span> 
+                            <span id="visitor-count" class="text-red-600 font-bold">-</span> 
                             <span class="text-blue-600 ml-4">Lượt sử dụng:</span> 
-       
-                             <span id="action-count" class="text-red-600 font-bold">-</span> 
+                            <span id="action-count" class="text-red-600 font-bold">-</span> 
                         </div>
                     </div>
 
 
                     <div class="content-card">
- 
-                   
-       <h3 class="content-card__header">Video Hướng Dẫn Sử Dụng Nhanh</h3> 
-            
-                             
-  <div id="video-container" class="bg-gray-200 rounded-lg"> 
-                             <iframe
-                     
-            class="w-full h-full aspect-video" 
-                      
-          src="https://www.youtube.com/embed/bmImlht_yB4?si=iIo9NZ7wc9FvKZKf" 
+                        <h3 class="content-card__header">Video Hướng Dẫn Sử Dụng Nhanh</h3> 
+                         <div id="video-container" class="bg-gray-200 rounded-lg"> 
+                            <iframe
+                                class="w-full h-full aspect-video" 
+                                src="https://www.youtube.com/embed/bmImlht_yB4?si=iIo9NZ7wc9FvKZKf" 
                                 title="YouTube video player" 
-       
-                     
-             frameborder="0" 
+                                frameborder="0" 
                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                              
-  allowfullscreen> 
-                          
-    </iframe>
-
-                        
- </div> 
-     
+                                allowfullscreen> 
+                            </iframe>
+                         </div> 
                     </div>
 
 
                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8"> 
                         <div class="flex flex-col"> 
-    
-                
-         <h2 class="text-2xl font-bold text-gray-800 mb-6">Góp ý & Thảo luận</h2> 
-
+                            <h2 class="text-2xl font-bold text-gray-800 mb-6">Góp ý & Thảo luận</h2> 
                             <div id="feedback-composer" class="bg-white rounded-xl shadow-md p-6 border border-gray-200 flex-grow"> 
-
- 
-               
-                        
-      </div> 
+                            </div> 
                         </div>
 
                         <div class="flex flex-col"> 
-
-            
-                 <h2 class="text-2xl font-bold text-gray-800 mb-6">Danh sách góp ý</h2> 
-                
-             <div id="feedback-list-container" class="bg-white rounded-xl shadow-md p-6 border border-gray-200 flex-grow"> 
-                   
-                             <div id="feedback-list" class="space-y-6"> 
-
+                             <h2 class="text-2xl font-bold text-gray-800 mb-6">Danh sách góp ý</h2> 
+                             <div id="feedback-list-container" class="bg-white rounded-xl shadow-md p-6 border border-gray-200 flex-grow"> 
+                                <div id="feedback-list" class="space-y-6"> 
                                 </div> 
-     
-              
-          </div>
+                             </div>
                         </div>
-                    
-  </div> 
+                    </div> 
 
                     <div class="mt-12"> 
-
-           
-       
-                       <h2 class="text-2xl font-bold text-gray-800 mb-6">Lịch sử cập nhật</h2> 
+                         <h2 class="text-2xl font-bold text-gray-800 mb-6">Lịch sử cập nhật</h2> 
                          <div id="update-history-list" class="space-y-6"> 
-
-         
                          </div> 
-                 
-    </div>
+                    </div>
                 </section>
 
-  
-               <section id="data-section" class="page-section"> 
+                <section id="data-section" class="page-section"> 
                         <div class="page-header">
                             <div class="flex flex-wrap items-center gap-4">
                                 <div class="flex items-center gap-x-3">
@@ -255,7 +211,7 @@
                             </div>
                 
                             <div class="content-card data-card--green flex flex-col gap-4"> <h3 class="content-card__header data-header--green">
-                                    <i data-feather="users" class="h-5 w-5"></i>CHI TIẾT SỨC KHỎE NHÂN VIÊN
+                                    <i data-feather="users" class="h-5 w-5"></i>CHI TIẾT NĂNG SUẤT NHÂN VIÊN
                                 </h3>
                                 
                                 <div class="data-input-group input-group--green">
@@ -388,1189 +344,643 @@
 
 
                     <div id="health-section-placeholder" class="placeholder-message hidden">Vui lòng cập nhật danh sách nhân viên để xem kết quả.</div> 
-                 
-   <div id="health-section-content"> 
-             
-            <div class="content-card"> 
-                         
-     <div class="page-header border-b pb-4 mb-6"> 
-
+                    <div id="health-section-content"> 
+                        <div class="content-card"> 
+                            <div class="page-header border-b pb-4 mb-6"> 
                                 <h2 class="page-header__title">Sức khỏe siêu thị</h2> 
-                         
-         <button class="page-header__help-btn" data-help-id="luyke" title="Xem hướng dẫn"> 
-        
-                            <i data-feather="help-circle"></i> 
-
-                         
-        </button> 
-
-
-                         
-     </div> 
+                                <button class="page-header__help-btn" data-help-id="luyke" title="Xem hướng dẫn"> 
+                                    <i data-feather="help-circle"></i> 
+                                </button> 
+                            </div> 
                             <button class="toggle-filters-btn" data-target="luyke-filter-container"> 
-                        
-         <span class="text">Hiện bộ lọc nâng cao</span> 
-
+                                <span class="text">Hiện bộ lọc nâng cao</span> 
                                 <i data-feather="chevron-down" class="icon"></i> 
-
-       
-                        </button> 
+                            </button> 
                             <div id="luyke-filter-container" class="advanced-filters hidden"> 
                                 <div id="luyke-filter-bar" class="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-4"> 
-
-      
-                                 <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end"> 
-
-        
-                                    <div class="md:col-span-2"> 
-
-                           
-                  <label for="luyke-filter-date" class="block text-sm font-medium text-gray-600 mb-1">Ngày tạo</label> 
-  
-                                           <div class="relative"> 
-
-           
-                           
-                            <input type="text" id="luyke-filter-date" class="p-2 border rounded-lg text-sm bg-white shadow-sm w-full" placeholder="Chọn ngày..."> 
-
-                           
-                     <button id="luyke-clear-date" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 text-xs">Bỏ chọn</button> 
-             
-             
-                     </div> 
-
-
+                                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end"> 
+                                        <div class="md:col-span-2"> 
+                                            <label for="luyke-filter-date" class="block text-sm font-medium text-gray-600 mb-1">Ngày tạo</label> 
+                                            <div class="relative"> 
+                                                <input type="text" id="luyke-filter-date" class="p-2 border rounded-lg text-sm bg-white shadow-sm w-full" placeholder="Chọn ngày..."> 
+                                                <button id="luyke-clear-date" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 text-xs">Bỏ chọn</button> 
+                                            </div> 
                                             <span id="luyke-date-summary" class="text-xs text-red-500 mt-1 block"></span> 
-                    
-      
-               </div> 
-                                  
-         <div class="md:col-span-2"><label for="luyke-filter-warehouse" class="block text-sm font-medium text-gray-600 mb-1">Mã Kho</label><select id="luyke-filter-warehouse" class="p-2 border
+                                        </div> 
+                                        <div class="md:col-span-2"><label for="luyke-filter-warehouse" class="block text-sm font-medium text-gray-600 mb-1">Mã Kho</label><select id="luyke-filter-warehouse" class="p-2 border
     rounded-lg text-sm bg-white shadow-sm w-full"></select></div> 
-                                
-         <div class="md:col-span-2"><label for="luyke-filter-department" class="block text-sm font-medium text-gray-600 mb-1">Bộ Phận</label><select id="luyke-filter-department" class="p-2 border rounded-lg text-sm bg-white shadow-sm w-full"></select></div> 
-        
-                                <div class="md:col-span-6"><label for="luyke-filter-name" class="block text-sm font-medium text-gray-600 mb-1">Nhân Viên</label><select id="luyke-filter-name" multiple></select></div> 
-
-
-            
-                      
-    </div> 
-                                     <div class="border-t pt-4 grid grid-cols-1 md:grid-cols-12 gap-4 items-end"> 
-                      
-                  <div class="md:col-span-3"><label for="luyke-highlight-nhanhang" class="block text-sm font-medium text-gray-600 mb-1">Tô màu
+                                        <div class="md:col-span-2"><label for="luyke-filter-department" class="block text-sm font-medium text-gray-600 mb-1">Bộ Phận</label><select id="luyke-filter-department" class="p-2 border rounded-lg text-sm bg-white shadow-sm w-full"></select></div> 
+                                        <div class="md:col-span-6"><label for="luyke-filter-name" class="block text-sm font-medium text-gray-600 mb-1">Nhân Viên</label><select id="luyke-filter-name" multiple></select></div> 
+                                    </div> 
+                                    <div class="border-t pt-4 grid grid-cols-1 md:grid-cols-12 gap-4 items-end"> 
+                                        <div class="md:col-span-3"><label for="luyke-highlight-nhanhang" class="block text-sm font-medium text-gray-600 mb-1">Tô màu
     ngành hàng</label><select id="luyke-highlight-nhanhang" multiple></select></div> 
-
-     
-                 
-                     <div class="md:col-span-3"><label for="luyke-highlight-nhomhang" class="block text-sm font-medium text-gray-600 mb-1">Tô màu nhóm hàng</label><select id="luyke-highlight-nhomhang" multiple></select></div> 
+                                        <div class="md:col-span-3"><label for="luyke-highlight-nhomhang" class="block text-sm font-medium text-gray-600 mb-1">Tô màu nhóm hàng</label><select id="luyke-highlight-nhomhang" multiple></select></div> 
                                         <div class="md:col-span-3"><label for="luyke-highlight-employee" class="block text-sm font-medium text-gray-600 mb-1">Tô màu nhân viên</label><select id="luyke-highlight-employee" multiple></select></div> 
-
-     
-  
-                                   <div class="md:col-span-3 flex items-end gap-2"> 
-
-               
-                                 <div><label for="luyke-highlight-color" class="block text-sm font-medium text-gray-600 mb-1">Chọn màu</label><input type="color" id="luyke-highlight-color" value="#ffff00" class="p-1 h-10 w-14 block bg-white border border-gray-300 cursor-pointer rounded-lg"></div> 
-
-    
-                                   
-      <button id="luyke-clear-highlight" class="bg-red-500 text-white px-4 h-10 rounded-lg hover:bg-red-600 transition text-sm">Xóa màu</button> 
-
-                                      
-     </div> 
-               
-                     </div>
-
+                                        <div class="md:col-span-3 flex items-end gap-2"> 
+                                            <div><label for="luyke-highlight-color" class="block text-sm font-medium text-gray-600 mb-1">Chọn màu</label><input type="color" id="luyke-highlight-color" value="#ffff00" class="p-1 h-10 w-14 block bg-white border border-gray-300 cursor-pointer rounded-lg"></div> 
+                                            <button id="luyke-clear-highlight" class="bg-red-500 text-white px-4 h-10 rounded-lg hover:bg-red-600 transition text-sm">Xóa màu</button> 
+                                        </div> 
+                                    </div>
                                 </div> 
-                             
-           </div> 
+                            </div> 
+                        </div>
 
-               
-           </div>
-
-                  
-       <div class="flex justify-between items-center mb-8"> 
-
+                        <div class="flex justify-between items-center mb-8"> 
                             <nav id="luyke-subtabs-nav" class="border-b border-gray-200 -mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs" data-content-container="luyke-subtabs-content"> 
-                                
-  <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-luyke-sieu-thi" data-title="SieuThiLuyKe"> 
-                                     <i data-feather="home"></i> 
-                                     <span>Siêu thị Lũy kế</span> 
-                  
-               </button>
+                                <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-luyke-sieu-thi" data-title="SieuThiLuyKe"> 
+                                    <i data-feather="home"></i> 
+                                    <span>Siêu thị Lũy kế</span> 
+                                </button>
                                 <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-luyke-thi-dua" data-title="ThiDuaLuyKe"> 
-                                     <i data-feather="award"></i> 
-           
-    
-                             <span>Thi đua Lũy kế</span> 
+                                    <i data-feather="award"></i> 
+                                    <span>Thi đua Lũy kế</span> 
                                 </button>
-                             
-   <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-luyke-thidua-vung" data-title="ThiDuaVung"> 
-       
-                               <i data-feather="map"></i> 
-     
-                                <span>Thi Đua Vùng TNB</span> 
+                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-luyke-thidua-vung" data-title="ThiDuaVung"> 
+                                    <i data-feather="map"></i> 
+                                    <span>Thi Đua Vùng TNB</span> 
                                 </button>
-     
-                   
-     </nav> 
-                           <div class="flex items-center gap-x-2"> 
-
-                 
-                  <button id="compose-luyke-notification-btn" class="action-btn action-btn--composer" title="Nhận xét"> 
-              
-                       <i data-feather="pen-tool"></i> 
-                              
-      <span>Nhận xét</span> 
-                                 </button> 
-
-
-          
-    
-         
-               <button id="export-luyke-btn" class="action-btn action-btn--export" title="Xuất Excel tab hiện tại"> 
-                                    <i data-feather="download"></i> 
-                              
-      <span>Xuất Excel</span> 
-  
-                               </button>
-
-
-               
-    
-                  <button id="capture-luyke-btn" class="action-btn action-btn--capture" title="Chụp ảnh tab hiện tại"> 
-                                  
-   <i data-feather="camera"></i> 
-                           
-         <span>Chụp màn hình</span> 
+                            </nav> 
+                            <div class="flex items-center gap-x-2"> 
+                                <button id="compose-luyke-notification-btn" class="action-btn action-btn--composer" title="Nhận xét"> 
+                                    <i data-feather="pen-tool"></i> 
+                                    <span>Nhận xét</span> 
                                 </button> 
-           
-                  </div>
-     
-                    </div>
+                                <button id="export-luyke-btn" class="action-btn action-btn--export" title="Xuất Excel tab hiện tại"> 
+                                    <i data-feather="download"></i> 
+                                    <span>Xuất Excel</span> 
+                                </button>
+                                <button id="capture-luyke-btn" class="action-btn action-btn--capture" title="Chụp ảnh tab hiện tại"> 
+                                    <i data-feather="camera"></i> 
+                                    <span>Chụp màn hình</span> 
+                                </button> 
+                            </div>
+                        </div>
 
                         <div id="luyke-subtabs-content"> 
-
-                       
-      <div id="subtab-luyke-sieu-thi" class="sub-tab-content space-y-8"> 
-
-                                
- <h2 id="luyke-supermarket-title" class="text-2xl font-bold text-center text-gray-700"></h2> 
-        
-                          <div id="luyke-kpi-cards-container" data-capture-group="kpi" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"> 
-                                     <div class="kpi-card p-6 rounded-2xl shadow-lg"> <h4 class="kpi-card-title">Doanh thu thực</h4> 
-              
-  
-                         <p id="luyke-kpi-dt-thuc-main" class="font-bold mt-2 mb-3">0</p> 
-                        
-                 <p id="luyke-kpi-dt-thuc-sub1" class="text-sm">DK: 0 / Target: 0</p> 
-                                 
-     </div>
-                               
-     <div class="kpi-card p-6 rounded-2xl shadow-lg"> <h4 class="kpi-card-title">Doanh thu Quy đổi</h4> 
-                                        
- <p id="luyke-kpi-dt-qd-main" class="font-bold mt-2 mb-3">0</p> 
-              
-                            <p id="luyke-kpi-dt-qd-sub1" class="text-sm">DK: 0 / Target: 0</p> 
-                                     </div> 
-   
-                                 <div class="kpi-card 
- p-6 rounded-2xl shadow-lg"> <h4 class="kpi-card-title">Tỷ lệ hoàn thành Target</h4> 
-           
-                                     <p id="luyke-kpi-ht-target-qd-main" class="font-bold mt-2 mb-3">0%</p> 
-                                         <p id="luyke-kpi-ht-target-thuc-sub" class="text-sm">DT Thực: 0%</p> 
-  
-           
-                        </div> <div class="kpi-card p-6 rounded-2xl shadow-lg"> <h4 class="kpi-card-title">Tỷ lệ quy đổi</h4> 
-                    
-                     <p id="luyke-kpi-tl-qd-main" class="font-bold mt-2 mb-3">0%</p> 
-                   
-                       <p id="luyke-kpi-tl-qd-sub" class="text-sm">Mục tiêu: 0%</p> 
-                     
-               </div> <div class="kpi-card p-6 rounded-2xl shadow-lg"> <h4 class="kpi-card-title">Doanh thu trả chậm</h4> 
-                             
-       
-     <p id="luyke-kpi-dt-tc-main" class="font-bold mt-2 mb-3">0</p> 
+                            <div id="subtab-luyke-sieu-thi" class="sub-tab-content space-y-8"> 
+                                <h2 id="luyke-supermarket-title" class="text-2xl font-bold text-center text-gray-700"></h2> 
+                                <div id="luyke-kpi-cards-container" data-capture-group="kpi" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"> 
+                                    <div class="kpi-card p-6 rounded-2xl shadow-lg"> <h4 class="kpi-card-title">Doanh thu thực</h4> 
+                                        <p id="luyke-kpi-dt-thuc-main" class="font-bold mt-2 mb-3">0</p> 
+                                        <p id="luyke-kpi-dt-thuc-sub1" class="text-sm">DK: 0 / Target: 0</p> 
+                                    </div>
+                                    <div class="kpi-card p-6 rounded-2xl shadow-lg"> <h4 class="kpi-card-title">Doanh thu Quy đổi</h4> 
+                                        <p id="luyke-kpi-dt-qd-main" class="font-bold mt-2 mb-3">0</p> 
+                                        <p id="luyke-kpi-dt-qd-sub1" class="text-sm">DK: 0 / Target: 0</p> 
+                                    </div> 
+                                    <div class="kpi-card p-6 rounded-2xl shadow-lg"> <h4 class="kpi-card-title">Tỷ lệ hoàn thành Target</h4> 
+                                        <p id="luyke-kpi-ht-target-qd-main" class="font-bold mt-2 mb-3">0%</p> 
+                                        <p id="luyke-kpi-ht-target-thuc-sub" class="text-sm">DT Thực: 0%</p> 
+                                    </div> <div class="kpi-card p-6 rounded-2xl shadow-lg"> <h4 class="kpi-card-title">Tỷ lệ quy đổi</h4> 
+                                        <p id="luyke-kpi-tl-qd-main" class="font-bold mt-2 mb-3">0%</p> 
+                                        <p id="luyke-kpi-tl-qd-sub" class="text-sm">Mục tiêu: 0%</p> 
+                                    </div> <div class="kpi-card p-6 rounded-2xl shadow-lg"> <h4 class="kpi-card-title">Doanh thu trả chậm</h4> 
+                                        <p id="luyke-kpi-dt-tc-main" class="font-bold mt-2 mb-3">0</p> 
                                         <p id="luyke-kpi-dt-tc-sub" class="text-sm">% thực trả chậm: 0%</p> 
-                             
-        </div> <div class="kpi-card p-6 rounded-2xl shadow-lg"> <h4 class="kpi-card-title">DTQĐ Chưa xuất</h4> 
-       
-                               
-   <p id="luyke-kpi-dtqd-chua-xuat-main" class="font-bold mt-2 mb-3">0</p> 
+                                    </div> <div class="kpi-card p-6 rounded-2xl shadow-lg"> <h4 class="kpi-card-title">DTQĐ Chưa xuất</h4> 
+                                        <p id="luyke-kpi-dtqd-chua-xuat-main" class="font-bold mt-2 mb-3">0</p> 
                                     </div> <div class="kpi-card p-6 rounded-2xl shadow-lg"> <h4 class="kpi-card-title">Thi đua ngành hàng</h4> 
-                 
-        
-                             
-    <p id="luyke-kpi-thidua-main" class="font-bold mt-2 mb-3">0%</p> 
+                                        <p id="luyke-kpi-thidua-main" class="font-bold mt-2 mb-3">0%</p> 
                                         <p id="luyke-kpi-thidua-sub" class="text-sm">0/0 Ngành</p> 
-   
-                          
-         </div> 
+                                    </div> 
                                     <div class="kpi-card p-6 rounded-2xl shadow-lg"> <h4 class="kpi-card-title">Tăng/giảm cùng kỳ</h4> 
-            
-                             <p id="luyke-kpi-dtck-main" class="font-bold mt-2 mb-3">N/A</p> 
-          
-             
-                   <p id="luyke-kpi-dtck-sub" class="text-sm">Doanh thu: 0 | 0%</p> 
+                                        <p id="luyke-kpi-dtck-main" class="font-bold mt-2 mb-3">N/A</p> 
+                                        <p id="luyke-kpi-dtck-sub" class="text-sm">Doanh thu: 0 | 0%</p> 
                                         <p id="luyke-kpi-lkck-sub" class="text-sm">Lượt khách: 0 | 0%</p> 
-                   
-      
-            </div> 
-                                 </div> 
-     
-                               <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start"> 
-
-                      
-                <div data-capture-group="1" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200"><h3 class="text-xl font-bold text-gray-700 mb-4 uppercase">Hiệu quả khai thác</h3><div 
-    
-id="luyke-efficiency-content"></div></div>
-                                     <div data-capture-group="1" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200"><h3 class="text-xl font-bold text-gray-700 mb-4 uppercase">Nhóm hàng quy đổi cao</h3><div id="luyke-qdc-content"></div></div> 
-                  
-               </div> 
-
-                                 <div
-    class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start"> 
-                
-                    <div data-capture-group="2" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200"><h3 class="text-xl font-bold text-gray-700 mb-4 uppercase">Ngành hàng chi tiết</h3><div 
- id="luyke-category-details-content"></div></div> 
-
-                   <div data-capture-group="2" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200"><h3 class="text-xl font-bold uppercase mb-4">Doanh thu chưa xuất</h3><div id="luyke-unexported-revenue-content"></div></div> 
-
+                                    </div> 
                                 </div> 
-                      
-      </div> 
-           
-                   <div id="subtab-luyke-thi-dua" class="sub-tab-content hidden space-y-4"> 
-                                 <div class="flex flex-wrap items-center justify-between gap-4"> 
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start"> 
+                                    <div data-capture-group="1" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200"><h3 class="text-xl font-bold text-gray-700 mb-4 uppercase">Hiệu quả khai thác</h3><div id="luyke-efficiency-content"></div></div>
+                                    <div data-capture-group="1" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200"><h3 class="text-xl font-bold text-gray-700 mb-4 uppercase">Nhóm hàng quy đổi cao</h3><div id="luyke-qdc-content"></div></div> 
+                                </div> 
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start"> 
+                                    <div data-capture-group="2" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200"><h3 class="text-xl font-bold text-gray-700 mb-4 uppercase">Ngành hàng chi tiết</h3><div id="luyke-category-details-content"></div></div> 
+                                    <div data-capture-group="2" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200"><h3 class="text-xl font-bold uppercase mb-4">Doanh thu chưa xuất</h3><div id="luyke-unexported-revenue-content"></div></div> 
+                                </div> 
+                            </div> 
+                            <div id="subtab-luyke-thi-dua" class="sub-tab-content hidden space-y-4"> 
+                                <div class="flex flex-wrap items-center justify-between gap-4"> 
                                     <div class="flex flex-wrap items-center gap-4"> 
-       
-                      
-            <h3 class="text-xl font-bold text-gray-800 uppercase">Thi đua lũy kế <span id="luyke-competition-summary" class="text-sm font-normal"></span></h3> 
-                                         <div id="luyke-thidua-view-selector" class="view-switcher"> 
-                     
-                          <button data-view="summary" class="view-switcher__btn active">Theo Phân Loại</button> 
-                             
-               <button data-view="completion" class="view-switcher__btn">Theo % Hoàn Thành</button> 
-                              
-           </div> 
-                                     </div>
-                                     <div id="luyke-competition-content"></div> 
-          
-             
-           </div> 
+                                        <h3 class="text-xl font-bold text-gray-800 uppercase">Thi đua lũy kế <span id="luyke-competition-summary" class="text-sm font-normal"></span></h3> 
+                                        <div id="luyke-thidua-view-selector" class="view-switcher"> 
+                                            <button data-view="summary" class="view-switcher__btn active">Theo Phân Loại</button> 
+                                            <button data-view="completion" class="view-switcher__btn">Theo % Hoàn Thành</button> 
+                                        </div> 
+                                    </div>
+                                    <div id="luyke-competition-content"></div> 
+                                </div> 
                             </div>
     
-                         <div id="subtab-luyke-thidua-vung" class="sub-tab-content hidden"> 
-                                 <div class="content-card"> 
-   
-                           
-       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end"> 
+                            <div id="subtab-luyke-thidua-vung" class="sub-tab-content hidden"> 
+                                <div class="content-card"> 
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end"> 
                                         <div class="data-input-group"> 
-                             
-                  <div class="flex flex-col sm:flex-row sm:items-center sm:gap-4"> 
-                                                 
-       <label class="data-input-group__label !mb-2 sm:!mb-0 flex-shrink-0">File Thi Đua Vùng:</label> 
-                        
-                           <div class="flex items-center gap-2"> 
+                                            <div class="flex flex-col sm:flex-row sm:items-center sm:gap-4"> 
+                                                <label class="data-input-group__label !mb-2 sm:!mb-0 flex-shrink-0">File Thi Đua Vùng:</label> 
+                                                <div class="flex items-center gap-2"> 
                                                     <label for="file-thidua-vung" class="data-input-group__file-trigger">Thêm file</label> 
-                         
-      <span id="file-name-thidua-vung" class="data-input-group__file-name">Chưa thêm file</span> 
-                                                  </div>
+                                                    <span id="file-name-thidua-vung" class="data-input-group__file-name">Chưa thêm file</span> 
+                                                </div>
                                             </div> 
-      
-                                       <input type="file" id="file-thidua-vung" class="hidden file-input" data-name="Thi đua vùng" accept=".xlsx, .xls, .csv"> 
-                                           <div class="data-input-group__status-wrapper mt-2"><span id="file-status-thidua-vung" class="data-input-group__status-text"></span></div> 
-              
-                           </div>
-                   
-                     <div> 
-                                           
-   <label for="thidua-vung-filter-supermarket" class="block text-sm font-medium text-gray-600 mb-1">Chọn Siêu thị</label> 
+                                            <input type="file" id="file-thidua-vung" class="hidden file-input" data-name="Thi đua vùng" accept=".xlsx, .xls, .csv"> 
+                                            <div class="data-input-group__status-wrapper mt-2"><span id="file-status-thidua-vung" class="data-input-group__status-text"></span></div> 
+                                        </div>
+                                        <div> 
+                                            <label for="thidua-vung-filter-supermarket" class="block text-sm font-medium text-gray-600 mb-1">Chọn Siêu thị</label> 
                                             <select id="thidua-vung-filter-supermarket"></select> 
-                         
-               </div> 
-            
-                          </div>
-                                 </div> 
+                                        </div> 
+                                    </div>
+                                </div> 
                                 <div id="thidua-vung-infographic-container"> 
-                 
-           
-         <div class="placeholder-message">Vui lòng tải file và chọn một siêu thị để xem báo cáo.</div> 
-                                
- </div> 
-                             </div> 
-             
-                 </div>
+                                    <div class="placeholder-message">Vui lòng tải file và chọn một siêu thị để xem báo cáo.</div> 
+                                </div> 
+                            </div> 
+                        </div>
                     </div>
-           
-     </section> 
+                </section> 
 
                 <section id="health-employee-section" class="page-section hidden"> 
 
-                      <div id="health-employee-section-placeholder" class="placeholder-message hidden">Vui lòng cập nhật danh sách nhân viên để xem kết quả.</div> 
+                    <div id="health-employee-section-placeholder" class="placeholder-message hidden">Vui lòng cập nhật danh sách nhân viên để xem kết quả.</div> 
  
                     <div id="health-employee-section-content"> 
                         <div class="content-card"> 
-
                             <div class="page-header border-b pb-4 mb-6"> 
-
-     
-                        
-   <h2 class="page-header__title">Sức khỏe nhân viên</h2> 
-                                 <button class="page-header__help-btn" data-help-id="sknv" title="Xem hướng dẫn"> 
-                                     <i data-feather="help-circle"></i> 
-
-                         
-        
- </button> 
-
-       
-                    </div>
+                                <h2 class="page-header__title">Sức khỏe nhân viên</h2> 
+                                <button class="page-header__help-btn" data-help-id="sknv" title="Xem hướng dẫn"> 
+                                    <i data-feather="help-circle"></i> 
+                                </button> 
+                            </div>
 
                             <button class="toggle-filters-btn" data-target="sknv-filter-container"> 
-
-   
-                              <span class="text">Hiện bộ lọc nâng cao</span> 
-
-    
-                                 <i data-feather="chevron-down" class="icon"></i> 
-                    
-        </button> 
+                                <span class="text">Hiện bộ lọc nâng cao</span> 
+                                <i data-feather="chevron-down" class="icon"></i> 
+                            </button> 
                             <div id="sknv-filter-container" class="advanced-filters hidden"> 
-
-               
- 
-                 <div id="sknv-filter-bar" class="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-4"> 
-
-                                         <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end"> 
-                     
-                 
-   <div class="md:col-span-2"> 
-
-                                  
-           <label for="sknv-filter-date" class="block text-sm font-medium text-gray-600 mb-1">Ngày tạo</label> 
-
-                                           <div class="relative"> 
-
-        
-                     
-                    <input type="text" id="sknv-filter-date" class="p-2 border rounded-lg text-sm bg-white shadow-sm w-full" placeholder="Chọn ngày..."> 
-
-                                              <button id="sknv-clear-date" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 text-xs">Bỏ chọn</button> 
-
-  
-                                           </div> 
-          
-                                  <span id="sknv-date-summary" class="text-xs text-red-500 mt-1 block"></span> 
-
-               
-  
-                              </div> 
-
+                                <div id="sknv-filter-bar" class="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-4"> 
+                                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end"> 
+                                        <div class="md:col-span-2"> 
+                                            <label for="sknv-filter-date" class="block text-sm font-medium text-gray-600 mb-1">Ngày tạo</label> 
+                                            <div class="relative"> 
+                                                <input type="text" id="sknv-filter-date" class="p-2 border rounded-lg text-sm bg-white shadow-sm w-full" placeholder="Chọn ngày..."> 
+                                                <button id="sknv-clear-date" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 text-xs">Bỏ chọn</button> 
+                                            </div> 
+                                            <span id="sknv-date-summary" class="text-xs text-red-500 mt-1 block"></span> 
+                                        </div> 
                                         <div class="md:col-span-2"><label for="sknv-filter-warehouse" class="block text-sm font-medium text-gray-600 mb-1">Mã Kho</label><select id="sknv-filter-warehouse" class="p-2 border rounded-lg text-sm bg-white shadow-sm w-full"></select></div> 
-   
-                    
-                   <div class="md:col-span-2"><label for="sknv-filter-department" class="block text-sm font-medium text-gray-600 mb-1">Bộ Phận</label><select id="sknv-filter-department" class="p-2 border rounded-lg text-sm bg-white shadow-sm w-full"></select></div> 
-
- 
+                                        <div class="md:col-span-2"><label for="sknv-filter-department" class="block text-sm font-medium text-gray-600 mb-1">Bộ Phận</label><select id="sknv-filter-department" class="p-2 border rounded-lg text-sm bg-white shadow-sm w-full"></select></div> 
                                         <div class="md:col-span-6"><label for="sknv-filter-name" class="block text-sm font-medium text-gray-600 mb-1">Nhân Viên</label><select id="sknv-filter-name" multiple></select></div> 
-                       
-             </div> 
-
-    
-                                     <div class="border-t pt-4 grid grid-cols-1 md:grid-cols-12 gap-4 items-end"> 
-
-            
-                                   
-   <div class="md:col-span-3"><label for="sknv-highlight-nhanhang" class="block text-sm font-medium text-gray-600 mb-1">Tô màu ngành hàng</label><select id="sknv-highlight-nhanhang" multiple></select></div> 
+                                    </div> 
+                                    <div class="border-t pt-4 grid grid-cols-1 md:grid-cols-12 gap-4 items-end"> 
+                                        <div class="md:col-span-3"><label for="sknv-highlight-nhanhang" class="block text-sm font-medium text-gray-600 mb-1">Tô màu ngành hàng</label><select id="sknv-highlight-nhanhang" multiple></select></div> 
                                         <div class="md:col-span-3"><label for="sknv-highlight-nhomhang" class="block text-sm font-medium text-gray-600 mb-1">Tô màu nhóm hàng</label><select id="sknv-highlight-nhomhang" multiple></select></div> 
-
-                                          
-      <div
-    class="md:col-span-3"><label for="sknv-highlight-employee" class="block text-sm font-medium text-gray-600 mb-1">Tô màu nhân viên</label><select id="sknv-highlight-employee" multiple></select></div> 
+                                        <div class="md:col-span-3"><label for="sknv-highlight-employee" class="block text-sm font-medium text-gray-600 mb-1">Tô màu nhân viên</label><select id="sknv-highlight-employee" multiple></select></div> 
                                         <div class="md:col-span-3 flex items-end gap-2"> 
-
-                                    
-        
-    <div><label for="sknv-highlight-color" class="block text-sm font-medium text-gray-600 mb-1">Chọn màu</label><input type="color" id="sknv-highlight-color" value="#ffff00" class="p-1 h-10 w-14 block bg-white border border-gray-300 cursor-pointer rounded-lg"></div> 
-
-                         
-                     <button id="sknv-clear-highlight" class="bg-red-500 text-white px-4 h-10 rounded-lg hover:bg-red-600 transition text-sm">Xóa màu</button> 
-                              
-           </div>
-
-
-                   
-                 </div> 
-                                 </div>
-     
-                         
- </div> 
+                                            <div><label for="sknv-highlight-color" class="block text-sm font-medium text-gray-600 mb-1">Chọn màu</label><input type="color" id="sknv-highlight-color" value="#ffff00" class="p-1 h-10 w-14 block bg-white border border-gray-300 cursor-pointer rounded-lg"></div> 
+                                            <button id="sknv-clear-highlight" class="bg-red-500 text-white px-4 h-10 rounded-lg hover:bg-red-600 transition text-sm">Xóa màu</button> 
+                                        </div>
+                                    </div> 
+                                </div>
+                            </div> 
                         </div>
 
 
 
                         <div class="content-card"> 
-                 
-           <div class="flex justify-between items-center mb-8">
-                           
-     <nav id="employee-subtabs-nav" class="border-b border-gray-200 -mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs" data-content-container="employee-subtabs-content"> 
-                                     <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-sknv" data-title="SKNV"> 
+                            <div class="flex justify-between items-center mb-8">
+                                <nav id="employee-subtabs-nav" class="border-b border-gray-200 -mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs" data-content-container="employee-subtabs-content"> 
+                                    <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-sknv" data-title="SKNV"> 
                                         <i data-feather="users"></i> 
-     
-                                     <span>SKNV</span> 
-
-              
-                         </button> 
-                                  
-    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-doanhthu-lk" data-title="DoanhThuLK"> 
-                     
-                   <i data-feather="dollar-sign"></i> 
-
-
-                                  
-        <span>Doanh thu LK</span> 
-          
-                            </button> 
-                                     <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-thunhap" data-title="ThuNhap"> 
-
-
-                                   
-      <i data-feather="briefcase"></i> 
-            
-                                     <span>Thu nhập</span> 
-                                     </button>
-
-
-               
-         
-             <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-khai-thac-luy-ke" data-title="HieuQuaKhaiThacLuyKe"> 
-                                
-         <i data-feather="bar-chart-2"></i> 
-
-                                    
-      <span>Hiệu quả NV LK</span>
- 
-                                     </button> 
+                                        <span>SKNV</span> 
+                                    </button> 
+                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-doanhthu-lk" data-title="DoanhThuLK"> 
+                                        <i data-feather="dollar-sign"></i> 
+                                        <span>Doanh thu LK</span> 
+                                    </button> 
+                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-thunhap" data-title="ThuNhap"> 
+                                        <i data-feather="briefcase"></i> 
+                                        <span>Thu nhập</span> 
+                                    </button>
+                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-khai-thac-luy-ke" data-title="HieuQuaKhaiThacLuyKe"> 
+                                        <i data-feather="bar-chart-2"></i> 
+                                        <span>Hiệu quả NV LK</span>
+                                    </button> 
                                     <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-doanhthu-nganhhang" data-title="DTNganhHang"> 
-
-         
-        
-                                   <i data-feather="layers"></i> 
-
-                                         <span>DT ngành hàng</span> 
-             
-                  
-      </button> 
-
-                               
-        <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-thi-dua-lk" data-title="HieuQuaThiDuaLK"> 
-                                         <i data-feather="award"></i> 
-            
-                    
-           <span>Thi đua NV LK</span> 
-
-                                     </button>
-    
-                                 </nav> 
- 
-                                 <div class="flex items-center gap-x-2"> 
-
-                         
-           <button id="compose-sknv-notification-btn" class="action-btn action-btn--composer" title="Nhận xét"> 
-                                
-       
-   <i data-feather="pen-tool"></i> 
-                                         <span>Nhận xét</span> 
-
-                                       </button>
-      
-           
-                     <button id="export-sknv-btn" class="action-btn action-btn--export" title="Xuất Excel tab hiện tại"> 
-
-
-                
-                           <i data-feather="download"></i> 
-                                    
-        <span>Xuất Excel</span> 
-                  
-                  </button>
-
-                                       
-    <button id="capture-sknv-btn" class="action-btn action-btn--capture" title="Chụp ảnh tab hiện tại"> 
-             
-                              <i data-feather="camera"></i> 
-                                    
-     <span>Chụp màn hình</span> 
-
-                                    
-  </button> 
-                         
-                       </div>
+                                        <i data-feather="layers"></i> 
+                                        <span>DT ngành hàng</span> 
+                                    </button> 
+                                    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-thi-dua-lk" data-title="HieuQuaThiDuaLK"> 
+                                        <i data-feather="award"></i> 
+                                        <span>Thi đua NV LK</span> 
+                                    </button>
+                                </nav> 
+                                <div class="flex items-center gap-x-2"> 
+                                    <button id="compose-sknv-notification-btn" class="action-btn action-btn--composer" title="Nhận xét"> 
+                                        <i data-feather="pen-tool"></i> 
+                                        <span>Nhận xét</span> 
+                                    </button>
+                                    <button id="export-sknv-btn" class="action-btn action-btn--export" title="Xuất Excel tab hiện tại"> 
+                                        <i data-feather="download"></i> 
+                                        <span>Xuất Excel</span> 
+                                    </button>
+                                    <button id="capture-sknv-btn" class="action-btn action-btn--capture" title="Chụp ảnh tab hiện tại"> 
+                                        <i data-feather="camera"></i> 
+                                        <span>Chụp màn hình</span> 
+                                    </button> 
+                                </div>
                             </div>
 
                             <div id="employee-subtabs-content"> 
-
-  
-         
-                        <div id="subtab-sknv" class="sub-tab-content"> 
-                            
-         <div id="sknv-summary-container"></div> 
-
-                                    
-  <div id="sknv-details-container" class="mt-6 hidden"> 
+                                <div id="subtab-sknv" class="sub-tab-content"> 
+                                    <div id="sknv-summary-container"></div> 
+                                    <div id="sknv-details-container" class="mt-6 hidden"> 
                                         <p class="text-gray-500">Vui lòng chọn một nhân viên để xem chi tiết.</p> 
-
-                                         </div> 
-
-    
-        
-                  
-             </div> 
+                                    </div> 
+                                </div> 
                                 <div id="subtab-doanhthu-lk" class="sub-tab-content hidden space-y-6"> 
-
-                        
-            <div id="revenue-report-container-lk"></div> 
-
-    
-                                 <div id="dtnv-lk-details-container"></div> 
-    
-                             </div> 
-                                     <div id="subtab-thunhap" class="sub-tab-content hidden space-y-6"> 
-
-
-
-                        
-               <div id="income-report-placeholder"> 
-
-                                      
-   <p class="text-gray-500 mb-4">Vui lòng tải đủ các file: <b>Danh sách nhân viên, Yêu cầu xuất lũy kế, Giờ công, Thưởng nóng</b> và xử lý <b>Thưởng ERP</b> ở tab 
- Data để xem báo cáo thu nhập.</p> 
-                                     </div>
-
-
-                 
-                   <div id="income-report-container"></div> 
-                            
-     </div>
-  
-                               <div id="subtab-hieu-qua-khai-thac-luy-ke" class="sub-tab-content hidden space-y-6" data-capture-preset="landscape-table"> 
-
-                                     <div id="efficiency-report-container"></div> 
-
-                 
-           
-        </div> 
+                                    <div id="revenue-report-container-lk"></div> 
+                                    <div id="dtnv-lk-details-container"></div> 
+                                </div> 
+                                <div id="subtab-thunhap" class="sub-tab-content hidden space-y-6"> 
+                                    <div id="income-report-placeholder"> 
+                                        <p class="text-gray-500 mb-4">Vui lòng tải đủ các file: <b>Danh sách nhân viên, Yêu cầu xuất lũy kế, Giờ công, Thưởng nóng</b> và xử lý <b>Thưởng ERP</b> ở tab Data để xem báo cáo thu nhập.</p> 
+                                    </div>
+                                    <div id="income-report-container"></div> 
+                                </div>
+                                <div id="subtab-hieu-qua-khai-thac-luy-ke" class="sub-tab-content hidden space-y-6" data-capture-preset="landscape-table"> 
+                                    <div id="efficiency-report-container"></div> 
+                                </div> 
                                 <div id="subtab-doanhthu-nganhhang" class="sub-tab-content hidden space-y-6" data-capture-preset="mobile-portrait"> 
                                     <div id="category-revenue-report-container"></div> 
-
-                          
-        </div>
-
-
-                   
-              <div id="subtab-hieu-qua-thi-dua-lk" class="sub-tab-content hidden space-y-6"> 
-                
-                <div class="flex justify-start items-center"> 
-                    <div id="sknv-thidua-view-selector" class="view-switcher"> 
-      
-                   <button data-view="program" class="view-switcher__btn">Theo Chương Trình</button> 
-                   <button data-view="employee" class="view-switcher__btn active">Theo Nhân Viên</button> 
-                   </div>
-                </div>
-
-                <div id="competition-report-container-lk" class="mt-4 view-content-program"> 
- 
-                    <p class="text-gray-500">Vui lòng khai báo chương trình thi đua trong "Thiết lập mục tiêu" để xem báo cáo.</p> 
-                </div>
-
-                <div id="pasted-competition-report-container" class="mt-4 view-content-employee hidden"> 
-                     <p class="text-gray-500">Vui lòng dán dữ liệu "Thi đua nhân viên" ở tab "Cập nhật 
- dữ liệu" để xem báo cáo.</p> 
-                </div>
-                
-                <div id="pasted-competition-detail-container" class="mt-4 hidden"> 
-                    </div>
-                </div>
-              </div>
-                        </div>
-                    </div>
-
-              
-    </section> 
-                 <section id="realtime-section" class="page-section hidden">
-                    <div
-    id="realtime-section-placeholder" class="placeholder-message hidden">Vui lòng cập nhật danh sách nhân viên để xem kết quả.</div> 
-               
-     <div id="realtime-section-content"> 
-                        <div class="content-card"> 
-
-
-                             <div class="page-header border-b pb-4 mb-6"> 
-
-                         
-       <div class="flex items-center gap-x-3"> 
-                                     <h2 class="page-header__title">Phân Tích 
- Doanh Thu Realtime</h2> 
-
-   
-                                     <button class="page-header__help-btn" data-help-id="realtime" title="Xem hướng dẫn"> 
-                                        <i data-feather="help-circle"></i> 
-
-        
-           
-                   </button> 
-
-                          
-       </div> 
-                                <div class="flex-shrink-0 flex items-center gap-x-4 ml-auto"> 
-
-                   
-                  <label for="realtime-file-input" class="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium whitespace-nowrap">Thêm file Realtime</label> 
-                                     <input type="file" id="realtime-file-input" class="hidden" accept=".xlsx, .xls, .csv"> 
-
-
-        
-                          
-    <a href="https://report.mwgroup.vn/home/dashboard/077" target="_blank" class="text-blue-600 hover:underline whitespace-nowrap text-sm">Lấy file tại đây</a> 
-                                </div> 
-                    
-        </div>
-
-
-                              <button class="toggle-filters-btn" data-target="realtime-filter-container"> 
-
-   
-            
-                   <span class="text">Hiện bộ lọc nâng cao</span> 
-
-                                <i data-feather="chevron-down" class="icon"></i> 
-                            </button>
-    
-       
-                  <div id="realtime-filter-container" class="advanced-filters hidden"> 
-
-                           
-     <div id="realtime-filter-bar" class="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-4"> 
-                                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end"> 
-       
-                              
-    <div class="md:col-span-3"><label
-    for="realtime-filter-warehouse" class="block text-sm font-medium text-gray-600 mb-1">Mã Kho</label><select id="realtime-filter-warehouse" class="p-2 border rounded-lg text-sm bg-white shadow-sm w-full"></select></div> 
-
-                               
-             <div class="md:col-span-3"><label for="realtime-filter-department" class="block text-sm font-medium text-gray-600 mb-1">Bộ Phận</label><select id="realtime-filter-department" class="p-2 border rounded-lg 
- text-sm bg-white shadow-sm w-full"></select></div> 
-                                        <div class="md:col-span-6"><label for="realtime-filter-name" class="block text-sm font-medium text-gray-600 mb-1">Nhân Viên</label><select
-    id="realtime-filter-name" multiple></select></div> 
-
-        
-                              </div> 
-             
-            
-             <div class="border-t pt-4 grid grid-cols-1 md:grid-cols-12 gap-4 items-end"> 
-
-                                         <div class="md:col-span-3"><label for="realtime-highlight-nhanhang" class="block text-sm font-medium text-gray-600 mb-1">Tô màu ngành hàng</label><select id="realtime-highlight-nhanhang" multiple></select></div> 
-
-                  
-      
-                 <div class="md:col-span-3"><label for="realtime-highlight-nhomhang" class="block text-sm font-medium text-gray-600 mb-1">Tô màu nhóm hàng</label><select id="realtime-highlight-nhomhang" multiple></select></div> 
-                    
-                     <div class="md:col-span-3"><label for="realtime-highlight-employee" class="block text-sm font-medium text-gray-600 mb-1">Tô màu nhân viên</label><select id="realtime-highlight-employee" multiple></select></div> 
-
-                           
-               <div class="md:col-span-3 flex items-end gap-2"> 
-
-             
-                                <div><label for="realtime-highlight-color" class="block text-sm font-medium text-gray-600 mb-1">Chọn màu</label><input type="color" id="realtime-highlight-color" value="#ffff00" class="p-1 h-10 w-14 block bg-white border border-gray-300 cursor-pointer rounded-lg"></div> 
-
-   
-                       
-                    <button id="realtime-clear-highlight" class="bg-red-500 text-white px-4 h-10 rounded-lg hover:bg-red-600 transition text-sm">Xóa màu</button> 
-
-
-                                     
-     </div> 
+                                </div>
+                                <div id="subtab-hieu-qua-thi-dua-lk" class="sub-tab-content hidden space-y-6"> 
+                                    <div class="flex justify-start items-center"> 
+                                        <div id="sknv-thidua-view-selector" class="view-switcher"> 
+                                            <button data-view="program" class="view-switcher__btn">Theo Chương Trình</button> 
+                                            <button data-view="employee" class="view-switcher__btn active">Theo Nhân Viên</button> 
+                                        </div>
                                     </div>
 
- 
-             
-                   </div> 
+                                    <div id="competition-report-container-lk" class="mt-4 view-content-program"> 
+                                        <p class="text-gray-500">Vui lòng khai báo chương trình thi đua trong "Thiết lập mục tiêu" để xem báo cáo.</p> 
+                                    </div>
+
+                                    <div id="pasted-competition-report-container" class="mt-4 view-content-employee hidden"> 
+                                        <p class="text-gray-500">Vui lòng dán dữ liệu "Thi đua nhân viên" ở tab "Cập nhật dữ liệu" để xem báo cáo.</p> 
+                                    </div>
+                                    
+                                    <div id="pasted-competition-detail-container" class="mt-4 hidden"> 
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section> 
+                 <section id="realtime-section" class="page-section hidden">
+                    <div id="realtime-section-placeholder" class="placeholder-message hidden">Vui lòng cập nhật danh sách nhân viên để xem kết quả.</div> 
+                    <div id="realtime-section-content"> 
+                        <div class="content-card"> 
+                            <div class="page-header border-b pb-4 mb-6"> 
+                                <div class="flex items-center gap-x-3"> 
+                                    <h2 class="page-header__title">Phân Tích Doanh Thu Realtime</h2> 
+                                    <button class="page-header__help-btn" data-help-id="realtime" title="Xem hướng dẫn"> 
+                                        <i data-feather="help-circle"></i> 
+                                    </button> 
+                                </div> 
+                                <div class="flex-shrink-0 flex items-center gap-x-4 ml-auto"> 
+                                    <label for="realtime-file-input" class="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium whitespace-nowrap">Thêm file Realtime</label> 
+                                    <input type="file" id="realtime-file-input" class="hidden" accept=".xlsx, .xls, .csv"> 
+                                    <a href="https://report.mwgroup.vn/home/dashboard/077" target="_blank" class="text-blue-600 hover:underline whitespace-nowrap text-sm">Lấy file tại đây</a> 
+                                </div> 
+                            </div>
+
+                            <button class="toggle-filters-btn" data-target="realtime-filter-container"> 
+                                <span class="text">Hiện bộ lọc nâng cao</span> 
+                                <i data-feather="chevron-down" class="icon"></i> 
+                            </button>
+                            <div id="realtime-filter-container" class="advanced-filters hidden"> 
+                                <div id="realtime-filter-bar" class="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-4"> 
+                                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end"> 
+                                        <div class="md:col-span-3"><label
+    for="realtime-filter-warehouse" class="block text-sm font-medium text-gray-600 mb-1">Mã Kho</label><select id="realtime-filter-warehouse" class="p-2 border rounded-lg text-sm bg-white shadow-sm w-full"></select></div> 
+                                        <div class="md:col-span-3"><label for="realtime-filter-department" class="block text-sm font-medium text-gray-600 mb-1">Bộ Phận</label><select id="realtime-filter-department" class="p-2 border rounded-lg text-sm bg-white shadow-sm w-full"></select></div> 
+                                        <div class="md:col-span-6"><label for="realtime-filter-name" class="block text-sm font-medium text-gray-600 mb-1">Nhân Viên</label><select
+    id="realtime-filter-name" multiple></select></div> 
+                                    </div> 
+                                    <div class="border-t pt-4 grid grid-cols-1 md:grid-cols-12 gap-4 items-end"> 
+                                        <div class="md:col-span-3"><label for="realtime-highlight-nhanhang" class="block text-sm font-medium text-gray-600 mb-1">Tô màu ngành hàng</label><select id="realtime-highlight-nhanhang" multiple></select></div> 
+                                        <div class="md:col-span-3"><label for="realtime-highlight-nhomhang" class="block text-sm font-medium text-gray-600 mb-1">Tô màu nhóm hàng</label><select id="realtime-highlight-nhomhang" multiple></select></div> 
+                                        <div class="md:col-span-3"><label for="realtime-highlight-employee" class="block text-sm font-medium text-gray-600 mb-1">Tô màu nhân viên</label><select id="realtime-highlight-employee" multiple></select></div> 
+                                        <div class="md:col-span-3 flex items-end gap-2"> 
+                                            <div><label for="realtime-highlight-color" class="block text-sm font-medium text-gray-600 mb-1">Chọn màu</label><input type="color" id="realtime-highlight-color" value="#ffff00" class="p-1 h-10 w-14 block bg-white border border-gray-300 cursor-pointer rounded-lg"></div> 
+                                            <button id="realtime-clear-highlight" class="bg-red-500 text-white px-4 h-10 rounded-lg hover:bg-red-600 transition text-sm">Xóa màu</button> 
+                                        </div> 
+                                    </div>
+                                </div> 
                             </div>
                          </div>
 
 
-                         
- 
-         <div class="flex justify-between items-center mb-8"> 
-
-                                <nav id="realtime-subtabs-nav" class="border-b border-gray-200 -mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs" data-content-container="realtime-subtabs-content"> 
+                         <div class="flex justify-between items-center mb-8"> 
+                             <nav id="realtime-subtabs-nav" class="border-b border-gray-200 -mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs" data-content-container="realtime-subtabs-content"> 
                                 <button class="sub-tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-sieu-thi" data-title="SieuThiRealtime"> 
-           
-                          <i data-feather="zap"></i> 
-
-
-          
-                          <span>Siêu thị Realtime</span> 
-                          
-       </button> 
-          
-                       <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-nhan-vien" data-title="DTNVRealtime"> 
-
+                                    <i data-feather="zap"></i> 
+                                    <span>Siêu thị Realtime</span> 
+                                </button> 
+                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-nhan-vien" data-title="DTNVRealtime"> 
                                     <i data-feather="pie-chart"></i> 
-
-
-     
-                               <span>DT NV Realtime</span> 
- 
-                      
-           </button> 
-                                <button
-    class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-hieu-qua" data-title="HieuQuaKhaiThacRealtime"> 
-
-                                
-    
-  <i data-feather="bar-chart-2"></i> 
-                                     <span>Hiệu quả NV Realtime</span> 
-            
-                     </button>
-
-                             
-    <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-nganh-hang" data-title="NganhHangRealtime"> 
-
-                            
-          <i data-feather="tag"></i> 
-                                    <span>Ngành hàng Realtime</span> 
-
-     
-             
-                </button> 
-                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-hang" data-title="HangRealtime"> 
-
-
-                     
-               <i data-feather="globe"></i> 
-
-              
-                       <span>DT Hãng Realtime</span> 
-                                 </button>
-
-
-                                  <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-thi-dua-realtime" data-title="HieuQuaThiDuaRealtime"> 
-
-        
-       
-                      <i data-feather="award"></i> 
-                               
-      <span>Thi đua NV Realtime</span> 
-                                 </button> 
-
-
-     
-                         </nav>
-
-                    
-            <div class="flex items-center gap-x-2"> 
-                                <button id="compose-realtime-notification-btn" class="action-btn action-btn--composer" title="Nhận xét"> 
-  
-          
-                          <i data-feather="pen-tool"></i> 
-
-
-                                     <span>Nhận xét</span> 
-                
-                </button> 
-           
-                     <button id="export-realtime-btn" class="action-btn action-btn--export" title="Xuất Excel tab hiện tại"> 
-
-                                    <i data-feather="download"></i> 
-
-                                         <span>Xuất 
- Excel</span> 
-        
-                        </button> 
-                              
-   <button id="capture-realtime-btn" class="action-btn action-btn--capture" title="Chụp ảnh tab hiện tại"> 
-
-                                  
-   <i data-feather="camera"></i> 
-
-
-                                          <span>Chụp màn hình</span> 
+                                    <span>DT NV Realtime</span> 
+                                </button> 
+                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-hieu-qua" data-title="HieuQuaKhaiThacRealtime"> 
+                                    <i data-feather="bar-chart-2"></i> 
+                                    <span>Hiệu quả NV Realtime</span> 
                                 </button>
+                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-nganh-hang" data-title="NganhHangRealtime"> 
+                                    <i data-feather="tag"></i> 
+                                    <span>Ngành hàng Realtime</span> 
+                                </button> 
+                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-realtime-hang" data-title="HangRealtime"> 
+                                    <i data-feather="globe"></i> 
+                                    <span>DT Hãng Realtime</span> 
+                                </button>
+                                <button class="sub-tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-target="subtab-hieu-qua-thi-dua-realtime" data-title="HieuQuaThiDuaRealtime"> 
+                                    <i data-feather="award"></i> 
+                                    <span>Thi đua NV Realtime</span> 
+                                </button> 
+                            </nav>
 
-                     
-        
- </div> 
+                            <div class="flex items-center gap-x-2"> 
+                                <button id="compose-realtime-notification-btn" class="action-btn action-btn--composer" title="Nhận xét"> 
+                                    <i data-feather="pen-tool"></i> 
+                                    <span>Nhận xét</span> 
+                                </button> 
+                                <button id="export-realtime-btn" class="action-btn action-btn--export" title="Xuất Excel tab hiện tại"> 
+                                    <i data-feather="download"></i> 
+                                    <span>Xuất Excel</span> 
+                                </button> 
+                                <button id="capture-realtime-btn" class="action-btn action-btn--capture" title="Chụp ảnh tab hiện tại"> 
+                                    <i data-feather="camera"></i> 
+                                    <span>Chụp màn hình</span> 
+                                </button>
+                            </div> 
                         </div>
 
 
                          <div id="realtime-subtabs-content"> 
-                             <div id="subtab-realtime-sieu-thi" class="sub-tab-content space-y-8"> 
-
-                         
-        <h2 id="realtime-supermarket-title" class="text-2xl font-bold text-center text-gray-700"></h2> 
-
-                 
-                      <div id="realtime-kpi-cards-container" data-capture-group="kpi" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"> 
+                            <div id="subtab-realtime-sieu-thi" class="sub-tab-content space-y-8"> 
+                                <h2 id="realtime-supermarket-title" class="text-2xl font-bold text-center text-gray-700"></h2> 
+                                <div id="realtime-kpi-cards-container" data-capture-group="kpi" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"> 
                                     <div class="kpi-card p-6 rounded-2xl shadow-lg"> 
-
-         
-                 
-                  <h4 class="kpi-card-title font-semibold uppercase tracking-wider">Doanh thu thực</h4> 
-
-                              
-                 <p id="rt-kpi-dt-thuc-main" class="font-bold mt-2 mb-3">0</p> 
-                 
-                        <p id="rt-kpi-dt-thuc-sub1" class="text-sm">% HT: <span class="kpi-percentage-value">0%</span> / Target: 0</p> 
-
-                                     <p id="rt-kpi-dt-thuc-sub2" class="text-sm mt-1">DT Chưa xuất: 0</p> 
-
-                             
-     
-    </div> 
-                                    <div class="kpi-card p-6 rounded-2xl shadow-lg"> 
-
-                                        <h4 class="kpi-card-title font-semibold uppercase tracking-wider">Doanh thu Quy đổi</h4> 
-                 
-                         <p id="rt-kpi-dt-qd-main" class="font-bold mt-2 mb-3">0</p> 
-
-
-     
-                                    <p id="rt-kpi-dt-qd-sub1" class="text-sm">% HT: <span class="kpi-percentage-value">0%</span> / Target: 0</p> 
-                               
-         <p id="rt-kpi-dt-qd-sub2" class="text-sm mt-1">DTQĐ Chưa xuất: 0</p> 
-
-                                     </div> 
-
-
-                  
-                   <div class="kpi-card p-6 rounded-2xl shadow-lg"> 
-              
-                            <h4 class="kpi-card-title font-semibold uppercase tracking-wider">Tỷ lệ quy đổi</h4> 
-                   
-                     <p id="rt-kpi-tl-qd-main" class="font-bold mt-2 mb-3 kpi-percentage-value">0%</p> 
-
-
-                             
- 
-             <p id="rt-kpi-tl-qd-sub" class="text-sm">Mục tiêu: 0%</p> 
+                                        <h4 class="kpi-card-title font-semibold uppercase tracking-wider">Doanh thu thực</h4> 
+                                        <p id="rt-kpi-dt-thuc-main" class="font-bold mt-2 mb-3">0</p> 
+                                        <p id="rt-kpi-dt-thuc-sub1" class="text-sm">% HT: <span class="kpi-percentage-value">0%</span> / Target: 0</p> 
+                                        <p id="rt-kpi-dt-thuc-sub2" class="text-sm mt-1">DT Chưa xuất: 0</p> 
                                     </div> 
                                     <div class="kpi-card p-6 rounded-2xl shadow-lg"> 
-
-         
-     
-                                     <h4 class="kpi-card-title font-semibold uppercase tracking-wider">Doanh thu trả chậm</h4> 
-
-    
-                                     <p id="rt-kpi-dt-tc-main" class="font-bold mt-2 mb-3">0</p> 
-
-                     
-                    <p id="rt-kpi-dt-tc-sub" class="text-sm">% thực trả chậm: <span class="kpi-percentage-value">0%</span></p> 
-
-
-  
+                                        <h4 class="kpi-card-title font-semibold uppercase tracking-wider">Doanh thu Quy đổi</h4> 
+                                        <p id="rt-kpi-dt-qd-main" class="font-bold mt-2 mb-3">0</p> 
+                                        <p id="rt-kpi-dt-qd-sub1" class="text-sm">% HT: <span class="kpi-percentage-value">0%</span> / Target: 0</p> 
+                                        <p id="rt-kpi-dt-qd-sub2" class="text-sm mt-1">DTQĐ Chưa xuất: 0</p> 
+                                    </div> 
+                                    <div class="kpi-card p-6 rounded-2xl shadow-lg"> 
+                                        <h4 class="kpi-card-title font-semibold uppercase tracking-wider">Tỷ lệ quy đổi</h4> 
+                                        <p id="rt-kpi-tl-qd-main" class="font-bold mt-2 mb-3 kpi-percentage-value">0%</p> 
+                                        <p id="rt-kpi-tl-qd-sub" class="text-sm">Mục tiêu: 0%</p> 
+                                    </div> 
+                                    <div class="kpi-card p-6 rounded-2xl shadow-lg"> 
+                                        <h4 class="kpi-card-title font-semibold uppercase tracking-wider">Doanh thu trả chậm</h4> 
+                                        <p id="rt-kpi-dt-tc-main" class="font-bold mt-2 mb-3">0</p> 
+                                        <p id="rt-kpi-dt-tc-sub" class="text-sm">% thực trả chậm: <span class="kpi-percentage-value">0%</span></p> 
+                                    </div> 
                                 </div> 
-                      
-           </div> 
-
-
-              
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start"> 
-
-                                          
- <div id="realtime-qdc-panel" data-capture-group="1" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200"> 
-                                
-         <h3 id="realtime-qdc-title" class="text-xl font-bold text-gray-700 mb-4 uppercase
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start"> 
+                                    <div id="realtime-qdc-panel" data-capture-group="1" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200"> 
+                                        <h3 id="realtime-qdc-title" class="text-xl font-bold text-gray-700 mb-4 uppercase
     flex items-center gap-2"><span>NHÓM HÀNG QUY ĐỔI CAO</span></h3> 
-                                         <div id="realtime-qdc-content"><p class="text-gray-500 font-bold">Vui lòng tải file realtime để xem chi tiết.</p></div> 
-                          
-      
-      </div> 
+                                        <div id="realtime-qdc-content"><p class="text-gray-500 font-bold">Vui lòng tải file realtime để xem chi tiết.</p></div> 
+                                    </div> 
 
                                     <div id="realtime-category-panel" data-capture-group="1" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200"> 
-
-
-                                           <h3 id="realtime-category-title" class="text-xl font-bold text-gray-700 mb-4 uppercase flex items-center gap-2"> 
-     
-                                 
-       <span>NGÀNH HÀNG CHI TIẾT</span> 
-
-                                         </h3> 
-    
-                     
-                  <div id="realtime-category-details-content"><p class="text-gray-500 font-bold">Vui lòng tải file realtime để xem chi tiết.</p></div> 
-
-
-
-                                     </div> 
-      
-                           </div>
-           
-                  
-     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start"> 
-
-                                          <div id="realtime-efficiency-panel" data-capture-group="2" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200"> 
-
-                             
- 
-               <h3 id="realtime-efficiency-title" class="text-xl font-bold text-gray-700 mb-4 uppercase bg-yellow-100 text-yellow-800 p-2 rounded-md">HIỆU QUẢ KHAI THÁC</h3> 
-                           
-                <div id="realtime-efficiency-content"><p class="text-gray-500 font-bold">Vui lòng tải file realtime để xem chi tiết.</p></div> 
-
-
-                           
-         </div> 
-                             
-        <div id="realtime-unexported-revenue-panel" data-capture-group="2" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200 flex flex-col"> 
-                                   
-       <h3 class="text-xl font-bold uppercase mb-4 bg-red-100 text-red-800 p-2 rounded-md">DOANH 
- THU CHƯA
+                                        <h3 id="realtime-category-title" class="text-xl font-bold text-gray-700 mb-4 uppercase flex items-center gap-2"> 
+                                            <span>NGÀNH HÀNG CHI TIẾT</span> 
+                                        </h3> 
+                                        <div id="realtime-category-details-content"><p class="text-gray-500 font-bold">Vui lòng tải file realtime để xem chi tiết.</p></div> 
+                                    </div> 
+                                </div>
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start"> 
+                                    <div id="realtime-efficiency-panel" data-capture-group="2" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200"> 
+                                        <h3 id="realtime-efficiency-title" class="text-xl font-bold text-gray-700 mb-4 uppercase bg-yellow-100 text-yellow-800 p-2 rounded-md">HIỆU QUẢ KHAI THÁC</h3> 
+                                        <div id="realtime-efficiency-content"><p class="text-gray-500 font-bold">Vui lòng tải file realtime để xem chi tiết.</p></div> 
+                                    </div> 
+                                    <div id="realtime-unexported-revenue-panel" data-capture-group="2" class="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-gray-200 flex flex-col"> 
+                                        <h3 class="text-xl font-bold uppercase mb-4 bg-red-100 text-red-800 p-2 rounded-md">DOANH THU CHƯA
     XUẤT</h3> 
-
-                                          <div id="realtime-unexported-revenue-content" class="flex-grow"><p class="text-gray-500 font-bold text-center">Vui lòng tải file realtime để xem chi tiết.</p></div> 
-                             </div>
-
-                   
-              
- </div> 
+                                        <div id="realtime-unexported-revenue-content" class="flex-grow"><p class="text-gray-500 font-bold text-center">Vui lòng tải file realtime để xem chi tiết.</p></div> 
+                                    </div>
+                                </div> 
                             </div> 
 
-                             <div id="subtab-realtime-nhan-vien" class="sub-tab-content hidden space-y-4" data-capture-preset="large-font-report"> 
-                           
-    
-  <div id="realtime-employee-detail-container"></div> 
-
-                               <div id="realtime-revenue-report-container"></div> 
-               
-             </div> 
+                            <div id="subtab-realtime-nhan-vien" class="sub-tab-content hidden space-y-4" data-capture-preset="large-font-report"> 
+                                <div id="realtime-employee-detail-container"></div> 
+                                <div id="realtime-revenue-report-container"></div> 
+                            </div> 
                             <div id="subtab-realtime-hieu-qua" class="sub-tab-content hidden space-y-4" data-capture-preset="landscape-table"> 
-           
-                     <div id="realtime-efficiency-report-container"></div> 
-
-          
-                  </div> 
-                             <div id="subtab-realtime-nganh-hang" class="sub-tab-content hidden space-y-4" data-capture-preset="mobile-portrait"> 
-                       
-           <div id="realtime-category-revenue-report-container"></div> 
+                                <div id="realtime-efficiency-report-container"></div> 
+                            </div> 
+                            <div id="subtab-realtime-nganh-hang" class="sub-tab-content hidden space-y-4" data-capture-preset="mobile-portrait"> 
+                                <div id="realtime-category-revenue-report-container"></div> 
                             </div> 
 
                             <div id="subtab-realtime-hang" class="sub-tab-content hidden space-y-4"> 
                                 <div class="content-card" data-capture-group="1"> 
- 
-                                     <div class="flex flex-wrap items-center justify-between gap-4 mb-4"> 
-
+                                    <div class="flex flex-wrap items-center justify-between gap-4 mb-4"> 
                                         <h3 class="text-xl font-bold text-gray-700 uppercase">Thống kê theo Hãng</h3> 
-                  
-  
-                     <div id="dthang-realtime-view-selector" class="view-switcher"> 
-                                           <button data-view="brand" class="view-switcher__btn active">Theo Hãng</button> 
-
-                                       
-       <button data-view="employee" class="view-switcher__btn">Theo Nhân viên</button> 
-                       
-                 </div> 
-
-                                     </div> 
-                    
-                  <div class="flex flex-wrap items-center gap-4 mb-4"> 
+                                        <div id="dthang-realtime-view-selector" class="view-switcher"> 
+                                            <button data-view="brand" class="view-switcher__btn active">Theo Hãng</button> 
+                                            <button data-view="employee" class="view-switcher__btn">Theo Nhân viên</button> 
+                                        </div> 
+                                    </div> 
+                                    <div class="flex flex-wrap items-center gap-4 mb-4"> 
                                         <div> 
-
- 
-         
-                                   <label 
- for="realtime-brand-category-filter" class="font-semibold text-sm text-gray-600">Ngành hàng:</label> 
-                                           <select id="realtime-brand-category-filter" class="p-2 border rounded-lg text-sm bg-white shadow-sm mt-1"></select> 
-                                         </div>
-
-           
- 
-   
-                             <div> 
-
-                         
-                                     <label for="realtime-brand-filter" class="font-semibold text-sm text-gray-600">Hãng:</label> 
-           
-                                 <select id="realtime-brand-filter"
+                                            <label for="realtime-brand-category-filter" class="font-semibold text-sm text-gray-600">Ngành hàng:</label> 
+                                            <select id="realtime-brand-category-filter" class="p-2 border rounded-lg text-sm bg-white shadow-sm mt-1"></select> 
+                                        </div>
+                                        <div> 
+                                            <label for="realtime-brand-filter" class="font-semibold text-sm text-gray-600">Hãng:</label> 
+                                            <select id="realtime-brand-filter"
     class="p-2 border rounded-lg text-sm bg-white shadow-sm mt-1"></select> 
-          
-                              </div> 
-                        
- 
-             </div> 
-
-
+                                        </div> 
+                                    </div> 
                                     <div id="realtime-brand-report-container"> 
-                                         
- <div id="realtime-brand-table-container"></div> 
-               
-                          <div id="realtime-employee-table-container"
+                                        <div id="realtime-brand-table-container"></div> 
+                                        <div id="realtime-employee-table-container"
     class="hidden"></div> 
-       
-                             </div> 
-                                 </div> 
-        
-                     
-</div> 
+                                    </div> 
+                                </div> 
+                            </div> 
 
-                             <div id="subtab-hieu-qua-thi-dua-realtime" class="sub-tab-content hidden space-y-6"> 
-                      
-           <div id="competition-report-container-rt"> 
-                    
-                  <p class="text-gray-500">Vui lòng khai báo chương trình thi đua trong "Thiết lập mục tiêu" để xem báo cáo.</p> 
-
-                         
-        </div> 
+                            <div id="subtab-hieu-qua-thi-dua-realtime" class="sub-tab-content hidden space-y-6"> 
+                                <div id="competition-report-container-rt"> 
+                                    <p class="text-gray-500">Vui lòng khai báo chương trình thi đua trong "Thiết lập mục tiêu" để xem báo cáo.</p> 
+                                </div> 
                             </div>
-             
-      
-           </div> 
+                        </div> 
                     </div>
                 </section>
 
                 <section id="declaration-section" class="page-section hidden"> 
                     <h2 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-6">Khai báo dữ liệu</h2> 
-        
-             
                     <div class="content-card"> 
-                         <p class="text-sm text-yellow-600 bg-yellow-50 p-3 rounded-lg mb-4">Lưu ý: Dữ liệu khai báo tại đây sẽ được lưu vào trình duyệt và sử dụng cho các logic tính toán. Chỉnh sửa và nhấn "Lưu" để cập nhật.</p> 
+                        <p class="text-sm text-yellow-600 bg-yellow-50 p-3 rounded-lg mb-4">Lưu ý: Dữ liệu khai báo tại đây sẽ được lưu vào trình duyệt và sử dụng cho các logic tính toán. Chỉnh sửa và nhấn "Lưu" để cập nhật.</p> 
 
-               
-         <div class="space-y-0">  
-                             
+                        <div class="space-y-0">  
                             <details class="declaration-group" open> 
-                                <summary>Khai báo Danh mục & Cấu 
- trúc</summary> 
+                                <summary>Khai báo Danh mục & Cấu trúc</summary> 
                                 <div class="declaration-content"> 
                                     <div class="grid md:grid-cols-2 gap-6 mt-4"> 
-                                  
-        <div class="data-input-group"> 
+                                        <div class="data-input-group"> 
                                             <label class="data-input-group__label">Danh mục Ngành hàng - Nhóm hàng - Hãng:</label> 
                                             <div class="data-input-group__content"> 
- 
-                                                 <div class="flex items-center gap-2"> 
+                                                <div class="flex items-center gap-2"> 
                                                     <label for="file-category-structure" class="data-input-group__file-trigger">Thêm file Excel</label> 
- 
-                                                     <span id="file-name-category-structure" class="data-input-group__file-name">Chưa thêm file</span> 
-                                                 </div> 
-    
-                                             <p class="text-xs text-gray-500">File Excel có 2 sheet: sheet đầu tiên có cột "Ngành hàng", "Nhóm hàng"; sheet thứ hai tên là "Hãng" có 1 cột chứa tên các hãng.</p> 
-                                     
-            <input type="file" id="file-category-structure" class="hidden file-input" data-name="Danh mục Ngành/Nhóm hàng" data-state-key="categoryStructure" data-save-key="saved_category_structure" accept=".xlsx, .xls, .csv"> 
-                                                 <div class="data-input-group__status-wrapper"> 
-                                  
-                   <span id="file-status-category-structure" class="data-input-group__status-text"></span> 
+                                                    <span id="file-name-category-structure" class="data-input-group__file-name">Chưa thêm file</span> 
+                                                </div> 
+                                                <p class="text-xs text-gray-500">File Excel có 2 sheet: sheet đầu tiên có cột "Ngành hàng", "Nhóm hàng"; sheet thứ hai tên là "Hãng" có 1 cột chứa tên các hãng.</p> 
+                                                <input type="file" id="file-category-structure" class="hidden file-input" data-name="Danh mục Ngành/Nhóm hàng" data-state-key="categoryStructure" data-save-key="saved_category_structure" accept=".xlsx, .xls, .csv"> 
+                                                <div class="data-input-group__status-wrapper"> 
+                                                    <span id="file-status-category-structure" class="data-input-group__status-text"></span> 
                                                     <span id="category-structure-saved-status" class="data-input-group__status-text"></span> 
-                                  
-                </div> 
+                                                </div> 
                                                 <div id="progress-category-structure" class="progress-bar-container hidden"><div class="progress-bar"></div></div> 
-                                         
-    </div> 
-                                         </div>
+                                            </div> 
+                                        </div>
                                     </div> 
-                            
-     </div>
+                                </div>
+                            </details>
+
+                            <details class="declaration-group">
+                                <summary>Khai báo Sản Phẩm Đặc Quyền</summary>
+                                <div class="declaration-content">
+                                    <div class="grid md:grid-cols-2 gap-6 mt-4">
+                                        <div class="data-input-group">
+                                            <label class="data-input-group__label">
+                                                <i data-feather="star" class="h-5 w-5 text-yellow-500"></i>
+                                                <span>File Sản Phẩm Đặc Quyền (SPĐQ):</span>
+                                            </label>
+                                            <div class="data-input-group__content">
+                                                <div class="flex items-center gap-2">
+                                                    <label for="file-special-products" class="data-input-group__file-trigger">Thêm file SPĐQ</label>
+                                                    <span id="file-name-special-products" class="data-input-group__file-name">Chưa thêm file</span>
+                                                </div>
+                                                <p class="text-xs text-gray-500">File Excel chứa danh sách SPĐQ, yêu cầu cột: "Mã sản phẩm", "Nhóm hàng", "Tên sản phẩm". Dữ liệu sẽ được đồng bộ lên Cloud.</p>
+                                                
+                                                <input type="file" id="file-special-products" class="hidden file-input" data-name="Sản Phẩm Đặc Quyền" accept=".xlsx, .xls, .csv">
+                                                
+                                                <div class="data-input-group__status-wrapper">
+                                                    <span id="file-status-special-products" class="data-input-group__status-text"></span>
+                                                </div>
+                                                <div id="progress-special-products" class="progress-bar-container hidden"><div class="progress-bar"></div></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <form id="special-program-form" class="p-4 bg-slate-50 border rounded-lg space-y-3 hidden mt-6">
+                                        <input type="hidden" id="special-program-id">
+                                        <div>
+                                            <label for="special-program-name" class="block text-sm font-medium text-gray-700">Tên chương trình (VD: "Theo dõi Tivi Đặc Quyền")</label>
+                                            <input type="text" id="special-program-name" class="mt-1 block w-full p-2 border rounded-md" placeholder="Tên chương trình...">
+                                        </div>
+                                        <div>
+                                            <label for="special-program-group" class="block text-sm font-medium text-gray-700">Chọn Nhóm hàng để theo dõi</label>
+                                            <select id="special-program-group" multiple class="mt-1 block w-full"></select>
+                                        </div>
+                                        <div class="flex justify-end gap-2">
+                                            <button type="button" id="cancel-special-program-btn" class="px-4 py-2 text-sm rounded-md bg-gray-200 hover:bg-gray-300">Hủy</button>
+                                            <button type="submit" id="save-special-program-btn" class="px-4 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700">Lưu Chương trình</button>
+                                        </div>
+                                    </form>
+                        
+                                    <button id="add-special-program-btn" class="mt-4 w-full text-sm py-2 px-4 border-2 border-dashed rounded-lg hover:bg-slate-50">
+                                        + Thêm Chương trình SP Đặc Quyền
+                                    </button>
+                                    </div>
+                            </details>
+                            <details class="declaration-group"> 
+                                <summary>Dữ liệu tính toán</summary> 
+                                <div class="declaration-content"> 
+                                    <div class="grid md:grid-cols-2 gap-6 mt-4"> 
+                                        <div>
+                                            <label for="declaration-ycx" class="block text-md font-semibold text-gray-700 mb-2">Hình thức xuất (Tính doanh thu)</label> 
+                                            <textarea id="declaration-ycx" rows="8" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm" placeholder="Dán danh sách các loại YCX vào đây, mỗi loại một dòng..."></textarea> 
+                                        </div>
+                                        <div> 
+                                            <label for="declaration-ycx-gop" class="block text-md font-semibold text-gray-700 mb-2">Hình thức xuất (Trả góp)</label> 
+                                            <textarea id="declaration-ycx-gop" rows="8" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm" placeholder="Dán danh sách các loại YCX Góp vào đây, mỗi loại một dòng..."></textarea> 
+                                        </div>
+                                        <div class="md:col-span-2"> 
+                                            <label for="declaration-heso" class="block text-md font-semibold text-gray-700 mb-2">Hệ số quy đổi</label> 
+                                            <textarea id="declaration-heso" rows="8" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm" placeholder="Dán danh sách hệ số quy đổi vào đây, định dạng: Tên nhóm hàng,Hệ số"></textarea> 
+                                        </div>
+                                    </div> 
+                                    <div class="mt-4">
+                                        <button id="save-declaration-btn" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition">Lưu Dữ liệu tính toán</button> 
+                                    </div> 
+                                </div>
                             </details>
 
                             <details class="declaration-group"> 
-                                 <summary>Dữ liệu tính toán</summary> 
-           
-                      <div class="declaration-content"> 
-                                    <div class="grid md:grid-cols-2 gap-6 mt-4"> 
-                                        <div>
-      
-                                           <label for="declaration-ycx" class="block text-md font-semibold text-gray-700 mb-2">Hình thức xuất (Tính doanh thu)</label> 
-                                            <textarea id="declaration-ycx" rows="8" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm" placeholder="Dán danh sách 
- các loại YCX vào đây, mỗi loại một dòng..."></textarea> 
-                                        </div>
-                                         <div> 
-                   
-                           <label for="declaration-ycx-gop" class="block text-md font-semibold text-gray-700 mb-2">Hình thức xuất (Trả góp)</label> 
-                                            <textarea id="declaration-ycx-gop" rows="8" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm" placeholder="Dán danh sách các loại YCX Góp vào đây, mỗi loại một dòng..."></textarea> 
-     
-                                         </div>
-                                        <div class="md:col-span-2"> 
-                                
-             <label for="declaration-heso" class="block text-md font-semibold text-gray-700 mb-2">Hệ số quy đổi</label> 
-                                             <textarea id="declaration-heso" rows="8" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm" placeholder="Dán danh sách hệ số quy đổi vào đây, định dạng: Tên nhóm hàng,Hệ số"></textarea> 
-                
-                         </div>
-                                    </div> 
-                                    <div class="mt-4">
-            
-                              <button id="save-declaration-btn" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition">Lưu Dữ liệu tính toán</button> 
-                                     </div> 
-                              
-   </div>
-                            </details>
-
-                             <details class="declaration-group"> 
                                 <summary>Khai báo Tên Rút Gọn (Thi Đua NV)</summary> 
-         
-                         <div class="declaration-content"> 
+                                <div class="declaration-content"> 
                                     <p class="text-sm text-gray-600 mt-4 mb-4">Dữ liệu dán ở tab "Cập nhật dữ liệu" sẽ tự động trích xuất tên chương trình thi đua gốc vào đây. Hãy nhập "Tên Rút Gọn" để bảng biểu hiển thị gọn gàng hơn. Thay đổi sẽ được <strong>tự động lưu</strong>.</p> 
-   
-                                   <div id="competition-name-mapping-container" class="max-h-96 overflow-y-auto pr-2"> 
+                                    <div id="competition-name-mapping-container" class="max-h-96 overflow-y-auto pr-2"> 
                                         <p class="text-gray-500 italic">Vui lòng dán dữ liệu "Thi đua nhân viên" ở tab "Cập nhật dữ liệu" để hệ thống tự động trích xuất tên...</p> 
-      
-                               </div> 
-                                 </div>
+                                    </div> 
+                                </div>
                             </details>
 
-                  
-           <details class="declaration-group"> 
+                            <details class="declaration-group"> 
                                 <summary>Nội dung Hướng dẫn</summary> 
                                 <div class="declaration-content"> 
-                            
-          <div class="grid md:grid-cols-1 gap-6 mt-4"> 
+                                    <div class="grid md:grid-cols-1 gap-6 mt-4"> 
                                         <div> 
-                                            <label for="edit-help-data" class="block text-md font-semibold text-gray-700 mb-2">Hướng dẫn Tab Cập nhật 
- dữ liệu</label> 
-                                             <textarea id="edit-help-data" rows="6" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" placeholder="Nhập nội dung hướng dẫn cho tab Cập nhật dữ liệu..."></textarea> 
+                                            <label for="edit-help-data" class="block text-md font-semibold text-gray-700 mb-2">Hướng dẫn Tab Cập nhật dữ liệu</label> 
+                                            <textarea id="edit-help-data" rows="6" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" placeholder="Nhập nội dung hướng dẫn cho tab Cập nhật dữ liệu..."></textarea> 
                                         </div>
  
-                                         <div> 
+                                        <div> 
                                             <label for="edit-help-luyke" class="block text-md font-semibold text-gray-700 mb-2">Hướng dẫn Tab Lũy kế</label> 
-               
-                               <textarea id="edit-help-luyke" rows="6" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" placeholder="Nhập nội dung hướng dẫn cho tab Lũy kế..."></textarea> 
+                                            <textarea id="edit-help-luyke" rows="6" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" placeholder="Nhập nội dung hướng dẫn cho tab Lũy kế..."></textarea> 
                                         </div>
                     
-                     <div> 
-                                             <label for="edit-help-sknv" class="block text-md font-semibold text-gray-700 mb-2">Hướng dẫn Tab Sức khỏe NV</label> 
-                                
-             <textarea id="edit-help-sknv" rows="6" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" placeholder="Nhập nội dung hướng dẫn cho tab Sức khỏe NV..."></textarea> 
+                                        <div> 
+                                            <label for="edit-help-sknv" class="block text-md font-semibold text-gray-700 mb-2">Hướng dẫn Tab Sức khỏe NV</label> 
+                                            <textarea id="edit-help-sknv" rows="6" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" placeholder="Nhập nội dung hướng dẫn cho tab Sức khỏe NV..."></textarea> 
                                         </div>
                                      
-     <div> 
+                                        <div> 
                                             <label for="edit-help-realtime" class="block text-md font-medium text-gray-700 mb-2">Hướng dẫn Tab Realtime</label> 
-                                            <textarea id="edit-help-realtime" rows="6" class="w-full p-2 border rounded-lg 
- focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" placeholder="Nhập nội dung hướng dẫn cho tab Realtime..."></textarea> 
-                                         </div>
+                                            <textarea id="edit-help-realtime" rows="6" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" placeholder="Nhập nội dung hướng dẫn cho tab Realtime..."></textarea> 
+                                        </div>
                                     </div> 
-                    
-                 <div class="mt-4"> 
+                                    <div class="mt-4"> 
                                         <button id="save-help-content-btn" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition">Lưu Hướng dẫn</button> 
-                                     </div> 
-   
-                                 </div>
+                                    </div> 
+                                </div>
                             </details>
 
                         </div> 
                     </div> 
 
-       
-              <details class="declaration-group content-card mt-8"> 
-                         <summary>Thống kê Người dùng</summary> 
+                    <details class="declaration-group content-card mt-8"> 
+                        <summary>Thống kê Người dùng</summary> 
                         <div class="declaration-content !p-0"> 
                             <div id="user-stats-container" class="mt-4"> 
-      
-                           <p class="text-gray-500">Đang tải danh sách người dùng...</p> 
+                                <p class="text-gray-500">Đang tải danh sách người dùng...</p> 
                             </div>
-                         </div> 
+                        </div> 
                     </details> 
-  
-               </section>
+                </section>
                 </div>
         </main>
     </div>
@@ -1580,8 +990,8 @@ id="luyke-efficiency-content"></div></div>
     <div id="modal-admin-container"></div>
     <div id="modal-login-container"></div>
     <div id="modal-help-container"></div>
-   
- <div id="modal-chart-container"></div>
+    
+    <div id="modal-chart-container"></div>
     <div id="modal-composer-container"></div>
     <div id="modal-preview-container"></div>
     <div id="modal-selection-container"></div> 
@@ -1589,14 +999,12 @@ id="luyke-efficiency-content"></div></div>
     <div id="modal-customer-detail-container"></div>
     <div id="modal-unexported-detail-container"></div>
     <script>
-        
- document.addEventListener('DOMContentLoaded', function() {
-        
-     const tailwindScript = document.querySelector('script[src="https://cdn.tailwindcss.com"]');
+        document.addEventListener('DOMContentLoaded', function() {
+            const tailwindScript = document.querySelector('script[src="https://cdn.tailwindcss.com"]');
             if (tailwindScript && window.location.protocol !== "file:") {
                 console.warn("cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation");
             }
         });
     </script>
-    <script type="module" src="./main.js?v=4.2"></script> </body>
+    <script type="module" src="./main.js?v=4.56"></script> </body>
 </html>

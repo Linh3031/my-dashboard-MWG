@@ -1,3 +1,4 @@
+// Version 3.2 - Add globalCompetitionConfigs for Firestore sync
 // Version 3.1 - Add sort state for pasted competition detail table
 // Version 3.0 - Add competitionNameMappings and pastedThiDuaReportData
 // Version 2.8 - Merged features: Add warehouse state, user stats sort, and listener
@@ -65,7 +66,10 @@ const appState = {
         realtime: []
     },
     
-    competitionConfigs: [],
+    // === START REFACTOR 2 (Bước 2a) ===
+    localCompetitionConfigs: [], // Đổi tên từ competitionConfigs (Lưu trên localStorage)
+    globalCompetitionConfigs: [], // Config chung do Admin tạo (Lưu trên Firestore)
+    // === END REFACTOR 2 ===
     
     realtimeYCXData: [],
     luykeGoalSettings: {},

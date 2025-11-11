@@ -1,4 +1,4 @@
-// Version 1.0 - Initial creation from ui-components.js
+// Version 1.1 - Fix renderUpdateHistory to support nested object notes
 // MODULE: UI HOME
 // Chứa các hàm render cho tab Trang chủ.
 
@@ -8,6 +8,7 @@ import { formatters } from './ui-formatters.js';
 /**
  * Render lịch sử cập nhật lên trang chủ.
  * (Đã di chuyển từ ui-components.js)
+ * (V1.1 - ĐÃ SỬA LỖI [object Object])
  */
 const renderUpdateHistory = async () => {
     const container = document.getElementById('update-history-list');
@@ -16,13 +17,41 @@ const renderUpdateHistory = async () => {
         const response = await fetch(`./changelog.json?v=${new Date().getTime()}`);
         if (!response.ok) throw new Error('Không thể tải lịch sử cập nhật.');
         const updateHistory = await response.json();
-        container.innerHTML = updateHistory.map(item => `
-            <div class="bg-white rounded-xl shadow-md p-5 border border-gray-200">
+
+        // === START: LOGIC SỬA LỖI (V1.1) ===
+        // Logic render này được đồng bộ từ main.js [cite: 567-572]
+        container.innerHTML = updateHistory.map(item => {
+            const notesHtml = item.notes.map(note => {
+                // Kiểm tra xem 'note' là string hay object
+                if (typeof note === 'object' && note !== null && note.title && Array.isArray(note.items)) {
+                    // Đây là một mục lồng cấp
+                    const subItemsHtml = note.items.map(subItem => 
+                        // Sử dụng style 'list-style-type: "- "'
+                        `<li class="ml-4" style="list-style-type: '- ';">${subItem}</li>`
+                    ).join('');
+                 
+                    return `
+                        <li class="mt-2 font-semibold text-gray-800">${note.title}
+                            <ul class="font-normal text-gray-700 space-y-1 mt-1">
+                                ${subItemsHtml}
+                            </ul>
+                        </li>
+                    `;
+                } else {
+                    // Đây là một string bình thường
+                    return `<li class="text-gray-700">${note}</li>`;
+                }
+            }).join('');
+            // === END: LOGIC SỬA LỖI ===
+
+            return `
+                <div class="bg-white rounded-xl shadow-md p-5 border border-gray-200">
                     <h4 class="font-bold text-blue-600 mb-2">Phiên bản ${item.version} (${item.date})</h4>
                     <ul class="list-disc list-inside text-gray-700 space-y-1 text-sm">
-                        ${item.notes.map(note => `<li>${note}</li>`).join('')}
-                </ul>
-                </div>`).join('');
+                        ${notesHtml}
+                    </ul>
+                </div>`;
+        }).join('');
     } catch (error) {
         console.error("Lỗi khi render lịch sử cập nhật:", error);
         container.innerHTML = '<p class="text-red-500">Không thể tải lịch sử cập nhật.</p>';

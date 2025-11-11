@@ -1,4 +1,4 @@
-// Version 1.7 - Refactor: Re-wire call to new adminService
+// Version 1.8 - Fix "Ghost Bug" by re-rendering lists on goal drawer open
 // MODULE: LISTENERS - SETTINGS
 // Chứa logic sự kiện cho các drawers Cài đặt và các Modals.
 
@@ -51,7 +51,7 @@ export function initializeSettingsListeners(appController) {
                     }
                 }
             } catch (e) {
-                console.error("Error re-processing pasted data after name mapping change:", e);
+                 console.error("Error re-processing pasted data after name mapping change:", e);
             }
         }
     }, 1000); // 1000ms (1 second) delay
@@ -61,7 +61,19 @@ export function initializeSettingsListeners(appController) {
     document.getElementById('admin-submit-btn')?.addEventListener('click', () => appController.handleAdminLogin());
     document.getElementById('admin-cancel-btn')?.addEventListener('click', () => ui.toggleModal('admin-modal', false));
     document.getElementById('interface-settings-btn')?.addEventListener('click', () => ui.toggleDrawer('interface-drawer', true));
-    document.getElementById('goal-settings-btn')?.addEventListener('click', () => ui.toggleDrawer('goal-drawer', true));
+    
+    // === START: SỬA LỖI (Bug 3 - Lỗi "Ma") ===
+    document.getElementById('goal-settings-btn')?.addEventListener('click', () => {
+        // Render lại cả hai danh sách MỖI KHI MỞ drawer để xóa trạng thái "ma"
+        // (Đây là các hàm trong ui-admin.js, được export qua ui.js)
+        ui.renderCompetitionConfigUI(); // Render lại list "Thi đua Tùy chỉnh"
+        ui.renderSpecialProgramConfigUI(); // Render lại list "SP Đặc Quyền"
+        
+        // Mở drawer sau khi đã render
+        ui.toggleDrawer('goal-drawer', true);
+    });
+    // === END: SỬA LỖI (Bug 3) ===
+
     document.querySelectorAll('.close-drawer-btn, #drawer-overlay').forEach(el => el.addEventListener('click', () => ui.closeAllDrawers()));
 
     // --- Interface Settings ---
@@ -74,7 +86,7 @@ export function initializeSettingsListeners(appController) {
     document.getElementById('rt-goal-warehouse-select')?.addEventListener('change', () => settingsService.loadAndApplyRealtimeGoalSettings());
     document.getElementById('luyke-goal-warehouse-select')?.addEventListener('change', () => settingsService.loadAndApplyLuykeGoalSettings());
     document.querySelectorAll('.rt-goal-input, .rt-setting-input').forEach(input => input.addEventListener('input', () => {
-        settingsService.saveRealtimeGoalSettings();
+         settingsService.saveRealtimeGoalSettings();
         appController.updateAndRenderCurrentTab();
     }));
     document.querySelectorAll('.luyke-goal-input').forEach(input => input.addEventListener('input', () => {
@@ -121,7 +133,7 @@ export function initializeSettingsListeners(appController) {
             } else if (settingType === 'qdcView') {
                 settingsService.saveQdcViewSettings(selectedItems);
             } else if (settingType === 'categoryView') {
-                settingsService.saveCategoryViewSettings(selectedItems);
+                 settingsService.saveCategoryViewSettings(selectedItems);
             }
 
             ui.toggleModal('selection-modal', false);
@@ -140,7 +152,7 @@ export function initializeSettingsListeners(appController) {
             
             // 2. Thay đổi trạng thái của cột được nhấp
             const newSettings = currentSettings.map(col => {
-                if (col.id === columnId) {
+                 if (col.id === columnId) {
                     return { ...col, visible: !col.visible };
                  }
                 return col;

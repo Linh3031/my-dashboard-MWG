@@ -1,4 +1,4 @@
-// Version 3.40 - Remove dedicated listener for lk-detail capture button
+// Version 3.41 - Add listeners for Special Program Edit/Delete buttons
 // Version 3.34 - Refactor: Hoàn tất di dời 2 listener (Template, Debug) sang data.service.js
 // ... (các phiên bản trước giữ nguyên)
 // MODULE: EVENT LISTENERS INITIALIZER
@@ -64,6 +64,12 @@ export function initializeEventListeners(mainAppController) {
         const competitionGroupEl = document.getElementById('competition-group');
         if (competitionGroupEl) appState.choices['competition_group'] = new Choices(competitionGroupEl, competitionMultiSelectConfig);
         
+        // ========== START: THÊM MỚI (SP ĐẶC QUYỀN) ==========
+        // Thêm select box mới cho chương trình SPĐQ
+        const specialProgramGroupEl = document.getElementById('special-program-group');
+        if (specialProgramGroupEl) appState.choices['special_program_group'] = new Choices(specialProgramGroupEl, competitionMultiSelectConfig);
+        // ========== END: THÊM MỚI ==========
+
         const singleSelectConfig = { searchEnabled: true, removeItemButton: false, itemSelectText: 'Chọn', searchPlaceholderValue: 'Tìm kiếm...' };
         
         const singleSelects = {
@@ -130,12 +136,20 @@ export function initializeEventListeners(mainAppController) {
     // --- BẮT ĐẦU TÁI CẤU TRÚC (v3.32 -> v3.34) ---
     // File input listeners - Trỏ đến dataService
     document.querySelectorAll('.file-input').forEach(input => {
-        if (input.id !== 'file-thidua-vung' && input.id !== 'file-category-structure' && input.id !== 'realtime-file-input' && input.id !== 'debug-competition-file-input') {
+        if (input.id !== 'file-thidua-vung' && input.id !== 'file-category-structure' && input.id !== 'realtime-file-input' && input.id !== 'debug-competition-file-input' && input.id !== 'file-special-products') { // <-- THÊM MỚI: Loại trừ file SPĐQ
             input.addEventListener('change', (e) => dataService.handleFileUpload(e));
         }
     });
     // Gán các handler đặc biệt - Trỏ đến dataService
     document.getElementById('file-category-structure')?.addEventListener('change', (e) => dataService.handleCategoryFile(e));
+    
+    // ========== START: THÊM MỚI (SP ĐẶC QUYỀN) ==========
+    // Thêm listener cho file SPĐQ
+    document.getElementById('file-special-products')?.addEventListener('change', (e) => dataService.handleSpecialProductFileUpload(e));
+    // Thêm listener cho form submit SPĐQ
+    document.getElementById('special-program-form')?.addEventListener('submit', (e) => appController._handleSpecialProgramFormSubmit(e));
+    // ========== END: THÊM MỚI ==========
+
     document.getElementById('paste-luyke')?.addEventListener('input', () => dataService.handleLuykePaste());
     document.getElementById('paste-thiduanv')?.addEventListener('input', () => dataService.handleThiduaNVPaste());
     document.getElementById('paste-thuongerp')?.addEventListener('input', () => dataService.handleErpPaste());
@@ -198,6 +212,46 @@ export function initializeEventListeners(mainAppController) {
 
     // Body click listener (Giữ nguyên logic, nhưng thay đổi hàm callback)
     document.body.addEventListener('click', (e) => {
+        
+        // ========== START: THÊM MỚI (SP ĐẶC QUYỀN) ==========
+        // Các nút trong form SP Đặc Quyền
+        const addSpecialBtn = e.target.closest('#add-special-program-btn');
+        const cancelSpecialBtn = e.target.closest('#cancel-special-program-btn');
+        
+        if (addSpecialBtn) {
+            e.preventDefault();
+            appController._handleSpecialProgramFormShow(true); // Cần tạo hàm này trong main.js
+            return;
+        }
+        if (cancelSpecialBtn) {
+            e.preventDefault();
+            appController._handleSpecialProgramFormShow(false); // Cần tạo hàm này trong main.js
+            return;
+        }
+        
+        // === START: SỬA LỖI (Bug 2 - Thêm listener cho Sửa/Xóa) ===
+        const editSpecialBtn = e.target.closest('.edit-special-program-btn');
+        const deleteSpecialBtn = e.target.closest('.delete-special-program-btn');
+
+        if (editSpecialBtn) {
+            e.preventDefault();
+            const index = parseInt(editSpecialBtn.dataset.index, 10);
+            appController._handleSpecialProgramFormEdit(index); // Sẽ thêm ở main.js
+            return;
+        }
+        if (deleteSpecialBtn) {
+            e.preventDefault();
+            const index = parseInt(deleteSpecialBtn.dataset.index, 10);
+            if (confirm('Bạn có chắc chắn muốn xóa chương trình SP Đặc Quyền này?')) {
+                appController._handleSpecialProgramDelete(index); // Sẽ thêm ở main.js
+            }
+            return;
+        }
+        // === END: SỬA LỖI (Bug 2) ===
+
+        // (Listeners cho Sửa/Xóa sẽ được thêm sau khi UI render list)
+        // ========== END: THÊM MỚI ==========
+
         const interactiveRow = e.target.closest('.interactive-row');
         if (interactiveRow && interactiveRow.dataset.employeeId) {
             e.preventDefault();

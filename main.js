@@ -1,4 +1,4 @@
-// Version 4.52 - Refactor: Re-wire calls from firebase object to new services
+// Version 4.57 - Add Edit/Delete handlers for Special Programs
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -62,7 +62,7 @@ const app = {
     },
     // === END: FIX LỖI ===
 
-    currentVersion: '4.1', // Giữ nguyên version này, bạn có thể tự cập nhật sau khi tích hợp xong
+    currentVersion: '4.2', // Giữ nguyên version này, bạn có thể tự cập nhật sau khi tích hợp xong
     storage: storage,
     unsubscribeDataListener: null,
     _isInitialized: false,
@@ -128,7 +128,17 @@ const app = {
         // === END: TÁI CẤU TRÚC (RE-WIRING) ===
         // *** >>> KẾT THÚC SỬA LỖI <<< ***
 
-        appState.competitionConfigs = [];
+        // === START REFACTOR 2 (Bước 2a) ===
+        // Khởi tạo các mảng config
+        appState.localCompetitionConfigs = []; // Từ LocalStorage
+        appState.globalCompetitionConfigs = []; // Từ Firestore
+        // === END REFACTOR 2 ===
+
+        // ========== START: THÊM MỚI (Khởi tạo State SPĐQ) ==========
+        appState.specialProductList = []; // Danh sách SPĐQ (Từ Firestore)
+        appState.globalSpecialPrograms = []; // Cấu hình CT SPĐQ (Từ Firestore)
+        // ========== END: THÊM MỚI ==========
+
         appState.viewingDetailFor = null;
 
         try {
@@ -198,6 +208,40 @@ const app = {
                 appState.competitionNameMappings = {}; // Ensure it's an object on failure
         }
         // *** END NEW ***
+
+        // === START REFACTOR 2 (Bước 2c) ===
+        console.log("Loading Global Competition Configs from Firestore...");
+        try {
+            appState.globalCompetitionConfigs = await adminService.loadGlobalCompetitionConfigs();
+            console.log(`Successfully loaded ${appState.globalCompetitionConfigs.length} global competition configs.`);
+        } catch (error) {
+            console.error("Error loading Global Competition Configs:", error);
+            ui.showNotification("Không thể tải cấu hình thi đua chung từ cloud.", "error");
+            appState.globalCompetitionConfigs = []; // Ensure it's an array on failure
+        }
+        // === END REFACTOR 2 ===
+
+        // ========== START: THÊM MỚI (Tải SP Đặc Quyền & Cấu hình SPĐQ) ==========
+        console.log("Loading Special Product List from Firestore...");
+        try {
+            appState.specialProductList = await adminService.loadSpecialProductList();
+            console.log(`Successfully loaded ${appState.specialProductList.length} special products.`);
+        } catch (error) {
+            console.error("Error loading Special Product List:", error);
+            ui.showNotification("Không thể tải danh sách SP Đặc Quyền từ cloud.", "error");
+            appState.specialProductList = []; // Ensure it's an array on failure
+        }
+
+        console.log("Loading Global Special Programs from Firestore...");
+        try {
+            appState.globalSpecialPrograms = await adminService.loadGlobalSpecialPrograms();
+            console.log(`Successfully loaded ${appState.globalSpecialPrograms.length} global special programs.`);
+        } catch (error) {
+            console.error("Error loading Global Special Programs:", error);
+            ui.showNotification("Không thể tải cấu hình SP Đặc Quyền từ cloud.", "error");
+            appState.globalSpecialPrograms = []; // Ensure it's an array on failure
+        }
+        // ========== END: THÊM MỚI ==========
 
         initializeEventListeners(this);
         dataService.init(this); // <<< THÊM MỚI (v4.48): Khởi động data service
@@ -547,8 +591,12 @@ const app = {
             } else {
                 appState.composerTemplates = { luyke: {}, sknv: {}, realtime: {} };
             }
+
+            // === START REFACTOR 2 (Bước 2d) ===
+            // Đổi appState.competitionConfigs -> appState.localCompetitionConfigs
             const savedCompetition = localStorage.getItem('competitionConfigs');
-            if (savedCompetition) appState.competitionConfigs = JSON.parse(savedCompetition);
+            if (savedCompetition) appState.localCompetitionConfigs = JSON.parse(savedCompetition);
+            // === END REFACTOR 2 ===
             
             // *** MODIFIED (v4.41): REMOVED localStorage load for competitionNameMappings ***
             // (Nó sẽ được tải từ Firestore trong continueInit)
@@ -671,6 +719,7 @@ const app = {
     updateAndRenderCurrentTab() {
         // ... (Giữ nguyên)
         ui.renderCompetitionConfigUI(); // <<< SỬA (v4.47)
+        ui.renderSpecialProgramConfigUI(); // <<< THÊM MỚI (v4.55)
         const activeTab = document.querySelector('.page-section:not(.hidden)');
         if (!activeTab) {
             return;
@@ -787,7 +836,10 @@ const app = {
 
     _handleCompetitionFormEdit(index) {
         // ... (Giữ nguyên)
-        const config = appState.competitionConfigs[index];
+        // === START REFACTOR 2 (Bước 2d) ===
+        // Sửa appState.competitionConfigs -> appState.globalCompetitionConfigs
+        const config = appState.globalCompetitionConfigs[index];
+        // === END REFACTOR 2 ===
         if (!config) return;
         this._handleCompetitionFormShow(true, true);
         document.getElementById('competition-id').value = index;
@@ -816,8 +868,11 @@ const app = {
 
     _handleCompetitionDelete(index) {
         // ... (Giữ nguyên)
-        appState.competitionConfigs.splice(index, 1);
-        this._saveCompetitionConfigs();
+        // === START REFACTOR 2 (Bước 2d) ===
+        // Sửa logic để xóa khỏi global configs và lưu vào Firestore
+        appState.globalCompetitionConfigs.splice(index, 1);
+        adminService.saveGlobalCompetitionConfigs(appState.globalCompetitionConfigs);
+        // === END REFACTOR 2 ===
         this.updateAndRenderCurrentTab();
         ui.showNotification('Đã xóa chương trình thi đua.', 'success');
     },
@@ -837,8 +892,11 @@ const app = {
         const minPriceEl = document.getElementById('competition-min-price');
         const maxPriceEl = document.getElementById('competition-max-price');
         const excludeAppleEl = document.getElementById('competition-exclude-apple');
+        
+        // === START REFACTOR 2 (Bước 2d) ===
+        // Sửa logic để lưu vào global configs và Firestore
         const newConfig = {
-            id: id ? appState.competitionConfigs[parseInt(id, 10)].id : `comp_${new Date().getTime()}`,
+            id: id ? appState.globalCompetitionConfigs[parseInt(id, 10)].id : `comp_${new Date().getTime()}`,
             name: name,
             brands: brands,
             groups: groups,
@@ -847,19 +905,152 @@ const app = {
             maxPrice: (parseFloat(maxPriceEl?.value) || 0) * 1000000,
             excludeApple: excludeAppleEl ? excludeAppleEl.checked : false,
         };
-        if (id !== '') { appState.competitionConfigs[parseInt(id, 10)] = newConfig; }
-        else { appState.competitionConfigs.push(newConfig); }
-        this._saveCompetitionConfigs();
+        if (id !== '') { appState.globalCompetitionConfigs[parseInt(id, 10)] = newConfig; }
+        else { appState.globalCompetitionConfigs.push(newConfig); }
+        adminService.saveGlobalCompetitionConfigs(appState.globalCompetitionConfigs);
+        // === END REFACTOR 2 ===
+        
         this._handleCompetitionFormShow(false);
         this.updateAndRenderCurrentTab();
         ui.showNotification('Đã lưu chương trình thi đua thành công!', 'success');
     },
 
 
-        _saveCompetitionConfigs() {
+    _saveCompetitionConfigs() {
         // ... (Giữ nguyên)
-        localStorage.setItem('competitionConfigs', JSON.stringify(appState.competitionConfigs));
+        // === START REFACTOR 2 (Bước 2d) ===
+        // Lưu config CÁ NHÂN (local) vào localStorage
+        localStorage.setItem('competitionConfigs', JSON.stringify(appState.localCompetitionConfigs));
+        // === END REFACTOR 2 ===
     },
+
+    // ========== START: HÀM MỚI (SỬA LỖI) ==========
+    _handleSpecialProgramFormShow(show = true, isEdit = false) {
+        const form = document.getElementById('special-program-form');
+        const addBtn = document.getElementById('add-special-program-btn');
+        if (!form || !addBtn) return;
+
+        if (show) {
+            // Cần điền dữ liệu cho 'special-program-group'
+            const groupSelectInstance = appState.choices['special_program_group'];
+            if (groupSelectInstance) {
+                // Lấy nhóm hàng từ danh sách SPĐQ đã tải
+                const uniqueGroups = [...new Set(appState.specialProductList.map(item => String(item.nhomHang).trim()).filter(Boolean))].sort();
+                const groupOptions = uniqueGroups.map(group => ({ value: group, label: group }));
+                groupSelectInstance.clearStore();
+                groupSelectInstance.setChoices(groupOptions, 'value', 'label', true);
+            }
+        }
+
+        form.classList.toggle('hidden', !show);
+        addBtn.classList.toggle('hidden', show);
+
+        if (show && !isEdit) {
+            form.reset();
+            document.getElementById('special-program-id').value = '';
+            appState.choices['special_program_group']?.removeActiveItems();
+        }
+    },
+
+    // === START: SỬA LỖI (Bug 2) - Thêm hàm Sửa ===
+    _handleSpecialProgramFormEdit(index) {
+        const config = appState.globalSpecialPrograms[index];
+        if (!config) {
+            ui.showNotification('Lỗi: Không tìm thấy chương trình để sửa.', 'error');
+            return;
+        }
+
+        // 1. Hiển thị form ở chế độ "Edit"
+        this._handleSpecialProgramFormShow(true, true);
+
+        // 2. Điền dữ liệu cũ vào form
+        document.getElementById('special-program-id').value = index;
+        document.getElementById('special-program-name').value = config.name;
+        
+        const groupChoices = appState.choices['special_program_group'];
+        if (groupChoices) {
+            groupChoices.removeActiveItems();
+            // Đảm bảo các lựa chọn (choices) có sẵn trước khi set giá trị
+            const uniqueGroups = [...new Set(appState.specialProductList.map(item => String(item.nhomHang).trim()).filter(Boolean))].sort();
+            const groupOptions = uniqueGroups.map(group => ({ value: group, label: group }));
+            groupChoices.setChoices(groupOptions, 'value', 'label', true);
+            // Set giá trị
+            groupChoices.setChoiceByValue(config.groups || []);
+        }
+    },
+    // === END: SỬA LỖI (Bug 2) ===
+
+    _handleSpecialProgramFormSubmit(e) {
+        e.preventDefault();
+        const id = document.getElementById('special-program-id').value;
+        const name = document.getElementById('special-program-name').value.trim();
+        if (!name) { 
+            ui.showNotification('Tên chương trình không được để trống.', 'error'); 
+            return; 
+        }
+
+        // === START: THÊM KIỂM TRA TRÙNG LẶP (v4.56) ===
+        const newNameLower = name.trim().toLowerCase();
+        // Kiểm tra xem có chương trình nào khác (không phải chính nó) có tên này không
+        const existingProgram = appState.globalSpecialPrograms.find((p, index) => {
+            const isDifferentProgram = id === '' || parseInt(id, 10) !== index;
+            return isDifferentProgram && p.name.trim().toLowerCase() === newNameLower;
+        });
+
+        if (existingProgram) {
+            ui.showNotification('Lỗi: Tên chương trình này đã tồn tại.', 'error');
+            return;
+        }
+        // === END: THÊM KIỂM TRA TRÙNG LẶP ===
+        
+        const groupChoices = appState.choices['special_program_group'];
+        const groups = groupChoices ? groupChoices.getValue(true) : [];
+        
+        if (groups.length === 0) { 
+            ui.showNotification('Lỗi: Vui lòng chọn ít nhất một Nhóm hàng.', 'error'); 
+            return; 
+        }
+
+        const newProgram = {
+            id: id ? appState.globalSpecialPrograms[parseInt(id, 10)].id : `sp_${new Date().getTime()}`,
+            name: name,
+            groups: groups,
+        };
+
+        if (id !== '') { 
+            appState.globalSpecialPrograms[parseInt(id, 10)] = newProgram; 
+        } else { 
+            appState.globalSpecialPrograms.push(newProgram); 
+        }
+        
+        // Lưu lên Firestore
+        adminService.saveGlobalSpecialPrograms(appState.globalSpecialPrograms);
+        
+        this._handleSpecialProgramFormShow(false);
+        this.updateAndRenderCurrentTab();
+        ui.showNotification('Đã lưu chương trình SP Đặc Quyền thành công!', 'success');
+    },
+    
+    // === START: SỬA LỖI (Bug 2) - Thêm hàm Xóa ===
+    _handleSpecialProgramDelete(index) {
+        const config = appState.globalSpecialPrograms[index];
+        if (!config) {
+            ui.showNotification('Lỗi: Không tìm thấy chương trình để xóa.', 'error');
+            return;
+        }
+
+        // 1. Xóa khỏi mảng state
+        appState.globalSpecialPrograms.splice(index, 1);
+        
+        // 2. Lưu mảng mới lên Firestore
+        adminService.saveGlobalSpecialPrograms(appState.globalSpecialPrograms);
+        
+        // 3. Render lại UI (drawer sẽ tự cập nhật)
+        this.updateAndRenderCurrentTab();
+        ui.showNotification(`Đã xóa chương trình "${config.name}".`, 'success');
+    },
+    // === END: SỬS LỖI (Bug 2) ===
+    // ========== END: HÀM MỚI ==========
 
     // <<< XÓA BỎ (v4.49) >>>
     // async handleTemplateDownload() { ... }

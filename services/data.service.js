@@ -1,11 +1,9 @@
-// Version 1.6 - Clean up diagnostic logs
+// Version 1.10 - Fix critical 404 import path error
 import { appState } from '../state.js';
 import { ui } from '../ui.js';
-import { services } from '../services.js';
+import { services } from '../services.js'; 
 // import { firebase } from '../firebase.js'; // ĐÃ XÓA
-import { settingsService } from '../modules/settings.service.js';
-import { uiRealtime } from '../ui-realtime.js';
-
+import { settingsService } from '../modules/settings.service.js'; // <<< ĐÃ SỬA LỖI
 // === START: TÁI CẤU TRÚC (RE-WIRING) IMPORTS ===
 import { analyticsService } from './analytics.service.js';
 import { storageService } from './storage.service.js';
@@ -42,7 +40,11 @@ export const dataService = {
             reader.onload = (event) => {
                 try {
                     const data = new Uint8Array(event.target.result);
-                    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                    // === START: SỬA LỖI (Vấn đề 2 - Logic Dữ liệu) ===
+                    // Thêm 'cellText: true' để đọc Mã SP dưới dạng chuỗi,
+                    // tránh bị chuyển thành số khoa học (E+10)
+                    const workbook = XLSX.read(data, { type: 'array', cellDates: true, cellText: true });
+                    // === END: SỬA LỖI ===
                     resolve(workbook);
                 } catch (err) { reject(err); }
             };
@@ -108,7 +110,10 @@ export const dataService = {
 
         try {
             const workbook = await this._handleFileRead(file);
-            const rawData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+            // === START: SỬA LỖI (Vấn đề 2 - Logic Dữ liệu) ===
+            // Thêm { raw: false } để sử dụng cellText đã đọc
+            const rawData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { raw: false, defval: null });
+            // === END: SỬA LỖI ===
             const normalizeType = fileType.replace('-thangtruoc', '');
             const { normalizedData, success, missingColumns } = services.normalizeData(rawData, normalizeType);
             ui.displayDebugInfo(fileType);
@@ -126,7 +131,7 @@ export const dataService = {
 
             if (appState.currentUser?.email) {
                  // === START: TÁI CẤU TRÚC (RE-WIRING) ===
-                 analyticsService.incrementCounter('actionsTaken', appState.currentUser.email);
+                analyticsService.incrementCounter('actionsTaken', appState.currentUser.email);
                  // === END: TÁI CẤU TRÚC (RE-WIRING) ===
                  console.log(`Incremented actionsTaken for ${appState.currentUser.email}`);
             } else {
@@ -249,7 +254,9 @@ export const dataService = {
 
         try {
             const workbook = await this._handleFileRead(file);
-            const rawData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+            // === START: SỬA LỖI (Vấn đề 2 - Logic Dữ liệu) ===
+            const rawData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { raw: false, defval: null });
+            // === END: SỬA LỖI ===
             const { normalizedData, success, missingColumns } = services.normalizeData(rawData, fileType);
             ui.displayDebugInfo(fileType);
 
@@ -303,7 +310,6 @@ export const dataService = {
         const receivedTime = new Date().toLocaleTimeString();
         console.log(`%c[handleCloudDataUpdate @ ${receivedTime}] Received data snapshot from Firestore listener:`, "color: blue; font-weight: bold;", JSON.stringify(cloudData).substring(0, 500) + "...");
         let showSyncNotification = false;
-
         const currentWarehouse = appState.selectedWarehouse;
         if (!currentWarehouse) {
             console.warn(`[handleCloudDataUpdate @ ${receivedTime}] Received update but no warehouse selected. Ignoring.`);
@@ -489,7 +495,9 @@ export const dataService = {
             ui.updateFileStatus(uiId, expectedFileName, `Đang xử lý file...`, 'default');
 
             const workbook = await this._handleFileRead(downloadedFile);
-            const rawData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+            // === START: SỬA LỖI (Vấn đề 2 - Logic Dữ liệu) ===
+            const rawData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { raw: false, defval: null });
+            // === END: SỬA LỖI ===
 
             const normalizeType = dataType.replace('_thangtruoc', '');
 
@@ -532,7 +540,7 @@ export const dataService = {
                     const statusText = `Lỗi tải/xử lý. Thử lại?`;
                     ui.updateFileStatus(uiId, fallbackMetadata.fileName || 'Cloud', statusText, 'error', true, fallbackMetadata, dataType, warehouse);
                 } else {
-                    ui.updateFileStatus(uiId, 'Cloud', 'Lỗi tải/xử lý. Không tìm thấy thông tin.', 'error', false);
+                    ui.updateFileStatus(uiId, 'Cloud', 'Lỗi tải/xSử lý. Không tìm thấy thông tin.', 'error', false);
                 }
             }
         } finally {
@@ -780,12 +788,16 @@ export const dataService = {
         e.target.value = '';
         try {
             const workbook = await this._handleFileRead(file);
-            const rawData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+            // === START: SỬA LỖI (Vấn đề 2 - Logic Dữ liệu) ===
+            const rawData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { raw: false, defval: null });
+            // === END: SỬA LỖI ===
             const { normalizedData, success, missingColumns } = services.normalizeData(rawData, 'ycx');
             ui.displayDebugInfo('ycx-realtime');
             if (success) {
                 appState.realtimeYCXData = normalizedData;
-                uiRealtime.populateRealtimeBrandCategoryFilter();
+                // *** START: SỬA LỖI (v1.9) - Xóa dòng lỗi ***
+                // this.appController.populateRealtimeBrandCategoryFilter(); // <--- DÒNG NÀY GÂY LỖI
+                // *** END: SỬA LỖI (v1.9) ***
                 ui.showNotification(`Tải thành công ${normalizedData.length} dòng realtime!`, 'success');
                 this.appController.updateAndRenderCurrentTab();
             } else {
@@ -811,13 +823,17 @@ export const dataService = {
         try {
             const workbook = await this._handleFileRead(file);
             const categorySheet = workbook.Sheets[workbook.SheetNames[0]];
-            const categoryRawData = XLSX.utils.sheet_to_json(categorySheet);
+            // === START: SỬA LỖI (Vấn đề 2 - Logic Dữ liệu) ===
+            const categoryRawData = XLSX.utils.sheet_to_json(categorySheet, { raw: false, defval: null });
+            // === END: SỬA LỖI ===
             const categoryResult = services.normalizeCategoryStructureData(categoryRawData);
             let brandResult = { success: true, normalizedData: [] };
             const brandSheetName = workbook.SheetNames.find(name => name.toLowerCase().trim() === 'hãng');
             if (brandSheetName) {
                 const brandSheet = workbook.Sheets[brandSheetName];
-                const brandRawData = XLSX.utils.sheet_to_json(brandSheet);
+                // === START: SỬA LỖI (Vấn đề 2 - Logic Dữ liệu) ===
+                const brandRawData = XLSX.utils.sheet_to_json(brandSheet, { raw: false, defval: null });
+                // === END: SỬA LỖI ===
                 brandResult = services.normalizeBrandData(brandRawData);
             }
             if(categoryResult.success) {
@@ -837,6 +853,51 @@ export const dataService = {
             fileInput.value = '';
         }
     },
+
+    // ========== START: HÀM MỚI XỬ LÝ FILE SPĐQ ==========
+    /**
+     * Xử lý tải file Sản Phẩm Đặc Quyền (SPĐQ).
+     */
+    async handleSpecialProductFileUpload(e) {
+        const fileInput = e.target;
+        const file = fileInput.files[0];
+        const uiId = 'special-products'; // ID từ index.html
+        if (!file) return;
+
+        ui.updateFileStatus(uiId, file.name, 'Đang xử lý...', 'default');
+        ui.showProgressBar(uiId);
+        try {
+            const workbook = await this._handleFileRead(file);
+            // === START: SỬA LỖI (Vấn đề 2 - Logic Dữ liệu) ===
+            // Thêm { raw: false } để đảm bảo đọc Mã SP dạng text
+            const rawData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { raw: false, defval: null });
+            // === END: SỬA LỖI ===
+            
+            // Gọi hàm normalize (sẽ được thêm vào services.js/data-processing.js)
+            const result = services.normalizeSpecialProductData(rawData);
+
+            if (result.success) {
+                appState.specialProductList = result.normalizedData;
+                
+                // Lưu lên Cloud
+                await adminService.saveSpecialProductList(result.normalizedData);
+                
+                ui.updateFileStatus(uiId, file.name, `✓ Đã xử lý và đồng bộ ${result.normalizedData.length} SPĐQ.`, 'success');
+                ui.showNotification(`Đã đồng bộ ${result.normalizedData.length} Sản phẩm Đặc quyền!`, 'success');
+            } else {
+                ui.showNotification(`Lỗi xử lý file SPĐQ: ${result.error}`, 'error');
+                ui.updateFileStatus(uiId, file.name, `Lỗi: ${result.error}`, 'error');
+            }
+        } catch (error) {
+            console.error("Lỗi khi xử lý file SPĐQ:", error);
+            ui.updateFileStatus(uiId, file.name, `Lỗi: ${error.message}`, 'error');
+            ui.showNotification(`Lỗi khi đọc file SPĐQ: ${error.message}`, 'error');
+        } finally {
+            ui.hideProgressBar(uiId);
+            fileInput.value = '';
+        }
+    },
+    // ========== END: HÀM MỚI ==========
 
     /**
      * Xử lý tải file Thi Đua Vùng.
@@ -866,6 +927,7 @@ export const dataService = {
         }
     },
     
+
     // --- CÁC HÀM MỚI (v1.3) ---
 
     /**
@@ -900,7 +962,9 @@ export const dataService = {
         ui.showNotification('Đang phân tích file gỡ lỗi...', 'success');
         try {
             const workbook = await this._handleFileRead(file);
-            const rawData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+            // === START: SỬA LỖI (Vấn đề 2 - Logic Dữ liệu) ===
+            const rawData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { raw: false, defval: null });
+            // === END: SỬA LỖI ===
             const debugResults = services.debugCompetitionFiltering(rawData);
             ui.renderCompetitionDebugReport(debugResults);
         } catch (err) {
