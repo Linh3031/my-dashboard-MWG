@@ -1,4 +1,4 @@
-// Version 4.57 - Add Edit/Delete handlers for Special Programs
+// Version 4.58 - Fix UI status for Special Product list on load
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -225,7 +225,16 @@ const app = {
         console.log("Loading Special Product List from Firestore...");
         try {
             appState.specialProductList = await adminService.loadSpecialProductList();
-            console.log(`Successfully loaded ${appState.specialProductList.length} special products.`);
+            const productCount = appState.specialProductList.length; // Lấy số lượng
+            console.log(`Successfully loaded ${productCount} special products.`);
+            
+            // === START: THÊM MỚI (VÁ LỖI UI) v4.58 ===
+            // Cập nhật trạng thái UI sau khi tải từ cloud (giống như logic của Danh mục Ngành hàng)
+            if (productCount > 0) {
+                ui.updateFileStatus('special-products', 'Tải từ Cloud', `✓ Đã tải ${productCount} sản phẩm.`, 'success', false);
+            }
+            // === END: THÊM MỚI (VÁ LỖI UI) v4.58 ===
+
         } catch (error) {
             console.error("Error loading Special Product List:", error);
             ui.showNotification("Không thể tải danh sách SP Đặc Quyền từ cloud.", "error");
