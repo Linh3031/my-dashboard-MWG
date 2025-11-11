@@ -1,5 +1,25 @@
 [
   {
+    "version": "4.2",
+    "date": "11/11/2025",
+    "notes": [
+      {
+        "title": "Thêm tính năng xem chi tiết thi đua lũy kế của từng nhân viên :",
+        "items": [
+          "Ở chế độ xem theo nhân viên, bảng tổng : số màu xanh là thi đua theo doanh thu, màu đen là thi đua theo số lượng ",
+          "Bấm vào tên nhân viên để xem chi tiết của 1 bạn"
+        ]
+      },
+      {
+        "title": "Thêm tính năng đo lường tỷ lệ khai thác sản phẩm đặc quyền",
+        "items": [
+          "Xem ở tab thi đua NV LK và Thi đua NV realtime",
+          "Dữ liệu cập nhật theo mã sản phẩm từ ngành hàng"
+        ]
+      }
+    ]
+  },
+  {
     "version": "4.0 / 4.1",
     "date": "08/11/2025",
     "notes": [
