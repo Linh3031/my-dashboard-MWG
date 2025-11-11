@@ -9,6 +9,111 @@ import { utils } from './utils.js';
 import { dataProcessing } from './services/data-processing.js';
 
 const reportGeneration = {
+    // ========== START: HÀM MỚI CHO SẢN PHẨM ĐẶC QUYỀN ==========
+    /**
+     * Tính toán báo cáo Sản Phẩm Đặc Quyền (SPĐQ) cho các chương trình đã cấu hình.
+     * @param {Array} sourceYcxData - Dữ liệu YCX thô (lũy kế hoặc realtime).
+     * @param {Array} specialProgramConfigs - Cấu hình các chương trình SPĐQ (từ appState.globalSpecialPrograms).
+     * @returns {Array} - Mảng các đối tượng báo cáo, mỗi đối tượng cho một chương trình.
+     */
+    calculateSpecialProductReport(sourceYcxData, specialProgramConfigs) {
+        // 1. Kiểm tra dữ liệu đầu vào
+        if (!sourceYcxData || sourceYcxData.length === 0 ||
+            !specialProgramConfigs || specialProgramConfigs.length === 0 ||
+            !appState.specialProductList || appState.specialProductList.length === 0) {
+            return [];
+        }
+
+        // 2. Lọc dữ liệu bán hàng hợp lệ (Đã xuất, đã thu, chưa hủy, chưa trả)
+        const hinhThucXuatTinhDoanhThu = dataProcessing.getHinhThucXuatTinhDoanhThu();
+        const validSalesData = sourceYcxData.filter(row => {
+            const isDoanhThuHTX = hinhThucXuatTinhDoanhThu.has(row.hinhThucXuat);
+            const isBaseValid = (row.trangThaiThuTien || "").trim() === 'Đã thu' &&
+                                (row.trangThaiHuy || "").trim() === 'Chưa hủy' &&
+                                (row.tinhTrangTra || "").trim() === 'Chưa trả' &&
+                                (row.trangThaiXuat || "").trim() === 'Đã xuất';
+            return isBaseValid && isDoanhThuHTX;
+        });
+
+        if (validSalesData.length === 0) return [];
+
+        // 3. Xử lý từng chương trình SPĐQ
+        const report = specialProgramConfigs.map(program => {
+            
+            // 3.1. Lấy danh sách Nhóm hàng và Mã SPĐQ cho chương trình này
+            const programGroups = new Set((program.groups || []).map(g => String(g).trim()));
+            if (programGroups.size === 0) return null; // Bỏ qua nếu chương trình không chọn nhóm hàng
+
+            const specialProductSet = new Set(
+                appState.specialProductList
+                    .filter(sp => programGroups.has(String(sp.nhomHang).trim()))
+                    .map(sp => String(sp.maSanPham).trim())
+            );
+
+            // 3.2. Lọc dữ liệu bán hàng chỉ cho các nhóm hàng trong chương trình này
+            const totalGroupSales = validSalesData.filter(row => 
+                programGroups.has(String(row.nhomHang).trim())
+            );
+            if (totalGroupSales.length === 0) return null; // Bỏ qua nếu không có doanh thu nhóm hàng này
+
+            // 3.3. Tính toán cho từng nhân viên
+            const employeeResults = appState.danhSachNhanVien.map(employee => {
+                const stats = {
+                    slDacQuyen: 0,
+                    slNhomHang: 0,
+                    dtDacQuyen: 0,
+                    dtNhomHang: 0
+                };
+
+                // Lọc doanh số của nhân viên này
+                const employeeSales = totalGroupSales.filter(row => {
+                    const msnvMatch = String(row.nguoiTao || '').match(/(\d+)/);
+                    return msnvMatch && msnvMatch[1].trim() === employee.maNV;
+                });
+
+                if (employeeSales.length === 0) {
+                    return { ...employee, ...stats, tyLeSL: 0, tyLeDT: 0 };
+                }
+
+                employeeSales.forEach(row => {
+                    const maSanPham = String(row.maSanPham || '').trim();
+                    const thanhTien = parseFloat(String(row.thanhTien || "0").replace(/,/g, '')) || 0;
+                    const soLuong = parseInt(String(row.soLuong || "0"), 10) || 0;
+
+                    // Cộng vào tổng nhóm hàng
+                    stats.slNhomHang += soLuong;
+                    stats.dtNhomHang += thanhTien;
+
+                    // Kiểm tra nếu là SPĐQ
+                    if (specialProductSet.has(maSanPham)) {
+                        stats.slDacQuyen += soLuong;
+                        stats.dtDacQuyen += thanhTien;
+                    }
+                });
+
+                const tyLeSL = stats.slNhomHang > 0 ? (stats.slDacQuyen / stats.slNhomHang) : 0;
+                const tyLeDT = stats.dtNhomHang > 0 ? (stats.dtDacQuyen / stats.dtNhomHang) : 0;
+
+                return {
+                    maNV: employee.maNV,
+                    hoTen: employee.hoTen,
+                    boPhan: employee.boPhan,
+                    ...stats,
+                    tyLeSL,
+                    tyLeDT
+                };
+            }).filter(e => e.slNhomHang > 0); // Chỉ giữ lại NV có bán nhóm hàng này
+
+            return {
+                program: program, // Cấu hình chương trình (tên, nhóm hàng)
+                employeeData: employeeResults, // Dữ liệu đã tính toán
+            };
+        }).filter(Boolean); // Lọc bỏ các chương trình null (không có nhóm hàng hoặc không có doanh thu)
+
+        return report;
+    },
+    // ========== END: HÀM MỚI ==========
+
     calculateCompetitionFocusReport(sourceYcxData, competitionConfigs) {
         if (!sourceYcxData || sourceYcxData.length === 0 || !competitionConfigs || competitionConfigs.length === 0) {
             return [];

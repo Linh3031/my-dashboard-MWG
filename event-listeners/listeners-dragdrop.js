@@ -1,3 +1,4 @@
+// Version 2.3 - Fix selector for pasted competition toggles (div instead of button)
 // Version 2.2 - Add dragdrop support for pasted competition column toggles
 // Version 2.1 - Add logging to diagnose re-render issue on drop
 // MODULE: LISTENERS - DRAG & DROP
@@ -69,8 +70,10 @@ function activateSortableOnPastedCompToggles(container) {
         filter: '.non-draggable',
         handle: '.drag-handle-icon',
         onEnd: (evt) => {
-            // Target các nút bấm mới
-            const newButtonOrder = Array.from(evt.target.querySelectorAll('button.pasted-comp-toggle-btn'));
+            // === START: SỬA LỖI (v2.3) ===
+            // Target các thẻ div (thay vì button)
+            const newButtonOrder = Array.from(evt.target.querySelectorAll('div.pasted-comp-toggle-btn'));
+            // === END: SỬA LỖI (v2.3) ===
             
             // Dùng 'tenGoc' làm ID duy nhất
             const newColumnNameOrder = newButtonOrder.map(btn => btn.dataset.columnTenGoc).filter(Boolean);

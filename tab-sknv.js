@@ -1,6 +1,5 @@
-// Version 3.9 - Update drag-drop listener to target the whole subtab container
-// Version 3.8 - Add view-switcher logic for sknv-thidua tab
-// Version 3.7 - Fix duplicate 'activeSubTabId' identifier declaration & Add logging
+// Version 4.8 - Refactor: Gỡ bỏ logic wrapper lồng nhau (sknv-program-grid-wrapper)
+// Version 4.3 - Refactor: Use globalCompetitionConfigs for report calculation
 // MODULE: TAB SKNV
 // Chịu trách nhiệm render và xử lý logic cho tab "Sức khỏe nhân viên"
 
@@ -77,22 +76,44 @@ export const sknvTab = {
         console.log(`[tab-sknv.js render] Active subtab ID (re-check): ${activeSubTabId}`); 
 
         const detailInfo = appState.viewingDetailFor; 
-        const isViewingDetail = detailInfo && (detailInfo.sourceTab === 'sknv' || detailInfo.sourceTab === 'dtnv-lk'); 
+        // === START: YÊU CẦU 4 (Thêm check sknv-thidua-pasted) ===
+        const isViewingDetail = detailInfo && (detailInfo.sourceTab === 'sknv' || detailInfo.sourceTab === 'dtnv-lk' || detailInfo.sourceTab === 'sknv-thidua-pasted'); 
+        // === END: YÊU CẦU 4 ===
         console.log(`[tab-sknv.js render] Is viewing detail? ${isViewingDetail}. Detail Info:`, detailInfo); 
 
         try { 
             if (isViewingDetail) { 
                 console.log(`[tab-sknv.js render] Rendering detail view for employee: ${detailInfo.employeeId}`); 
-                const employeeData = appState.masterReportData.sknv.find(nv => String(nv.maNV) === String(detailInfo.employeeId)); 
+                
                 if (activeSubTabId === 'subtab-sknv' && detailInfo.sourceTab === 'sknv') { 
-                   
-  console.log("[tab-sknv.js render] Calling ui.displaySknvReport (detail mode)."); 
-                     ui.displaySknvReport(filteredReport, true); 
+                    const employeeData = appState.masterReportData.sknv.find(nv => String(nv.maNV) === String(detailInfo.employeeId)); 
+                    console.log("[tab-sknv.js render] Calling ui.displaySknvReport (detail mode)."); 
+                    ui.displaySknvReport(filteredReport, true); 
+
                 } else if (activeSubTabId === 'subtab-doanhthu-lk' && detailInfo.sourceTab === 'dtnv-lk') { 
+                    const employeeData = appState.masterReportData.sknv.find(nv => String(nv.maNV) === String(detailInfo.employeeId)); 
                     console.log("[tab-sknv.js render] Calling services.generateLuyKeEmployeeDetailReport..."); 
                     const luykeDetailData = services.generateLuyKeEmployeeDetailReport(detailInfo.employeeId, filteredYCXData); 
                     console.log("[tab-sknv.js render] Calling ui.renderLuykeEmployeeDetail..."); 
                     ui.renderLuykeEmployeeDetail(luykeDetailData, employeeData, 'dtnv-lk-details-container'); 
+
+                // === START: YÊU CẦU 4 (Render chi tiết) ===
+                } else if (activeSubTabId === 'subtab-hieu-qua-thi-dua-lk' && detailInfo.sourceTab === 'sknv-thidua-pasted') {
+                    console.log("[tab-sknv.js render] Calling uiSknv.renderPastedCompetitionDetail...");
+                    // Tìm data NV từ appState.pastedThiDuaReportData
+                    const employeePastedData = appState.pastedThiDuaReportData.find(nv => String(nv.maNV) === String(detailInfo.employeeId));
+                    // Lấy TBT bộ phận đã lưu
+                    const deptAverages = uiSknv._lastPastedAverages || {};
+                    
+                    // Gọi hàm render chi tiết
+                    uiSknv.renderPastedCompetitionDetail(employeePastedData, deptAverages);
+                    
+                    // Ẩn các container tóm tắt
+                    document.getElementById('competition-report-container-lk')?.classList.add('hidden');
+                    document.getElementById('pasted-competition-report-container')?.classList.add('hidden');
+                    document.getElementById('pasted-competition-detail-container')?.classList.remove('hidden');
+
+                // === END: YÊU CẦU 4 ===
                 } else {
                     console.log(`[tab-sknv.js render] Viewing detail but not on the correct subtab (${activeSubTabId}), rendering summary instead.`); 
                     this.renderSummaryViews(activeSubTabId, filteredReport, filteredYCXData); 
@@ -117,13 +138,29 @@ export const sknvTab = {
          highlightService.populateHighlightFilters('sknv', filteredYCXData, filteredReport); 
         highlightService.applyHighlights('sknv'); 
 
-        // *** START: MODIFIED (v3.9) ***
-        // Target container cha để kích hoạt listener cho CẢ HAI bảng
-        if (!isViewingDetail) { 
-            console.log("[tab-sknv.js render] Initializing drag-drop for 'employee-subtabs-content'."); 
-            dragDroplisteners.initializeForContainer('employee-subtabs-content'); 
+        // === START: MODIFIED (v4.1) - Sửa lỗi kéo thả ===
+        // Chỉ khởi tạo kéo thả khi ở view tóm tắt (không phải chi tiết)
+        if (!isViewingDetail) {
+            // Và chỉ khởi tạo cho container của tab con đang hoạt động
+            
+            if (activeSubTabId === 'subtab-hieu-qua-khai-thac-luy-ke') {
+                // Kích hoạt kéo thả cho bảng "Hiệu quả NV LK"
+                console.log("[tab-sknv.js render] Initializing drag-drop for 'efficiency-report-container'."); 
+                dragDroplisteners.initializeForContainer('efficiency-report-container');
+            
+            } else if (activeSubTabId === 'subtab-hieu-qua-thi-dua-lk') {
+                // Kích hoạt kéo thả cho tab "Thi đua NV LK"
+                const activeViewBtn = document.querySelector('#sknv-thidua-view-selector .view-switcher__btn.active');
+                const viewType = activeViewBtn ? activeViewBtn.dataset.view : 'employee';
+                
+                // Chỉ kích hoạt cho view "Theo Nhân Viên" (nơi có các thẻ kéo thả)
+                if (viewType === 'employee') {
+                    console.log("[tab-sknv.js render] Initializing drag-drop for 'pasted-competition-report-container'."); 
+                    dragDroplisteners.initializeForContainer('pasted-competition-report-container'); 
+                }
+            }
         }
-        // *** END: MODIFIED (v3.9) ***
+        // === END: MODIFIED (v4.1) ===
         
         console.log("[tab-sknv.js render] === Render complete ==="); 
     },
@@ -132,51 +169,89 @@ export const sknvTab = {
 filteredReport, filteredYCXData) {
         console.log(`[tab-sknv.js renderSummaryViews] Rendering summary for subtab: ${activeSubTabId}`); 
         
-        // *** START: MODIFIED (v3.8) ***
+        // *** START: MODIFIED (v3.8 & v4.0) ***
         if (activeSubTabId === 'subtab-hieu-qua-thi-dua-lk') { 
             console.log("[tab-sknv.js renderSummaryViews] Rendering 'Thi đua NV LK' subtab.");
             
+            // ========== START: LOGIC DI CHUYỂN (SP ĐẶC QUYỀN) ==========
             const activeViewBtn = document.querySelector('#sknv-thidua-view-selector .view-switcher__btn.active');
-            const viewType = activeViewBtn ? activeViewBtn.dataset.view : 'program';
+            const viewType = activeViewBtn ? activeViewBtn.dataset.view : 'employee'; // <<< YÊU CẦU 1: Đổi mặc định sang 'employee'
             console.log(`[tab-sknv.js renderSummaryViews] View type selected: ${viewType}`);
 
             const programContainer = document.getElementById('competition-report-container-lk');
             const employeeContainer = document.getElementById('pasted-competition-report-container');
+            const detailContainer = document.getElementById('pasted-competition-detail-container');
 
-            if (!programContainer || !employeeContainer) {
+            if (!programContainer || !employeeContainer || !detailContainer) { 
                 console.error("[tab-sknv.js renderSummaryViews] Missing competition containers!");
                 return;
             }
 
+            detailContainer.classList.add('hidden'); // Luôn ẩn chi tiết khi render tóm tắt
+
+            // === START: THAY ĐỔI V4.8 (Gỡ bỏ wrapper, gộp HTML) ===
+            // Gỡ bỏ logic tạo 'programGridWrapper' và 'spContainer'
+            
             if (viewType === 'program') {
-                console.log("[tab-sknv.js renderSummaryViews] Calculating 'program' report..."); 
-                const competitionReportData = services.calculateCompetitionFocusReport( 
-         
-           filteredYCXData, 
-                    appState.competitionConfigs 
-                );
-                console.log("[tab-sknv.js renderSummaryViews] Calling uiCompetition.renderCompetitionUI..."); 
-                uiCompetition.renderCompetitionUI('competition-report-container-lk', competitionReportData); 
                 
+                // 1. Tính toán Báo cáo SPĐQ
+                console.log("[tab-sknv.js renderSummaryViews] Calculating 'Special Product' report...");
+                const specialReportData = services.calculateSpecialProductReport(
+                    filteredYCXData, // Dữ liệu YCX đã được lọc (ngày, kho, v.v.)
+                    appState.globalSpecialPrograms
+                );
+                // Render SPĐQ (Hàm này trả về chuỗi HTML)
+                const specialReportHtml = uiSknv.renderSpecialProgramReport(null, specialReportData);
+                if (specialReportData.length > 0) {
+                    console.log("Dữ liệu SPĐQ (LK) đã tính toán:", specialReportData);
+                }
+
+                // 2. Tính toán Báo cáo Thi đua Tùy chỉnh
+                console.log("[tab-sknv.js renderSummaryViews] Calculating 'program' report..."); 
+                const allConfigs = [ ...appState.globalCompetitionConfigs, ...appState.localCompetitionConfigs ];
+                const competitionReportData = services.calculateCompetitionFocusReport( 
+                    filteredYCXData, 
+                    allConfigs // Truyền danh sách đã gộp
+                );
+                // Render Thi đua Tùy chỉnh (Hàm này render vào DOM, nhưng chúng ta sẽ sửa nó)
+                // Tạm thời, chúng ta tạo 1 container ảo để lấy HTML
+                const tempCompetitionDiv = document.createElement('div');
+                uiCompetition.renderCompetitionUI(tempCompetitionDiv, competitionReportData); 
+                const competitionReportHtml = tempCompetitionDiv.innerHTML;
+                
+                // 3. Gộp HTML và chèn vào DOM
+                // Bọc cả hai chuỗi HTML trong một grid 2 cột duy nhất
+                programContainer.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        ${specialReportHtml}
+                        ${competitionReportHtml}
+                    </div>
+                `;
+                
+                // 4. Hiển thị/Ẩn container
                 programContainer.classList.remove('hidden');
                 employeeContainer.classList.add('hidden');
+                // === END: THAY ĐỔI V4.8 ===
 
             } else { // viewType === 'employee'
+                
+                // === START: THAY ĐỔI V4.8 ===
+                // Ẩn container 'program', hiển thị container 'employee'
+                programContainer.classList.add('hidden');
+                employeeContainer.classList.remove('hidden');
+                // === END: THAY ĐỔI V4.8 ===
+                
                 console.log("[tab-sknv.js renderSummaryViews] Calling uiSknv.renderPastedCompetitionReport..."); 
                 
                 // Lọc dữ liệu thi đua đã dán dựa trên bộ lọc chung (kho, bộ phận, tên)
                 const visibleEmployeeMaNVs = new Set(filteredReport.map(nv => nv.maNV));
                 const filteredPastedData = (appState.pastedThiDuaReportData || []).filter(item => 
                     visibleEmployeeMaNVs.has(item.maNV)
-        
-        );
+                );
                 
                 uiSknv.renderPastedCompetitionReport(filteredPastedData); 
-                
-                programContainer.classList.add('hidden');
-                employeeContainer.classList.remove('hidden');
             }
-        // *** END: MODIFIED (v3.8) ***
+            // === END: YÊU CẦU 4 ===
         
         } else if (activeSubTabId === 'subtab-sknv') { 
              console.log("[tab-sknv.js renderSummaryViews] Calling ui.displaySknvReport (summary mode)..."); 

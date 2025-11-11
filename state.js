@@ -1,3 +1,5 @@
+// Version 3.2 - Add globalCompetitionConfigs for Firestore sync
+// Version 3.1 - Add sort state for pasted competition detail table
 // Version 3.0 - Add competitionNameMappings and pastedThiDuaReportData
 // Version 2.8 - Merged features: Add warehouse state, user stats sort, and listener
 // MODULE 2: TỦ TRẠNG THÁI (APPSTATE)
@@ -64,7 +66,10 @@ const appState = {
         realtime: []
     },
     
-    competitionConfigs: [],
+    // === START REFACTOR 2 (Bước 2a) ===
+    localCompetitionConfigs: [], // Đổi tên từ competitionConfigs (Lưu trên localStorage)
+    globalCompetitionConfigs: [], // Config chung do Admin tạo (Lưu trên Firestore)
+    // === END REFACTOR 2 ===
     
     realtimeYCXData: [],
     luykeGoalSettings: {},
@@ -105,6 +110,9 @@ const appState = {
         sknv_thidua_employee: { key: 'percentExpected', direction: 'desc'},
         // *** NEW (v3.0) ***
         sknv_thidua_pasted: { key: 'hoTen', direction: 'asc' }, // Sắp xếp cho bảng thi đua dán vào
+        // === START: YÊU CẦU 2 (v3.1) ===
+        sknv_thidua_pasted_detail: { key: 'name', direction: 'asc' }, // Sắp xếp cho bảng chi tiết thi đua
+        // === END: YÊU CẦU 2 (v3.1) ===
         // *** END NEW ***
         luyke_competition_doanhthu: { key: 'hoanThanh', direction: 'desc' },
         luyke_competition_soluong: { key: 'hoanThanh', direction: 'desc' },

@@ -1,4 +1,4 @@
-// Version 1.0 - Refactored from ui-listeners.js
+// Version 1.1 - Refactor: Update target input listener to use globalCompetitionConfigs
 // MODULE: LISTENERS - COMPETITION
 // Chứa logic sự kiện cho việc quản lý các chương trình thi đua.
 
@@ -46,7 +46,12 @@ export function initializeCompetitionListeners(appController) {
     document.body.addEventListener('change', (e) => {
         if (e.target.classList.contains('competition-target-input')) {
             const competitionId = e.target.dataset.competitionId;
-            const config = appState.competitionConfigs.find(c => c.id === competitionId);
+            
+            // === START REFACTOR 2 (Bước 2d) ===
+            // Sửa logic để cập nhật vào global configs
+            const config = appState.globalCompetitionConfigs.find(c => c.id === competitionId);
+            // === END REFACTOR 2 ===
+
             if (config) {
                 config.target = e.target.value; 
             }

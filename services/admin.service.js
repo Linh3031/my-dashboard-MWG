@@ -1,4 +1,4 @@
-// Version 1.0 - Initial service extraction
+// Version 1.1 - Add functions for Global Competition Configs (Firestore)
 // MODULE: ADMIN SERVICE
 // Chịu trách nhiệm xử lý logic đọc/ghi dữ liệu của Admin (Khai báo, Hướng dẫn).
 import { getFirestore, collection, doc, setDoc, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -133,5 +133,147 @@ export const adminService = {
             console.error("Lỗi khi lưu Bảng Ánh Xạ Tên Thi Đua:", error);
             ui.showNotification('Lỗi khi lưu tên rút gọn lên cloud.', 'error');
         }
+    },
+
+    // === START REFACTOR 2 (Bước 2b) ===
+    async loadGlobalCompetitionConfigs() {
+        if (!appState.db) {
+            console.warn("loadGlobalCompetitionConfigs called before DB initialization.");
+            return [];
+        }
+        console.log("Loading Global Competition Configs from Firestore...");
+        try {
+            const docRef = doc(appState.db, "declarations", "globalCompetitionConfigs");
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                console.log("Successfully loaded Global Competition Configs.");
+                return docSnap.data().configs || [];
+            } else {
+                console.log("No Global Competition Configs found in Firestore, returning empty array.");
+                return [];
+            }
+        } catch (error) {
+            console.error("Lỗi khi tải Cấu hình Thi Đua Chung từ Firestore:", error);
+            return [];
+        }
+    },
+
+    async saveGlobalCompetitionConfigs(configs) {
+        if (!appState.db || !appState.isAdmin) {
+            console.warn("Save Global Competition Configs skipped: Not admin or DB not initialized.");
+            ui.showNotification('Lỗi: Bạn không có quyền lưu cấu hình chung.', 'error');
+            return;
+        }
+        console.log("Saving Global Competition Configs to Firestore...");
+        try {
+            const docRef = doc(appState.db, "declarations", "globalCompetitionConfigs");
+            await setDoc(docRef, { configs: configs });
+            console.log("Successfully saved Global Competition Configs.");
+            ui.showNotification('Đã lưu Cấu hình Thi Đua Chung lên cloud!', 'success');
+        } catch (error) {
+            console.error("Lỗi khi lưu Cấu hình Thi Đua Chung:", error);
+            ui.showNotification('Lỗi khi lưu cấu hình thi đua chung lên cloud.', 'error');
+        }
+    },
+    // === END REFACTOR 2 (Bước 2b) ===
+
+    // ========== START: HÀM MỚI CHO SẢN PHẨM ĐẶC QUYỀN ==========
+    /**
+     * Tải danh sách Sản Phẩm Đặc Quyền (SPĐQ) từ Firestore.
+     * @returns {Promise<Array<Object>>} Mảng các đối tượng SPĐQ.
+     */
+    async loadSpecialProductList() {
+        if (!appState.db) {
+            console.warn("loadSpecialProductList called before DB initialization.");
+            return [];
+        }
+        console.log("Loading Special Product List from Firestore...");
+        try {
+            const docRef = doc(appState.db, "declarations", "specialProductList");
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const products = docSnap.data().products || [];
+                console.log(`Successfully loaded ${products.length} special products.`);
+                return products;
+            } else {
+                console.log("No Special Product List found in Firestore, returning empty array.");
+                return [];
+            }
+        } catch (error) {
+            console.error("Lỗi khi tải Danh sách SP Đặc Quyền từ Firestore:", error);
+            return [];
+        }
+    },
+
+    /**
+     * Lưu danh sách Sản Phẩm Đặc Quyền (SPĐQ) lên Firestore.
+     * @param {Array<Object>} products - Mảng các đối tượng SPĐQ.
+     */
+    async saveSpecialProductList(products) {
+        if (!appState.db || !appState.isAdmin) {
+            console.warn("saveSpecialProductList skipped: Not admin or DB not initialized.");
+            ui.showNotification('Lỗi: Bạn không có quyền lưu danh sách SPĐQ.', 'error');
+            return;
+        }
+        console.log(`Saving ${products.length} special products to Firestore...`);
+        try {
+            const docRef = doc(appState.db, "declarations", "specialProductList");
+            await setDoc(docRef, { products: products });
+            console.log("Successfully saved Special Product List.");
+            ui.showNotification('Đã lưu Danh sách SP Đặc Quyền lên cloud!', 'success');
+        } catch (error) {
+            console.error("Lỗi khi lưu Danh sách SP Đặc Quyền:", error);
+            ui.showNotification('Lỗi khi lưu danh sách SPĐQ lên cloud.', 'error');
+        }
+    },
+
+    /**
+     * Tải Cấu hình Chương trình SP Đặc Quyền từ Firestore.
+     * @returns {Promise<Array<Object>>} Mảng các đối tượng cấu hình.
+     */
+    async loadGlobalSpecialPrograms() {
+        if (!appState.db) {
+            console.warn("loadGlobalSpecialPrograms called before DB initialization.");
+            return [];
+        }
+        console.log("Loading Global Special Programs from Firestore...");
+        try {
+            const docRef = doc(appState.db, "declarations", "globalSpecialPrograms");
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const programs = docSnap.data().programs || [];
+                console.log(`Successfully loaded ${programs.length} global special programs.`);
+                return programs;
+            } else {
+                console.log("No Global Special Programs found in Firestore, returning empty array.");
+                return [];
+            }
+        } catch (error) {
+            console.error("Lỗi khi tải Cấu hình Chương trình SPĐQ từ Firestore:", error);
+            return [];
+        }
+    },
+
+    /**
+     * Lưu Cấu hình Chương trình SP Đặc Quyền lên Firestore.
+     * @param {Array<Object>} programs - Mảng các đối tượng cấu hình.
+     */
+    async saveGlobalSpecialPrograms(programs) {
+        if (!appState.db || !appState.isAdmin) {
+            console.warn("saveGlobalSpecialPrograms skipped: Not admin or DB not initialized.");
+            ui.showNotification('Lỗi: Bạn không có quyền lưu cấu hình SPĐQ.', 'error');
+            return;
+        }
+        console.log("Saving Global Special Programs to Firestore...");
+        try {
+            const docRef = doc(appState.db, "declarations", "globalSpecialPrograms");
+            await setDoc(docRef, { programs: programs });
+            console.log("Successfully saved Global Special Programs.");
+            ui.showNotification('Đã lưu Cấu hình Chương trình SPĐQ lên cloud!', 'success');
+        } catch (error) {
+            console.error("Lỗi khi lưu Cấu hình Chương trình SPĐQ:", error);
+            ui.showNotification('Lỗi khi lưu cấu hình SPĐQ lên cloud.', 'error');
+        }
     }
+    // ========== END: HÀM MỚI CHO SẢN PHẨM ĐẶC QUYỀN ==========
 };

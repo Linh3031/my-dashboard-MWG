@@ -1,3 +1,10 @@
+/* Version 1.8 - No changes for this refactor
+/* Version 1.7 - (YC 1) Change competition detail employee name color to dark green
+/* Version 1.6 - Adjust detail view layout, colors, and KPI styling
+/* Version 1.5 - Add standard 'line-clamp' property for compatibility
+/* Version 1.4 - Implement "Multi-lane" layout & fix text wrap for competition detail
+/* Version 1.3 - Add 3-column infographic styles and fix capture scroll
+/* Version 1.2 - Fix drag-drop cursor for pasted competition toggles
 /* Version 1.1 - Add sticky column styles for pasted competition table */
 /* Chứa các style CHỈ dành riêng cho tab Sức Khỏe Nhân Viên (SKNV) */
 
@@ -566,3 +573,218 @@ filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3)); /* Add a nice shadow */
     z-index: 3; /* Nằm trên cả tiêu đề và nội dung */
 }
 /* === END: Sticky Columns (v1.1) === */
+
+/* === START: YÊU CẦU 2 (v1.2) - Sửa lỗi con trỏ kéo thả === */
+.column-toggle-btn {
+    /* Mặc định là pointer để người dùng biết có thể click bật/tắt */
+    cursor: pointer;
+}
+
+.column-toggle-btn .drag-handle-icon {
+    /* Chỉ riêng icon kéo mới có cursor grab */
+    cursor: grab;
+}
+
+.column-toggle-btn .drag-handle-icon:active {
+    /* Khi đang kéo icon */
+    cursor: grabbing;
+}
+/* === END: YÊU CẦU 2 (v1.2) === */
+
+/* === START: UPDATED STYLES (v1.4) - "Multi-lane" Layout & Text Wrap === */
+
+/* Bỏ layout 3 cột cũ */
+/*
+.sknv-thidua-detail-grid { ... }
+.sknv-thidua-column { ... }
+.sknv-thidua-column-content { ... }
+*/
+
+/* Container cho mỗi "làn đường" (Đạt, Gần Đạt, Cần Cố Gắng) */
+.sknv-thidua-lane {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Container chứa các thẻ card, cho phép xếp hàng ngang và xuống dòng */
+.sknv-thidua-horizontal-content {
+    padding: 0.75rem; /* p-3 */
+    display: flex;
+    flex-direction: row; /* Xếp hàng ngang */
+    flex-wrap: wrap;     /* Tự động xuống dòng */
+    gap: 0.75rem;        /* Khoảng cách giữa các thẻ */
+}
+
+/* Thông báo khi làn đường trống */
+.sknv-thidua-horizontal-content .empty-col-msg {
+    font-size: 0.875rem; /* text-sm */
+    color: #6b7280; /* gray-500 */
+    text-align: center;
+    padding: 1rem 0;
+    font-style: italic;
+    width: 100%; /* Chiếm toàn bộ chiều rộng của làn đường */
+}
+
+/* Thẻ chi tiết từng ngành hàng (Yêu cầu 3 - Layout) */
+.sknv-thidua-item-card {
+    background-color: #ffffff; /* bg-white */
+    border-radius: 0.5rem; /* rounded-lg */
+    border: 1px solid #e5e7eb; /* border */
+    padding: 0.75rem; /* p-3 */
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+    transition: all 0.2s ease-in-out;
+    
+    /* Logic xếp hàng ngang: */
+    /* === START: YÊU CẦU 3 (v1.6) === */
+    flex: 1 1 180px; /* Thẻ có thể co giãn, cơ sở là 180px (thay vì 220px) */
+    min-width: 180px; /* Chiều rộng tối thiểu 180px (thay vì 220px) */
+    /* === END: YÊU CẦU 3 (v1.6) === */
+} 
+.sknv-thidua-item-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1); /* shadow-md */
+}
+
+/* Tiêu đề ngành hàng (Yêu cầu 1 - Text Wrap) */
+.item-card-title {
+    font-weight: 600; /* font-semibold */
+    color: #1f2937; /* gray-800 */
+    margin-bottom: 0.5rem; /* mb-2 */
+    
+    /* Bắt đầu sửa lỗi wrap text */
+    white-space: normal; /* Cho phép xuống dòng */
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* Giới hạn 2 dòng */
+    line-clamp: 2; /* === THÊM MỚI (v1.5) - Sửa lỗi tương thích === */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-height: 2.5em; /* Đảm bảo đủ chiều cao cho 2 dòng (line-height 1.25) */
+    line-height: 1.25;
+    /* Kết thúc sửa lỗi wrap text */
+}
+
+/* Các style còn lại của thẻ được giữ nguyên */
+.item-card-progress-bar-container {
+    width: 100%;
+    background-color: #e5e7eb; /* gray-200 */
+    border-radius: 9999px; /* rounded-full */
+    height: 0.75rem; /* h-3 */
+    overflow: hidden;
+    margin-bottom: 0.5rem; /* mb-2 */
+}
+.item-card-progress-bar {
+    height: 100%;
+    border-radius: 9999px;
+    transition: width 0.5s ease-in-out;
+}
+.item-card-metrics {
+    font-size: 0.75rem; /* text-xs */
+    color: #4b5563; /* gray-600 */
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.5rem; /* gap-x-2 gap-y-1 */
+}
+.item-card-metrics strong {
+    font-weight: 600;
+    color: #111827; /* gray-900 */
+}
+.item-card-metrics .text-green-600 { color: #16a34a; }
+.item-card-metrics .text-red-600 { color: #dc2626; }
+
+/* === END: UPDATED STYLES (v1.4) === */
+
+
+/* === START: SỬA LỖI (v1.3) - Căn chỉnh icon cho thẻ KPI === */
+.rt-infographic-summary-card .label {
+    font-size: 0.875em;
+    color: #4b5563;
+    font-weight: 500;
+    /* Thêm các thuộc tính flex để căn chỉnh icon */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem; /* 4px */
+}
+.rt-infographic-summary-card .label .feather {
+    width: 1em;
+    height: 1em;
+}
+/* === END: SỬA LỖI (v1.3) === */
+
+/* === START: YÊU CẦU 5 (v1.6) - Làm dịu màu header === */
+.sknv-thidua-column-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem; /* gap-2 */
+    padding: 0.75rem 1rem; /* p-3 */
+    border-bottom: 1px solid; /* Cập nhật border color bên dưới */
+} 
+.sknv-thidua-column-header .feather {
+    width: 1.25rem; /* h-5 w-5 */
+    height: 1.25rem;
+    stroke-width: 2.5;
+}
+.sknv-thidua-column-header h4 {
+    font-size: 1.125rem; /* text-lg */
+    font-weight: 700; /* font-bold */
+}
+.sknv-thidua-column-header.header-blue {
+    background-color: #dbeafe; /* blue-100 */
+    color: #1e40af; /* blue-800 */
+    border-color: #bfdbfe; /* blue-200 */
+} 
+.sknv-thidua-column-header.header-yellow {
+    background-color: #fef9c3; /* yellow-100 */
+    color: #854d0e; /* yellow-800 */
+    border-color: #fde68a; /* yellow-200 */
+} 
+.sknv-thidua-column-header.header-red {
+    background-color: #fee2e2; /* red-100 */
+    color: #991b1b; /* red-800 */
+    border-color: #fecaca; /* red-200 */
+} 
+/* === END: YÊU CẦU 5 (v1.6) === */
+
+
+/* === START: (v1.6) Yêu cầu tùy chỉnh cho chi tiết thi đua (Yêu cầu 1 & 4) === */
+
+/* Yêu cầu 1: Ghi đè header nhân viên (loại bỏ màu tím) */
+#sknv-thidua-detail-capture-area .sknv-detail-header-card {
+    background-color: #ffffff !important;
+    border-color: #e5e7eb !important;
+    border-top-width: 4px !important;
+    border-top-color: #6b7280 !important; /* gray-500 */
+} 
+/* === START: THAY ĐỔI (v1.7) === */
+#sknv-thidua-detail-capture-area .sknv-detail-header-card .name {
+    color: #166534 !important; /* YC 1 (v1.7): Đổi sang xanh lá cây đậm (green-800) */
+} 
+/* === END: THAY ĐỔI (v1.7) === */
+#sknv-thidua-detail-capture-area .sknv-detail-header-card .department {
+    color: #374151 !important; /* gray-700 */
+} 
+#sknv-thidua-detail-capture-area .sknv-detail-header-card .sknv-card__avatar {
+    background-color: #e5e7eb !important; /* gray-200 */
+} 
+#sknv-thidua-detail-capture-area .sknv-detail-header-card .sknv-card__avatar svg {
+    color: #374151 !important; /* gray-700 */
+} 
+
+/* Yêu cầu 4: Thêm màu cho các thẻ KPI */
+.rt-infographic-summary-card .value.is-dat {
+    color: #16a34a !important; /* green-600 */
+} 
+.rt-infographic-summary-card .value.is-positive {
+    color: #2563eb !important; /* blue-600 */
+} 
+.rt-infographic-summary-card .value.is-gan-dat {
+    color: #f59e0b !important; /* amber-500 */
+} 
+.rt-infographic-summary-card .value.is-can-co-gang,
+.rt-infographic-summary-card .value.is-negative {
+    color: #dc2626 !important; /* red-600 */
+} 
+
+/* === END: (v1.6) Yêu cầu tùy chỉnh === */

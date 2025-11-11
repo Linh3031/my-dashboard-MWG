@@ -1,3 +1,5 @@
+// Version 3.2 - Fix: renderCompetitionUI now accepts an HTML Element as containerId
+// Version 3.1 - Refactor: Gỡ bỏ grid wrapper khỏi renderCompetitionUI
 // Version 2.9 - Simplify multi-brand competition table header
 // MODULE: UI COMPETITION
 // Chứa các hàm render giao diện cho báo cáo thi đua đa hãng, đa năng.
@@ -9,37 +11,61 @@ import { config } from './config.js';
 const uiCompetition = {
     /**
      * Render toàn bộ giao diện báo cáo hiệu quả thi đua mới.
-     * @param {string} containerId - ID của container để render báo cáo.
+     * @param {string|HTMLElement} containerId - ID của container hoặc chính phần tử container để render báo cáo.
      * @param {Array} reportData - Dữ liệu đã được xử lý từ services.calculateCompetitionFocusReport.
      */
     renderCompetitionUI(containerId, reportData) {
-        const container = document.getElementById(containerId);
-        if (!container) return;
+        // === START: SỬA LỖI (v3.2) ===
+        // Sửa lỗi: Chấp nhận cả chuỗi ID hoặc một đối tượng HTML Element
+        const container = typeof containerId === 'string' 
+            ? document.getElementById(containerId) 
+            : containerId;
+        // === END: SỬA LỖI (v3.2) ===
+
+        if (!container) {
+            console.error("[ui-competition.js] Lỗi: Container không hợp lệ. Đầu vào là:", containerId);
+            return;
+        }
 
         if (!reportData || reportData.length === 0) {
-            const isLk = containerId.includes('-lk');
-            const configs = appState.competitionConfigs;
+            const isLk = container.id ? container.id.includes('-lk') : containerId.includes('-lk'); // Phải kiểm tra cả containerId (string) dự phòng
+            
+            // === START REFACTOR 2 (Bước 2e) ===
+            // Đọc từ global configs (Firestore) + local configs (LocalStorage)
+            const allConfigs = [ ...appState.globalCompetitionConfigs, ...appState.localCompetitionConfigs ];
+            // === END REFACTOR 2 ===
+
             const ycxData = isLk ? appState.ycxData : appState.realtimeYCXData;
             
             let errorMessage = '';
-            if (configs.length === 0) {
+            // === START REFACTOR 2 (Bước 2e) ===
+            if (allConfigs.length === 0) {
+            // === END REFACTOR 2 ===
                 errorMessage = 'Chưa có chương trình thi đua nào được khai báo trong "Thiết lập mục tiêu".';
             } else if (ycxData.length === 0) {
-                errorMessage = `Đã có ${configs.length} chương trình thi đua, nhưng bạn chưa tải file dữ liệu bán hàng (${isLk ? 'YCX Lũy kế' : 'Realtime'}) tương ứng để tính toán.`;
+                // === START REFACTOR 2 (Bước 2e) ===
+                errorMessage = `Đã có ${allConfigs.length} chương trình thi đua, nhưng bạn chưa tải file dữ liệu bán hàng (${isLk ? 'YCX Lũy kế' : 'Realtime'}) tương ứng để tính toán.`;
+                // === END REFACTOR 2 ===
             } else {
-                errorMessage = `Đã tìm thấy ${configs.length} chương trình thi đua, nhưng không có doanh thu/số lượng nào khớp với các nhóm hàng đã chọn trong file YCX. Vui lòng kiểm tra lại sự thống nhất về tên gọi giữa cấu hình thi đua và dữ liệu bán hàng.`;
+                // === START REFACTOR 2 (Bước 2e) ===
+                // *** SỬA LỖI (v3.2): Thông báo này là LỖI LOGIC GỐC. Chúng ta sẽ thay thế nó ***
+                // errorMessage = `Đã tìm thấy ${allConfigs.length} chương trình thi đua, nhưng không có doanh thu/số lượng nào khớp...`;
+                errorMessage = `Không có dữ liệu thi đua cho bộ lọc hiện tại.`;
+                // *** END SỬA LỖI (v3.2) ***
             }
             container.innerHTML = `<div class="p-4 bg-yellow-50 text-yellow-800 border border-yellow-200 rounded-lg italic">${errorMessage}</div>`;
             return;
         }
 
-        let finalHTML = '<div class="grid grid-cols-1 md:grid-cols-2 gap-6">';
+        // === START: THAY ĐỔI V4.8 (Gỡ bỏ grid wrapper) ===
+        let finalHTML = ''; // Bắt đầu bằng chuỗi rỗng
         reportData.forEach((competitionResult, index) => {
             if (competitionResult.employeeData.length === 0) return;
             finalHTML += this._renderFocusCompetitionTable(competitionResult, index);
         });
-        finalHTML += `</div>`;
-        container.innerHTML = finalHTML;
+        // finalHTML += `</div>`; // Xóa thẻ đóng
+        container.innerHTML = finalHTML; // Render trực tiếp HTML của các thẻ
+        // === END: THAY ĐỔI V4.8 ===
     },
 
     /**

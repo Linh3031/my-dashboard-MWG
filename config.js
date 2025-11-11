@@ -19,6 +19,9 @@ const config = {
             soLuong: { required: true, displayName: 'Số lượng', aliases: ['sl bán', 'số lượng'] },
             nhomHang: { required: true, displayName: 'Nhóm hàng', aliases: ['nhóm hàng'] },
             tenSanPham: { required: true, displayName: 'Tên sản phẩm', aliases: ['tên sản phẩm'] },
+            // ========== START: THÊM MỚI ==========
+            maSanPham: { required: true, displayName: 'Mã sản phẩm', aliases: ['mã sản phẩm', 'masanpham', 'mã sp', 'product code'] },
+            // ========== END: THÊM MỚI ==========
             tenKhachHang: { required: true, displayName: 'Tên khách hàng', aliases: ['tên khách hàng', 'tenkhachhang'] },
             nhaSanXuat: { required: true, displayName: 'Nhà sản xuất', aliases: ['nhà sản xuất', 'nhasanxuat'] },
             nganhHang: { required: true, displayName: 'Ngành hàng', aliases: ['ngành hàng'] },
