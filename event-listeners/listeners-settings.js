@@ -8,6 +8,7 @@ import { appState } from '../state.js';
 // import { firebase } from '../firebase.js'; // <-- ĐÃ XÓA
 import { adminService } from '../services/admin.service.js'; // <-- ĐÃ THÊM 
 import { services } from '../services.js'; // *** NEW (v1.5) ***
+import { adminModal } from '../main.js'; // <--- THAY ĐỔI 1: Import modal Svelte
 
 export function initializeSettingsListeners(appController) {
     // *** NEW (v1.5): Helper debounce function ***
@@ -57,9 +58,14 @@ export function initializeSettingsListeners(appController) {
     }, 1000); // 1000ms (1 second) delay
 
     // --- Open/Close Modals & Drawers ---
-    document.getElementById('admin-access-btn')?.addEventListener('click', () => ui.toggleModal('admin-modal', true));
-    document.getElementById('admin-submit-btn')?.addEventListener('click', () => appController.handleAdminLogin());
-    document.getElementById('admin-cancel-btn')?.addEventListener('click', () => ui.toggleModal('admin-modal', false));
+    // <--- THAY ĐỔI 2: Giữ nguyên code bạn đã sửa
+    document.getElementById('admin-access-btn')?.addEventListener('click', () => {
+      if (adminModal) adminModal.$set({ isVisible: true }); // Hiện modal Svelte
+    });
+    // <--- THAY ĐỔI 3: XÓA 2 DÒNG BÊN DƯỚI (nếu bạn chưa xóa)
+    // document.getElementById('admin-submit-btn')?.addEventListener('click', () => appController.handleAdminLogin());
+    // document.getElementById('admin-cancel-btn')?.addEventListener('click', () => ui.toggleModal('admin-modal', false));
+    
     document.getElementById('interface-settings-btn')?.addEventListener('click', () => ui.toggleDrawer('interface-drawer', true));
     
     // === START: SỬA LỖI (Bug 3 - Lỗi "Ma") ===

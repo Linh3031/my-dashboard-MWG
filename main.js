@@ -1,7 +1,42 @@
-// Version 4.58 - Fix UI status for Special Product list on load
+// Version 4.62 - Fix: Match 'onConfirm' prop name; Cleanup console.log clutter
+// Version 4.61 - Fix: Use Svelte 5 'mount' function WITH event props (Fixes $on error)
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
+// Import CSS của thư viện
+import 'choices.js/public/assets/styles/choices.min.css';
+import 'flatpickr/dist/flatpickr.min.css';
+
+// Import CSS CỦA BẠN (Rất quan trọng)
+import './styles/dashboard.css';
+
+// Import các thư viện JS
+import * as XLSX from 'xlsx';
+import html2canvas from 'html2canvas';
+import Choices from 'choices.js';
+import flatpickr from 'flatpickr';
+import { Chart, registerables } from 'chart.js';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
+import Sortable from 'sortablejs';
+import feather from 'feather-icons';
+import { mount } from 'svelte'; // Dùng hàm mount của Svelte 5
+
+// Gán chúng vào `window` để code cũ của bạn không bị lỗi
+// (Vì code cũ của bạn đang gọi thẳng tên thư viện)
+window.XLSX = XLSX;
+window.html2canvas = html2canvas;
+window.Choices = Choices;
+window.flatpickr = flatpickr;
+Chart.register(...registerables, ChartDataLabels);
+window.Chart = Chart;
+window.ChartDataLabels = ChartDataLabels;
+window.Sortable = Sortable;
+window.feather = feather;
+
+// <--- THAY ĐỔI 1: Khai báo biến modal ở đây
+let adminModal; 
+
+// --- Code main.js cũ của bạn bắt đầu từ đây ---
 import { config } from './config.js';
 import { appState } from './state.js';
 import { services } from './services.js';
@@ -17,7 +52,8 @@ import { storage } from './modules/storage.js';
 import { drawerInterface } from './components/drawer-interface.js';
 import { drawerGoal } from './components/drawer-goal.js';
 import { modalForceUpdate } from './components/modal-force-update.js';
-import { modalAdmin } from './components/modal-admin.js';
+// <--- THAY ĐỔI 2: Sửa lại cách import file Svelte (không có dấu {})
+import ModalAdmin from './components/ModalAdmin.svelte';
 import { modalLogin } from './components/modal-login.js';
 import { modalHelp } from './components/modal-help.js';
 import { modalChart } from './components/modal-chart.js';
@@ -71,14 +107,12 @@ const app = {
     async init() {
         try {
             await firebase.initCore();
-            console.log("Rendering static UI components...");
             sidebar.render('#sidebar-container');
             drawerInterface.render('#interface-drawer-container');
             drawerGoal.render('#goal-drawer-container');
             modalForceUpdate.render('#modal-force-update-container');
-            modalAdmin.render('#modal-admin-container');
+            // <--- THAY ĐỔI 3: Xóa dòng modalAdmin.render(...) ở đây
             await modalLogin.render('#modal-login-container');
-            console.log("[main.js init] Finished awaiting modalLogin.render.");
             modalHelp.render('#modal-help-container');
             modalChart.render('#modal-chart-container');
             modalComposer.render('#modal-composer-container');
@@ -89,19 +123,13 @@ const app = {
             modalUnexportedDetail.render('#modal-unexported-detail-container');
             // === END: RENDER MODALS MỚI ===
             feather.replace();
-            console.log("Static UI components rendered.");
 
-            console.log("Ensuring anonymous authentication...");
             const user = await auth.ensureAnonymousAuth();
 
             if (user && !this._isInitialized) {
                 this._isInitialized = true;
-                console.log("Anonymous auth confirmed. Setting up listeners and email identification...");
                 firebase.setupListeners();
-                console.log("[main.js init] Calling auth.initEmailIdentification...");
                 auth.initEmailIdentification(this.continueInit.bind(this));
-            } else if (user && this._isInitialized) {
-                console.log("App already initialized, skipping init steps.");
             }
 
         } catch (error) {
@@ -120,7 +148,6 @@ const app = {
                 ui.showNotification("Lỗi: Không tìm thấy thông tin người dùng.", "error");
                 return;
         }
-        console.log(`Email identification complete: ${appState.currentUser.email}. Continuing app initialization...`);
 
         // *** >>> SỬA LỖI ĐẾM LƯỢT TRUY CẬP: GỌI HÀM ĐẾM Ở ĐÂY <<< ***
         // === START: TÁI CẤU TRÚC (RE-WIRING) ===
@@ -137,6 +164,7 @@ const app = {
         // ========== START: THÊM MỚI (Khởi tạo State SPĐQ) ==========
         appState.specialProductList = []; // Danh sách SPĐQ (Từ Firestore)
         appState.globalSpecialPrograms = []; // Cấu hình CT SPĐQ (Từ Firestore)
+        
         // ========== END: THÊM MỚI ==========
 
         appState.viewingDetailFor = null;
@@ -145,13 +173,11 @@ const app = {
             const storedVersions = localStorage.getItem(LOCAL_DATA_VERSIONS_KEY);
             if (storedVersions) {
                 this._localDataVersions = JSON.parse(storedVersions);
-                console.log("%c[continueInit] Loaded _localDataVersions from localStorage:", "color: brown;", this._localDataVersions);
             } else {
                 this._localDataVersions = {};
-                console.log("%c[continueInit] No _localDataVersions found in localStorage, initialized as {}.", "color: brown;");
             }
         } catch (e) {
-            console.error("%cError loading _localDataVersions from localStorage:", "color: red;", e);
+             console.error("%cError loading _localDataVersions from localStorage:", "color: red;", e);
             this._localDataVersions = {};
         }
 
@@ -159,14 +185,12 @@ const app = {
         this.loadAndDisplayQrCode();
         this.setupMarquee();
         await this.storage.openDB();
-        console.log("Loading category data from Firestore...");
         try {
             // === START: TÁI CẤU TRÚC (RE-WIRING) ===
             const { categories, brands } = await adminService.loadCategoryDataFromFirestore();
             // === END: TÁI CẤU TRÚC (RE-WIRING) ===
             appState.categoryStructure = categories;
             appState.brandList = brands;
-            console.log(`Successfully populated ${appState.categoryStructure.length} categories and ${appState.brandList.length} brands from Firestore.`);
             
             // === FIX 1a (Thêm) ===
             // Cập nhật trạng thái UI sau khi tải từ cloud, thay vì để trống
@@ -176,9 +200,8 @@ const app = {
         } catch (error) {
                 console.error("Error loading category data after auth:", error);
                 ui.showNotification("Không thể tải cấu trúc ngành hàng từ cloud.", "error");
-        }
+}
 
-        console.log("Loading calculation declarations from Firestore...");
         try {
             // === START: TÁI CẤU TRÚC (RE-WIRING) ===
             const declarations = await adminService.loadDeclarationsFromFirestore();
@@ -191,17 +214,15 @@ const app = {
             const decHeSoEl = document.getElementById('declaration-heso');
             if (decHeSoEl) decHeSoEl.value = declarations.heSoQuyDoi || Object.entries(config.DEFAULT_DATA.HE_SO_QUY_DOI).map(([k, v]) => `${k},${v}`).join('\n');
         } catch (error) {
-                console.error("Error loading declarations after auth:", error);
+             console.error("Error loading declarations after auth:", error);
                 ui.showNotification("Không thể tải khai báo tính toán từ cloud.", "error");
         }
         
         // *** NEW (v4.41): Load competition name mappings from Firestore ***
-        console.log("Loading competition name mappings from Firestore...");
         try {
             // === START: TÁI CẤU TRÚC (RE-WIRING) ===
             appState.competitionNameMappings = await adminService.loadCompetitionNameMappings();
             // === END: TÁI CẤU TRÚC (RE-WIRING) ===
-            console.log("Successfully loaded competition name mappings from Firestore.");
         } catch (error) {
                 console.error("Error loading competition name mappings:", error);
                 ui.showNotification("Không thể tải tên rút gọn (thi đua) từ cloud.", "error");
@@ -210,10 +231,8 @@ const app = {
         // *** END NEW ***
 
         // === START REFACTOR 2 (Bước 2c) ===
-        console.log("Loading Global Competition Configs from Firestore...");
         try {
             appState.globalCompetitionConfigs = await adminService.loadGlobalCompetitionConfigs();
-            console.log(`Successfully loaded ${appState.globalCompetitionConfigs.length} global competition configs.`);
         } catch (error) {
             console.error("Error loading Global Competition Configs:", error);
             ui.showNotification("Không thể tải cấu hình thi đua chung từ cloud.", "error");
@@ -222,11 +241,9 @@ const app = {
         // === END REFACTOR 2 ===
 
         // ========== START: THÊM MỚI (Tải SP Đặc Quyền & Cấu hình SPĐQ) ==========
-        console.log("Loading Special Product List from Firestore...");
         try {
             appState.specialProductList = await adminService.loadSpecialProductList();
             const productCount = appState.specialProductList.length; // Lấy số lượng
-            console.log(`Successfully loaded ${productCount} special products.`);
             
             // === START: THÊM MỚI (VÁ LỖI UI) v4.58 ===
             // Cập nhật trạng thái UI sau khi tải từ cloud (giống như logic của Danh mục Ngành hàng)
@@ -241,10 +258,8 @@ const app = {
             appState.specialProductList = []; // Ensure it's an array on failure
         }
 
-        console.log("Loading Global Special Programs from Firestore...");
         try {
             appState.globalSpecialPrograms = await adminService.loadGlobalSpecialPrograms();
-            console.log(`Successfully loaded ${appState.globalSpecialPrograms.length} global special programs.`);
         } catch (error) {
             console.error("Error loading Global Special Programs:", error);
             ui.showNotification("Không thể tải cấu hình SP Đặc Quyền từ cloud.", "error");
@@ -253,6 +268,7 @@ const app = {
         // ========== END: THÊM MỚI ==========
 
         initializeEventListeners(this);
+        
         dataService.init(this); // <<< THÊM MỚI (v4.48): Khởi động data service
         await this.loadDataFromStorage();
 
@@ -260,15 +276,12 @@ const app = {
         if (savedWarehouse) {
             appState.selectedWarehouse = savedWarehouse;
             if(this.unsubscribeDataListener) this.unsubscribeDataListener();
-            console.log(`Re-attaching listener for saved warehouse: ${savedWarehouse}`);
             
             // <<< CẬP NHẬT (v4.48): Trỏ callback đến dataService >>>
             // (HÀM NÀY VẪN GỌI firebase. VÌ NÓ LÀ HÀM LÕI)
             this.unsubscribeDataListener = firebase.listenForDataChanges(savedWarehouse, (cloudData) => {
                 dataService.handleCloudDataUpdate(cloudData);
             });
-
-            console.log(`%c[continueInit] Checking sync status for warehouse ${savedWarehouse} (AFTER loadDataFromStorage)...`, "color: teal; font-weight: bold;");
 
             const fileDataTypes = Object.keys(this.ALL_DATA_MAPPING).filter(k => !this.ALL_DATA_MAPPING[k].isPasted);
 
@@ -282,10 +295,6 @@ const app = {
                 const metadata = dataService._getSavedMetadata(savedWarehouse, firestoreKey); 
                 const localVersionInfo = this._localDataVersions?.[savedWarehouse]?.[firestoreKey] || { version: 0, timestamp: 0 };
 
-                console.log(`%c[continueInit] --> Checking ${firestoreKey}:`, "color: teal;");
-                console.log(`%c    Metadata (localStorage):`, "color: teal;", metadata ? `v${metadata.version}, ts ${metadata.timestamp}, by ${metadata.updatedBy}` : 'null');
-                console.log(`%c    Local Version Info (_localDataVersions):`, "color: teal;", `v${localVersionInfo.version}, ts ${localVersionInfo.timestamp}`);
-
                 const fileStatusSpan = document.getElementById(`file-status-${uiId}`);
                 // === FIX 2b.1 (Sửa) ===
                 // Thay đổi cách kiểm tra 'cache', vì chúng ta sẽ hiển thị số dòng
@@ -293,29 +302,22 @@ const app = {
 
                 if (currentStatusIsCache) {
                         if (metadata && metadata.version > localVersionInfo.version) {
-                        console.log(`%c[continueInit] Cache loaded for ${firestoreKey}, but cloud v${metadata.version} is newer. Showing download button.`, "color: orange;");
-                        ui.updateFileStatus(uiId, metadata.fileName || 'Cloud', '', 'default', true, metadata, firestoreKey, savedWarehouse); // <<< SỬA (v4.47)
-                        } else {
-                            console.log(`%c[continueInit] UI status for ${firestoreKey} was set by loadDataFromStorage (cache) and is up-to-date. Keeping it.`, "color: green;");
+                         ui.updateFileStatus(uiId, metadata.fileName || 'Cloud', '', 'default', true, metadata, firestoreKey, savedWarehouse); // <<< SỬA (v4.47)
                         }
                 } else if (metadata) {
                         if (metadata.version > localVersionInfo.version) {
                         ui.updateFileStatus(uiId, metadata.fileName || 'Cloud', '', 'default', true, metadata, firestoreKey, savedWarehouse); // <<< SỬA (v4.47)
-                        console.log(`%c[continueInit] UI status for ${firestoreKey} requires download (Cloud v${metadata.version} > Local v${localVersionInfo.version}).`, "color: green;");
                     } else {
                             ui.updateFileStatus(uiId, metadata.fileName || 'Cloud', '', 'default', true, metadata, firestoreKey, savedWarehouse); // <<< SỬA (v4.47)
-                        console.log(`%c[continueInit] UI status for ${firestoreKey} requires download (v${metadata.version}). Cache empty or not loaded.`, "color: orange;");
                     }
                 } else {
-                        ui.updateFileStatus(uiId, '', `Đang chờ đồng bộ từ kho ${savedWarehouse}...`, 'default'); // <<< SỬA (v4.47)
-                    console.log(`%c[continueInit] No metadata for ${firestoreKey}, waiting for sync.`, "color: orange;");
+                     ui.updateFileStatus(uiId, '', `Đang chờ đồng bộ từ kho ${savedWarehouse}...`, 'default'); // <<< SỬA (v4.47)
                 }
             });
-            console.log(`%c[continueInit] Finished checking sync status.`, "color: teal; font-weight: bold;");
 
         } else {
                 Object.keys(this.ALL_DATA_MAPPING).filter(k => !this.ALL_DATA_MAPPING[k].isPasted).forEach(fileTypeKey => {
-                    ui.updateFileStatus(this.ALL_DATA_MAPPING[fileTypeKey].uiId, '', 'Chọn kho để đồng bộ...', 'default'); // <<< SỬA (v4.47)
+                   ui.updateFileStatus(this.ALL_DATA_MAPPING[fileTypeKey].uiId, '', 'Chọn kho để đồng bộ...', 'default'); // <<< SỬA (v4.47)
                 });
                 const dsnvFilename = localStorage.getItem(LOCAL_DSNV_FILENAME_KEY);
                 if (!dsnvFilename) {
@@ -325,7 +327,7 @@ const app = {
 
         if (appState.danhSachNhanVien.length > 0) {
             ui.populateWarehouseSelector(); // <<< SỬA (v4.47)
-        } else {
+         } else {
                 console.error("[main.js continueInit] CRITICAL: appState.danhSachNhanVien is empty! Warehouse selector cannot be populated.");
                 const selector = document.getElementById('data-warehouse-selector');
                 if (selector) {
@@ -343,17 +345,32 @@ const app = {
         this.loadPastedDataFromStorage();
         this.switchTab('data-section');
         this.checkForUpdates();
+        
+        // <--- === START SVELTE 5 FIX === --->
+        // Khởi tạo Modal Admin Svelte
+        try {
+          adminModal = mount(ModalAdmin, {
+            target: document.getElementById('modal-admin-container'),
+            props: {
+              isVisible: false, // Ban đầu ẩn
+              
+              // Truyền hàm xử lý qua props
+              onConfirm: () => {
+                this.handleAdminLogin(); // Gọi hàm đăng nhập
+              },
+              onClose: () => {
+                adminModal.$set({ isVisible: false }); // Ẩn modal
+              }
+            }
+          });
+        } catch (svelteError) {
+          console.error("FATAL SVELTE ERROR:", svelteError);
+          ui.showNotification("Lỗi nghiêm trọng khi khởi tạo component Svelte.", "error");
+        }
+        // <--- === END SVELTE 5 FIX === --->
+
         setInterval(() => this.checkForUpdates(), 15 * 60 * 1000);
     },
-
-    // <<< START: XÓA BỎ KHỐI HÀM (v4.49) >>>
-    // 14 hàm (handleCloudDataUpdate, handleDownloadAndProcessData, _getSavedMetadata, 
-    //         handleFileInputChange, handleDsnvUpload) đã bị xóa ở v4.48.
-    // 3 hàm sau sẽ bị xóa ở v4.49:
-    // handleFileRead(file) { ... }
-    // async handleCompetitionDebugFile(e) { ... }
-    // async handleTemplateDownload() { ... }
-    // <<< END: XÓA BỎ KHỐI HÀM (v4.49) >>>
 
     async setupMarquee() {
         // ... (Giữ nguyên)
@@ -361,7 +378,7 @@ const app = {
         const marqueeText = marqueeContainer?.querySelector('.marquee-text');
         if (!marqueeContainer || !marqueeText) return;
         try {
-            const versionRes = await fetch(`./version.json?v=${new Date().getTime()}`);
+             const versionRes = await fetch(`./version.json?v=${new Date().getTime()}`);
             const versionInfo = await versionRes.json();
             const currentVersion = versionInfo.version || this.currentVersion;
             marqueeText.textContent = `🔥 Chi tiết bản cập nhật - Phiên bản ${currentVersion}`;
@@ -390,12 +407,12 @@ const app = {
         if (!changelogData || changelogData.length === 0) return '<p>Không có lịch sử cập nhật.</p>';
         
         return changelogData.map(item => {
-            const notesHtml = item.notes.map(note => {
+             const notesHtml = item.notes.map(note => {
                 // Yêu cầu mới: Kiểm tra xem 'note' là string hay object
                 if (typeof note === 'object' && note !== null && note.title && Array.isArray(note.items)) {
                     // Đây là một mục lồng cấp
                     const subItemsHtml = note.items.map(subItem => 
-                        // Sử dụng style 'list-style-type: "- "'
+                         // Sử dụng style 'list-style-type: "- "'
                         `<li class="ml-4" style="list-style-type: '- ';">${subItem}</li>`
                     ).join('');
                     
@@ -415,7 +432,7 @@ const app = {
             return `
                 <div class="mb-4 pb-4 border-b last:border-b-0">
                     <h4 class="font-bold text-blue-600 mb-2">Phiên bản ${item.version} (${item.date})</h4>
-                    <ul class="list-disc list-inside space-y-1 text-sm">
+                     <ul class="list-disc list-inside space-y-1 text-sm">
                         ${notesHtml}
                     </ul>
                 </div>
@@ -431,7 +448,6 @@ const app = {
             if (!response.ok) return;
             const serverConfig = await response.json();
             if (serverConfig.version && serverConfig.version !== this.currentVersion) {
-                    console.log(`Phiên bản mới ${serverConfig.version} đã sẵn sàng!`);
                 const changelogRes = await fetch(`./changelog.json?v=${new Date().getTime()}`);
                 const changelogData = await changelogRes.json();
                 const newVersionDetails = changelogData.find(log => log.version === serverConfig.version);
@@ -444,23 +460,23 @@ const app = {
                         if (typeof note === 'object' && note !== null && note.title && Array.isArray(note.items)) {
                             const subItemsHtml = note.items.map(subItem => 
                                 `<li class="ml-4" style="list-style-type: '- ';">${subItem}</li>`
-                            ).join('');
+                             ).join('');
                             return `
                                 <li class="mt-2 font-semibold text-gray-800">${note.title}
                                     <ul class="font-normal text-gray-700 space-y-1 mt-1">
-                                        ${subItemsHtml}
+                                         ${subItemsHtml}
                                     </ul>
                                 </li>
                             `;
                         } else {
-                            return `<li class="text-gray-700">${note}</li>`;
+                             return `<li class="text-gray-700">${note}</li>`;
                         }
                     }).join('');
                     
                     notesContainer.innerHTML = `
                         <p class="text-sm font-semibold text-gray-700 mb-2">Nội dung cập nhật:</p>
                         <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
-                            ${notesHtml}
+                             ${notesHtml}
                         </ul>
                     `;
                 } else if (notesContainer) {
@@ -478,7 +494,6 @@ const app = {
     
         let dsnvLoadSuccess = false;
         const loadSavedFile = async (saveKey, stateKey, fileType, uiId) => {
-            console.log(`[main.js loadDataFromStorage] Attempting to load ${saveKey} from IndexedDB...`);
             let savedData = null;
             try {
                 savedData = await this.storage.getItem(saveKey);
@@ -492,15 +507,13 @@ const app = {
                             selector.disabled = true;
                         }
                     }
-                    return;
+                 return;
             }
 
             if (!savedData) {
-                console.log(`[main.js loadDataFromStorage] ${saveKey} not found in IndexedDB.`);
                 return;
             }
 
-            console.log(`[main.js loadDataFromStorage] Found ${saveKey} in IndexedDB.`);
             try {
                 if (saveKey === 'saved_category_structure') {
                         if (appState.categoryStructure.length > 0 || appState.brandList.length > 0) {
@@ -510,7 +523,6 @@ const app = {
                 }
                 const normalizedData = savedData;
                 if (normalizedData && Array.isArray(normalizedData) && normalizedData.length > 0) {
-                    console.log(`[main.js loadDataFromStorage] Successfully validated data for ${saveKey}, ${normalizedData.length} rows.`);
                     appState[stateKey] = normalizedData;
 
                     let fileNameToShow = `Cache (${normalizedData.length} dòng)`;
@@ -523,7 +535,7 @@ const app = {
                     const firestoreKey = mappingEntry ? mappingEntry.firestoreKey : null;
 
                     if (saveKey === 'saved_danhsachnv') {
-                            dsnvLoadSuccess = true;
+                         dsnvLoadSuccess = true;
                             fileNameToShow = localStorage.getItem(LOCAL_DSNV_FILENAME_KEY) || fileNameToShow;
                     } else if (firestoreKey && !mappingEntry.isPasted) {
                             const currentWarehouse = localStorage.getItem('selectedWarehouse');
@@ -531,28 +543,21 @@ const app = {
                                 // <<< CẬP NHẬT (v4.48): Gọi hàm helper từ dataService >>>
                                 metadata = dataService._getSavedMetadata(currentWarehouse, firestoreKey);
                                 if (metadata) {
-                                        fileNameToShow = metadata.fileName || fileNameToShow;
-                                    console.log(`[main.js loadDataFromStorage] Found metadata for ${firestoreKey}, will use it in status update.`);
-                                } else {
-                                    console.log(`[main.js loadDataFromStorage] No metadata found in localStorage for ${firestoreKey}, using basic cache status.`);
+                                     fileNameToShow = metadata.fileName || fileNameToShow;
                                 }
-                            } else {
-                                console.log(`[main.js loadDataFromStorage] No warehouse selected, using basic cache status for ${firestoreKey}.`);
                             }
                     }
 
                     ui.updateFileStatus(uiId, fileNameToShow, statusText, statusType, false, metadata); // <<< SỬA (v4.47)
 
                     if (stateKey === 'danhSachNhanVien') {
-                        console.log("[main.js loadDataFromStorage] Updating employee maps after loading DSNV from cache.");
-                        services.updateEmployeeMaps();
+                         services.updateEmployeeMaps();
                     }
                 } else {
                         console.error(`[main.js loadDataFromStorage] Invalid or empty data array found in cache for ${saveKey}.`);
                         ui.updateFileStatus(uiId, '', `Lỗi dữ liệu cache.`, 'error'); // <<< SỬA (v4.47)
                         try {
                             await this.storage.setItem(saveKey, null);
-                            console.log(`[main.js loadDataFromStorage] Cleared potentially corrupted cache for ${saveKey}.`);
                         } catch(clearError) {
                             console.error(`[main.js loadDataFromStorage] Failed to clear corrupted cache for ${saveKey}:`, clearError);
                         }
@@ -560,7 +565,7 @@ const app = {
                 } catch (e) {
                 console.error(`[main.js loadDataFromStorage] Lỗi xử lý ${saveKey} từ IndexedDB:`, e);
                 ui.updateFileStatus(uiId, '', `Lỗi xử lý cache.`, 'error'); // <<< SỬA (v4.47)
-            }
+             }
         };
 
         await loadSavedFile('saved_danhsachnv', 'danhSachNhanVien', 'danhsachnv', 'danhsachnv');
@@ -614,8 +619,7 @@ const app = {
             if (savedPastedThiDua) {
                 try {
                     // Lưu ý: Chúng ta lưu mảng ĐÃ XỬ LÝ, không phải text thô
-                    appState.pastedThiDuaReportData = JSON.parse(savedPastedThiDua); 
-                    console.log(`[main.js loadDataFromStorage] Loaded ${appState.pastedThiDuaReportData.length} rows of processed pasted competition data.`);
+                     appState.pastedThiDuaReportData = JSON.parse(savedPastedThiDua); 
                 } catch (e) {
                     console.error("Lỗi đọc daily_paste_thiduanv từ localStorage:", e);
                     appState.pastedThiDuaReportData = [];
@@ -627,31 +631,15 @@ const app = {
     },
 
     loadPastedDataFromStorage() {
-        // === START: DEBUG (v4.43) ===
-        console.log("%c[DEBUG loadPastedDataFromStorage] Bắt đầu tải dữ liệu dán...", "color: brown; font-weight: bold;");
-        // === END: DEBUG ===
-
         const loadPasted = (saveKey, stateKey, uiId, processFunc) => {
-            // === START: DEBUG (v4.43) ===
-                console.log(`%c[DEBUG loadPastedDataFromStorage] Đang xử lý key: ${saveKey}`, "color: brown;");
-            // === END: DEBUG ===
-            
             const pastedText = localStorage.getItem(saveKey); // Đây là text thô (ngoại trừ daily_paste_thiduanv)
             
-            // === START: DEBUG (v4.43) ===
-            if (pastedText) {
-                console.log(`%c[DEBUG loadPastedDataFromStorage]   > Tìm thấy dữ liệu cho ${saveKey}. (Độ dài: ${pastedText.length})`, "color: green;");
-            } else {
-                console.log(`%c[DEBUG loadPastedDataFromStorage]   > Không tìm thấy dữ liệu cho ${saveKey} trong localStorage.`, "color: red;");
-            }
-            // === END: DEBUG ===
-
             if (pastedText) {
                     const el = document.getElementById(uiId.replace('status-', 'paste-'));
                     
                     // === FIX 2a.2 (Sửa) ===
                     // Không điền text thô cho ô thi đua NV, vì chúng ta lưu *dữ liệu đã xử lý* vào key đó
-                    if (el && saveKey !== 'daily_paste_thiduanv') {
+                     if (el && saveKey !== 'daily_paste_thiduanv') {
                     el.value = pastedText;
                     }
                     // === END FIX ===
@@ -660,7 +648,7 @@ const app = {
                 
                 // === FIX 2a.2 (Sửa) ===
                 if (saveKey === 'daily_paste_thiduanv') {
-                    // Dữ liệu đã được tải vào appState.pastedThiDuaReportData trong loadDataFromStorage
+                     // Dữ liệu đã được tải vào appState.pastedThiDuaReportData trong loadDataFromStorage
                     processedCount = appState.pastedThiDuaReportData.length;
                 } 
                 // === END FIX ===
@@ -673,9 +661,8 @@ const app = {
                     // Xử lý ngay dữ liệu Lũy kế dán vào để appState.competitionData sẵn sàng
                     try {
                         services.parseCompetitionDataFromLuyKe(pastedText);
-                        console.log("[loadPastedData] Parsed luyke paste data from cache.");
                     } catch(e) {
-                        console.warn("Lỗi xử lý 'paste-luyke' từ cache khi tải trang:", e);
+                         // (Bỏ log)
                     }
                     // === END FIX ===
                 }
@@ -686,7 +673,7 @@ const app = {
                 let metadata = null;
                 if (kho && mappingInfo) {
                     // <<< CẬP NHẬT (v4.48): Gọi hàm helper từ dataService >>>
-                    metadata = dataService._getSavedMetadata(kho, mappingInfo.firestoreKey);
+                     metadata = dataService._getSavedMetadata(kho, mappingInfo.firestoreKey);
                     if (metadata) {
                             ui.updatePasteStatus(uiId, '', 'success', metadata, processedCount); // <<< SỬA (v4.47)
                     } else {
@@ -697,7 +684,7 @@ const app = {
                     }
                 } else if (pastedText) {
                         // === FIX 2b.2 (Sửa) ===
-                        let countMsg = processedCount > 0 ? `(${processedCount} NV)` : '';
+                         let countMsg = processedCount > 0 ? `(${processedCount} NV)` : '';
                         if (uiId === 'status-luyke') countMsg = '';
                         ui.updatePasteStatus(uiId, `✓ Đã tải ${countMsg} (chưa chọn kho)`, 'success', null, processedCount); // <<< SỬA (v4.47)
                 }
@@ -711,13 +698,6 @@ const app = {
 
         // === FIX 2a.2 (Thêm) - Xử lý tải lại raw text cho Thi đua NV ===
         const rawThiDuaPaste = localStorage.getItem(RAW_PASTE_THIDUANV_KEY);
-        // === START: DEBUG (v4.43) ===
-        if (rawThiDuaPaste) {
-            console.log(`%c[DEBUG loadPastedDataFromStorage]   > Tìm thấy dữ liệu THÔ cho ${RAW_PASTE_THIDUANV_KEY}. (Độ dài: ${rawThiDuaPaste.length})`, "color: green;");
-        } else {
-            console.log(`%c[DEBUG loadPastedDataFromStorage]   > Không tìm thấy dữ liệu cho ${RAW_PASTE_THIDUANV_KEY} trong localStorage.`, "color: red;");
-        }
-        // === END: DEBUG ===
         if (rawThiDuaPaste) {
             const el = document.getElementById('paste-thiduanv');
             if (el) el.value = rawThiDuaPaste;
@@ -745,7 +725,7 @@ const app = {
             // ... (Giữ nguyên)
         document.querySelectorAll('.page-section').forEach(section => section.classList.toggle('hidden', section.id !== targetId));
         document.querySelectorAll('.nav-link').forEach(link => {
-                const isActive = link.getAttribute('href') === `#${targetId}`;
+                 const isActive = link.getAttribute('href') === `#${targetId}`;
                 link.classList.toggle('bg-blue-100', isActive);
             link.classList.toggle('text-blue-700', isActive);
         });
@@ -778,7 +758,7 @@ const app = {
         if (!choicesInstance) return;
         const selectedValue = choicesInstance.getValue(true);
         if (selectedValue) {
-            const reportData = services.generateThiDuaVungReport(selectedValue);
+             const reportData = services.generateThiDuaVungReport(selectedValue);
             ui.renderThiDuaVungInfographic(reportData);
         } else {
             const container = document.getElementById('thidua-vung-infographic-container');
@@ -818,9 +798,6 @@ const app = {
             ui.displayCompetitionReport(view);
         }
     },
-
-    // <<< XÓA BỎ (v4.49) >>>
-    // async handleCompetitionDebugFile(e) { ... }
 
     _handleCompetitionFormShow(show = true, isEdit = false) {
         // ... (Giữ nguyên)
@@ -870,7 +847,7 @@ const app = {
         if(maxPriceEl) maxPriceEl.value = config.maxPrice ? config.maxPrice / 1000000 : '';
         const groupChoices = appState.choices['competition_group'];
         if (groupChoices) {
-            groupChoices.removeActiveItems();
+             groupChoices.removeActiveItems();
             groupChoices.setChoiceByValue(config.groups);
         }
     },
@@ -906,7 +883,7 @@ const app = {
         // Sửa logic để lưu vào global configs và Firestore
         const newConfig = {
             id: id ? appState.globalCompetitionConfigs[parseInt(id, 10)].id : `comp_${new Date().getTime()}`,
-            name: name,
+             name: name,
             brands: brands,
             groups: groups,
             type: compTypeEl ? compTypeEl.value : 'doanhthu',
@@ -917,7 +894,7 @@ const app = {
         if (id !== '') { appState.globalCompetitionConfigs[parseInt(id, 10)] = newConfig; }
         else { appState.globalCompetitionConfigs.push(newConfig); }
         adminService.saveGlobalCompetitionConfigs(appState.globalCompetitionConfigs);
-        // === END REFACTOR 2 ===
+// === END REFACTOR 2 ===
         
         this._handleCompetitionFormShow(false);
         this.updateAndRenderCurrentTab();
@@ -955,7 +932,7 @@ const app = {
         addBtn.classList.toggle('hidden', show);
 
         if (show && !isEdit) {
-            form.reset();
+             form.reset();
             document.getElementById('special-program-id').value = '';
             appState.choices['special_program_group']?.removeActiveItems();
         }
@@ -979,7 +956,7 @@ const app = {
         const groupChoices = appState.choices['special_program_group'];
         if (groupChoices) {
             groupChoices.removeActiveItems();
-            // Đảm bảo các lựa chọn (choices) có sẵn trước khi set giá trị
+// Đảm bảo các lựa chọn (choices) có sẵn trước khi set giá trị
             const uniqueGroups = [...new Set(appState.specialProductList.map(item => String(item.nhomHang).trim()).filter(Boolean))].sort();
             const groupOptions = uniqueGroups.map(group => ({ value: group, label: group }));
             groupChoices.setChoices(groupOptions, 'value', 'label', true);
@@ -1027,7 +1004,7 @@ const app = {
         };
 
         if (id !== '') { 
-            appState.globalSpecialPrograms[parseInt(id, 10)] = newProgram; 
+             appState.globalSpecialPrograms[parseInt(id, 10)] = newProgram; 
         } else { 
             appState.globalSpecialPrograms.push(newProgram); 
         }
@@ -1061,25 +1038,23 @@ const app = {
     // === END: SỬS LỖI (Bug 2) ===
     // ========== END: HÀM MỚI ==========
 
-    // <<< XÓA BỎ (v4.49) >>>
-    // async handleTemplateDownload() { ... }
-
+    // <--- === START SVELTE 5 FIX === --->
+    // Thay thế hàm cũ bằng hàm logic mới
     handleAdminLogin() {
-        // ... (Giữ nguyên)
-        const passInputEl = document.getElementById('admin-password-input');
-        const errorMsgEl = document.getElementById('admin-error-msg');
-        if (passInputEl?.value === config.ADMIN_PASSWORD) {
-            appState.isAdmin = true;
-            ui.renderFeedbackSection();
-            ui.renderAdminHelpEditors();
-            this.switchTab('declaration-section');
-            ui.toggleModal('admin-modal', false);
-            passInputEl.value = '';
-            if(errorMsgEl) errorMsgEl.classList.add('hidden');
-        } else {
-            if(errorMsgEl) errorMsgEl.classList.remove('hidden');
+        // Logic kiểm tra mật khẩu đã được Svelte (ModalAdmin.svelte) xử lý xong.
+        // Hàm này chỉ được gọi KHI MẬT KHẨU ĐÃ ĐÚNG.
+
+        appState.isAdmin = true;
+        ui.renderFeedbackSection(); // Cập nhật giao diện Góp ý
+        ui.renderAdminHelpEditors(); // Tải nội dung Hướng dẫn (nếu có)
+        this.switchTab('declaration-section'); // Quan trọng: Chuyển sang tab Khai báo
+
+        // Đóng modal Svelte
+        if (adminModal) {
+            adminModal.$set({ isVisible: false });
         }
     },
+    // <--- === END SVELTE 5 FIX === --->
 
     handleContrastChange(e) {
         // ... (Giữ nguyên)
@@ -1104,7 +1079,7 @@ const app = {
         }
     },
 
-        handleClearHighlight(prefix) {
+    handleClearHighlight(prefix) {
         // ... (Giữ nguyên)
         appState.highlightSettings[prefix] = {};
         localStorage.setItem('highlightSettings', JSON.stringify(appState.highlightSettings));
@@ -1122,7 +1097,7 @@ const app = {
         const declarationsToSave = {
             ycx: ycxEl ? ycxEl.value : '',
             ycxGop: ycxGopEl ? ycxGopEl.value : '',
-            heSo: heSoEl ? heSoEl.value : ''
+             heSo: heSoEl ? heSoEl.value : ''
         };
         // === START: TÁI CẤU TRÚC (RE-WIRING) ===
         await adminService.saveDeclarationsToFirestore(declarationsToSave);
@@ -1141,7 +1116,7 @@ const app = {
         const realtimeEl = document.getElementById('edit-help-realtime');
         const contents = {
                 data: dataEl ? dataEl.value : '',
-                luyke: luykeEl ? luykeEl.value : '',
+                 luyke: luykeEl ? luykeEl.value : '',
                 sknv: sknvEl ? sknvEl.value : '',
                 realtime: realtimeEl ? realtimeEl.value : ''
         };
@@ -1170,7 +1145,7 @@ const app = {
             if (e.target.classList.contains('cancel-reply-btn')) { replyForm.classList.add('hidden'); }
         if (e.target.classList.contains('submit-reply-btn')) {
                 const textarea = replyForm.querySelector('textarea');
-                if(textarea){
+if(textarea){
                     // === START: TÁI CẤU TRÚC (RE-WIRING) ===
                     const success = await collaborationService.submitReply(docId, textarea.value.trim());
                     // === END: TÁI CẤU TRÚC (RE-WIRING) ===
@@ -1216,14 +1191,14 @@ const app = {
             subTabButtons.forEach(btn => {
                     const subTabId = btn.dataset.target;
                 const isActive = btn.classList.contains('active');
-                const newTabBtn = document.createElement('button');
+                 const newTabBtn = document.createElement('button');
                 newTabBtn.className = `composer__tab-btn ${isActive ? 'active' : ''}`;
                 newTabBtn.dataset.target = `context-pane-${subTabId}`;
                 newTabBtn.textContent = btn.textContent.trim();
                     newTabBtn.addEventListener('click', () => {
                     contextTabsContainer.querySelectorAll('.composer__tab-btn').forEach(t => t.classList.remove('active'));
                     contextContentContainer.querySelectorAll('.composer__context-pane').forEach(c => c.classList.add('hidden'));
-                    newTabBtn.classList.add('active');
+                     newTabBtn.classList.add('active');
                     const targetPane = document.getElementById(`context-pane-${subTabId}`);
                     if(targetPane) targetPane.classList.remove('hidden');
                 });
@@ -1242,6 +1217,7 @@ const app = {
             });
             contextTabsContainer.classList.toggle('hidden', contextTabsContainer.children.length === 0);
         }
+        
         const filteredReportData = this._getFilteredReportData(sectionId);
         const supermarketReport = services.aggregateReport(filteredReportData);
         ui.populateComposerDetailTags(supermarketReport);
@@ -1266,6 +1242,7 @@ const app = {
             }
             return;
         }
+        
         if (e.target.matches('.composer__icon-btn, .composer__tag-btn')) {
                 if (!activeTextarea) { ui.showNotification("Vui lòng chọn một tab nội dung để chèn thẻ.", "error"); return; }
                 let tagToInsert = e.target.dataset.tag;
@@ -1279,7 +1256,7 @@ const app = {
         }
             if (e.target.id === 'save-composer-template-btn') {
             if (!activeTextarea) return;
-            const activeContextTab = modal.querySelector('#composer-context-tabs .composer__tab-btn.active');
+const activeContextTab = modal.querySelector('#composer-context-tabs .composer__tab-btn.active');
             const subTabId = activeContextTab?.dataset.target.replace('context-pane-', '');
             if (subTabId) {
                     if (!appState.composerTemplates[sectionId]) appState.composerTemplates[sectionId] ={};
@@ -1307,18 +1284,21 @@ const app = {
         // ... (Giữ nguyên)
             try {
                 // === START: TÁI CẤU TRÚC (RE-WIRING) ===
-                const qrUrl = await storageService.getQrCodeDownloadURL();
+                const bookmarkUrl = await storageService.getBookmarkDownloadURL();
                 // === END: TÁI CẤU TRÚC (RE-WIRING) ===
-            const imgEl = document.getElementById('header-qr-image');
-            if (imgEl) imgEl.src = qrUrl;
+             const linkElement = document.getElementById('download-bookmark-link');
+            if (linkElement) linkElement.href = bookmarkUrl;
         }
         catch (error) {
-                console.error("Không thể tải mã QR:", error);
-            const container = document.querySelector('.header-qr-container');
-            if (container) container.style.display = 'none';
+                console.error("Không thể tải link bookmark:", error);
+            const linkElement = document.getElementById('download-bookmark-link');
+            if (linkElement) linkElement.style.display = 'none';
         }
     }
 };
 
 // Khởi chạy ứng dụng khi DOM đã sẵn sàng
 app.init();
+
+// <--- THAY ĐỔI 5: Export biến adminModal
+export { adminModal };

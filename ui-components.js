@@ -1,3 +1,4 @@
+// Version 3.33 - Fix: Phá vỡ vòng lặp (circular dependency) với ui.js
 // Version 3.32 - Refactor: Remove HomePage functions (moved to ui-home.js) and renderCompetitionConfigUI (moved to ui-admin.js)
 // Version 3.31 - Refactor: Remove admin and filter functions (moved to ui-admin.js and ui-filters.js)
 // ... (các phiên bản trước giữ nguyên)
@@ -8,7 +9,9 @@ import { appState } from './state.js';
 import { services } from './services.js';
 import { utils } from './utils.js';
 import { settingsService } from './modules/settings.service.js';
-import { ui } from './ui.js';
+// === START: SỬA LỖI VÒNG LẶP ===
+// ĐÃ XÓA: import { ui } from './ui.js';
+// === END: SỬA LỖI VÒNG LẶP ===
 import { formatters } from './ui-formatters.js'; // (v3.26)
 import { modalManager } from './ui-modal-manager.js'; // (v3.28)
 import { notifications } from './ui-notifications.js'; // <<< THÊM MỚI (v3.29)
@@ -238,14 +241,19 @@ export const uiComponents = {
         const content = contentEl.textContent;
         navigator.clipboard.writeText(content)
                 .then(() => {
-                // Sử dụng ui.showNotification thay vì uiComponents.showNotification
-                ui.showNotification('Đã sao chép nội dung!', 'success');
-                ui.toggleModal('preview-modal', false);
+                // === START: SỬA LỖI VÒNG LẶP ===
+                // Sử dụng 'this.showNotification' thay vì 'ui.showNotification'
+                this.showNotification('Đã sao chép nội dung!', 'success');
+                // Sử dụng 'this.toggleModal' thay vì 'ui.toggleModal'
+                this.toggleModal('preview-modal', false);
+                // === END: SỬA LỖI VÒNG LẶP ===
                 })
                 .catch(err => {
                 console.error('Lỗi sao chép:', err);
-                    // Sử dụng ui.showNotification
-                    ui.showNotification('Lỗi khi sao chép.', 'error');
+                // === START: SỬA LỖI VÒNG LẶP ===
+                // Sử dụng 'this.showNotification'
+                this.showNotification('Lỗi khi sao chép.', 'error');
+                // === END: SỬA LỖI VÒNG LẶP ===
                 });
     },
 

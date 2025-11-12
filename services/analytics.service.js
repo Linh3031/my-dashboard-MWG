@@ -1,7 +1,7 @@
 // Version 1.0 - Initial service extraction
 // MODULE: ANALYTICS SERVICE
 // Chịu trách nhiệm xử lý logic thống kê, người dùng và phân tích.
-import { getFirestore, collection, doc, setDoc, increment, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, doc, setDoc, increment, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { appState } from '../state.js';
 import { ui } from '../ui.js';
 

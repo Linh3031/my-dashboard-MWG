@@ -1,8 +1,9 @@
 // Kịch bản Node.js chuyên dụng để tạo snapshot toàn diện cho dự án
-// Phiên bản 1.2 - Thêm logic loại trừ file cụ thể (excludeFiles)
+// Phiên bản 1.4 - Thêm hỗ trợ file .svelte
+// Phiên bản 1.3 - Cập nhật sang cú pháp ES Module (import) để tương thích với Vite
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 
 // --- CẤU HÌNH ---
 const config = {
@@ -11,11 +12,19 @@ const config = {
     // Tên file output
     outputFile: 'project_snapshot.txt',
     // Các đuôi file cần lấy nội dung
-    includeExtensions: ['.js', '.html', '.css', '.txt', '.json', '.svg', '.md'],
+    includeExtensions: [
+        '.js', 
+        '.html', 
+        '.css', 
+        '.txt', 
+        '.json', 
+        '.svg', 
+        '.md', 
+        '.svelte' // <-- ĐÃ THÊM ĐUÔI FILE MỚI
+    ],
     // Các thư mục cần bỏ qua
-    excludeDirectories: ['node_modules', '.git', '.history'],
+    excludeDirectories: ['node_modules', '.git', '.history', 'dist'], // Thêm 'dist' (thư mục build của Vite)
     
-    // ===> THÊM MỤC NÀY VÀO <===
     // Các file cụ thể cần bỏ qua (sử dụng đường dẫn tương đối)
     excludeFiles: [
         'project_snapshot.txt',   // Loại bỏ chính file snapshot
@@ -36,7 +45,6 @@ function walkDirectory(dir, filelist = []) {
         const filepath = path.join(dir, file);
         const stat = fs.statSync(filepath);
 
-        // ===> THÊM LOGIC KIỂM TRA NÀY VÀO <===
         // Chuẩn hóa đường dẫn để so sánh (vd: 'folder/file.js')
         const normalizedPath = path.normalize(filepath).replace(/\\/g, '/');
 
@@ -44,7 +52,6 @@ function walkDirectory(dir, filelist = []) {
         if (config.excludeFiles.includes(normalizedPath)) {
             return; 
         }
-        // ===> KẾT THÚC LOGIC MỚI <===
 
         // Nếu là thư mục và không nằm trong danh sách loại trừ -> tiếp tục duyệt
         if (stat.isDirectory() && !config.excludeDirectories.includes(file)) {
@@ -60,7 +67,7 @@ function walkDirectory(dir, filelist = []) {
 
 // Hàm chính để chạy kịch bản
 function createSnapshot() {
-    console.log('Bắt đầu quá trình tạo snapshot (phiên bản nâng cao)...');
+    console.log('Bắt đầu quá trình tạo snapshot (phiên bản ESM)...');
     
     const allFiles = walkDirectory(config.rootDirectory);
 
