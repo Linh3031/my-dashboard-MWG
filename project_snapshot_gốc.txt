@@ -3153,8 +3153,9 @@ export function initializeEventListeners(mainAppController) {
                                 <div id="subtab-doanhthu-nganhhang" class="sub-tab-content hidden space-y-6" data-capture-preset="mobile-portrait"> 
                                     <div id="category-revenue-report-container"></div> 
                                 </div>
-                                <div id="subtab-hieu-qua-thi-dua-lk" class="sub-tab-content hidden space-y-6"> 
-                                    <div class="flex justify-start items-center"> 
+                                
+                                <div id="subtab-hieu-qua-thi-dua-lk" class="sub-tab-content hidden space-y-6" data-capture-preset="mobile-portrait"> 
+                                <div class="flex justify-start items-center"> 
                                         <div id="sknv-thidua-view-selector" class="view-switcher"> 
                                             <button data-view="program" class="view-switcher__btn">Theo Chương Trình</button> 
                                             <button data-view="employee" class="view-switcher__btn active">Theo Nhân Viên</button> 
@@ -3359,8 +3360,8 @@ export function initializeEventListeners(mainAppController) {
                                 </div> 
                             </div> 
 
-                            <div id="subtab-hieu-qua-thi-dua-realtime" class="sub-tab-content hidden space-y-6"> 
-                                <div id="competition-report-container-rt"> 
+                            <div id="subtab-hieu-qua-thi-dua-realtime" class="sub-tab-content hidden space-y-6" data-capture-preset="mobile-portrait"> 
+                            <div id="competition-report-container-rt"> 
                                     <p class="text-gray-500">Vui lòng khai báo chương trình thi đua trong "Thiết lập mục tiêu" để xem báo cáo.</p> 
                                 </div> 
                             </div>
@@ -3545,12 +3546,13 @@ export function initializeEventListeners(mainAppController) {
             }
         });
     </script>
-    <script type="module" src="./main.js?v=4.56"></script> </body>
+    <script type="module" src="./main.js?v=4.2"></script> </body>
 </html>
+
 --- END FILE: ./index.html ---
 
 --- START FILE: ./main.js ---
-// Version 4.57 - Add Edit/Delete handlers for Special Programs
+// Version 4.58 - Fix UI status for Special Product list on load
 // MODULE 5: BỘ ĐIỀU KHIỂN TRUNG TÂM (MAIN)
 // File này đóng vai trò điều phối, nhập khẩu các module khác và khởi chạy ứng dụng.
 
@@ -3777,7 +3779,16 @@ const app = {
         console.log("Loading Special Product List from Firestore...");
         try {
             appState.specialProductList = await adminService.loadSpecialProductList();
-            console.log(`Successfully loaded ${appState.specialProductList.length} special products.`);
+            const productCount = appState.specialProductList.length; // Lấy số lượng
+            console.log(`Successfully loaded ${productCount} special products.`);
+            
+            // === START: THÊM MỚI (VÁ LỖI UI) v4.58 ===
+            // Cập nhật trạng thái UI sau khi tải từ cloud (giống như logic của Danh mục Ngành hàng)
+            if (productCount > 0) {
+                ui.updateFileStatus('special-products', 'Tải từ Cloud', `✓ Đã tải ${productCount} sản phẩm.`, 'success', false);
+            }
+            // === END: THÊM MỚI (VÁ LỖI UI) v4.58 ===
+
         } catch (error) {
             console.error("Error loading Special Product List:", error);
             ui.showNotification("Không thể tải danh sách SP Đặc Quyền từ cloud.", "error");
@@ -4868,6 +4879,7 @@ app.init();
 --- END FILE: ./main.js ---
 
 --- START FILE: ./modules/capture.service.js ---
+// Version 1.10 - Fix messy file names by searching for h3/h4 title inside element
 // Version 1.9 - Add fixed width to preset-mobile-portrait for better mobile viewing
 // Version 1.8 - Fix: Apply presetClass to contentClone instead of wrapper
 // Version 1.1 - Fix blank charts by disabling Chart.js animations and adding 500ms delay during capture
@@ -5002,7 +5014,10 @@ export const captureService = {
     async captureAndDownload(elementToCapture, title, presetClass = '') {
         const date = new Date();
         const timeString = date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+        // === SỬA LỖI (Vấn đề 1 - Ngày tháng) ===
+        // Giữ nguyên dd-mm theo yêu cầu
         const dateString = date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+        // === END SỬA LỖI ===
         const finalTitle = `${title.replace(/_/g, ' ')} - ${timeString} ${dateString}`;
     
         const captureWrapper = document.createElement('div');
@@ -5052,7 +5067,9 @@ export const captureService = {
             });
     
             const link = document.createElement('a');
+            // === SỬA LỖI (Vấn đề 1 - Ngày tháng) ===
             link.download = `${title}_${dateString.replace(/\//g, '-')}.png`;
+            // === END SỬA LỖI ===
             link.href = canvas.toDataURL('image/png');
             link.click();
             ui.showNotification('Đã chụp và tải xuống hình ảnh!', 'success');
@@ -5120,9 +5137,24 @@ export const captureService = {
             }
 
             for (const [group, elements] of captureGroups.entries()) {
-                const captureTitle = captureGroups.size > 1 ? `${baseTitle}_Nhom_${group}` : baseTitle;
                 
-                const targetElement = elements[0];
+                const targetElement = elements[0]; // Lấy phần tử đầu tiên của nhóm
+                
+                // === START: SỬA LỖI (Vấn đề 1 - Tiêu đề) v1.10 ===
+                let foundTitle = '';
+                
+                // Tìm trong phần tử đầu tiên của nhóm
+                if (targetElement) {
+                    // Cố gắng tìm h3 hoặc h4 bên trong
+                    foundTitle = targetElement.querySelector('h3, h4')?.textContent?.trim() || '';
+                }
+                
+                // Dọn dẹp tên file
+                const captureTitle = (foundTitle || baseTitle) // Dùng tiêu đề tìm được, hoặc tên tab làm dự phòng
+                                        .replace(/[^a-zA-Z0-9\sÁ-ỹ]/g, '') // Bỏ ký tự đặc biệt (giữ lại tiếng Việt)
+                                        .replace(/\s+/g, '_'); // Thay khoảng trắng bằng gạch dưới
+                // === END: SỬA LỖI (Vấn đề 1 - Tiêu đề) v1.10 ===
+                
                 const preset = targetElement.dataset.capturePreset;
                 const isKpiGroup = group === 'kpi';
                 
@@ -11715,7 +11747,7 @@ export { luykeTab };
 --- END FILE: ./tab-luyke.js ---
 
 --- START FILE: ./tab-sknv.js ---
-// Version 4.8 - Fix competition layout (use grid instead of stack)
+// Version 4.8 - Refactor: Gỡ bỏ logic wrapper lồng nhau (sknv-program-grid-wrapper)
 // Version 4.3 - Refactor: Use globalCompetitionConfigs for report calculation
 // MODULE: TAB SKNV
 // Chịu trách nhiệm render và xử lý logic cho tab "Sức khỏe nhân viên"
@@ -11906,98 +11938,57 @@ filteredReport, filteredYCXData) {
 
             detailContainer.classList.add('hidden'); // Luôn ẩn chi tiết khi render tóm tắt
 
-            // === START: THAY ĐỔI (V4.8) ===
-            // 1. Tìm hoặc tạo wrapper (Grid 2 cột)
-            const mainContainer = document.getElementById('subtab-hieu-qua-thi-dua-lk');
-            let programGridWrapper = document.getElementById('sknv-program-grid-wrapper');
-            if (!programGridWrapper && mainContainer) {
-                programGridWrapper = document.createElement('div');
-                programGridWrapper.id = 'sknv-program-grid-wrapper';
-                
-                // ĐỔI TỪ 'space-y-6' (xếp chồng) SANG 'grid 2 cột'
-                programGridWrapper.className = 'grid grid-cols-1 md:grid-cols-2 gap-6';
-                
-                // Chèn wrapper vào DOM, ngay sau view-selector
-                const viewSelector = document.getElementById('sknv-thidua-view-selector');
-                if (viewSelector) {
-                    // Đảm bảo nó chưa tồn tại
-                    if (!viewSelector.nextElementSibling || viewSelector.nextElementSibling.id !== 'sknv-program-grid-wrapper') {
-                        viewSelector.after(programGridWrapper);
-                    }
-                } else {
-                    mainContainer.prepend(programGridWrapper);
-                }
-            } else if (programGridWrapper) {
-                // Đảm bảo nó đúng class (trường hợp render lại)
-                programGridWrapper.className = 'grid grid-cols-1 md:grid-cols-2 gap-6';
-            }
+            // === START: THAY ĐỔI V4.8 (Gỡ bỏ wrapper, gộp HTML) ===
+            // Gỡ bỏ logic tạo 'programGridWrapper' và 'spContainer'
             
-            // 2. Tìm hoặc tạo container SPĐQ
-            let spContainer = document.getElementById('special-program-report-container-lk');
-            if (!spContainer) {
-                spContainer = document.createElement('div');
-                spContainer.id = 'special-program-report-container-lk';
-            }
-            
-            // 3. Đảm bảo cả 2 container báo cáo nằm TRONG wrapper
-            // (appendChild sẽ tự động di chuyển nếu nó đã tồn tại ở chỗ khác)
-            if (programGridWrapper) {
-                programGridWrapper.appendChild(spContainer);
-                programGridWrapper.appendChild(programContainer);
-            }
-            // === END: THAY ĐỔI (V4.8) ===
-
-
             if (viewType === 'program') {
                 
-                // === START: DI CHUYỂN LOGIC SPĐQ VÀO ĐÂY (v4.4) ===
+                // 1. Tính toán Báo cáo SPĐQ
                 console.log("[tab-sknv.js renderSummaryViews] Calculating 'Special Product' report...");
-                
-                // Tính toán dữ liệu SPĐQ
                 const specialReportData = services.calculateSpecialProductReport(
                     filteredYCXData, // Dữ liệu YCX đã được lọc (ngày, kho, v.v.)
                     appState.globalSpecialPrograms
                 );
-                
-                // Render SPĐQ
-                uiSknv.renderSpecialProgramReport(spContainer, specialReportData);
+                // Render SPĐQ (Hàm này trả về chuỗi HTML)
+                const specialReportHtml = uiSknv.renderSpecialProgramReport(null, specialReportData);
                 if (specialReportData.length > 0) {
                     console.log("Dữ liệu SPĐQ (LK) đã tính toán:", specialReportData);
                 }
-                // === END: DI CHUYỂN LOGIC SPĐQ (v4.4) ===
 
-
+                // 2. Tính toán Báo cáo Thi đua Tùy chỉnh
                 console.log("[tab-sknv.js renderSummaryViews] Calculating 'program' report..."); 
-                
-                // === START REFACTOR 2 (Bước 2e) ===
-                // Gộp 2 danh sách config
                 const allConfigs = [ ...appState.globalCompetitionConfigs, ...appState.localCompetitionConfigs ];
                 const competitionReportData = services.calculateCompetitionFocusReport( 
                     filteredYCXData, 
                     allConfigs // Truyền danh sách đã gộp
                 );
-                // === END REFACTOR 2 ===
-
-                console.log("[tab-sknv.js renderSummaryViews] Calling uiCompetition.renderCompetitionUI..."); 
-                uiCompetition.renderCompetitionUI('competition-report-container-lk', competitionReportData); 
+                // Render Thi đua Tùy chỉnh (Hàm này render vào DOM, nhưng chúng ta sẽ sửa nó)
+                // Tạm thời, chúng ta tạo 1 container ảo để lấy HTML
+                const tempCompetitionDiv = document.createElement('div');
+                uiCompetition.renderCompetitionUI(tempCompetitionDiv, competitionReportData); 
+                const competitionReportHtml = tempCompetitionDiv.innerHTML;
                 
-                // === START: SỬA LỖI LAYOUT (v4.5 -> v4.6) ===
-                // Hiển thị grid wrapper, ẩn view "Theo Nhân Viên"
-                if (programGridWrapper) {
-                    programGridWrapper.classList.remove('hidden');
-                }
+                // 3. Gộp HTML và chèn vào DOM
+                // Bọc cả hai chuỗi HTML trong một grid 2 cột duy nhất
+                programContainer.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        ${specialReportHtml}
+                        ${competitionReportHtml}
+                    </div>
+                `;
+                
+                // 4. Hiển thị/Ẩn container
+                programContainer.classList.remove('hidden');
                 employeeContainer.classList.add('hidden');
-                // === END: SỬA LỖI LAYOUT (v4.5 -> v4.6) ===
+                // === END: THAY ĐỔI V4.8 ===
 
             } else { // viewType === 'employee'
                 
-                // === START: SỬA LỖI LAYOUT (v4.5 -> v4.6) ===
-                // Ẩn grid wrapper, hiển thị view "Theo Nhân Viên"
-                if (programGridWrapper) {
-                    programGridWrapper.classList.add('hidden');
-                }
+                // === START: THAY ĐỔI V4.8 ===
+                // Ẩn container 'program', hiển thị container 'employee'
+                programContainer.classList.add('hidden');
                 employeeContainer.classList.remove('hidden');
-                // === END: SỬA LỖI LAYOUT (v4.5 -> v4.6) ===
+                // === END: THAY ĐỔI V4.8 ===
                 
                 console.log("[tab-sknv.js renderSummaryViews] Calling uiSknv.renderPastedCompetitionReport..."); 
                 
@@ -12303,6 +12294,7 @@ export const uiAdmin = {
 --- END FILE: ./ui-admin.js ---
 
 --- START FILE: ./ui-competition.js ---
+// Version 3.2 - Fix: renderCompetitionUI now accepts an HTML Element as containerId
 // Version 3.1 - Refactor: Gỡ bỏ grid wrapper khỏi renderCompetitionUI
 // Version 2.9 - Simplify multi-brand competition table header
 // MODULE: UI COMPETITION
@@ -12315,15 +12307,24 @@ import { config } from './config.js';
 const uiCompetition = {
     /**
      * Render toàn bộ giao diện báo cáo hiệu quả thi đua mới.
-     * @param {string} containerId - ID của container để render báo cáo.
+     * @param {string|HTMLElement} containerId - ID của container hoặc chính phần tử container để render báo cáo.
      * @param {Array} reportData - Dữ liệu đã được xử lý từ services.calculateCompetitionFocusReport.
      */
     renderCompetitionUI(containerId, reportData) {
-        const container = document.getElementById(containerId);
-        if (!container) return;
+        // === START: SỬA LỖI (v3.2) ===
+        // Sửa lỗi: Chấp nhận cả chuỗi ID hoặc một đối tượng HTML Element
+        const container = typeof containerId === 'string' 
+            ? document.getElementById(containerId) 
+            : containerId;
+        // === END: SỬA LỖI (v3.2) ===
+
+        if (!container) {
+            console.error("[ui-competition.js] Lỗi: Container không hợp lệ. Đầu vào là:", containerId);
+            return;
+        }
 
         if (!reportData || reportData.length === 0) {
-            const isLk = containerId.includes('-lk');
+            const isLk = container.id ? container.id.includes('-lk') : containerId.includes('-lk'); // Phải kiểm tra cả containerId (string) dự phòng
             
             // === START REFACTOR 2 (Bước 2e) ===
             // Đọc từ global configs (Firestore) + local configs (LocalStorage)
@@ -12343,8 +12344,10 @@ const uiCompetition = {
                 // === END REFACTOR 2 ===
             } else {
                 // === START REFACTOR 2 (Bước 2e) ===
-                errorMessage = `Đã tìm thấy ${allConfigs.length} chương trình thi đua, nhưng không có doanh thu/số lượng nào khớp với các nhóm hàng đã chọn trong file YCX. Vui lòng kiểm tra lại sự thống nhất về tên gọi giữa cấu hình thi đua và dữ liệu bán hàng.`;
-                // === END REFACTOR 2 ===
+                // *** SỬA LỖI (v3.2): Thông báo này là LỖI LOGIC GỐC. Chúng ta sẽ thay thế nó ***
+                // errorMessage = `Đã tìm thấy ${allConfigs.length} chương trình thi đua, nhưng không có doanh thu/số lượng nào khớp...`;
+                errorMessage = `Không có dữ liệu thi đua cho bộ lọc hiện tại.`;
+                // *** END SỬA LỖI (v3.2) ***
             }
             container.innerHTML = `<div class="p-4 bg-yellow-50 text-yellow-800 border border-yellow-200 rounded-lg italic">${errorMessage}</div>`;
             return;
