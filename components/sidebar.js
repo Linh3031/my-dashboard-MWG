@@ -1,5 +1,6 @@
+// Version 1.6 - FIX BUG: Remove 'nav-link' class from external link to prevent router interception
+// Version 1.5 - Add New Version External Link
 // Version 1.4 - Add font-semibold to all nav links for consistency
-// Version 1.3 - Optimize HTML for better icon/text alignment
 // Chứa mã HTML và logic cho thanh điều hướng bên.
 
 const sidebarHTML = `
@@ -34,7 +35,21 @@ const sidebarHTML = `
                     <span class="menu-text">Doanh thu realtime</span>
                 </a>
             </li>
-        </ul>
+
+            <li class="mt-4 pt-2 border-t border-dashed border-gray-300">
+                <a href="https://qlstmwg.netlify.app/" target="_blank" class="flex items-start p-3 text-red-700 bg-red-50 rounded-lg hover:bg-red-100 border border-red-200 shadow-sm transition-all group cursor-pointer">
+                    <div class="mt-1">
+                        <i data-feather="gift" class="group-hover:animate-bounce"></i>
+                    </div>
+                    <div class="ml-3 flex flex-col">
+                        <span class="menu-text font-bold uppercase text-sm">Phiên bản mới</span>
+                        <span class="text-[10px] font-normal text-red-600 mt-1 leading-tight">
+                            Đã cho phép tùy chỉnh dữ liệu nhiều hơn
+                        </span>
+                    </div>
+                </a>
+            </li>
+            </ul>
     </div>
     <div>
         <ul class="space-y-2">
@@ -66,6 +81,10 @@ export const sidebar = {
         const container = document.querySelector(containerSelector);
         if (container) {
             container.innerHTML = sidebarHTML;
+            // Re-initialize Feather icons for the newly injected HTML
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
         }
     }
 };
